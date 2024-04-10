@@ -80,9 +80,3 @@ public class MyProgram : IDisposable, IListener<Update>
 }
 ```
 
-public struct MyEvent(uint value)
-{
-    public uint value = value;
-}
-```
-
