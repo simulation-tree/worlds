@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Unmanaged\Unmanaged.csproj" />
+    <ProjectReference Include="..\..\unmanaged\Unmanaged\Unmanaged.csproj" />
   </ItemGroup>
 
 </Project>
