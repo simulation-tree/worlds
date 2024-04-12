@@ -1,7 +1,7 @@
 ﻿using System;
 using Unmanaged;
 
-namespace Game.ECS
+namespace Game
 {
     /// <summary>
     /// Represents a type of a component on an entity.

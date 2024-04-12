@@ -13,9 +13,15 @@ namespace Game
         private World world;
         private bool stopped;
         private bool disposed;
-        private readonly Dictionary<object, List<object>> listeners = new();
+        private readonly HashSet<object> listenerKeys = [];
+        private readonly Dictionary<object, List<object>> listeners = [];
 
         public ref World World => ref world;
+
+        /// <summary>
+        /// Has this instance been disposed?
+        /// </summary>
+        public bool IsDisposed => disposed;
 
         public VirtualMachine()
         {
@@ -36,7 +42,7 @@ namespace Game
         [Conditional("DEBUG")]
         private void ThrowIfAlreadyAdded(object obj)
         {
-            if (listeners.ContainsKey(obj))
+            if (listenerKeys.Contains(obj))
             {
                 throw new InvalidOperationException("Listener already added.");
             }
@@ -45,7 +51,7 @@ namespace Game
         [Conditional("DEBUG")]
         private void ThrowIfNotAdded(object obj)
         {
-            if (!listeners.ContainsKey(obj))
+            if (!listenerKeys.Contains(obj))
             {
                 throw new InvalidOperationException("Listener not added.");
             }
@@ -56,7 +62,7 @@ namespace Game
         {
             if (disposed)
             {
-                throw new InvalidOperationException("Virtual machine has stopped.");
+                throw new ObjectDisposedException(nameof(VirtualMachine));
             }
         }
 
@@ -102,6 +108,7 @@ namespace Game
             ThrowIfAlreadyAdded(obj);
 
             listeners.Add(obj, ListenerUtils.AddImplementations(world, obj));
+            listenerKeys.Add(obj);
         }
 
         public void Remove(object obj)
@@ -110,6 +117,31 @@ namespace Game
             ThrowIfNotAdded(obj);
 
             ListenerUtils.RemoveImplementations(world, listeners[obj]);
+            listeners.Remove(obj);
+            listenerKeys.Remove(obj);
+        }
+
+        public bool Contains<T>()
+        {
+            ThrowIfDisposed();
+
+            if (listenerKeys.Count == 0)
+            {
+                return false;
+            }
+
+            object[] keys = [listenerKeys];
+            for (int i = keys.Length - 1; i >= 0; i--)
+            {
+                object key = keys[i];
+                if (key is T)
+                {
+                    return true;
+                }
+            }
+
+            GC.SuppressFinalize(keys);
+            return false;
         }
     }
 }
