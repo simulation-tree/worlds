@@ -53,7 +53,7 @@ namespace Game
 
         public readonly void SubmitEvent<T>(T message) where T : unmanaged
         {
-            UnmanagedWorld.SubmitEvent(value, Container.Create(message));
+            UnmanagedWorld.SubmitEvent(value, Container.Allocate(message));
         }
 
         public readonly void AddListener<T>(Listener<T> listener) where T : unmanaged

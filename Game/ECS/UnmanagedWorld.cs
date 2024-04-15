@@ -85,10 +85,10 @@ namespace Game
                 Universe.listenerCauses[id - 1] = [];
             }
 
-            UnsafeList* entities = UnsafeList.Create<EntityDescription>();
-            UnsafeList* freeEntities = UnsafeList.Create<EntityID>();
-            UnsafeList* componentArchetypes = UnsafeList.Create<ComponentTypeMask>();
-            UnsafeList* collectionArchetypes = UnsafeList.Create<CollectionTypeMask>();
+            UnsafeList* entities = UnsafeList.Allocate<EntityDescription>();
+            UnsafeList* freeEntities = UnsafeList.Allocate<EntityID>();
+            UnsafeList* componentArchetypes = UnsafeList.Allocate<ComponentTypeMask>();
+            UnsafeList* collectionArchetypes = UnsafeList.Allocate<CollectionTypeMask>();
 
             ref Dictionary<ComponentTypeMask, CollectionOfComponents> components = ref Universe.components[id - 1];
             components.Add(default, new CollectionOfComponents(default));
@@ -442,7 +442,7 @@ namespace Game
             }
 
             ref UnsafeList* list = ref collections.lists[type.value - 1];
-            list = UnsafeList.Create(type.RuntimeType);
+            list = UnsafeList.Allocate(type.RuntimeType);
             return UnsafeList.AsList<C>(list);
         }
 
@@ -471,7 +471,7 @@ namespace Game
             }
 
             ref UnsafeList* list = ref collections.lists[type.value - 1];
-            list = UnsafeList.Create(type.RuntimeType, initialCount);
+            list = UnsafeList.Allocate(type.RuntimeType, initialCount);
             for (int i = 0; i < initialCount; i++)
             {
                 UnsafeList.AddDefault(list);

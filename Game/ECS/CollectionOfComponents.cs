@@ -18,7 +18,7 @@ namespace Game.ECS
                 ComponentType type = new(i);
                 if (types.Contains(type))
                 {
-                    lists[i] = UnsafeList.Create(type.RuntimeType);
+                    lists[i] = UnsafeList.Allocate(type.RuntimeType);
                 }
             }
 
