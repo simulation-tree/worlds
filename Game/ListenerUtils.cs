@@ -7,7 +7,7 @@ namespace Game
     {
         public static List<object> AddImplementations(World world, object obj)
         {
-            return AddImplementations(world.AsPointer(), obj);
+            return AddImplementations(world.value, obj);
         }
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace Game
 
         public static void RemoveImplementations(World world, List<object> listenerList)
         {
-            RemoveImplementations(world.AsPointer(), listenerList);
+            RemoveImplementations(world.value, listenerList);
         }
 
         public static void RemoveImplementations(UnmanagedWorld* world, List<object> listenerList)

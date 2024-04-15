@@ -1,6 +1,5 @@
 ﻿using Game.ECS;
 using System;
-using System.Threading;
 using Unmanaged;
 using Unmanaged.Collections;
 
@@ -8,26 +7,11 @@ namespace Game
 {
     public readonly unsafe struct World : IDisposable, IEquatable<World>
     {
-        private readonly UnmanagedWorld* value;
+        internal readonly UnmanagedWorld* value;
 
         public readonly uint ID => UnmanagedWorld.GetID(value);
         public readonly uint Count => UnmanagedWorld.GetCount(value);
-
-        public readonly bool IsDisposed
-        {
-            get
-            {
-                try
-                {
-                    Allocations.ThrowIfNull((nint)value);
-                    return false;
-                }
-                catch
-                {
-                    return true;
-                }
-            }
-        }
+        public readonly bool IsDisposed => UnmanagedWorld.IsDisposed(value);
 
         /// <summary>
         /// Creates a new disposable world.
@@ -37,7 +21,7 @@ namespace Game
             value = UnmanagedWorld.Create();
         }
 
-        public World(UnmanagedWorld* pointer)
+        internal World(UnmanagedWorld* pointer)
         {
             this.value = pointer;
         }
@@ -65,11 +49,6 @@ namespace Game
         public readonly override int GetHashCode()
         {
             return value->GetHashCode();
-        }
-
-        public readonly UnmanagedWorld* AsPointer()
-        {
-            return value;
         }
 
         public readonly void SubmitEvent<T>(T message) where T : unmanaged
@@ -209,6 +188,11 @@ namespace Game
         public readonly ref C TryGetComponentRef<C>(EntityID id, out bool found) where C : unmanaged
         {
             return ref UnmanagedWorld.TryGetComponentRef<C>(value, id, out found);
+        }
+
+        public readonly ReadOnlySpan<EntityID> GetEntities(ComponentTypeMask componentTypes)
+        {
+            return UnmanagedWorld.GetEntities(value, componentTypes);
         }
 
         public readonly void QueryComponents(ComponentType type, QueryCallback action)

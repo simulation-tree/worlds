@@ -9,11 +9,11 @@ namespace Game.ECS
 
         public ulong value;
 
-        public readonly int Size
+        public readonly uint Size
         {
             get
             {
-                int size = 0;
+                uint size = 0;
                 for (int i = 0; i < MaxComponents; i++)
                 {
                     ComponentType type = new(i);
@@ -27,11 +27,11 @@ namespace Game.ECS
             }
         }
 
-        public readonly int Count
+        public readonly uint Count
         {
             get
             {
-                int count = 0;
+                uint count = 0;
                 for (int i = 0; i < MaxComponents; i++)
                 {
                     ComponentType type = new(i);
@@ -119,6 +119,12 @@ namespace Game.ECS
         public readonly bool Contains(ComponentType type)
         {
             return (value & 1UL << type.value) != 0;
+        }
+
+        /// <returns><c>true</c> if the given value is contained.</returns>
+        public readonly bool Contains(ComponentTypeMask other)
+        {
+            return (value & other.value) == other.value;
         }
 
         public readonly bool Contains<T>() where T : unmanaged

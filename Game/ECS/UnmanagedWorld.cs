@@ -51,6 +51,11 @@ namespace Game
             return world->id;
         }
 
+        public static bool IsDisposed(UnmanagedWorld* world)
+        {
+            return Allocations.IsNull((nint)world);
+        }
+
         public static uint GetCount(UnmanagedWorld* world)
         {
             Allocations.ThrowIfNull((nint)world);
@@ -845,6 +850,32 @@ namespace Game
             {
                 return defaultValue;
             }
+        }
+
+        public static ReadOnlySpan<EntityID> GetEntities(UnmanagedWorld* world, ComponentTypeMask componentTypes)
+        {
+            uint mostComponents = 0;
+            ComponentTypeMask mostArchetype = default;
+            for (uint i = 0; i < world->componentArchetypes->Count; i++)
+            {
+                ComponentTypeMask archetype = UnsafeList.Get<ComponentTypeMask>(world->componentArchetypes, i);
+                if (archetype.Contains(componentTypes))
+                {
+                    if (archetype.Count > mostComponents)
+                    {
+                        mostComponents = archetype.Count;
+                        mostArchetype = archetype;
+                    }
+                }
+            }
+
+            if (mostArchetype != default)
+            {
+                CollectionOfComponents data = world->Components[mostArchetype];
+                return data.entities.AsSpan();
+            }
+
+            return default;
         }
 
         public static void QueryComponents(UnmanagedWorld* world, ComponentType type, QueryCallback action)
