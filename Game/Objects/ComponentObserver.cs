@@ -75,8 +75,8 @@ namespace Game
         public static void PollChanges(UnsafeComponentObserver<T>* observer)
         {
             Allocations.ThrowIfNull((nint)observer);
-            ref UnmanagedList<EntityID> tracked = ref observer->tracked;
-            ref UnmanagedList<EntityID> foundEntities = ref observer->foundEntities;
+            UnmanagedList<EntityID> tracked = observer->tracked;
+            UnmanagedList<EntityID> foundEntities = observer->foundEntities;
             ReadOnlySpan<EntityID> entities = observer->world.GetEntities(ComponentTypeMask.Get<T>());
             for (int i = 0; i < entities.Length; i++)
             {
@@ -96,7 +96,7 @@ namespace Game
                 if (!foundEntities.Contains(id))
                 {
                     tracked.RemoveAt(index);
-                    //observer->removed(observer->world, id);
+                    observer->removed(observer->world, id);
                 }
 
                 index--;
