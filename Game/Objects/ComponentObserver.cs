@@ -32,6 +32,29 @@ namespace Game
         }
     }
 
+    public readonly unsafe struct ComponentObserverWithInput<C> : IDisposable where C : unmanaged
+    {
+        private readonly UnsafeComponentObserver<C>* pointer;
+
+        public ComponentObserverWithInput(World world, delegate* unmanaged<World, EntityID, void> added, delegate* unmanaged<World, EntityID, void> removed)
+        {
+            pointer = UnsafeComponentObserver<C>.Create(world, added, removed);
+        }
+
+        public readonly void Dispose()
+        {
+            UnsafeComponentObserver<C>.Dispose(pointer);
+        }
+
+        /// <summary>
+        /// Iterates over the world to find changes to <typeparamref name="C"/> components.
+        /// </summary>
+        public readonly void PollChanges()
+        {
+            UnsafeComponentObserver<C>.PollChanges(pointer);
+        }
+    }
+
     public unsafe struct UnsafeComponentObserver<T> where T : unmanaged
     {
         private readonly UnmanagedList<EntityID> tracked;

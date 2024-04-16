@@ -1,5 +1,6 @@
 ﻿using Game.ECS;
 using System;
+using System.Runtime.CompilerServices;
 using Unmanaged;
 using Unmanaged.Collections;
 
@@ -95,14 +96,9 @@ namespace Game
             return UnmanagedWorld.GetComponents(value, id);
         }
 
-        public readonly EntityID CreateEntity()
+        public readonly EntityID CreateEntity(EntityID parent = default)
         {
-            return CreateEntity(default);
-        }
-
-        public readonly EntityID CreateEntity(ComponentTypeMask componentTypes)
-        {
-            return UnmanagedWorld.CreateEntity(value, componentTypes);
+            return UnmanagedWorld.CreateEntity(value, parent, default);
         }
 
         public readonly bool ContainsEntity(EntityID id)
@@ -150,9 +146,44 @@ namespace Game
             UnmanagedWorld.ClearCollection<T>(value, id);
         }
 
+        public readonly bool HasParent(EntityID id)
+        {
+            return UnmanagedWorld.HasParent(value, id);
+        }
+
+        public readonly EntityID GetParent(EntityID id)
+        {
+            return UnmanagedWorld.GetParent(value, id);
+        }
+
+        public readonly void SetParent(EntityID id, EntityID parent)
+        {
+            UnmanagedWorld.SetParent(value, id, parent);
+        }
+
+        public readonly bool TryGetParent(EntityID id, out EntityID parent)
+        {
+            if (HasParent(id))
+            {
+                parent = GetParent(id);
+                return true;
+            }
+            else
+            {
+                parent = default;
+                return false;
+            }
+        }
+
         public readonly void AddComponent<T>(EntityID id, T component) where T : unmanaged
         {
             UnmanagedWorld.AddComponent(value, id, component);
+        }
+
+        public readonly ref T AddComponentRef<T>(EntityID id) where T : unmanaged
+        {
+            AddComponent<T>(id, default);
+            return ref GetComponentRef<T>(id);
         }
 
         public readonly void RemoveComponent<T>(EntityID id) where T : unmanaged
@@ -160,9 +191,9 @@ namespace Game
             UnmanagedWorld.RemoveComponent<T>(value, id);
         }
 
-        public readonly bool ContainsComponent<C>(EntityID id) where C : unmanaged
+        public readonly bool ContainsComponent<T>(EntityID id) where T : unmanaged
         {
-            return UnmanagedWorld.ContainsComponent<C>(value, id);
+            return UnmanagedWorld.ContainsComponent(value, id, ComponentType.Get<T>());
         }
 
         public readonly bool ContainsComponent(EntityID id, ComponentType type)
@@ -170,24 +201,46 @@ namespace Game
             return UnmanagedWorld.ContainsComponent(value, id, type);
         }
 
-        public readonly ref C GetComponentRef<C>(EntityID id) where C : unmanaged
+        public readonly ref T GetComponentRef<T>(EntityID id) where T : unmanaged
         {
-            return ref UnmanagedWorld.GetComponentRef<C>(value, id);
+            return ref UnmanagedWorld.GetComponentRef<T>(value, id);
         }
 
-        public readonly C GetComponent<C>(EntityID id, C defaultValue = default) where C : unmanaged
+        public readonly T GetComponent<T>(EntityID id, T defaultValue) where T : unmanaged
         {
-            return UnmanagedWorld.GetComponent(value, id, defaultValue);
+            if (ContainsComponent<T>(id))
+            {
+                return GetComponentRef<T>(id);
+            }
+            else
+            {
+                return defaultValue;
+            }
         }
 
         public readonly Span<byte> GetComponent(EntityID id, ComponentType type)
         {
-            return UnmanagedWorld.GetComponent(value, id, type);
+            return UnmanagedWorld.GetComponentBytes(value, id, type);
         }
 
         public readonly ref C TryGetComponentRef<C>(EntityID id, out bool found) where C : unmanaged
         {
-            return ref UnmanagedWorld.TryGetComponentRef<C>(value, id, out found);
+            if (ContainsComponent<C>(id))
+            {
+                found = true;
+                return ref GetComponentRef<C>(id);
+            }
+            else
+            {
+                found = false;
+                return ref Unsafe.AsRef<C>(null);
+            }
+        }
+
+        public readonly void SetComponent<T>(EntityID id, T component) where T : unmanaged
+        {
+            ref T existing = ref GetComponentRef<T>(id);
+            existing = component;
         }
 
         public readonly ReadOnlySpan<EntityID> GetEntities(ComponentTypeMask componentTypes)
@@ -244,14 +297,6 @@ namespace Game
 
     public delegate void Listener<T>(ref T message) where T : unmanaged;
     public delegate void Listener(ref Container message);
-
-    public struct EntityDescription(EntityID id, uint version, ComponentTypeMask componentTypes, CollectionTypeMask collectionTypes)
-    {
-        public EntityID id = id;
-        public uint version = version;
-        public ComponentTypeMask componentTypes = componentTypes;
-        public CollectionTypeMask collectionTypes = collectionTypes;
-    }
 
     public unsafe delegate void CreatedCallback(UnmanagedWorld* world, EntityID id);
     public unsafe delegate void DestroyedCallback(UnmanagedWorld* world, EntityID id);

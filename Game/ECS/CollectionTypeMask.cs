@@ -5,14 +5,16 @@ namespace Game.ECS
 {
     public unsafe struct CollectionTypeMask : IEquatable<CollectionTypeMask>
     {
+        public const int MaxTypes = 64;
+
         public ulong value;
 
-        public readonly int Count
+        public readonly uint Count
         {
             get
             {
-                int count = 0;
-                for (int i = 0; i < CollectionType.MaxTypes; i++)
+                uint count = 0;
+                for (int i = 0; i < MaxTypes; i++)
                 {
                     CollectionType type = new(i);
                     if (Contains(type))
@@ -28,7 +30,7 @@ namespace Game.ECS
         public override readonly string ToString()
         {
             StringBuilder builder = new();
-            for (int i = 0; i < CollectionType.MaxTypes; i++)
+            for (int i = 0; i < MaxTypes; i++)
             {
                 CollectionType type = new(i);
                 if (Contains(type))
@@ -64,7 +66,7 @@ namespace Game.ECS
         public readonly int CopyTo(Span<CollectionType> span)
         {
             int count = 0;
-            for (int i = 0; i < CollectionType.MaxTypes; i++)
+            for (int i = 0; i < MaxTypes; i++)
             {
                 CollectionType type = new(i);
                 if (Contains(type))
@@ -99,6 +101,11 @@ namespace Game.ECS
         public readonly bool Contains(CollectionType type)
         {
             return (value & 1UL << type.value) != 0;
+        }
+
+        public readonly bool Contains(CollectionTypeMask other)
+        {
+            return (value & other.value) == other.value;
         }
 
         public readonly bool Contains<T>() where T : unmanaged

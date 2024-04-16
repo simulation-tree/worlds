@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unmanaged;
@@ -42,6 +43,22 @@ namespace Game
             this.freeEntities = freeEntities;
             this.componentArchetypes = componentArchetypes;
             this.collectionArchetypes = collectionArchetypes;
+        }
+
+        [Conditional("DEBUG")]
+        private static void ThrowIfEntityMissing(UnmanagedWorld* world, EntityID id)
+        {
+            uint index = id.value - 1;
+            if (index >= world->entities->Count)
+            {
+                throw new NullReferenceException($"Entity {id} not found.");
+            }
+
+            ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
+            if (entity.id != id)
+            {
+                throw new NullReferenceException($"Entity {id} not found.");
+            }
         }
 
         public static uint GetID(UnmanagedWorld* world)
@@ -281,7 +298,7 @@ namespace Game
             }
         }
 
-        public static EntityID GenerateEntity(UnmanagedWorld* world, ComponentTypeMask componentTypes)
+        private static EntityID GenerateEntity(UnmanagedWorld* world, EntityID parent, ComponentTypeMask componentTypes)
         {
             Allocations.ThrowIfNull((nint)world);
 
@@ -300,7 +317,7 @@ namespace Game
 
             uint index = world->entities->Count + 1;
             EntityID newId = new(index);
-            EntityDescription newEntity = new(newId, 0, componentTypes, default);
+            EntityDescription newEntity = new(newId, 0, parent, componentTypes, default);
             UnsafeList.Add(world->entities, newEntity);
 
             ref CollectionOfCollections?[] arrays = ref world->Collections;
@@ -377,22 +394,44 @@ namespace Game
             return entity.componentTypes;
         }
 
-        /// <summary>
-        /// Creates a new blank entity.
-        /// </summary>
-        public static EntityID CreateEntity(UnmanagedWorld* world)
+        public static bool HasParent(UnmanagedWorld* world, EntityID id)
         {
-            return CreateEntity(world, default);
+            Allocations.ThrowIfNull((nint)world);
+            ThrowIfEntityMissing(world, id);
+
+            uint index = id.value - 1;
+            ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
+            return entity.parent != default;
+        }
+
+        public static EntityID GetParent(UnmanagedWorld* world, EntityID id)
+        {
+            Allocations.ThrowIfNull((nint)world);
+            ThrowIfEntityMissing(world, id);
+
+            uint index = id.value - 1;
+            ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
+            return entity.parent;
+        }
+
+        public static void SetParent(UnmanagedWorld* world, EntityID id, EntityID parent)
+        {
+            Allocations.ThrowIfNull((nint)world);
+            ThrowIfEntityMissing(world, id);
+
+            uint index = id.value - 1;
+            ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
+            entity.parent = parent;
         }
 
         /// <summary>
         /// Creates a new entity with blank components of the given types.
         /// </summary>
-        public static EntityID CreateEntity(UnmanagedWorld* world, ComponentTypeMask componentTypes)
+        public static EntityID CreateEntity(UnmanagedWorld* world, EntityID parent, ComponentTypeMask componentTypes)
         {
             Allocations.ThrowIfNull((nint)world);
 
-            EntityID id = GenerateEntity(world, componentTypes);
+            EntityID id = GenerateEntity(world, parent, componentTypes);
             CollectionOfComponents newData = world->Components[componentTypes];
             for (int i = 0; i < ComponentTypeMask.MaxComponents; i++)
             {
@@ -420,14 +459,10 @@ namespace Game
         public static UnmanagedList<C> CreateCollection<C>(UnmanagedWorld* world, EntityID id) where C : unmanaged
         {
             Allocations.ThrowIfNull((nint)world);
+            ThrowIfEntityMissing(world, id);
 
             uint index = id.value - 1;
             ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
-            if (entity.id != id)
-            {
-                throw new NullReferenceException($"Entity {id} not found.");
-            }
-
             CollectionType type = CollectionType.Get<C>();
             if (entity.collectionTypes.Contains(type))
             {
@@ -449,14 +484,10 @@ namespace Game
         public static Span<C> CreateCollection<C>(UnmanagedWorld* world, EntityID id, uint initialCount) where C : unmanaged
         {
             Allocations.ThrowIfNull((nint)world);
+            ThrowIfEntityMissing(world, id);
 
             uint index = id.value - 1;
             ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
-            if (entity.id != id)
-            {
-                throw new NullReferenceException($"Entity {id} not found.");
-            }
-
             CollectionType type = CollectionType.Get<C>();
             if (entity.collectionTypes.Contains(type))
             {
@@ -483,14 +514,10 @@ namespace Game
         public static void AddToCollection<C>(UnmanagedWorld* world, EntityID id, C value) where C : unmanaged
         {
             Allocations.ThrowIfNull((nint)world);
+            ThrowIfEntityMissing(world, id);
 
             uint index = id.value - 1;
             ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
-            if (entity.id != id)
-            {
-                throw new NullReferenceException($"Entity {id} not found.");
-            }
-
             CollectionType type = CollectionType.Get<C>();
             if (entity.collectionTypes.Contains(type))
             {
@@ -507,28 +534,20 @@ namespace Game
         public static bool ContainsCollection<C>(UnmanagedWorld* world, EntityID id) where C : unmanaged
         {
             Allocations.ThrowIfNull((nint)world);
+            ThrowIfEntityMissing(world, id);
 
             uint index = id.value - 1;
             ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
-            if (entity.id != id)
-            {
-                throw new NullReferenceException($"Entity {id} not found.");
-            }
-
             return entity.collectionTypes.Contains<C>();
         }
 
         public static UnmanagedList<C> GetCollection<C>(UnmanagedWorld* world, EntityID id) where C : unmanaged
         {
             Allocations.ThrowIfNull((nint)world);
+            ThrowIfEntityMissing(world, id);
 
             uint index = id.value - 1;
             ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
-            if (entity.id != id)
-            {
-                throw new NullReferenceException($"Entity {id} not found.");
-            }
-
             CollectionType type = CollectionType.Get<C>();
             if (entity.collectionTypes.Contains(type))
             {
@@ -545,14 +564,10 @@ namespace Game
         public static void RemoveAtFromCollection<C>(UnmanagedWorld* world, EntityID id, uint index) where C : unmanaged
         {
             Allocations.ThrowIfNull((nint)world);
+            ThrowIfEntityMissing(world, id);
 
             uint entityIndex = id.value - 1;
             ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, entityIndex);
-            if (entity.id != id)
-            {
-                throw new NullReferenceException($"Entity {id} not found.");
-            }
-
             CollectionType type = CollectionType.Get<C>();
             if (entity.collectionTypes.Contains(type))
             {
@@ -569,14 +584,10 @@ namespace Game
         public static void DestroyCollection<C>(UnmanagedWorld* world, EntityID id) where C : unmanaged
         {
             Allocations.ThrowIfNull((nint)world);
+            ThrowIfEntityMissing(world, id);
 
             uint entityIndex = id.value - 1;
             ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, entityIndex);
-            if (entity.id != id)
-            {
-                throw new NullReferenceException($"Entity {id} not found.");
-            }
-
             CollectionType type = CollectionType.Get<C>();
             if (entity.collectionTypes.Contains(type))
             {
@@ -595,14 +606,10 @@ namespace Game
         public static void ClearCollection<C>(UnmanagedWorld* world, EntityID id) where C : unmanaged
         {
             Allocations.ThrowIfNull((nint)world);
+            ThrowIfEntityMissing(world, id);
 
             uint entityIndex = id.value - 1;
             ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, entityIndex);
-            if (entity.id != id)
-            {
-                throw new NullReferenceException($"Entity {id} not found.");
-            }
-
             CollectionType type = CollectionType.Get<C>();
             if (entity.collectionTypes.Contains(type))
             {
@@ -681,12 +688,6 @@ namespace Game
             oldData.MoveTo(id, newData);
         }
 
-        public static bool ContainsComponent<C>(UnmanagedWorld* world, EntityID id) where C : unmanaged
-        {
-            ComponentType type = ComponentType.Get<C>();
-            return ContainsComponent(world, id, type);
-        }
-
         public static bool ContainsComponent(UnmanagedWorld* world, EntityID id, ComponentType type)
         {
             Allocations.ThrowIfNull((nint)world);
@@ -726,32 +727,7 @@ namespace Game
             }
         }
 
-        public static C GetComponent<C>(UnmanagedWorld* world, EntityID id) where C : unmanaged
-        {
-            Allocations.ThrowIfNull((nint)world);
-
-            uint index = id.value - 1;
-            ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
-            if (entity.id != id)
-            {
-                throw new NullReferenceException($"Entity {id} not found.");
-            }
-
-            ComponentType type = ComponentType.Get<C>();
-            if (entity.componentTypes.Contains(type))
-            {
-                CollectionOfComponents data = world->Components[entity.componentTypes];
-                uint componentIndex = data.entities.IndexOf(id);
-                ref UnsafeList* list = ref data.lists[type.value - 1];
-                return UnsafeList.Get<C>(list, componentIndex);
-            }
-            else
-            {
-                throw new NullReferenceException($"Component {type.RuntimeType} not found.");
-            }
-        }
-
-        public static Span<byte> GetComponent(UnmanagedWorld* world, EntityID id, ComponentType type)
+        public static Span<byte> GetComponentBytes(UnmanagedWorld* world, EntityID id, ComponentType type)
         {
             Allocations.ThrowIfNull((nint)world);
 
@@ -772,83 +748,6 @@ namespace Game
             else
             {
                 throw new NullReferenceException($"Component {type.RuntimeType} not found.");
-            }
-        }
-
-        public static void SetComponent<C>(UnmanagedWorld* world, EntityID id, C value) where C : unmanaged
-        {
-            Allocations.ThrowIfNull((nint)world);
-
-            uint index = id.value - 1;
-            ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
-            if (entity.id != id)
-            {
-                throw new NullReferenceException($"Entity {id} not found.");
-            }
-
-            ComponentType type = ComponentType.Get<C>();
-            if (entity.componentTypes.Contains(type))
-            {
-                CollectionOfComponents data = world->Components[entity.componentTypes];
-                uint componentIndex = data.entities.IndexOf(id);
-                ref UnsafeList* list = ref data.lists[type.value - 1];
-                UnsafeList.Set(list, componentIndex, value);
-            }
-            else
-            {
-                throw new NullReferenceException($"Component {type.RuntimeType} not found.");
-            }
-        }
-
-        public static ref C TryGetComponentRef<C>(UnmanagedWorld* world, EntityID id, out bool found) where C : unmanaged
-        {
-            Allocations.ThrowIfNull((nint)world);
-
-            uint index = id.value - 1;
-            ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
-            if (entity.id != id)
-            {
-                throw new NullReferenceException($"Entity {id} not found.");
-            }
-
-            ComponentType type = ComponentType.Get<C>();
-            if (entity.componentTypes.Contains(type))
-            {
-                CollectionOfComponents data = world->Components[entity.componentTypes];
-                uint componentIndex = data.entities.IndexOf(id);
-                ref UnsafeList* list = ref data.lists[type.value - 1];
-                found = true;
-                return ref UnsafeList.GetRef<C>(list, componentIndex);
-            }
-            else
-            {
-                found = false;
-                return ref Unsafe.AsRef<C>(null);
-            }
-        }
-
-        public static C GetComponent<C>(UnmanagedWorld* world, EntityID id, C defaultValue = default) where C : unmanaged
-        {
-            Allocations.ThrowIfNull((nint)world);
-
-            uint index = id.value - 1;
-            ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
-            if (entity.id != id)
-            {
-                throw new NullReferenceException($"Entity {id} not found.");
-            }
-
-            ComponentType type = ComponentType.Get<C>();
-            if (entity.componentTypes.Contains(type))
-            {
-                CollectionOfComponents data = world->Components[entity.componentTypes];
-                uint componentIndex = data.entities.IndexOf(id);
-                ref UnsafeList* list = ref data.lists[type.value - 1];
-                return UnsafeList.Get<C>(list, componentIndex);
-            }
-            else
-            {
-                return defaultValue;
             }
         }
 
@@ -1021,6 +920,15 @@ namespace Game
                     }
                 }
             }
+        }
+
+        public struct EntityDescription(EntityID id, uint version, EntityID parent, ComponentTypeMask componentTypes, CollectionTypeMask collectionTypes)
+        {
+            public EntityID id = id;
+            public uint version = version;
+            public EntityID parent = parent;
+            public ComponentTypeMask componentTypes = componentTypes;
+            public CollectionTypeMask collectionTypes = collectionTypes;
         }
     }
 }
