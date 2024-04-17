@@ -1,17 +1,20 @@
 ﻿using System;
 using Unmanaged;
 
-namespace Game.ECS
+namespace Game
 {
     /// <summary>
-    /// Represents a type of an array on an entity.
+    /// Represents a collection type using the element type.
     /// </summary>
     public readonly struct CollectionType : IEquatable<CollectionType>
     {
         private static readonly RuntimeType[] runtimeTypes = new RuntimeType[MaxTypes];
         private static ushort count = 0;
 
-        public const byte MaxTypes = 64;
+        /// <summary>
+        /// Maximum amount of collection types permitted in use.
+        /// </summary>
+        public const byte MaxTypes = 16;
 
         public readonly byte value;
 
@@ -65,18 +68,18 @@ namespace Game.ECS
 
         public unsafe static CollectionType Get<T>() where T : unmanaged
         {
-            return ArrayTypeHash<T>.value;
+            return HashValue<T>.value;
         }
 
-        private static class ArrayTypeHash<T> where T : unmanaged
+        private static class HashValue<T> where T : unmanaged
         {
             public static CollectionType value;
 
-            unsafe static ArrayTypeHash()
+            static HashValue()
             {
                 if (count >= MaxTypes)
                 {
-                    throw new InvalidOperationException("Too many componentTypes registered.");
+                    throw new InvalidOperationException("Too many collection types registered.");
                 }
 
                 value = new CollectionType((byte)(count + 1));

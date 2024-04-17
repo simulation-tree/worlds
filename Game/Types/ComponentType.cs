@@ -8,10 +8,10 @@ namespace Game
     /// </summary>
     public readonly struct ComponentType : IEquatable<ComponentType>
     {
-        private static readonly RuntimeType[] runtimeTypes = new RuntimeType[MaxComponentTypes];
+        private static readonly RuntimeType[] runtimeTypes = new RuntimeType[MaxTypes];
         private static ushort count = 0;
 
-        public const byte MaxComponentTypes = 64;
+        public const byte MaxTypes = 64;
 
         /// <summary>
         /// The unique value of this type.
@@ -40,17 +40,17 @@ namespace Game
             return value == ComponentTypeHash<T>.value.value;
         }
 
-        public override bool Equals(object? obj)
+        public readonly override bool Equals(object? obj)
         {
             return obj is ComponentType type && Equals(type);
         }
 
-        public bool Equals(ComponentType other)
+        public readonly bool Equals(ComponentType other)
         {
             return value == other.value;
         }
 
-        public override int GetHashCode()
+        public readonly override int GetHashCode()
         {
             return value.GetHashCode();
         }
@@ -65,7 +65,7 @@ namespace Game
             return !(left == right);
         }
 
-        public unsafe static ComponentType Get<T>() where T : unmanaged
+        public static ComponentType Get<T>() where T : unmanaged
         {
             return ComponentTypeHash<T>.value;
         }
@@ -74,9 +74,9 @@ namespace Game
         {
             public static ComponentType value;
 
-            unsafe static ComponentTypeHash()
+            static ComponentTypeHash()
             {
-                if (count >= MaxComponentTypes)
+                if (count >= MaxTypes)
                 {
                     throw new InvalidOperationException("Too many componentTypes registered.");
                 }

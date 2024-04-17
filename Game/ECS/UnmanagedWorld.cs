@@ -23,7 +23,6 @@ namespace Game
         public static event DestroyedCallback EntityDestroyed = delegate { };
 
         private readonly uint id;
-        private uint count;
         private readonly UnsafeList* entities;
         private readonly UnsafeList* freeEntities;
         private readonly UnsafeList* componentArchetypes;
@@ -32,13 +31,12 @@ namespace Game
         private readonly ref Dictionary<ComponentTypeMask, CollectionOfComponents> Components => ref Universe.components[(int)id - 1];
         private readonly ref CollectionOfCollections?[] Collections => ref Universe.collections[(int)id - 1];
         private readonly ref ConcurrentQueue<Container> EventQueue => ref Universe.eventQueues[(int)id - 1];
-        private readonly ref Dictionary<RuntimeType, List<Listener>> EventHandlers => ref Universe.listenerHandlers[(int)id - 1];
+        private readonly ref Dictionary<RuntimeType, List<ListenerCallback>> EventHandlers => ref Universe.listenerHandlers[(int)id - 1];
         private readonly ref Dictionary<RuntimeType, List<object?>> EventHandlerCauses => ref Universe.listenerCauses[(int)id - 1];
 
         private UnmanagedWorld(uint id, UnsafeList* entities, UnsafeList* freeEntities, UnsafeList* componentArchetypes, UnsafeList* collectionArchetypes)
         {
             this.id = id;
-            this.count = 0;
             this.entities = entities;
             this.freeEntities = freeEntities;
             this.componentArchetypes = componentArchetypes;
@@ -49,7 +47,8 @@ namespace Game
         private static void ThrowIfEntityMissing(UnmanagedWorld* world, EntityID id)
         {
             uint index = id.value - 1;
-            if (index >= world->entities->Count)
+            uint count = GetEntityCount(world);
+            if (index >= count)
             {
                 throw new NullReferenceException($"Entity {id} not found.");
             }
@@ -73,11 +72,11 @@ namespace Game
             return Allocations.IsNull((nint)world);
         }
 
-        public static uint GetCount(UnmanagedWorld* world)
+        public static uint GetEntityCount(UnmanagedWorld* world)
         {
             Allocations.ThrowIfNull((nint)world);
 
-            return world->count;
+            return UnsafeList.GetCount(world->entities);
         }
 
         public static UnmanagedWorld* Create()
@@ -127,7 +126,7 @@ namespace Game
 
             uint id = world->id;
             ref Dictionary<ComponentTypeMask, CollectionOfComponents> components = ref world->Components;
-            uint count = world->componentArchetypes->Count;
+            uint count = UnsafeList.GetCount(world->componentArchetypes);
             while (count > 0)
             {
                 ComponentTypeMask types = UnsafeList.Get<ComponentTypeMask>(world->componentArchetypes, count - 1);
@@ -171,7 +170,7 @@ namespace Game
 
         public readonly override int GetHashCode()
         {
-            return HashCode.Combine(id, count, entities->GetHashCode(), componentArchetypes->GetHashCode(), collectionArchetypes->GetHashCode());
+            return HashCode.Combine(id, entities->GetHashCode(), componentArchetypes->GetHashCode(), collectionArchetypes->GetHashCode());
         }
 
         public static void SubmitEvent(UnmanagedWorld* world, Container container)
@@ -181,11 +180,11 @@ namespace Game
             world->EventQueue.Enqueue(container);
         }
 
-        public static void AddListener(UnmanagedWorld* world, RuntimeType type, Listener listener)
+        public static void AddListener(UnmanagedWorld* world, RuntimeType type, ListenerCallback listener)
         {
             Allocations.ThrowIfNull((nint)world);
 
-            if (!world->EventHandlers.TryGetValue(type, out System.Collections.Generic.List<Listener>? listeners))
+            if (!world->EventHandlers.TryGetValue(type, out System.Collections.Generic.List<ListenerCallback>? listeners))
             {
                 listeners = [];
                 world->EventHandlers.Add(type, listeners);
@@ -201,7 +200,7 @@ namespace Game
             causes.Add(null);
         }
 
-        public static void RemoveListener(UnmanagedWorld* world, RuntimeType type, Listener listener)
+        public static void RemoveListener(UnmanagedWorld* world, RuntimeType type, ListenerCallback listener)
         {
             Allocations.ThrowIfNull((nint)world);
 
@@ -222,12 +221,12 @@ namespace Game
             }
         }
 
-        public static void AddListener<T>(UnmanagedWorld* world, Listener<T> listener) where T : unmanaged
+        public static void AddListener<T>(UnmanagedWorld* world, ListenerCallback<T> listener) where T : unmanaged
         {
             Allocations.ThrowIfNull((nint)world);
 
             RuntimeType type = RuntimeType.Get<T>();
-            if (!world->EventHandlers.TryGetValue(type, out System.Collections.Generic.List<Listener>? listeners))
+            if (!world->EventHandlers.TryGetValue(type, out System.Collections.Generic.List<ListenerCallback>? listeners))
             {
                 listeners = [];
                 world->EventHandlers.Add(type, listeners);
@@ -249,7 +248,7 @@ namespace Game
             causes.Add(listener);
         }
 
-        public static void RemoveListener<T>(UnmanagedWorld* world, Listener<T> listener) where T : unmanaged
+        public static void RemoveListener<T>(UnmanagedWorld* world, ListenerCallback<T> listener) where T : unmanaged
         {
             Allocations.ThrowIfNull((nint)world);
 
@@ -286,7 +285,7 @@ namespace Game
             while (eventQueue.TryDequeue(out Container message))
             {
                 RuntimeType type = message.type;
-                if (world->EventHandlers.TryGetValue(type, out System.Collections.Generic.List<Listener>? listeners))
+                if (world->EventHandlers.TryGetValue(type, out System.Collections.Generic.List<ListenerCallback>? listeners))
                 {
                     for (int i = 0; i < listeners.Count; i++)
                     {
@@ -302,7 +301,7 @@ namespace Game
         {
             Allocations.ThrowIfNull((nint)world);
 
-            if (world->freeEntities->Count > 0)
+            if (UnsafeList.GetCount(world->freeEntities) > 0)
             {
                 EntityID oldId = UnsafeList.Get<EntityID>(world->freeEntities, 0);
                 UnsafeList.RemoveAt(world->freeEntities, 0);
@@ -315,7 +314,7 @@ namespace Game
                 return oldId;
             }
 
-            uint index = world->entities->Count + 1;
+            uint index = UnsafeList.GetCount(world->entities) + 1;
             EntityID newId = new(index);
             EntityDescription newEntity = new(newId, 0, parent, componentTypes, default);
             UnsafeList.Add(world->entities, newEntity);
@@ -349,7 +348,7 @@ namespace Game
             CollectionOfComponents oldData = world->Components[oldTypes];
             uint oldIndex = oldData.entities.IndexOf(id);
             oldData.entities.Remove(id);
-            for (int i = 0; i < ComponentTypeMask.MaxComponents; i++)
+            for (int i = 0; i < ComponentTypeMask.MaxValues; i++)
             {
                 ComponentType type = new(i);
                 if (oldTypes.Contains(type))
@@ -381,7 +380,6 @@ namespace Game
             entity.collectionTypes = default;
             entity.version++;
             UnsafeList.Add(world->freeEntities, id);
-            world->count--;
             EntityDestroyed(world, id);
         }
 
@@ -392,6 +390,36 @@ namespace Game
             uint index = id.value - 1;
             ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
             return entity.componentTypes;
+        }
+
+        public static uint ReadComponents<T>(UnmanagedWorld* world, ReadOnlySpan<EntityID> entities, Span<T> components, Span<bool> contains) where T : unmanaged
+        {
+            Allocations.ThrowIfNull((nint)world);
+
+            ComponentType type = ComponentType.Get<T>();
+            uint count = 0;
+            for (uint i = 0; i < entities.Length; i++)
+            {
+                EntityID id = entities[(int)i];
+                uint index = id.value - 1;
+                ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
+                if (entity.componentTypes.Contains(type))
+                {
+                    CollectionOfComponents data = world->Components[entity.componentTypes];
+                    uint componentIndex = data.entities.IndexOf(id);
+                    ref UnsafeList* list = ref data.lists[type.value - 1];
+                    UnsafeList.CopyTo(list, componentIndex, components, i);
+                    count++;
+                    contains[(int)i] = true;
+                }
+                else
+                {
+                    components[(int)i] = default;
+                    contains[(int)i] = false;
+                }
+            }
+
+            return count;
         }
 
         public static bool HasParent(UnmanagedWorld* world, EntityID id)
@@ -433,7 +461,7 @@ namespace Game
 
             EntityID id = GenerateEntity(world, parent, componentTypes);
             CollectionOfComponents newData = world->Components[componentTypes];
-            for (int i = 0; i < ComponentTypeMask.MaxComponents; i++)
+            for (int i = 0; i < ComponentTypeMask.MaxValues; i++)
             {
                 ComponentType type = new(i);
                 if (componentTypes.Contains(type))
@@ -443,7 +471,6 @@ namespace Game
                 }
             }
 
-            world->count++;
             return id;
         }
 
@@ -755,7 +782,8 @@ namespace Game
         {
             uint mostComponents = 0;
             ComponentTypeMask mostArchetype = default;
-            for (uint i = 0; i < world->componentArchetypes->Count; i++)
+            uint count = UnsafeList.GetCount(world->componentArchetypes);
+            for (uint i = 0; i < count; i++)
             {
                 ComponentTypeMask archetype = UnsafeList.Get<ComponentTypeMask>(world->componentArchetypes, i);
                 if (archetype.Contains(componentTypes))
@@ -781,7 +809,8 @@ namespace Game
         {
             Allocations.ThrowIfNull((nint)world);
 
-            for (uint i = 0; i < world->componentArchetypes->Count; i++)
+            uint count = UnsafeList.GetCount(world->componentArchetypes);
+            for (uint i = 0; i < count; i++)
             {
                 ComponentTypeMask archetype = UnsafeList.Get<ComponentTypeMask>(world->componentArchetypes, i);
                 if (archetype.Contains(type))
@@ -801,7 +830,8 @@ namespace Game
             Allocations.ThrowIfNull((nint)world);
 
             ComponentType t1 = ComponentType.Get<C1>();
-            for (uint i = 0; i < world->componentArchetypes->Count; i++)
+            uint count = UnsafeList.GetCount(world->componentArchetypes);
+            for (uint i = 0; i < count; i++)
             {
                 ComponentTypeMask archetype = UnsafeList.Get<ComponentTypeMask>(world->componentArchetypes, i);
                 if (archetype.Contains(t1))
@@ -821,7 +851,8 @@ namespace Game
             Allocations.ThrowIfNull((nint)world);
 
             ComponentType t1 = ComponentType.Get<C1>();
-            for (uint i = 0; i < world->componentArchetypes->Count; i++)
+            uint count = UnsafeList.GetCount(world->componentArchetypes);
+            for (uint i = 0; i < count; i++)
             {
                 ComponentTypeMask archetype = UnsafeList.Get<ComponentTypeMask>(world->componentArchetypes, i);
                 if (archetype.Contains(t1))
@@ -844,7 +875,8 @@ namespace Game
 
             ComponentType t1 = ComponentType.Get<C1>();
             ComponentType t2 = ComponentType.Get<C2>();
-            for (uint i = 0; i < world->componentArchetypes->Count; i++)
+            uint count = UnsafeList.GetCount(world->componentArchetypes);
+            for (uint i = 0; i < count; i++)
             {
                 ComponentTypeMask archetype = UnsafeList.Get<ComponentTypeMask>(world->componentArchetypes, i);
                 if (archetype.Contains(t1) && archetype.Contains(t2))
@@ -870,7 +902,8 @@ namespace Game
             ComponentType t1 = ComponentType.Get<C1>();
             ComponentType t2 = ComponentType.Get<C2>();
             ComponentType t3 = ComponentType.Get<C3>();
-            for (uint i = 0; i < world->componentArchetypes->Count; i++)
+            uint count = UnsafeList.GetCount(world->componentArchetypes);
+            for (uint i = 0; i < count; i++)
             {
                 ComponentTypeMask archetype = UnsafeList.Get<ComponentTypeMask>(world->componentArchetypes, i);
                 if (archetype.Contains(t1) && archetype.Contains(t2) && archetype.Contains(t3))
@@ -899,7 +932,8 @@ namespace Game
             ComponentType t2 = ComponentType.Get<C2>();
             ComponentType t3 = ComponentType.Get<C3>();
             ComponentType t4 = ComponentType.Get<C4>();
-            for (uint i = 0; i < world->componentArchetypes->Count; i++)
+            uint count = UnsafeList.GetCount(world->componentArchetypes);
+            for (uint i = 0; i < count; i++)
             {
                 ComponentTypeMask archetype = UnsafeList.Get<ComponentTypeMask>(world->componentArchetypes, i);
                 if (archetype.Contains(t1) && archetype.Contains(t2) && archetype.Contains(t3) && archetype.Contains(t4))

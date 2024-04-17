@@ -13,7 +13,7 @@ namespace Game.ECS
         internal static Dictionary<ComponentTypeMask, CollectionOfComponents>[] components = [];
         internal static CollectionOfCollections?[][] collections = [];
         internal static ConcurrentQueue<Container>[] eventQueues = [];
-        internal static Dictionary<RuntimeType, List<Listener>>[] listenerHandlers = [];
+        internal static Dictionary<RuntimeType, List<ListenerCallback>>[] listenerHandlers = [];
         internal static Dictionary<RuntimeType, List<object?>>[] listenerCauses = [];
     }
 }

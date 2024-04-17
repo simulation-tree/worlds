@@ -4,6 +4,7 @@ using Unmanaged.Collections;
 
 namespace Game
 {
+    //todo: find a use for this, otherwise remove it
     public readonly unsafe struct Entity : IDisposable
     {
         public readonly EntityID id;

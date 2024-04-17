@@ -1,20 +1,26 @@
 ﻿using System;
 using System.Text;
 
-namespace Game.ECS
+namespace Game
 {
+    /// <summary>
+    /// A mask containing component types.
+    /// </summary>
     public unsafe struct ComponentTypeMask : IEquatable<ComponentTypeMask>
     {
-        public const int MaxComponents = 64;
+        public const int MaxValues = ComponentType.MaxTypes;
 
-        public ulong value;
+        private ulong value;
 
+        /// <summary>
+        /// Size in bytes encapsulating all component types in this mask.
+        /// </summary>
         public readonly uint Size
         {
             get
             {
                 uint size = 0;
-                for (int i = 0; i < MaxComponents; i++)
+                for (int i = 0; i < MaxValues; i++)
                 {
                     ComponentType type = new(i);
                     if (Contains(type))
@@ -27,12 +33,15 @@ namespace Game.ECS
             }
         }
 
+        /// <summary>
+        /// Amount of types in this mask.
+        /// </summary>
         public readonly uint Count
         {
             get
             {
                 uint count = 0;
-                for (int i = 0; i < MaxComponents; i++)
+                for (int i = 0; i < MaxValues; i++)
                 {
                     ComponentType type = new(i);
                     if (Contains(type))
@@ -48,7 +57,7 @@ namespace Game.ECS
         public override readonly string ToString()
         {
             StringBuilder builder = new();
-            for (int i = 0; i < MaxComponents; i++)
+            for (int i = 0; i < MaxValues; i++)
             {
                 ComponentType type = new(i);
                 if (Contains(type))
@@ -84,7 +93,7 @@ namespace Game.ECS
         public readonly int CopyTo(Span<ComponentType> span)
         {
             int count = 0;
-            for (int i = 0; i < MaxComponents; i++)
+            for (int i = 0; i < MaxValues; i++)
             {
                 ComponentType type = new(i);
                 if (Contains(type))

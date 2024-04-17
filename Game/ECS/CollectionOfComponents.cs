@@ -12,8 +12,8 @@ namespace Game.ECS
         public CollectionOfComponents(ComponentTypeMask types)
         {
             this.types = types;
-            lists = new UnsafeList*[ComponentTypeMask.MaxComponents];
-            for (int i = 0; i < ComponentTypeMask.MaxComponents; i++)
+            lists = new UnsafeList*[ComponentTypeMask.MaxValues];
+            for (int i = 0; i < ComponentTypeMask.MaxValues; i++)
             {
                 ComponentType type = new(i);
                 if (types.Contains(type))
@@ -33,7 +33,7 @@ namespace Game.ECS
         {
             uint oldIndex = entities.IndexOf(id);
             entities.RemoveAt(oldIndex);
-            for (int i = 0; i < ComponentTypeMask.MaxComponents; i++)
+            for (int i = 0; i < ComponentTypeMask.MaxValues; i++)
             {
                 ComponentType typeToTest = new(i);
                 if (destination.types.Contains(typeToTest))
@@ -65,7 +65,7 @@ namespace Game.ECS
         public void Dispose()
         {
             entities.Dispose();
-            for (int i = 0; i < ComponentTypeMask.MaxComponents; i++)
+            for (int i = 0; i < ComponentTypeMask.MaxValues; i++)
             {
                 ComponentType type = new(i);
                 if (types.Contains(type))

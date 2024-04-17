@@ -11,7 +11,7 @@ namespace Game
         internal readonly UnmanagedWorld* value;
 
         public readonly uint ID => UnmanagedWorld.GetID(value);
-        public readonly uint Count => UnmanagedWorld.GetCount(value);
+        public readonly uint Count => UnmanagedWorld.GetEntityCount(value);
         public readonly bool IsDisposed => UnmanagedWorld.IsDisposed(value);
 
         /// <summary>
@@ -57,22 +57,22 @@ namespace Game
             UnmanagedWorld.SubmitEvent(value, Container.Allocate(message));
         }
 
-        public readonly void AddListener<T>(Listener<T> listener) where T : unmanaged
+        public readonly void AddListener<T>(ListenerCallback<T> listener) where T : unmanaged
         {
             UnmanagedWorld.AddListener(value, listener);
         }
 
-        public readonly void RemoveListener<T>(Listener<T> listener) where T : unmanaged
+        public readonly void RemoveListener<T>(ListenerCallback<T> listener) where T : unmanaged
         {
             UnmanagedWorld.RemoveListener(value, listener);
         }
 
-        public readonly void AddListener(RuntimeType type, Listener listener)
+        public readonly void AddListener(RuntimeType type, ListenerCallback listener)
         {
             UnmanagedWorld.AddListener(value, type, listener);
         }
 
-        public readonly void RemoveListener(RuntimeType type, Listener listener)
+        public readonly void RemoveListener(RuntimeType type, ListenerCallback listener)
         {
             UnmanagedWorld.RemoveListener(value, type, listener);
         }
@@ -94,6 +94,15 @@ namespace Game
         public readonly ComponentTypeMask GetComponents(EntityID id)
         {
             return UnmanagedWorld.GetComponents(value, id);
+        }
+
+        /// <summary>
+        /// Finds components for every entity given and writes them into the same index.
+        /// </summary>
+        /// <returns>Amount of components found and copied into destination span.</returns>
+        public readonly uint ReadComponents<T>(ReadOnlySpan<EntityID> entities, Span<T> destination, Span<bool> contains) where T : unmanaged
+        {
+            return UnmanagedWorld.ReadComponents(value, entities, destination, contains);
         }
 
         public readonly EntityID CreateEntity(EntityID parent = default)
@@ -295,8 +304,8 @@ namespace Game
     public delegate void QueryCallback<T1, T2, T3>(in EntityID id, ref T1 t1, ref T2 t2, ref T3 t3) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged;
     public delegate void QueryCallback<T1, T2, T3, T4>(in EntityID id, ref T1 t1, ref T2 t2, ref T3 t3, ref T4 t4) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged;
 
-    public delegate void Listener<T>(ref T message) where T : unmanaged;
-    public delegate void Listener(ref Container message);
+    public delegate void ListenerCallback<T>(ref T message) where T : unmanaged;
+    public delegate void ListenerCallback(ref Container message);
 
     public unsafe delegate void CreatedCallback(UnmanagedWorld* world, EntityID id);
     public unsafe delegate void DestroyedCallback(UnmanagedWorld* world, EntityID id);

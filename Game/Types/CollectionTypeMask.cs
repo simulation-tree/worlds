@@ -1,20 +1,23 @@
 ﻿using System;
 using System.Text;
 
-namespace Game.ECS
+namespace Game
 {
+    /// <summary>
+    /// Mask containing collection types.
+    /// </summary>
     public unsafe struct CollectionTypeMask : IEquatable<CollectionTypeMask>
     {
-        public const int MaxTypes = 64;
+        public const int MaxValues = CollectionType.MaxTypes;
 
-        public ulong value;
+        private ushort value;
 
         public readonly uint Count
         {
             get
             {
                 uint count = 0;
-                for (int i = 0; i < MaxTypes; i++)
+                for (int i = 0; i < MaxValues; i++)
                 {
                     CollectionType type = new(i);
                     if (Contains(type))
@@ -30,7 +33,7 @@ namespace Game.ECS
         public override readonly string ToString()
         {
             StringBuilder builder = new();
-            for (int i = 0; i < MaxTypes; i++)
+            for (int i = 0; i < MaxValues; i++)
             {
                 CollectionType type = new(i);
                 if (Contains(type))
@@ -66,7 +69,7 @@ namespace Game.ECS
         public readonly int CopyTo(Span<CollectionType> span)
         {
             int count = 0;
-            for (int i = 0; i < MaxTypes; i++)
+            for (int i = 0; i < MaxValues; i++)
             {
                 CollectionType type = new(i);
                 if (Contains(type))
@@ -80,7 +83,7 @@ namespace Game.ECS
 
         public void Add(CollectionType type)
         {
-            value |= 1UL << type.value;
+            value |= (ushort)(1 << type.value);
         }
 
         public void Add<T>() where T : unmanaged
@@ -90,7 +93,7 @@ namespace Game.ECS
 
         public void Remove(CollectionType type)
         {
-            value &= ~(1UL << type.value);
+            value &= (ushort)~(1 << type.value);
         }
 
         public void Remove<T>() where T : unmanaged
