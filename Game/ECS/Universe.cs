@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
-using Unmanaged;
 
 namespace Game.ECS
 {
@@ -12,8 +11,5 @@ namespace Game.ECS
         //todo: replace these with unmanaged collections inside a World
         internal static Dictionary<ComponentTypeMask, CollectionOfComponents>[] components = [];
         internal static CollectionOfCollections?[][] collections = [];
-        internal static ConcurrentQueue<Container>[] eventQueues = [];
-        internal static Dictionary<RuntimeType, List<ListenerCallback>>[] listenerHandlers = [];
-        internal static Dictionary<RuntimeType, List<object?>>[] listenerCauses = [];
     }
 }

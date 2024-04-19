@@ -1,21 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using Unmanaged;
 
 namespace Game
 {
     public unsafe static class ListenerUtils
     {
-        public static List<object> AddImplementations(World world, object obj)
-        {
-            return AddImplementations(world.value, obj);
-        }
+        private static readonly Dictionary<(World, RuntimeType), HashSet<ListenerCallback>> eventKeyToListener = [];
 
         /// <summary>
         /// Adds all implementations of <see cref="IListener{T}"/>
         /// </summary>
-        public static List<object> AddImplementations(UnmanagedWorld* world, object obj)
+        public static List<object> AddImplementations(World world, object obj)
         {
-            nint worldPointer = (nint)world;
             Type objType = obj.GetType();
 #pragma warning disable IL2075
             Type[] types = objType.GetInterfaces();
@@ -30,8 +28,8 @@ namespace Game
                     //todo: remove this warning suppression, together with the causing issue for aot
                     Type eventType = interfaceType.GetGenericArguments()[0];
                     Type genericListenerType = typeof(Listener<>).MakeGenericType(eventType);
-                    IListener listener = (IListener)(Activator.CreateInstance(genericListenerType, [worldPointer, obj]) ?? throw new Exception());
-                    listener.AddToWorld(world);
+                    IListener listener = (IListener)(Activator.CreateInstance(genericListenerType, [world, obj]) ?? throw new Exception());
+                    listener.AddListenerToWorld(world);
                     listenerList.Add(listener);
 #pragma warning restore IL3050
 #pragma warning restore IL2055
@@ -43,41 +41,61 @@ namespace Game
 
         public static void RemoveImplementations(World world, List<object> listenerList)
         {
-            RemoveImplementations(world.value, listenerList);
-        }
-
-        public static void RemoveImplementations(UnmanagedWorld* world, List<object> listenerList)
-        {
             foreach (IListener listener in listenerList)
             {
-                listener.RemoveFromWorld(world);
+                listener.RemoveListenerFromWorld(world);
             }
         }
 
         private unsafe interface IListener
         {
-            void AddToWorld(UnmanagedWorld* world);
-            void RemoveFromWorld(UnmanagedWorld* world);
+            void AddListenerToWorld(World world);
+            void RemoveListenerFromWorld(World world);
         }
 
-        private unsafe sealed class Listener<T>(nint worldPointer, IListener<T> listener) : IListener where T : unmanaged
+        [UnmanagedCallersOnly]
+        private static void Callback(World world, Container container)
         {
-            private readonly UnmanagedWorld* world = (UnmanagedWorld*)worldPointer;
+            if (eventKeyToListener.ContainsKey((world, container.type)))
+            {
+                foreach (ListenerCallback listener in eventKeyToListener[(world, container.type)])
+                {
+                    listener(ref container);
+                }
+            }
+        }
+
+        private unsafe sealed class Listener<T>(World world, IListener<T> listener) : IListener where T : unmanaged
+        {
+            private static bool listening; 
+
+            private readonly World world = world;
             private readonly IListener<T> listener = listener;
 
-            void IListener.AddToWorld(UnmanagedWorld* world)
+            void IListener.AddListenerToWorld(World world)
             {
-                UnmanagedWorld.AddListener<T>(world, Receive);
+                if (!listening)
+                {
+                    world.Listen<T>(&Callback);
+                    listening = true;
+                }
+
+                if (!eventKeyToListener.ContainsKey((world, RuntimeType.Get<T>())))
+                {
+                    eventKeyToListener.Add((world, RuntimeType.Get<T>()), new());
+                }
+
+                eventKeyToListener[(world, RuntimeType.Get<T>())].Add(Receive);
             }
 
-            void IListener.RemoveFromWorld(UnmanagedWorld* world)
+            void IListener.RemoveListenerFromWorld(World world)
             {
-                UnmanagedWorld.RemoveListener<T>(world, Receive);
+                eventKeyToListener[(world, RuntimeType.Get<T>())].Remove(Receive);
             }
 
-            private void Receive(ref T message)
+            private void Receive(ref Container message)
             {
-                listener.Receive(new(world), ref message);
+                listener.Receive(world, ref message.AsRef<T>());
             }
         }
     }

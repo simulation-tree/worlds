@@ -70,7 +70,7 @@ namespace Game.ECS
                 ComponentType type = new(i);
                 if (types.Contains(type))
                 {
-                    UnsafeList.Dispose(lists[i]);
+                    UnsafeList.Free(lists[i]);
                 }
             }
         }

@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using Unmanaged;
 
 namespace Game
 {
@@ -10,6 +12,8 @@ namespace Game
     /// </summary>
     public class VirtualMachine : IDisposable
     {
+        private static readonly Dictionary<World, VirtualMachine> vms = [];
+
         private World world;
         private bool stopped;
         private bool disposed;
@@ -23,18 +27,20 @@ namespace Game
         /// </summary>
         public bool IsDisposed => disposed;
 
-        public VirtualMachine()
+        unsafe public VirtualMachine()
         {
             world = new();
-            world.AddListener<Shutdown>(Shutdown);
+            world.Listen<Shutdown>(&Shutdown);
+            vms.Add(world, this);
         }
 
         public void Dispose()
         {
             ThrowIfDisposed();
+            vms.Remove(world);
             disposed = true;
 
-            world.RemoveListener<Shutdown>(Shutdown);
+            //world.RemoveListener<Shutdown>(Shutdown);
             world.Dispose();
             GC.SuppressFinalize(this);
         }
@@ -85,8 +91,8 @@ namespace Game
         {
             ThrowIfStopped();
             ThrowIfDisposed();
-            world.SubmitEvent(new Update());
-            world.PollListeners();
+            world.Submit(new Update());
+            world.Poll();
             return !stopped;
         }
 
@@ -94,12 +100,14 @@ namespace Game
         {
             ThrowIfStopped();
             ThrowIfDisposed();
-            world.SubmitEvent(message);
+            world.Submit(message);
         }
 
-        private void Shutdown(ref Shutdown shutdown)
+        [UnmanagedCallersOnly]
+        private static void Shutdown(World world, Container container)
         {
-            stopped = true;
+            VirtualMachine vm = vms[world];
+            vm.stopped = true;
         }
 
         public void Add(object obj)
@@ -109,6 +117,7 @@ namespace Game
 
             listeners.Add(obj, ListenerUtils.AddImplementations(world, obj));
             listenerKeys.Add(obj);
+            world.Submit(new SystemAdded(0));
         }
 
         public void Remove(object obj)
@@ -119,6 +128,18 @@ namespace Game
             ListenerUtils.RemoveImplementations(world, listeners[obj]);
             listeners.Remove(obj);
             listenerKeys.Remove(obj);
+            world.Submit(new SystemRemoved(0));
+        }
+
+        public void MoveToEnd(object obj)
+        {
+            ThrowIfDisposed();
+            ThrowIfNotAdded(obj);
+
+            ListenerUtils.RemoveImplementations(world, listeners[obj]);
+            listeners[obj] = ListenerUtils.AddImplementations(world, obj);
+            listenerKeys.Remove(obj);
+            listenerKeys.Add(obj);
         }
 
         public bool Contains<T>()

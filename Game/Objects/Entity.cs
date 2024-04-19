@@ -19,7 +19,7 @@ namespace Game
             id = world.CreateEntity();
             this.world = world;
             this.destroyedCallback = destroyedCallback;
-            UnmanagedWorld.EntityDestroyed += OnDestroyed;
+            UnsafeWorld.EntityDestroyed += OnDestroyed;
         }
 
         internal Entity(EntityID id, World world)
@@ -45,11 +45,11 @@ namespace Game
             }
         }
 
-        private readonly void OnDestroyed(UnmanagedWorld* value, EntityID id)
+        private readonly void OnDestroyed(UnsafeWorld* value, EntityID id)
         {
             if (this.id == id && world.value == value)
             {
-                UnmanagedWorld.EntityDestroyed -= OnDestroyed;
+                UnsafeWorld.EntityDestroyed -= OnDestroyed;
                 destroyedCallback(world, id);
             }
         }
