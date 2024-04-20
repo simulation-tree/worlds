@@ -515,36 +515,6 @@ namespace Game
             return UnsafeList.AsList<C>(list);
         }
 
-        public static Span<C> CreateCollection<C>(UnsafeWorld* world, EntityID id, uint initialCount) where C : unmanaged
-        {
-            Allocations.ThrowIfNull((nint)world);
-            ThrowIfEntityMissing(world, id);
-
-            uint index = id.value - 1;
-            ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
-            CollectionType type = CollectionType.Get<C>();
-            if (entity.collectionTypes.Contains(type))
-            {
-                throw new InvalidOperationException($"Collection of type {type} already present.");
-            }
-
-            entity.collectionTypes.Add(type);
-            ref CollectionOfCollections? collections = ref world->Collections[index];
-            if (collections is null)
-            {
-                collections = new CollectionOfCollections();
-            }
-
-            ref UnsafeList* list = ref collections.lists[type.value - 1];
-            list = UnsafeList.Allocate(type.RuntimeType, initialCount);
-            for (int i = 0; i < initialCount; i++)
-            {
-                UnsafeList.AddDefault(list);
-            }
-
-            return UnsafeList.AsSpan<C>(list);
-        }
-
         public static void AddToCollection<C>(UnsafeWorld* world, EntityID id, C value) where C : unmanaged
         {
             Allocations.ThrowIfNull((nint)world);
@@ -753,34 +723,7 @@ namespace Game
             return UnsafeList.Get(list, componentIndex);
         }
 
-        public static ReadOnlySpan<EntityID> GetEntities(UnsafeWorld* world, ComponentTypeMask componentTypes)
-        {
-            uint mostComponents = 0;
-            ComponentTypeMask mostArchetype = default;
-            uint count = UnsafeList.GetCount(world->componentArchetypes);
-            for (uint i = 0; i < count; i++)
-            {
-                ComponentTypeMask archetype = UnsafeList.Get<ComponentTypeMask>(world->componentArchetypes, i);
-                if (archetype.Contains(componentTypes))
-                {
-                    if (archetype.Count > mostComponents)
-                    {
-                        mostComponents = archetype.Count;
-                        mostArchetype = archetype;
-                    }
-                }
-            }
-
-            if (mostArchetype != default)
-            {
-                CollectionOfComponents data = world->Components[mostArchetype];
-                return data.entities.AsSpan();
-            }
-
-            return default;
-        }
-
-        public static void QueryComponents(UnsafeWorld* world, ComponentType type, QueryCallback action)
+        public static void QueryComponents(UnsafeWorld* world, ComponentTypeMask types, QueryCallback action)
         {
             Allocations.ThrowIfNull((nint)world);
 
@@ -788,7 +731,7 @@ namespace Game
             for (uint i = 0; i < count; i++)
             {
                 ComponentTypeMask archetype = UnsafeList.Get<ComponentTypeMask>(world->componentArchetypes, i);
-                if (archetype.Contains(type))
+                if (archetype.Contains(types))
                 {
                     CollectionOfComponents data = world->Components[archetype];
                     for (uint e = 0; e < data.entities.Count; e++)

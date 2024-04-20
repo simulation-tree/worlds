@@ -133,8 +133,8 @@ namespace Game
 
         public readonly bool TryGetFirst<T>(out EntityID id, out T found) where T : unmanaged
         {
-            ReadOnlySpan<EntityID> entities = UnsafeWorld.GetEntities(value, ComponentTypeMask.Get<T>());
-            if (entities.Length > 0)
+            using UnmanagedList<EntityID> entities = GetEntities(ComponentTypeMask.Get<T>());
+            if (entities.Count > 0)
             {
                 id = entities[0];
                 found = UnsafeWorld.GetComponentRef<T>(value, id);
@@ -163,9 +163,20 @@ namespace Game
             return UnsafeWorld.CreateCollection<T>(value, id);
         }
 
+        /// <summary>
+        /// Creates a new collection of the given count and returns it as a span.
+        /// </summary>
         public readonly Span<T> CreateCollection<T>(EntityID id, uint initialCount) where T : unmanaged
         {
-            return UnsafeWorld.CreateCollection<T>(value, id, initialCount);
+            UnmanagedList<T> list = UnsafeWorld.CreateCollection<T>(value, id);
+            list.AddDefault(initialCount);
+            return list.AsSpan();
+        }
+
+        public readonly void CreateCollection<T>(EntityID id, ReadOnlySpan<T> values) where T : unmanaged
+        {
+            UnmanagedList<T> list = UnsafeWorld.CreateCollection<T>(value, id);
+            list.AddRange(values);
         }
 
         public readonly void AddToCollection<T>(EntityID id, T value) where T : unmanaged
@@ -232,6 +243,9 @@ namespace Game
             UnsafeWorld.AddComponent(value, id, component);
         }
 
+        /// <summary>
+        /// Adds a default component and returns it by reference for initialization.
+        /// </summary>
         public readonly ref T AddComponentRef<T>(EntityID id) where T : unmanaged
         {
             AddComponent<T>(id, default);
@@ -258,7 +272,10 @@ namespace Game
             return ref UnsafeWorld.GetComponentRef<T>(value, id);
         }
 
-        public readonly T GetComponent<T>(EntityID id, T defaultValue) where T : unmanaged
+        /// <summary>
+        /// Returns a component of the given type if it exists, otherwise returns a default value.
+        /// </summary>
+        public readonly T GetComponent<T>(EntityID id, T defaultValue = default) where T : unmanaged
         {
             if (ContainsComponent<T>(id))
             {
@@ -295,14 +312,25 @@ namespace Game
             existing = component;
         }
 
-        public readonly ReadOnlySpan<EntityID> GetEntities(ComponentTypeMask componentTypes)
+        public readonly UnmanagedList<EntityID> GetEntities(ComponentTypeMask componentTypes)
         {
-            return UnsafeWorld.GetEntities(value, componentTypes);
+            UnmanagedList<EntityID> entities = new();
+            QueryComponents(componentTypes, (in EntityID id) =>
+            {
+                entities.Add(id);
+            });
+
+            return entities;
         }
 
         public readonly void QueryComponents(ComponentType type, QueryCallback action)
         {
-            UnsafeWorld.QueryComponents(value, type, action);
+            UnsafeWorld.QueryComponents(value, ComponentTypeMask.Get(type), action);
+        }
+
+        public readonly void QueryComponents(ComponentTypeMask types, QueryCallback action)
+        {
+            UnsafeWorld.QueryComponents(value, types, action);
         }
 
         public readonly void QueryComponents<C1>(QueryCallback action) where C1 : unmanaged

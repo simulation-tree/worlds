@@ -50,8 +50,8 @@ namespace Game
             Allocations.ThrowIfNull((nint)observer);
             UnmanagedList<EntityID> tracked = observer->tracked;
             UnmanagedList<EntityID> foundEntities = observer->foundEntities;
-            ReadOnlySpan<EntityID> entities = observer->world.GetEntities(ComponentTypeMask.Get<T>());
-            for (int i = 0; i < entities.Length; i++)
+            using UnmanagedList<EntityID> entities = observer->world.GetEntities(ComponentTypeMask.Get<T>());
+            for (uint i = 0; i < entities.Count; i++)
             {
                 EntityID id = entities[i];
                 if (tracked.AddIfUnique(id))

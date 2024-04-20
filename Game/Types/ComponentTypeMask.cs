@@ -151,6 +151,21 @@ namespace Game
             return left.value != right.value;
         }
 
+        public static ComponentTypeMask Get(ComponentType type1)
+        {
+            ComponentTypeMask mask = default;
+            mask.Add(type1);
+            return mask;
+        }
+
+        public static ComponentTypeMask Get(ComponentType type1, ComponentType type2)
+        {
+            ComponentTypeMask mask = default;
+            mask.Add(type1);
+            mask.Add(type2);
+            return mask;
+        }
+
         public static ComponentTypeMask Get<T1>() where T1 : unmanaged
         {
             ComponentTypeMask mask = default;
