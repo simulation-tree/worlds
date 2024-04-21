@@ -77,7 +77,7 @@ namespace Game
             ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
             if (entity.componentTypes.Contains(type))
             {
-                throw new InvalidOperationException($"Component {type.RuntimeType} already present.");
+                throw new InvalidOperationException($"Component {type.RuntimeType} already present on {id}.");
             }
         }
 
