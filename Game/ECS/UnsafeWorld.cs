@@ -247,7 +247,7 @@ namespace Game
             }
         }
 
-        private static EntityID GenerateEntity(UnsafeWorld* world, EntityID parent, ComponentTypeMask componentTypes)
+        private static EntityID GenerateEntity(UnsafeWorld* world, ComponentTypeMask componentTypes)
         {
             Allocations.ThrowIfNull((nint)world);
 
@@ -260,7 +260,6 @@ namespace Game
                 ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, oldIndex);
                 entity.id = oldId;
                 entity.version++;
-                entity.parent = parent;
                 entity.componentTypes = componentTypes;
                 EntityCreated(world, oldId);
                 return oldId;
@@ -268,7 +267,7 @@ namespace Game
 
             uint index = UnsafeList.GetCount(world->entities) + 1;
             EntityID newId = new(index);
-            EntityDescription newEntity = new(newId, 0, parent, componentTypes, default);
+            EntityDescription newEntity = new(newId, 0, componentTypes, default);
             UnsafeList.Add(world->entities, newEntity);
 
             ref CollectionOfCollections?[] arrays = ref world->Collections;
@@ -346,60 +345,14 @@ namespace Game
             return entity.componentTypes;
         }
 
-        public static void ReadChildren(UnsafeWorld* world, EntityID parentId, UnmanagedList<EntityID> children)
-        {
-            Allocations.ThrowIfNull((nint)world);
-            ThrowIfEntityMissing(world, parentId);
-
-            UnsafeList* entities = world->entities;
-            for (uint i = 0; i < UnsafeList.GetCount(entities); i++)
-            {
-                ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(entities, i);
-                if (entity.parent == parentId)
-                {
-                    children.Add(entity.id);
-                }
-            }
-        }
-
-        public static bool HasParent(UnsafeWorld* world, EntityID id)
-        {
-            Allocations.ThrowIfNull((nint)world);
-            ThrowIfEntityMissing(world, id);
-
-            uint index = id.value - 1;
-            ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
-            return entity.parent != default;
-        }
-
-        public static EntityID GetParent(UnsafeWorld* world, EntityID id)
-        {
-            Allocations.ThrowIfNull((nint)world);
-            ThrowIfEntityMissing(world, id);
-
-            uint index = id.value - 1;
-            ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
-            return entity.parent;
-        }
-
-        public static void SetParent(UnsafeWorld* world, EntityID id, EntityID parent)
-        {
-            Allocations.ThrowIfNull((nint)world);
-            ThrowIfEntityMissing(world, id);
-
-            uint index = id.value - 1;
-            ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
-            entity.parent = parent;
-        }
-
         /// <summary>
         /// Creates a new entity with blank components of the given types.
         /// </summary>
-        public static EntityID CreateEntity(UnsafeWorld* world, EntityID parent, ComponentTypeMask componentTypes)
+        public static EntityID CreateEntity(UnsafeWorld* world, ComponentTypeMask componentTypes)
         {
             Allocations.ThrowIfNull((nint)world);
 
-            EntityID id = GenerateEntity(world, parent, componentTypes);
+            EntityID id = GenerateEntity(world, componentTypes);
             CollectionOfComponents newData = world->Components[componentTypes];
             for (int i = 0; i < ComponentTypeMask.MaxValues; i++)
             {
@@ -812,11 +765,10 @@ namespace Game
             }
         }
 
-        public struct EntityDescription(EntityID id, uint version, EntityID parent, ComponentTypeMask componentTypes, CollectionTypeMask collectionTypes)
+        public struct EntityDescription(EntityID id, uint version, ComponentTypeMask componentTypes, CollectionTypeMask collectionTypes)
         {
             public EntityID id = id;
             public uint version = version;
-            public EntityID parent = parent;
             public ComponentTypeMask componentTypes = componentTypes;
             public CollectionTypeMask collectionTypes = collectionTypes;
         }

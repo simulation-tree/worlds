@@ -81,41 +81,6 @@ namespace Game
         }
 
         /// <summary>
-        /// Creates a new list containing all entities only children of the given entity,
-        /// not including itself.
-        /// </summary>
-        public readonly void ReadChildren(EntityID id, UnmanagedList<EntityID> children)
-        {
-            UnsafeWorld.ReadChildren(value, id, children);
-        }
-
-        /// <summary>
-        /// Creates a new list containing all entities that are descendants of the given entity,
-        /// not including itself.
-        /// </summary>
-        public readonly UnmanagedList<EntityID> GetAllChildren(EntityID id)
-        {
-            using UnmanagedList<EntityID> stack = new();
-            using UnmanagedList<EntityID> tempChildren = new();
-            ReadChildren(id, stack);
-            UnmanagedList<EntityID> allChildren = new();
-            for (uint i = 0; i < stack.Count; i++)
-            {
-                EntityID child = stack[i];
-                allChildren.Add(child);
-
-                tempChildren.Clear();
-                ReadChildren(child, tempChildren);
-                for (uint j = 0; j < tempChildren.Count; j++)
-                {
-                    stack.Add(tempChildren[j]);
-                }
-            }
-
-            return allChildren;
-        }
-
-        /// <summary>
         /// Finds components for every entity given and writes them into the same index.
         /// </summary>
         /// <returns>Amount of components found and copied into destination span.</returns>
@@ -183,9 +148,9 @@ namespace Game
             }
         }
 
-        public readonly EntityID CreateEntity(EntityID parent = default)
+        public readonly EntityID CreateEntity()
         {
-            return UnsafeWorld.CreateEntity(value, parent, default);
+            return UnsafeWorld.CreateEntity(value, default);
         }
 
         public readonly bool ContainsEntity(EntityID id)
@@ -242,35 +207,6 @@ namespace Game
         public readonly void ClearCollection<T>(EntityID id) where T : unmanaged
         {
             UnsafeWorld.ClearCollection<T>(value, id);
-        }
-
-        public readonly bool HasParent(EntityID id)
-        {
-            return UnsafeWorld.HasParent(value, id);
-        }
-
-        public readonly EntityID GetParent(EntityID id)
-        {
-            return UnsafeWorld.GetParent(value, id);
-        }
-
-        public readonly void SetParent(EntityID id, EntityID parent)
-        {
-            UnsafeWorld.SetParent(value, id, parent);
-        }
-
-        public readonly bool TryGetParent(EntityID id, out EntityID parent)
-        {
-            if (HasParent(id))
-            {
-                parent = GetParent(id);
-                return true;
-            }
-            else
-            {
-                parent = default;
-                return false;
-            }
         }
 
         public readonly void AddComponent<T>(EntityID id, T component) where T : unmanaged
