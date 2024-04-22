@@ -90,8 +90,8 @@ namespace Game
             destination.Clear();
 
             using UnmanagedArray<EntityID> entityArray = new(entities);
-            using UnmanagedArray<bool> containsArray = new((uint)contains.Length);
-            using UnmanagedArray<T> destinationArray = new((uint)destination.Length);
+            using UnmanagedArray<bool> containsArray = new((uint)entities.Length);
+            using UnmanagedArray<T> destinationArray = new((uint)entities.Length);
             UnsafeWorld.QueryComponents(value, (in EntityID id, ref T component) =>
             {
                 for (uint i = 0; i < entityArray.Length; i++)
@@ -111,7 +111,7 @@ namespace Game
         public readonly void ReadComponents<T>(ReadOnlySpan<EntityID> entities, Span<T> destination) where T : unmanaged
         {
             using UnmanagedArray<EntityID> entityArray = new(entities);
-            using UnmanagedArray<T> destinationArray = new((uint)destination.Length);
+            using UnmanagedArray<T> destinationArray = new((uint)entities.Length);
             UnsafeWorld.QueryComponents(value, (in EntityID id, ref T component) =>
             {
                 for (uint i = 0; i < entityArray.Length; i++)
