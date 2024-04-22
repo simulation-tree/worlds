@@ -346,80 +346,18 @@ namespace Game
             return entity.componentTypes;
         }
 
-        public static UnmanagedList<EntityID> GetChildren(UnsafeWorld* world, EntityID parentId)
+        public static void ReadChildren(UnsafeWorld* world, EntityID parentId, UnmanagedList<EntityID> children)
         {
             Allocations.ThrowIfNull((nint)world);
             ThrowIfEntityMissing(world, parentId);
 
             UnsafeList* entities = world->entities;
-            UnsafeList* children = UnsafeList.Allocate<EntityID>();
             for (uint i = 0; i < UnsafeList.GetCount(entities); i++)
             {
                 ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(entities, i);
                 if (entity.parent == parentId)
                 {
-                    UnsafeList.Add(children, entity.id);
-                }
-            }
-
-            return UnsafeList.AsList<EntityID>(children);
-        }
-
-        public static uint TryReadComponents<T>(UnsafeWorld* world, ReadOnlySpan<EntityID> entities, Span<T> components, Span<bool> contains) where T : unmanaged
-        {
-            Allocations.ThrowIfNull((nint)world);
-
-            ComponentType type = ComponentType.Get<T>();
-            uint count = 0;
-            for (uint i = 0; i < entities.Length; i++)
-            {
-                EntityID id = entities[(int)i];
-                uint index = id.value - 1;
-                ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
-                if (entity.componentTypes.Contains(type))
-                {
-                    CollectionOfComponents data = world->Components[entity.componentTypes];
-                    uint componentIndex = data.entities.IndexOf(id);
-                    ref UnsafeList* list = ref data.lists[type.value - 1];
-                    UnsafeList.CopyTo(list, componentIndex, components, i);
-                    count++;
-                    contains[(int)i] = true;
-                }
-                else
-                {
-                    components[(int)i] = default;
-                    contains[(int)i] = false;
-                }
-            }
-
-            return count;
-        }
-
-        public static void ReadComponents<T>(UnsafeWorld* world, ReadOnlySpan<EntityID> entities, Span<T> destination) where T : unmanaged
-        {
-            Allocations.ThrowIfNull((nint)world);
-
-            if (destination.Length < entities.Length)
-            {
-                throw new ArgumentException("Destination span is too small.");
-            }
-
-            ComponentType type = ComponentType.Get<T>();
-            for (uint i = 0; i < entities.Length; i++)
-            {
-                EntityID id = entities[(int)i];
-                uint index = id.value - 1;
-                ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
-                if (entity.componentTypes.Contains(type))
-                {
-                    CollectionOfComponents data = world->Components[entity.componentTypes];
-                    uint componentIndex = data.entities.IndexOf(id);
-                    ref UnsafeList* list = ref data.lists[type.value - 1];
-                    destination[(int)i] = UnsafeList.GetRef<T>(list, componentIndex);
-                }
-                else
-                {
-                    destination[(int)i] = default;
+                    children.Add(entity.id);
                 }
             }
         }

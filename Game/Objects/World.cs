@@ -84,9 +84,9 @@ namespace Game
         /// Creates a new list containing all entities only children of the given entity,
         /// not including itself.
         /// </summary>
-        public readonly UnmanagedList<EntityID> GetChildren(EntityID id)
+        public readonly void ReadChildren(EntityID id, UnmanagedList<EntityID> children)
         {
-            return UnsafeWorld.GetChildren(value, id);
+            UnsafeWorld.ReadChildren(value, id, children);
         }
 
         /// <summary>
@@ -95,17 +95,20 @@ namespace Game
         /// </summary>
         public readonly UnmanagedList<EntityID> GetAllChildren(EntityID id)
         {
-            using UnmanagedList<EntityID> stack = GetChildren(id);
+            using UnmanagedList<EntityID> stack = new();
+            using UnmanagedList<EntityID> tempChildren = new();
+            ReadChildren(id, stack);
             UnmanagedList<EntityID> allChildren = new();
             for (uint i = 0; i < stack.Count; i++)
             {
                 EntityID child = stack[i];
                 allChildren.Add(child);
 
-                using UnmanagedList<EntityID> children = GetChildren(child);
-                for (uint j = 0; j < children.Count; j++)
+                tempChildren.Clear();
+                ReadChildren(child, tempChildren);
+                for (uint j = 0; j < tempChildren.Count; j++)
                 {
-                    stack.Add(children[j]);
+                    stack.Add(tempChildren[j]);
                 }
             }
 
@@ -116,14 +119,46 @@ namespace Game
         /// Finds components for every entity given and writes them into the same index.
         /// </summary>
         /// <returns>Amount of components found and copied into destination span.</returns>
-        public readonly uint TryReadComponents<T>(ReadOnlySpan<EntityID> entities, Span<T> destination, Span<bool> contains) where T : unmanaged
+        public readonly void ReadComponents<T>(ReadOnlySpan<EntityID> entities, Span<T> destination, Span<bool> contains) where T : unmanaged
         {
-            return UnsafeWorld.TryReadComponents(value, entities, destination, contains);
+            contains.Clear();
+            destination.Clear();
+
+            using UnmanagedArray<EntityID> entityArray = new(entities);
+            using UnmanagedArray<bool> containsArray = new((uint)contains.Length);
+            using UnmanagedArray<T> destinationArray = new((uint)destination.Length);
+            UnsafeWorld.QueryComponents(value, (in EntityID id, ref T component) =>
+            {
+                for (uint i = 0; i < entityArray.Length; i++)
+                {
+                    if (entityArray[i] == id)
+                    {
+                        destinationArray[i] = component;
+                        containsArray[i] = true;
+                    }
+                }
+            });
+
+            destinationArray.CopyTo(destination);
+            containsArray.CopyTo(contains);
         }
 
         public readonly void ReadComponents<T>(ReadOnlySpan<EntityID> entities, Span<T> destination) where T : unmanaged
         {
-            UnsafeWorld.ReadComponents(value, entities, destination);
+            using UnmanagedArray<EntityID> entityArray = new(entities);
+            using UnmanagedArray<T> destinationArray = new((uint)destination.Length);
+            UnsafeWorld.QueryComponents(value, (in EntityID id, ref T component) =>
+            {
+                for (uint i = 0; i < entityArray.Length; i++)
+                {
+                    if (entityArray[i] == id)
+                    {
+                        destinationArray[i] = component;
+                    }
+                }
+            });
+
+            destinationArray.CopyTo(destination);
         }
 
         public readonly bool TryGetFirst<T>(out T found) where T : unmanaged
