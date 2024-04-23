@@ -70,9 +70,9 @@ namespace Game
             UnsafeWorld.DestroyEntity(value, id);
         }
 
-        public readonly void Listen<T>(delegate* unmanaged<World, Container, void> callback) where T : unmanaged
+        public readonly Listener Listen(RuntimeType eventType, delegate* unmanaged<World, Container, void> callback)
         {
-            UnsafeWorld.Listen(value, RuntimeType.Get<T>(), callback);
+            return UnsafeWorld.Listen(value, eventType, callback);
         }
 
         public readonly ComponentTypeMask GetComponents(EntityID id)
@@ -181,7 +181,8 @@ namespace Game
 
         public readonly void AddToCollection<T>(EntityID id, T value) where T : unmanaged
         {
-            UnsafeWorld.AddToCollection(this.value, id, value);
+            UnmanagedList<T> list = UnsafeWorld.GetCollection<T>(this.value, id);
+            list.Add(value);
         }
 
         public readonly bool ContainsCollection<T>(EntityID id) where T : unmanaged
@@ -196,7 +197,8 @@ namespace Game
 
         public readonly void RemoveAtFromCollection<T>(EntityID id, uint index) where T : unmanaged
         {
-            UnsafeWorld.RemoveAtFromCollection<T>(value, id, index);
+            UnmanagedList<T> list = UnsafeWorld.GetCollection<T>(this.value, id);
+            list.RemoveAt(index);
         }
 
         public readonly void DestroyCollection<T>(EntityID id) where T : unmanaged
@@ -206,12 +208,14 @@ namespace Game
 
         public readonly void ClearCollection<T>(EntityID id) where T : unmanaged
         {
-            UnsafeWorld.ClearCollection<T>(value, id);
+            UnmanagedList<T> list = UnsafeWorld.GetCollection<T>(this.value, id);
+            list.Clear();
         }
 
         public readonly void AddComponent<T>(EntityID id, T component) where T : unmanaged
         {
-            UnsafeWorld.AddComponent(value, id, component);
+            ref T target = ref UnsafeWorld.AddComponentRef<T>(value, id);
+            target = component;
         }
 
         /// <summary>
@@ -258,7 +262,7 @@ namespace Game
             }
         }
 
-        public readonly Span<byte> GetComponent(EntityID id, ComponentType type)
+        public readonly Span<byte> GetComponentBytes(EntityID id, ComponentType type)
         {
             return UnsafeWorld.GetComponentBytes(value, id, type);
         }

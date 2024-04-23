@@ -68,6 +68,7 @@ namespace Game
         private unsafe sealed class Listener<T>(World world, IListener<T> listener) : IListener where T : unmanaged
         {
             private static bool listening; 
+            private static readonly RuntimeType eventType = RuntimeType.Get<T>();
 
             private readonly World world = world;
             private readonly IListener<T> listener = listener;
@@ -76,7 +77,7 @@ namespace Game
             {
                 if (!listening)
                 {
-                    world.Listen<T>(&Callback);
+                    world.Listen(eventType, &Callback);
                     listening = true;
                 }
 

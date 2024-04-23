@@ -30,7 +30,7 @@ namespace Game
         unsafe public VirtualMachine()
         {
             world = new();
-            world.Listen<Shutdown>(&Shutdown);
+            world.Listen(RuntimeType.Get<Shutdown>(), &Shutdown);
             vms.Add(world, this);
         }
 

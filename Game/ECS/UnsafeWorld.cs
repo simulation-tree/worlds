@@ -1,4 +1,5 @@
 ﻿using Game.ECS;
+using Game.Requests;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -152,10 +153,10 @@ namespace Game
             {
                 RuntimeType eventType = UnsafeDictionary.GetKeyRef<RuntimeType, nint>(world->listeners, i);
                 UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, eventType);
-                uint listenerCount = UnsafeList.GetCount(listenerList);
-                for (uint j = 0; j < listenerCount; j++)
+                while (UnsafeList.GetCount(listenerList) > 0)
                 {
-                    Listener listener = UnsafeList.Get<Listener>(listenerList, j);
+                    UnsafeList.RemoveAt(listenerList, 0, out Listener removedListener);
+                    Listener.UnsafeListener.Free(removedListener.value);
                 }
 
                 UnsafeList.Free(listenerList);
@@ -208,21 +209,24 @@ namespace Game
             UnsafeList.Add(world->events, message);
         }
 
+        /// <summary>
+        /// Polls all submitted events and invokes listeners.
+        /// </summary>
         public static void Poll(UnsafeWorld* world)
         {
             World worldValue = new(world);
-            using UnmanagedArray<Container> events = new(UnsafeList.AsSpan<Container>(world->events));
+            using UnmanagedArray<Container> tempEvents = new(UnsafeList.AsSpan<Container>(world->events));
             UnsafeList.Clear(world->events);
 
-            for (uint i = 0; i < events.Length; i++)
+            for (uint i = 0; i < tempEvents.Length; i++)
             {
-                using Container message = events[i];
+                using Container message = tempEvents[i];
                 RuntimeType eventType = message.type;
                 if (UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listeners, eventType))
                 {
                     UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, eventType);
-                    uint listenerCount = UnsafeList.GetCount(listenerList);
-                    for (uint j = 0; j < listenerCount; j++)
+                    uint eventListenerCount = UnsafeList.GetCount(listenerList);
+                    for (uint j = 0; j < eventListenerCount; j++)
                     {
                         Listener listener = UnsafeList.Get<Listener>(listenerList, j);
                         listener.Invoke(worldValue, message);
@@ -231,9 +235,9 @@ namespace Game
             }
         }
 
-        public static void Listen(UnsafeWorld* world, RuntimeType eventType, delegate* unmanaged<World, Container, void> callback)
+        public static Listener Listen(UnsafeWorld* world, RuntimeType eventType, delegate* unmanaged<World, Container, void> callback)
         {
-            Listener listener = new(callback);
+            Listener listener = new(new(world), eventType, callback);
             if (!UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listeners, eventType))
             {
                 UnsafeList* listenerList = UnsafeList.Allocate<Listener>();
@@ -244,6 +248,22 @@ namespace Game
             {
                 UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, eventType);
                 UnsafeList.Add(listenerList, listener);
+            }
+
+            return listener;
+        }
+
+        public static void Unlisten(UnsafeWorld* world, Listener listener)
+        {
+            if (UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listeners, listener.eventType))
+            {
+                UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, listener.eventType);
+                Listener.UnsafeListener.Free(listener.value);
+                UnsafeList.Remove(listenerList, listener);
+            }
+            else
+            {
+                throw new NullReferenceException($"Listener for {listener.eventType} not found.");
             }
         }
 
@@ -406,26 +426,6 @@ namespace Game
             return UnsafeList.AsList<C>(list);
         }
 
-        public static void AddToCollection<C>(UnsafeWorld* world, EntityID id, C value) where C : unmanaged
-        {
-            Allocations.ThrowIfNull((nint)world);
-            ThrowIfEntityMissing(world, id);
-
-            uint index = id.value - 1;
-            ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
-            CollectionType type = CollectionType.Get<C>();
-            if (entity.collectionTypes.Contains(type))
-            {
-                ref CollectionOfCollections array = ref world->Collections[index]!;
-                ref UnsafeList* list = ref array.lists[type.value - 1];
-                UnsafeList.Add(list, value);
-            }
-            else
-            {
-                throw new NullReferenceException($"Array {type} not found.");
-            }
-        }
-
         public static bool ContainsCollection<C>(UnsafeWorld* world, EntityID id) where C : unmanaged
         {
             Allocations.ThrowIfNull((nint)world);
@@ -456,26 +456,6 @@ namespace Game
             }
         }
 
-        public static void RemoveAtFromCollection<C>(UnsafeWorld* world, EntityID id, uint index) where C : unmanaged
-        {
-            Allocations.ThrowIfNull((nint)world);
-            ThrowIfEntityMissing(world, id);
-
-            uint entityIndex = id.value - 1;
-            ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, entityIndex);
-            CollectionType type = CollectionType.Get<C>();
-            if (entity.collectionTypes.Contains(type))
-            {
-                ref CollectionOfCollections? array = ref world->Collections[entityIndex]!;
-                ref UnsafeList* list = ref array.lists[type.value - 1];
-                UnsafeList.RemoveAt(list, index);
-            }
-            else
-            {
-                throw new NullReferenceException($"Array {type} not found.");
-            }
-        }
-
         public static void DestroyCollection<C>(UnsafeWorld* world, EntityID id) where C : unmanaged
         {
             Allocations.ThrowIfNull((nint)world);
@@ -498,32 +478,12 @@ namespace Game
             }
         }
 
-        public static void ClearCollection<C>(UnsafeWorld* world, EntityID id) where C : unmanaged
+        public static ref T AddComponentRef<T>(UnsafeWorld* world, EntityID id) where T : unmanaged
         {
             Allocations.ThrowIfNull((nint)world);
             ThrowIfEntityMissing(world, id);
 
-            uint entityIndex = id.value - 1;
-            ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, entityIndex);
-            CollectionType type = CollectionType.Get<C>();
-            if (entity.collectionTypes.Contains(type))
-            {
-                ref CollectionOfCollections? array = ref world->Collections[entityIndex]!;
-                ref UnsafeList* list = ref array.lists[type.value - 1];
-                UnsafeList.Clear(list);
-            }
-            else
-            {
-                throw new NullReferenceException($"Array {type} not found.");
-            }
-        }
-
-        public static void AddComponent<C>(UnsafeWorld* world, EntityID id, C component) where C : unmanaged
-        {
-            Allocations.ThrowIfNull((nint)world);
-            ThrowIfEntityMissing(world, id);
-
-            ComponentType addedType = ComponentType.Get<C>();
+            ComponentType addedType = ComponentType.Get<T>();
             ThrowIfComponentAlreadyPresent(world, id, addedType);
 
             uint index = id.value - 1;
@@ -544,15 +504,15 @@ namespace Game
             CollectionOfComponents oldData = components[previousTypes];
             uint newIndex = oldData.MoveTo(id, newData);
             ref UnsafeList* list = ref newData.lists[addedType.value - 1];
-            UnsafeList.Set(list, newIndex, component);
+            return ref UnsafeList.GetRef<T>(list, newIndex);
         }
 
-        public static void RemoveComponent<C>(UnsafeWorld* world, EntityID id) where C : unmanaged
+        public static void RemoveComponent<T>(UnsafeWorld* world, EntityID id) where T : unmanaged
         {
             Allocations.ThrowIfNull((nint)world);
             ThrowIfEntityMissing(world, id);
 
-            ComponentType removedType = ComponentType.Get<C>();
+            ComponentType removedType = ComponentType.Get<T>();
             ThrowIfComponentMissing(world, id, removedType);
 
             uint index = id.value - 1;
@@ -771,21 +731,6 @@ namespace Game
             public uint version = version;
             public ComponentTypeMask componentTypes = componentTypes;
             public CollectionTypeMask collectionTypes = collectionTypes;
-        }
-
-        public readonly unsafe struct Listener
-        {
-            public readonly delegate* unmanaged<World, Container, void> callback;
-
-            public Listener(delegate* unmanaged<World, Container, void> callback)
-            {
-                this.callback = callback;
-            }
-
-            public readonly void Invoke(World world, Container message)
-            {
-                callback(world, message);
-            }
         }
     }
 }
