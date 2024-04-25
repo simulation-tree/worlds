@@ -18,7 +18,7 @@ namespace Game
         public unsafe void SimpleListener()
         {
             using World world = new();
-            world.Listen(RuntimeType.Get<SimpleEvent>(), &OnSimpleEvent);
+            world.Listen<SimpleEvent>(&OnSimpleEvent);
             world.Submit(new SimpleEvent { x = 1 });
             world.Submit(new SimpleEvent { x = 2 });
             world.Poll();

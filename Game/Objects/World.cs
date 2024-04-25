@@ -75,6 +75,11 @@ namespace Game
             UnsafeWorld.DestroyEntity(value, id);
         }
 
+        public readonly Listener Listen<T>(delegate* unmanaged<World, Container, void> callback) where T : unmanaged
+        {
+            return Listen(RuntimeType.Get<T>(), callback);
+        }
+
         public readonly Listener Listen(RuntimeType eventType, delegate* unmanaged<World, Container, void> callback)
         {
             return UnsafeWorld.Listen(value, eventType, callback);

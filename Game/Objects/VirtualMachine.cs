@@ -30,7 +30,7 @@ namespace Game
         unsafe public VirtualMachine()
         {
             world = new();
-            world.Listen(RuntimeType.Get<Shutdown>(), &Shutdown);
+            world.Listen<Shutdown>(&Shutdown);
             vms.Add(world, this);
         }
 
@@ -117,7 +117,6 @@ namespace Game
 
             listeners.Add(obj, ListenerUtils.AddImplementations(world, obj));
             listenerKeys.Add(obj);
-            world.Submit(new SystemAdded(0));
         }
 
         public void Remove(object obj)
@@ -128,7 +127,6 @@ namespace Game
             ListenerUtils.RemoveImplementations(world, listeners[obj]);
             listeners.Remove(obj);
             listenerKeys.Remove(obj);
-            world.Submit(new SystemRemoved(0));
         }
 
         public void MoveToEnd(object obj)

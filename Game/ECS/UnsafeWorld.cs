@@ -472,7 +472,7 @@ namespace Game
             CollectionType type = CollectionType.Get<T>();
             if (entity.collectionTypes.Contains(type))
             {
-                throw new InvalidOperationException($"Collection of type {type} already present.");
+                throw new InvalidOperationException($"Collection of type {type} already present on {id}.");
             }
 
             entity.collectionTypes.Add(type);

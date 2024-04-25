@@ -1,16 +1,17 @@
 # Game
-Library for running composable logic on data.
+Library for running logic on data through a `World` instance.
 
-### Worlds
-`World` instances provide an API to interact with entities, components
-and events. These are present inside `VirtualMachine` instances as well.
+### Components and Systems
+Components and systems form a union and can be closely thought of as verbs and nouns.
+Components must be unmanaged structures, and there is no standardization for "systems", since any
+style will work:
 ```cs
 using World world = new();
 EntityID entity = world.CreateEntity();
 world.AddComponent(entity, new MyComponent(25));
 world.QueryComponents((in EntityID entity, ref MyComponent value) =>
 {
-
+    value.value++;
 });
 
 public struct MyComponent(uint value)
@@ -20,21 +21,63 @@ public struct MyComponent(uint value)
 ```
 
 ### Events
-Dispatching events and listening to them as a feature exists. Submitting the
-message is thread safe, but getting the listeners to invoke should occur from
-the thread a world was created in (usually main thread):
+Events operate by first being submitted to `World` instances from any thread, and then calling the 
+`Poll` method while on the main thread (or the thread that created the instance).
 ```cs
 using World world = new();
-world.AddListener<Update>(OnUpdate);
-world.SubmitEvent(new Update());
-world.PollListeners();
+world.Listen<MyEvent>(&OnUpdate);
 
-void OnUpdate(ref Update update)
+world.Submit(new MyEvent(25));
+world.Poll();
+
+[UnmanagedCallersOnly]
+static void OnMyEvent(World world, Container message)
 {
+    ref MyEvent update = ref message.AsRef<MyEvent>();
+    Console.WriteLine($"data: {update.data}");
+}
 
+public struct MyEvent(uint data)
+{ 
+    public uint data = data;
 }
 ```
 
+With unmanaged listeners it can be difficult to integrate with a design that encourages instance methods, as it asks for the callbacks to be unmanaged static callers only. The following is an
+approach that can get around this design by making the static callback aware of what systems
+are interested in the event.
+```cs
+public class MySystem : IDisposable
+{
+    private static readonly List<MySystem> systems = [];
+
+    public unsafe MySystem(World world)
+    {
+        systems.Add(this);
+        world.Listen<MyEvent>(&StaticEvent);
+    }
+
+    public void Dispose()
+    {
+        systems.Remove(this);
+    }
+
+    private void HandleMyEvent(MyEvent e)
+    {
+        Console.WriteLine($"data: {e.data}");
+    }
+
+    [UnmanagedCallersOnly]
+    private static void StaticEvent(World world, Container message)
+    {
+        MyEvent e = message.AsRef<MyEvent>();
+        foreach (MySystem system in systems)
+        {
+            system.HandleMyEvent(e);
+        }
+    }
+}
+```
 ### Virtual Machines
 These contain `World` instances and are the shell of program logic, allowing additional
 capabilities like 3D rendering to be written as individual objects. Their intended use
