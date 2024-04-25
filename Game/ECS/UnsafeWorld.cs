@@ -28,11 +28,12 @@ namespace Game
         private readonly UnsafeList* collectionArchetypes;
         private readonly UnsafeList* events;
         private readonly UnsafeDictionary* listeners;
+        private readonly UnsafeDictionary* listenersWithContext;
 
         private readonly ref Dictionary<ComponentTypeMask, CollectionOfComponents> Components => ref Universe.components[(int)id - 1];
         private readonly ref CollectionOfCollections?[] Collections => ref Universe.collections[(int)id - 1];
 
-        private UnsafeWorld(uint id, UnsafeList* entities, UnsafeList* freeEntities, UnsafeList* componentArchetypes, UnsafeList* collectionArchetypes, UnsafeList* events, UnsafeDictionary* listeners)
+        private UnsafeWorld(uint id, UnsafeList* entities, UnsafeList* freeEntities, UnsafeList* componentArchetypes, UnsafeList* collectionArchetypes, UnsafeList* events, UnsafeDictionary* listeners, UnsafeDictionary* listenersWithContext)
         {
             this.id = id;
             this.entities = entities;
@@ -41,6 +42,7 @@ namespace Game
             this.collectionArchetypes = collectionArchetypes;
             this.events = events;
             this.listeners = listeners;
+            this.listenersWithContext = listenersWithContext;
         }
 
         [Conditional("DEBUG")]
@@ -123,6 +125,7 @@ namespace Game
             UnsafeList* collectionArchetypes = UnsafeList.Allocate<CollectionTypeMask>();
             UnsafeList* events = UnsafeList.Allocate<Container>();
             UnsafeDictionary* listeners = UnsafeDictionary.Allocate<RuntimeType, nint>();
+            UnsafeDictionary* listenersWithContext = UnsafeDictionary.Allocate<RuntimeType, nint>();
 
             ref Dictionary<ComponentTypeMask, CollectionOfComponents> components = ref Universe.components[id - 1];
             components.Add(default, new CollectionOfComponents(default));
@@ -131,7 +134,7 @@ namespace Game
 
             nint pointer = Marshal.AllocHGlobal(sizeof(UnsafeWorld));
             UnsafeWorld* world = (UnsafeWorld*)pointer;
-            *world = new UnsafeWorld(id, entities, freeEntities, componentArchetypes, collectionArchetypes, events, listeners);
+            *world = new UnsafeWorld(id, entities, freeEntities, componentArchetypes, collectionArchetypes, events, listeners, listenersWithContext);
             Allocations.Register((nint)world);
             return world;
         }
@@ -156,7 +159,21 @@ namespace Game
                 while (UnsafeList.GetCount(listenerList) > 0)
                 {
                     UnsafeList.RemoveAt(listenerList, 0, out Listener removedListener);
-                    Listener.UnsafeListener.Free(removedListener.value);
+                    UnsafeListener.Free(removedListener.value);
+                }
+
+                UnsafeList.Free(listenerList);
+            }
+
+            listenerTypesCount = UnsafeDictionary.GetCount(world->listenersWithContext);
+            for (uint i = 0; i < listenerTypesCount; i++)
+            {
+                RuntimeType eventType = UnsafeDictionary.GetKeyRef<RuntimeType, nint>(world->listenersWithContext, i);
+                UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listenersWithContext, eventType);
+                while (UnsafeList.GetCount(listenerList) > 0)
+                {
+                    UnsafeList.RemoveAt(listenerList, 0, out ListenerWithContext removedListener);
+                    UnsafeListener.Free(removedListener.value);
                 }
 
                 UnsafeList.Free(listenerList);
@@ -195,6 +212,7 @@ namespace Game
             UnsafeList.Free(world->collectionArchetypes);
             UnsafeList.Free(world->events);
             UnsafeDictionary.Free(world->listeners);
+            UnsafeDictionary.Free(world->listenersWithContext);
             components.Clear();
             Universe.destroyedWorlds.Add(id);
         }
@@ -232,6 +250,17 @@ namespace Game
                         listener.Invoke(worldValue, message);
                     }
                 }
+
+                if (UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listenersWithContext, eventType))
+                {
+                    UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listenersWithContext, eventType);
+                    uint eventListenerCount = UnsafeList.GetCount(listenerList);
+                    for (uint j = 0; j < eventListenerCount; j++)
+                    {
+                        ListenerWithContext listener = UnsafeList.Get<ListenerWithContext>(listenerList, j);
+                        listener.Invoke(worldValue, message);
+                    }
+                }
             }
         }
 
@@ -253,12 +282,44 @@ namespace Game
             return listener;
         }
 
+        public static ListenerWithContext Listen(UnsafeWorld* world, nint pointer, RuntimeType eventType, delegate* unmanaged<nint, World, Container, void> callback)
+        {
+            ListenerWithContext listener = new(pointer, new(world), eventType, callback);
+            if (!UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listenersWithContext, eventType))
+            {
+                UnsafeList* listenerList = UnsafeList.Allocate<ListenerWithContext>();
+                UnsafeList.Add(listenerList, listener);
+                UnsafeDictionary.Add(world->listenersWithContext, eventType, (nint)listenerList);
+            }
+            else
+            {
+                UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, eventType);
+                UnsafeList.Add(listenerList, listener);
+            }
+
+            return listener;
+        }
+
         public static void Unlisten(UnsafeWorld* world, Listener listener)
         {
             if (UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listeners, listener.eventType))
             {
                 UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, listener.eventType);
-                Listener.UnsafeListener.Free(listener.value);
+                UnsafeListener.Free(listener.value);
+                UnsafeList.Remove(listenerList, listener);
+            }
+            else
+            {
+                throw new NullReferenceException($"Listener for {listener.eventType} not found.");
+            }
+        }
+
+        public static void Unlisten(UnsafeWorld* world, ListenerWithContext listener)
+        {
+            if (UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listenersWithContext, listener.eventType))
+            {
+                UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listenersWithContext, listener.eventType);
+                UnsafeListener.Free(listener.value);
                 UnsafeList.Remove(listenerList, listener);
             }
             else
@@ -401,14 +462,14 @@ namespace Game
             return entity.id == id;
         }
 
-        public static UnmanagedList<C> CreateCollection<C>(UnsafeWorld* world, EntityID id) where C : unmanaged
+        public static UnmanagedList<T> CreateCollection<T>(UnsafeWorld* world, EntityID id) where T : unmanaged
         {
             Allocations.ThrowIfNull((nint)world);
             ThrowIfEntityMissing(world, id);
 
             uint index = id.value - 1;
             ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
-            CollectionType type = CollectionType.Get<C>();
+            CollectionType type = CollectionType.Get<T>();
             if (entity.collectionTypes.Contains(type))
             {
                 throw new InvalidOperationException($"Collection of type {type} already present.");
@@ -423,17 +484,17 @@ namespace Game
 
             ref UnsafeList* list = ref collections.lists[type.value - 1];
             list = UnsafeList.Allocate(type.RuntimeType);
-            return UnsafeList.AsList<C>(list);
+            return new(list);
         }
 
-        public static bool ContainsCollection<C>(UnsafeWorld* world, EntityID id) where C : unmanaged
+        public static bool ContainsCollection<T>(UnsafeWorld* world, EntityID id) where T : unmanaged
         {
             Allocations.ThrowIfNull((nint)world);
             ThrowIfEntityMissing(world, id);
 
             uint index = id.value - 1;
             ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->entities, index);
-            return entity.collectionTypes.Contains<C>();
+            return entity.collectionTypes.Contains<T>();
         }
 
         public static UnmanagedList<C> GetCollection<C>(UnsafeWorld* world, EntityID id) where C : unmanaged
@@ -448,7 +509,7 @@ namespace Game
             {
                 ref CollectionOfCollections array = ref world->Collections[index]!;
                 ref UnsafeList* list = ref array.lists[type.value - 1];
-                return UnsafeList.AsList<C>(list);
+                return new(list);
             }
             else
             {

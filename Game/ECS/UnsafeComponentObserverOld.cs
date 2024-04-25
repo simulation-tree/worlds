@@ -5,7 +5,7 @@ using Unmanaged.Collections;
 
 namespace Game
 {
-    public unsafe struct UnsafeComponentObserver<T> where T : unmanaged
+    public unsafe struct UnsafeComponentObserverOld<T> where T : unmanaged
     {
         private readonly UnmanagedList<EntityID> tracked;
         private readonly UnmanagedList<EntityID> foundEntities;
@@ -13,7 +13,7 @@ namespace Game
         private readonly delegate* unmanaged<World, EntityID, void> added;
         private readonly delegate* unmanaged<World, EntityID, void> removed;
 
-        private UnsafeComponentObserver(World world, delegate* unmanaged<World, EntityID, void> added, delegate* unmanaged<World, EntityID, void> removed)
+        private UnsafeComponentObserverOld(World world, delegate* unmanaged<World, EntityID, void> added, delegate* unmanaged<World, EntityID, void> removed)
         {
             tracked = new();
             foundEntities = new();
@@ -22,21 +22,21 @@ namespace Game
             this.removed = removed;
         }
 
-        public static UnsafeComponentObserver<T>* Create(World world, delegate* unmanaged<World, EntityID, void> added, delegate* unmanaged<World, EntityID, void> removed)
+        public static UnsafeComponentObserverOld<T>* Allocate(World world, delegate* unmanaged<World, EntityID, void> added, delegate* unmanaged<World, EntityID, void> removed)
         {
-            nint pointer = Marshal.AllocHGlobal(sizeof(UnsafeComponentObserver<T>));
-            UnsafeComponentObserver<T>* typedPointer = (UnsafeComponentObserver<T>*)pointer;
+            nint pointer = Marshal.AllocHGlobal(sizeof(UnsafeComponentObserverOld<T>));
+            UnsafeComponentObserverOld<T>* typedPointer = (UnsafeComponentObserverOld<T>*)pointer;
             typedPointer[0] = new(world, added, removed);
             Allocations.Register(pointer);
             return typedPointer;
         }
 
-        public static bool IsDisposed(UnsafeComponentObserver<T>* observer)
+        public static bool IsDisposed(UnsafeComponentObserverOld<T>* observer)
         {
             return Allocations.IsNull((nint)observer);
         }
 
-        public static void Dispose(UnsafeComponentObserver<T>* observer)
+        public static void Dispose(UnsafeComponentObserverOld<T>* observer)
         {
             Allocations.ThrowIfNull((nint)observer);
             observer->tracked.Dispose();
@@ -45,12 +45,13 @@ namespace Game
             Allocations.Unregister((nint)observer);
         }
 
-        public static void PollChanges(UnsafeComponentObserver<T>* observer)
+        public static void PollChanges(UnsafeComponentObserverOld<T>* observer)
         {
             Allocations.ThrowIfNull((nint)observer);
             UnmanagedList<EntityID> tracked = observer->tracked;
             UnmanagedList<EntityID> foundEntities = observer->foundEntities;
-            using UnmanagedList<EntityID> entities = observer->world.GetEntities(ComponentTypeMask.Get<T>());
+            using UnmanagedList<EntityID> entities = new();
+            observer->world.ReadEntities(ComponentTypeMask.Get<T>(), entities);
             for (uint i = 0; i < entities.Count; i++)
             {
                 EntityID id = entities[i];

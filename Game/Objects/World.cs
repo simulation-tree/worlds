@@ -10,7 +10,12 @@ namespace Game
         internal readonly UnsafeWorld* value;
 
         public readonly uint ID => UnsafeWorld.GetID(value);
+
+        /// <summary>
+        /// Amount of entities in the world.
+        /// </summary>
         public readonly uint Count => UnsafeWorld.GetEntityCount(value);
+
         public readonly bool IsDisposed => UnsafeWorld.IsDisposed(value);
 
         /// <summary>
@@ -75,6 +80,11 @@ namespace Game
             return UnsafeWorld.Listen(value, eventType, callback);
         }
 
+        public readonly ListenerWithContext Listen(nint pointer, RuntimeType eventType, delegate* unmanaged<nint, World, Container, void> callback)
+        {
+            return UnsafeWorld.Listen(value, pointer, eventType, callback);
+        }
+
         public readonly ComponentTypeMask GetComponents(EntityID id)
         {
             return UnsafeWorld.GetComponents(value, id);
@@ -133,7 +143,8 @@ namespace Game
 
         public readonly bool TryGetFirst<T>(out EntityID id, out T found) where T : unmanaged
         {
-            using UnmanagedList<EntityID> entities = GetEntities(ComponentTypeMask.Get<T>());
+            using UnmanagedList<EntityID> entities = new();
+            ReadEntities(ComponentTypeMask.Get<T>(), entities);
             if (entities.Count > 0)
             {
                 id = entities[0];
@@ -248,7 +259,8 @@ namespace Game
         }
 
         /// <summary>
-        /// Returns a component of the given type if it exists, otherwise returns a default value.
+        /// Returns the component of the expected type if it exists, otherwise the default value
+        /// is given.
         /// </summary>
         public readonly T GetComponent<T>(EntityID id, T defaultValue = default) where T : unmanaged
         {
@@ -287,15 +299,12 @@ namespace Game
             existing = component;
         }
 
-        public readonly UnmanagedList<EntityID> GetEntities(ComponentTypeMask componentTypes)
+        public readonly void ReadEntities(ComponentTypeMask componentTypes, UnmanagedList<EntityID> list)
         {
-            UnmanagedList<EntityID> entities = new();
             QueryComponents(componentTypes, (in EntityID id) =>
             {
-                entities.Add(id);
+                list.Add(id);
             });
-
-            return entities;
         }
 
         public readonly void QueryComponents(ComponentType type, QueryCallback action)
