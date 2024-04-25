@@ -86,13 +86,21 @@ namespace Game
 
         public static uint GetID(UnsafeWorld* world)
         {
-            Allocations.ThrowIfNull((nint)world);
-
+            if (world is null)
+            {
+                return 0;
+            }
+            
             return world->id;
         }
 
         public static bool IsDisposed(UnsafeWorld* world)
         {
+            if (world is null)
+            {
+                return true;
+            }
+
             return Allocations.IsNull((nint)world);
         }
 
@@ -243,11 +251,12 @@ namespace Game
                 if (UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listeners, eventType))
                 {
                     UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, eventType);
-                    uint eventListenerCount = UnsafeList.GetCount(listenerList);
-                    for (uint j = 0; j < eventListenerCount; j++)
+                    uint j = 0;
+                    while (j < UnsafeList.GetCount(listenerList))
                     {
                         Listener listener = UnsafeList.Get<Listener>(listenerList, j);
                         listener.Invoke(worldValue, message);
+                        j++;
                     }
                 }
 
