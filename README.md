@@ -20,18 +20,18 @@ public struct MyComponent(uint value)
 }
 ```
 
-### Events
+### Events and Listeners
 Events operate by first being submitted to `World` instances from any thread, and then calling the 
-`Poll` method while on the main thread (or the thread that created the instance).
+`Poll` method while on the main thread, with listeners added before.
 ```cs
 using World world = new();
-world.Listen<MyEvent>(&OnUpdate);
+using Listener listener = world.Listen<MyEvent>(&ReceivedEvent);
 
 world.Submit(new MyEvent(25));
 world.Poll();
 
 [UnmanagedCallersOnly]
-static void OnMyEvent(World world, Container message)
+private static void ReceivedEvent(World world, Container message)
 {
     ref MyEvent update = ref message.AsRef<MyEvent>();
     Console.WriteLine($"data: {update.data}");
@@ -43,22 +43,26 @@ public struct MyEvent(uint data)
 }
 ```
 
-With unmanaged listeners it can be difficult to integrate with a design that encourages instance methods, as it asks for the callbacks to be unmanaged static callers only. The following is an
-approach that can get around this design by making the static callback aware of what systems
-are interested in the event.
+### Instance listeners
+With unmanaged listeners it can be difficult to integrate with instance methods, as it asks for the
+callbacks to be unmanaged static callers only. The following is an approach that can get around this
+by making the static callback aware of what systems are interested.
 ```cs
 public class MySystem : IDisposable
 {
     private static readonly List<MySystem> systems = [];
 
+    private readonly Listener listener;
+
     public unsafe MySystem(World world)
     {
         systems.Add(this);
-        world.Listen<MyEvent>(&StaticEvent);
+        listener = world.Listen<MyEvent>(&StaticEvent);
     }
 
     public void Dispose()
     {
+        listener.Dispose();
         systems.Remove(this);
     }
 
@@ -78,48 +82,38 @@ public class MySystem : IDisposable
     }
 }
 ```
-### Virtual Machines
-These contain `World` instances and are the shell of program logic, allowing additional
-capabilities like 3D rendering to be written as individual objects. Their intended use
-is to call `Update` to advance the state forward. Either as a single instruction or inside
-a `while (vm.Update())` loop where the exit condition is the submission of a `Shutdown` event.
-
-Example of a program that runs 1000 times and exits:
+The example above can then be composed into a `World` like so:
 ```cs
-using (VirtualMachine vm = new())
-{
-    using (MyProgram myProgram = new())
-    {
-        vm.Add(myProgram);
-        while (vm.Update()) { }
-        vm.Remove(myProgram);
+using World world = new();
+using MySystem system = new(world);
+```
 
-        Debug.WriteLine($"exited after {myProgram.iterations} iterations");
-    }
+### Running program setup
+The following snippet is an example of a continous program that runs until a `Shutdown` event
+is submitted, emerging a barebones game loop. On its own it doesn't perform anything other than
+run forever, it requires a `Update` listeners to perform the remaining operations of the game:
+```cs
+private static bool stopped;
+
+using World world = new();
+using Listener listener = world.Listen<Shutdown>(&AskedToShutdown);
+while (!stopped)
+{
+    world.Submit(new Update());
+    world.Poll();
 }
 
-public class MyProgram : IDisposable, IListener<Update>
+[UnmanagedCallersOnly]
+private static void AskedToShutdown(World world, Container message)
 {
-    public uint iterations;
-
-    public MyProgram()
-    {
-        Debug.WriteLine("program started");
-    }
-
-    public void Dispose()
-    {
-        Debug.WriteLine("program finished");
-    }
-
-    void IListener<Update>.Receive(World world, ref Update e)
-    {
-        iterations++;
-        if (iterations > 1000)
-        {
-            world.SubmitEvent(new Shutdown());
-        }
-    }
+    stopped = true;
 }
 ```
 
+### Contributing and Direction
+This library is created to define a baseline layer for "programs" that often want to run
+continously (like games or simulations), while taking the advantage of a CPU's ability to perform
+more efficiently when data is laid out linearly. For this reason, the archetype component-system
+pattern is at the root, and serves as a dependency for other projects.
+
+Contributions to this are welcome.
