@@ -62,8 +62,8 @@ namespace Game
         }
 
         /// <summary>
-        /// Iterates over all events with <see cref="Submit"/> and
-        /// notifies added listeners.
+        /// Iterates over all events that we submitted with <see cref="Submit"/>,
+        /// and notifies all registered listeners.
         /// </summary>
         public readonly void Poll()
         {
