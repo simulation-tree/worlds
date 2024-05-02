@@ -1,7 +1,9 @@
-﻿namespace Game
+﻿using System;
+
+namespace Game
 {
     /// <summary>
-    /// Objects added to <see cref="VirtualMachine"/>s that
+    /// Objects added to <see cref="VirtualMachineOld"/>s that
     /// implement this will be registered as listeners for events
     /// of type <typeparamref name="T"/>.
     /// </summary>

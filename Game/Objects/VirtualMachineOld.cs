@@ -10,9 +10,9 @@ namespace Game
     /// <summary>
     /// An object for simulating machines that operate on events.
     /// </summary>
-    public class VirtualMachine : IDisposable
+    public class VirtualMachineOld : IDisposable
     {
-        private static readonly Dictionary<World, VirtualMachine> vms = [];
+        private static readonly Dictionary<World, VirtualMachineOld> vms = [];
 
         private World world;
         private bool stopped;
@@ -27,7 +27,7 @@ namespace Game
         /// </summary>
         public bool IsDisposed => disposed;
 
-        unsafe public VirtualMachine()
+        unsafe public VirtualMachineOld()
         {
             world = new();
             world.Listen<Shutdown>(&Shutdown);
@@ -68,7 +68,7 @@ namespace Game
         {
             if (disposed)
             {
-                throw new ObjectDisposedException(nameof(VirtualMachine));
+                throw new ObjectDisposedException(nameof(VirtualMachineOld));
             }
         }
 
@@ -106,7 +106,7 @@ namespace Game
         [UnmanagedCallersOnly]
         private static void Shutdown(World world, Container container)
         {
-            VirtualMachine vm = vms[world];
+            VirtualMachineOld vm = vms[world];
             vm.stopped = true;
         }
 

@@ -1,5 +1,4 @@
 ﻿using Game.ECS;
-using Game.Requests;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -90,7 +89,7 @@ namespace Game
             {
                 return 0;
             }
-            
+
             return world->id;
         }
 
