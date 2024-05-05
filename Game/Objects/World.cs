@@ -284,6 +284,20 @@ namespace Game
             return UnsafeWorld.GetComponentBytes(value, id, type);
         }
 
+        public readonly bool TryGetComponent<T>(EntityID id, out T found) where T : unmanaged
+        {
+            if (ContainsComponent<T>(id))
+            {
+                found = GetComponentRef<T>(id);
+                return true;
+            }
+            else
+            {
+                found = default;
+                return false;
+            }
+        }
+
         public readonly ref C TryGetComponentRef<C>(EntityID id, out bool found) where C : unmanaged
         {
             if (ContainsComponent<C>(id))

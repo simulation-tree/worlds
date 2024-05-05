@@ -301,7 +301,7 @@ namespace Game
             }
             else
             {
-                UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, eventType);
+                UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listenersWithContext, eventType);
                 UnsafeList.Add(listenerList, listener);
             }
 
