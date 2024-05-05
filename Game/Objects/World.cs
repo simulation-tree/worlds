@@ -58,7 +58,7 @@ namespace Game
 
         public readonly void Submit<T>(T message) where T : unmanaged
         {
-            UnsafeWorld.Submit(value, Container.Allocate(message));
+            UnsafeWorld.Submit(value, Container.Create(message));
         }
 
         /// <summary>
