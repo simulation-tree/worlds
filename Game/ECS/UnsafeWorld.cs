@@ -571,9 +571,21 @@ namespace Game
             }
 
             CollectionOfComponents oldData = components[previousTypes];
-            uint newIndex = oldData.MoveTo(id, newData);
-            ref UnsafeList* list = ref newData.lists[addedType.value - 1];
-            return ref UnsafeList.GetRef<T>(list, newIndex);
+            if (oldData.entities.Contains(id))
+            {
+                //todo: remove this branch
+                uint newIndex = oldData.MoveTo(id, newData);
+                ref UnsafeList* list = ref newData.lists[addedType.value - 1];
+                return ref UnsafeList.GetRef<T>(list, newIndex);
+            }
+            else
+            {
+                uint newIndex = newData.entities.Count;
+                newData.entities.Add(id);
+                ref UnsafeList* list = ref newData.lists[addedType.value - 1];
+                UnsafeList.AddDefault(list);
+                return ref UnsafeList.GetRef<T>(list, newIndex);
+            }
         }
 
         public static void RemoveComponent<T>(UnsafeWorld* world, EntityID id) where T : unmanaged

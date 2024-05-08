@@ -3,23 +3,25 @@ using Unmanaged;
 
 namespace Game
 {
-    public readonly unsafe struct Listener : IDisposable, IEquatable<Listener>
+    public readonly unsafe struct ListenerWithContext : IDisposable, IEquatable<ListenerWithContext>
     {
         public readonly RuntimeType eventType;
 
         internal readonly UnsafeListener* value;
+        private readonly nint context;
         private readonly World world;
 
         public readonly bool IsDisposed => UnsafeListener.IsDisposed(value);
 
-        public Listener()
+        public ListenerWithContext()
         {
             throw new NotImplementedException();
         }
 
-        internal Listener(World world, RuntimeType eventType, delegate* unmanaged<World, Container, void> callback)
+        internal ListenerWithContext(nint context, World world, RuntimeType eventType, delegate* unmanaged<nint, World, Container, void> callback)
         {
             this.eventType = eventType;
+            this.context = context;
             value = UnsafeListener.Allocate(callback);
             this.world = world;
         }
@@ -31,30 +33,30 @@ namespace Game
 
         public readonly void Invoke(World world, Container message)
         {
-            UnsafeListener.Invoke(value, world, message);
+            UnsafeListener.Invoke(value, context, world, message);
         }
 
         public override bool Equals(object? obj)
         {
-            return obj is Listener listener && Equals(listener);
+            return obj is ListenerWithContext context && Equals(context);
         }
 
-        public bool Equals(Listener other)
+        public bool Equals(ListenerWithContext other)
         {
             return value == other.value;
         }
 
-        public unsafe override int GetHashCode()
+        public override unsafe int GetHashCode()
         {
             return new IntPtr(value).GetHashCode();
         }
 
-        public static bool operator ==(Listener left, Listener right)
+        public static bool operator ==(ListenerWithContext left, ListenerWithContext right)
         {
             return left.Equals(right);
         }
 
-        public static bool operator !=(Listener left, Listener right)
+        public static bool operator !=(ListenerWithContext left, ListenerWithContext right)
         {
             return !(left == right);
         }
