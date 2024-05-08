@@ -55,7 +55,7 @@ namespace Game
             for (uint i = 0; i < entities.Count; i++)
             {
                 EntityID id = entities[i];
-                if (tracked.AddIfUnique(id))
+                if (tracked.TryAdd(id))
                 {
                     observer->added(observer->world, id);
                 }
