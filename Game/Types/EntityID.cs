@@ -35,7 +35,7 @@ namespace Game
 #if DEBUG
             if (DebugToString.createStackTraces.TryGetValue(this, out StackTrace? stackTrace))
             {
-                return $"{value} ({stackTrace.GetFrame(0)})";
+                return $"{value} ({stackTrace})";
             }
             else
             {
@@ -46,19 +46,27 @@ namespace Game
 #endif
         }
 
-        public override bool Equals(object? obj)
+        public readonly override bool Equals(object? obj)
         {
             return obj is EntityID iD && Equals(iD);
         }
 
-        public bool Equals(EntityID other)
+        public readonly bool Equals(EntityID other)
         {
             return value == other.value;
         }
 
-        public override int GetHashCode()
+        public readonly override int GetHashCode()
         {
             return HashCode.Combine(value);
+        }
+
+        /// <summary>
+        /// Returns a <see cref="EntityID"/> value that may or may not be valid.
+        /// </summary>
+        public static EntityID Assume(uint value)
+        {
+            return new(value);
         }
 
         public static bool operator ==(EntityID left, EntityID right)
