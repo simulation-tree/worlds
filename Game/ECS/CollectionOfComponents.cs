@@ -6,8 +6,8 @@ namespace Game.ECS
     internal unsafe sealed class CollectionOfComponents : IDisposable
     {
         public readonly ComponentTypeMask types;
-        public UnmanagedList<EntityID> entities;
-        public UnsafeList*[] lists;
+        public readonly UnmanagedList<EntityID> entities;
+        public readonly UnsafeList*[] lists;
 
         public CollectionOfComponents(ComponentTypeMask types)
         {
