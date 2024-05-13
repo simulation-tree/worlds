@@ -205,7 +205,7 @@ namespace Game
                     for (int t = 0; t < CollectionType.MaxTypes; t++)
                     {
                         ref UnsafeList* list = ref arrayCollection.lists[t];
-                        if (list != default)
+                        if (!UnsafeList.IsDisposed(list))
                         {
                             UnsafeList.Free(list);
                         }
@@ -340,6 +340,14 @@ namespace Game
         {
             Allocations.ThrowIfNull((nint)world);
 
+            Dictionary<ComponentTypeMask, CollectionOfComponents> components = world->Components;
+            if (!components.TryGetValue(componentTypes, out CollectionOfComponents? newData))
+            {
+                newData = new CollectionOfComponents(componentTypes);
+                components.Add(componentTypes, newData);
+                UnsafeList.Add(world->componentArchetypes, componentTypes);
+            }
+
             if (UnsafeList.GetCount(world->freeEntities) > 0)
             {
                 EntityID oldId = UnsafeList.Get<EntityID>(world->freeEntities, 0);
@@ -350,6 +358,8 @@ namespace Game
                 entity.id = oldId;
                 entity.version++;
                 entity.componentTypes = componentTypes;
+                entity.collectionTypes = default;
+                newData.entities.Add(oldId);
                 EntityCreated(world, oldId);
                 return oldId;
             }
@@ -363,14 +373,6 @@ namespace Game
             if (arrays.Length <= index)
             {
                 Array.Resize(ref arrays, (int)index * 2);
-            }
-
-            Dictionary<ComponentTypeMask, CollectionOfComponents> components = world->Components;
-            if (!components.TryGetValue(componentTypes, out CollectionOfComponents? newData))
-            {
-                newData = new CollectionOfComponents(componentTypes);
-                components.Add(componentTypes, newData);
-                UnsafeList.Add(world->componentArchetypes, componentTypes);
             }
 
             newData.entities.Add(newId);
@@ -389,6 +391,7 @@ namespace Game
             CollectionOfComponents oldData = world->Components[oldTypes];
             uint oldIndex = oldData.entities.IndexOf(id);
             oldData.entities.Remove(id);
+
             for (int i = 0; i < ComponentTypeMask.MaxValues; i++)
             {
                 ComponentType type = new(i);
@@ -410,7 +413,7 @@ namespace Game
                         if (entity.collectionTypes.Contains(type))
                         {
                             ref UnsafeList* array = ref arrayCollection.lists[i];
-                            UnsafeList.Clear(array);
+                            UnsafeList.Free(array);
                         }
                     }
                 }
@@ -571,21 +574,9 @@ namespace Game
             }
 
             CollectionOfComponents oldData = components[previousTypes];
-            if (oldData.entities.Contains(id))
-            {
-                //todo: remove this branch
-                uint newIndex = oldData.MoveTo(id, newData);
-                ref UnsafeList* list = ref newData.lists[addedType.value - 1];
-                return ref UnsafeList.GetRef<T>(list, newIndex);
-            }
-            else
-            {
-                uint newIndex = newData.entities.Count;
-                newData.entities.Add(id);
-                ref UnsafeList* list = ref newData.lists[addedType.value - 1];
-                UnsafeList.AddDefault(list);
-                return ref UnsafeList.GetRef<T>(list, newIndex);
-            }
+            uint newIndex = oldData.MoveTo(id, newData);
+            ref UnsafeList* list = ref newData.lists[addedType.value - 1];
+            return ref UnsafeList.GetRef<T>(list, newIndex);
         }
 
         public static void RemoveComponent<T>(UnsafeWorld* world, EntityID id) where T : unmanaged
