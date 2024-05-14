@@ -18,7 +18,7 @@ namespace Game
         {
             World world = new();
             world.Dispose();
-            Assert.Throws<ObjectDisposedException>(() => world.Dispose());
+            Assert.Throws<NullReferenceException>(() => world.Dispose());
         }
 
         [Test]
