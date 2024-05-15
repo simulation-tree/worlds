@@ -19,6 +19,7 @@ jobs:
         with:
           repository: game-simulations/unmanaged
           token: ${{ secrets.PAT }}
+          path: "../game"
       
       - name: Setup dotnet
         uses: actions/setup-dotnet@v4
