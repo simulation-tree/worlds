@@ -19,6 +19,7 @@ namespace Game
         public readonly byte value;
 
         public readonly RuntimeType RuntimeType => runtimeTypes[value - 1];
+        public readonly bool IsValid => value > 0 && value <= count;
 
         private ComponentType(byte value)
         {
@@ -27,7 +28,7 @@ namespace Game
 
         public ComponentType(int index)
         {
-            value = (byte)(index + 1);
+            value = (byte)index;
         }
 
         public override string ToString()

@@ -19,6 +19,7 @@ namespace Game
         public readonly byte value;
 
         public readonly RuntimeType RuntimeType => runtimeTypes[value - 1];
+        public readonly bool IsValid => value > 0 && value <= count;
 
         private CollectionType(byte value)
         {

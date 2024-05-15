@@ -22,7 +22,7 @@ namespace Game
                 uint size = 0;
                 for (int i = 0; i < MaxValues; i++)
                 {
-                    ComponentType type = new(i);
+                    ComponentType type = new(i + 1);
                     if (Contains(type))
                     {
                         size += type.RuntimeType.size;
@@ -43,7 +43,7 @@ namespace Game
                 uint count = 0;
                 for (int i = 0; i < MaxValues; i++)
                 {
-                    ComponentType type = new(i);
+                    ComponentType type = new(i + 1);
                     if (Contains(type))
                     {
                         count++;
@@ -59,7 +59,7 @@ namespace Game
             StringBuilder builder = new();
             for (int i = 0; i < MaxValues; i++)
             {
-                ComponentType type = new(i);
+                ComponentType type = new(i + 1);
                 if (Contains(type))
                 {
                     builder.Append(type.RuntimeType.Type.Name);
@@ -95,7 +95,7 @@ namespace Game
             int count = 0;
             for (int i = 0; i < MaxValues; i++)
             {
-                ComponentType type = new(i);
+                ComponentType type = new(i + 1);
                 if (Contains(type))
                 {
                     span[count++] = type;

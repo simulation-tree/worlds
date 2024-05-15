@@ -1,13 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Unmanaged;
 using Unmanaged.Collections;
 
 namespace Game
 {
-    public readonly unsafe struct World : IDisposable, IEquatable<World>
+    public unsafe struct World : IDisposable, IEquatable<World>, ISerializable, IDeserializable
     {
-        internal readonly UnsafeWorld* value;
+        internal UnsafeWorld* value;
 
         public readonly uint ID => UnsafeWorld.GetID(value);
 
@@ -54,6 +55,74 @@ namespace Game
         public readonly override int GetHashCode()
         {
             return value->GetHashCode();
+        }
+
+        void ISerializable.Serialize(BinaryWriter writer, Dictionary<uint, object> objects)
+        {
+            Span<char> nameBuffer = stackalloc char[FixedString.MaxLength];
+            Span<byte> typesBuffer = stackalloc byte[Math.Max(ComponentType.MaxTypes, CollectionType.MaxTypes)];
+            int count = 0;
+            for (byte i = 0; i < ComponentType.MaxTypes; i++)
+            {
+                ComponentType componentType = new(i + 1);
+                if (componentType.IsValid)
+                {
+                    typesBuffer[count] = i;
+                    count++;
+                }
+            }
+
+            writer.WriteValue((byte)count);
+            for (int i = 0; i < count; i++)
+            {
+                ComponentType componentType = new(typesBuffer[i] + 1);
+                RuntimeType runtimeType = componentType.RuntimeType;
+                Type systemType = runtimeType.Type;
+                string aqn = systemType.AssemblyQualifiedName ?? throw new InvalidOperationException("AssemblyQualifiedName is null");
+                FixedString name = new(aqn);
+                name.CopyTo(nameBuffer);
+                writer.WriteValue((byte)name.Length);
+                writer.WriteSpan<char>(nameBuffer[..name.Length]);
+            }
+
+            count = 0;
+            for (byte i = 0; i < CollectionType.MaxTypes; i++)
+            {
+                CollectionType collectionType = new(i);
+                if (collectionType.IsValid)
+                {
+                    typesBuffer[count] = i;
+                    count++;
+                }
+            }
+
+            writer.WriteValue((byte)count);
+            for (int i = 0; i < count; i++)
+            {
+                CollectionType collectionType = new(typesBuffer[i] + 1);
+                RuntimeType runtimeType = collectionType.RuntimeType;
+                Type systemType = runtimeType.Type;
+                string aqn = systemType.AssemblyQualifiedName ?? throw new InvalidOperationException("AssemblyQualifiedName is null");
+                FixedString name = new(aqn);
+                name.CopyTo(nameBuffer);
+                writer.WriteValue((byte)name.Length);
+                writer.WriteSpan<char>(nameBuffer[..name.Length]);
+            }
+
+            writer.WriteValue(Count);
+        }
+
+        void IDeserializable.Deserialize(ref BinaryReader reader, IReadOnlyDictionary<uint, object> objects)
+        {
+            value = UnsafeWorld.Allocate();
+            byte componentTypeCount = reader.ReadValue<byte>();
+            for (int i = 0; i < componentTypeCount; i++)
+            {
+                byte nameLength = reader.ReadValue<byte>();
+                FixedString name = new(reader.ReadSpan<char>(nameLength));
+                //Type type = Type.GetType(name.ToString()) ?? throw new InvalidOperationException("Type not found");
+                //UnsafeWorld.RegisterComponentType(value, type);
+            }
         }
 
         public readonly void Submit<T>(T message) where T : unmanaged
