@@ -13,6 +13,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4.1.2
+
+      - name: Pull dependencies
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/unmanaged
+          token: ${{ secrets.PAT }}
       
       - name: Setup dotnet
         uses: actions/setup-dotnet@v4
