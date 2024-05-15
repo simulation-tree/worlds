@@ -8,18 +8,20 @@ jobs:
 
     defaults:
       run:
-        working-directory: Game Tests
+        working-directory: game/Game Tests
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4.1.2
+        with:
+          path: game
 
       - name: Pull dependencies
         uses: actions/checkout@v4.1.2
         with:
           repository: game-simulations/unmanaged
           token: ${{ secrets.PAT }}
-          path: ../
+          path: unmanaged
       
       - name: Setup dotnet
         uses: actions/setup-dotnet@v4
