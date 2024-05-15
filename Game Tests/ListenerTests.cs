@@ -8,6 +8,12 @@ namespace Game
     {
         private static readonly List<int> received = new();
 
+        [TearDown]
+        public void CleanUp()
+        {
+            Allocations.ThrowIfAnyAllocation();
+        }
+
         [SetUp]
         public void SetUp()
         {

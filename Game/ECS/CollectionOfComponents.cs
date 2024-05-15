@@ -7,20 +7,20 @@ namespace Game.ECS
     {
         private readonly ComponentTypeMask types;
         private readonly UnmanagedList<EntityID> entities;
-        private readonly UnsafeList*[] lists;
+        private readonly UnmanagedArray<nint> lists;
 
-        public ReadOnlySpan<EntityID> Entities => entities.AsSpan();
+        public UnmanagedList<EntityID> Entities => entities;
 
         public CollectionOfComponents(ComponentTypeMask types)
         {
             this.types = types;
-            lists = new UnsafeList*[ComponentTypeMask.MaxValues];
-            for (int i = 0; i < ComponentTypeMask.MaxValues; i++)
+            lists = new(ComponentTypeMask.MaxValues);
+            for (uint i = 0; i < ComponentTypeMask.MaxValues; i++)
             {
                 ComponentType type = new(i + 1);
                 if (types.Contains(type))
                 {
-                    lists[i] = UnsafeList.Allocate(type.RuntimeType);
+                    lists[i] = (nint)UnsafeList.Allocate(type.RuntimeType);
                 }
             }
 
@@ -29,13 +29,18 @@ namespace Game.ECS
 
         public void Add(EntityID id)
         {
+            if (entities.Contains(id))
+            {
+                throw new InvalidOperationException("Entity already exists.");
+            }
+
             entities.Add(id);
-            for (int i = 0; i < ComponentTypeMask.MaxValues; i++)
+            for (uint i = 0; i < ComponentTypeMask.MaxValues; i++)
             {
                 ComponentType type = new(i + 1);
                 if (types.Contains(type))
                 {
-                    ref UnsafeList* list = ref lists[i];
+                    UnsafeList* list = (UnsafeList*)lists[i];
                     UnsafeList.AddDefault(list);
                 }
             }
@@ -45,12 +50,12 @@ namespace Game.ECS
         {
             uint index = entities.IndexOf(entity);
             entities.RemoveAt(index);
-            for (int i = 0; i < ComponentTypeMask.MaxValues; i++)
+            for (uint i = 0; i < ComponentTypeMask.MaxValues; i++)
             {
                 ComponentType type = new(i + 1);
                 if (types.Contains(type))
                 {
-                    ref UnsafeList* list = ref lists[i];
+                    UnsafeList* list = (UnsafeList*)lists[i];
                     UnsafeList.RemoveAt(list, index);
                 }
             }
@@ -65,7 +70,7 @@ namespace Game.ECS
         public ref T GetComponentRef<T>(uint index) where T : unmanaged
         {
             ComponentType type = ComponentType.Get<T>();
-            ref UnsafeList* list = ref lists[type.value - 1];
+            UnsafeList* list = GetComponents(type);
             return ref UnsafeList.GetRef<T>(list, index);
         }
 
@@ -77,15 +82,20 @@ namespace Game.ECS
 
         public Span<byte> GetComponentBytes(uint index, ComponentType type)
         {
-            ref UnsafeList* list = ref lists[type.value - 1];
+            UnsafeList* list = GetComponents(type);
             return UnsafeList.Get(list, index);
         }
 
         public UnmanagedList<T> GetComponents<T>() where T : unmanaged
         {
             ComponentType type = ComponentType.Get<T>();
-            ref UnsafeList* list = ref lists[type.value - 1];
+            UnsafeList* list = GetComponents(type);
             return new(list);
+        }
+
+        public UnsafeList* GetComponents(ComponentType type)
+        {
+            return (UnsafeList*)lists[(uint)(type.value - 1)];
         }
 
         /// <summary>
@@ -94,48 +104,59 @@ namespace Game.ECS
         /// </summary>
         public uint MoveTo(EntityID id, CollectionOfComponents destination)
         {
+            if (destination.entities.Contains(id))
+            {
+                throw new InvalidOperationException("Entity already exists in destination.");
+            }
+
             uint oldIndex = entities.IndexOf(id);
             entities.RemoveAt(oldIndex);
-            for (int i = 0; i < ComponentTypeMask.MaxValues; i++)
+
+            uint newIndex = destination.entities.Count;
+            destination.entities.Add(id);
+
+            for (uint i = 0; i < ComponentTypeMask.MaxValues; i++)
             {
                 ComponentType type = new(i + 1);
+                bool sourceHas = types.Contains(type);
                 if (destination.types.Contains(type))
                 {
-                    ref UnsafeList* newList = ref destination.lists[i];
-                    UnsafeList.AddDefault(newList);
-                    if (types.Contains(type))
+                    UnsafeList* destinationList = (UnsafeList*)destination.lists[i];
+                    UnsafeList.AddDefault(destinationList);
+
+                    if (sourceHas)
                     {
-                        ref UnsafeList* oldList = ref lists[i];
-                        uint newIndex = UnsafeList.GetCount(newList) - 1;
-                        UnsafeList.CopyTo(oldList, oldIndex, newList, newIndex);
-                        UnsafeList.RemoveAt(oldList, oldIndex);
+                        //copy
+                        UnsafeList* sourceList = (UnsafeList*)lists[i];
+                        UnsafeList.CopyTo(sourceList, oldIndex, destinationList, newIndex);
                     }
                 }
-                else
+                
+                if (sourceHas)
                 {
-                    if (types.Contains(type))
-                    {
-                        ref var oldList = ref lists[i];
-                        UnsafeList.RemoveAt(oldList, oldIndex);
-                    }
+                    //remove
+                    UnsafeList* oldList = (UnsafeList*)lists[i];
+                    UnsafeList.RemoveAt(oldList, oldIndex);
                 }
             }
 
-            destination.entities.Add(id);
-            return destination.entities.Count - 1;
+            return newIndex;
         }
 
         public void Dispose()
         {
             entities.Dispose();
-            for (int i = 0; i < ComponentTypeMask.MaxValues; i++)
+            for (uint i = 0; i < ComponentTypeMask.MaxValues; i++)
             {
                 ComponentType type = new(i + 1);
                 if (types.Contains(type))
                 {
-                    UnsafeList.Free(lists[i]);
+                    UnsafeList* list = (UnsafeList*)lists[i];
+                    UnsafeList.Free(list);
                 }
             }
+
+            lists.Dispose();
         }
     }
 }

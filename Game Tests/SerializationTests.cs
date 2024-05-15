@@ -7,6 +7,12 @@ namespace Game
 {
     public class SerializationTests
     {
+        [TearDown]
+        public void CleanUp()
+        {
+            Allocations.ThrowIfAnyAllocation();
+        }
+
         [Test]
         public void SaveWorld()
         {
@@ -14,18 +20,71 @@ namespace Game
             EntityID a = world.CreateEntity();
             world.AddComponent(a, new Fruit(42));
             world.AddComponent(a, new Apple("Hello, World!"));
+            EntityID temporary = world.CreateEntity();
             EntityID b = world.CreateEntity();
             world.AddComponent(b, new Fruit(43));
             EntityID c = world.CreateEntity();
             world.AddComponent(c, new Apple("Goodbye, World!"));
+            world.DestroyEntity(temporary);
+
+            List<EntityID> oldEntities = new();
+            List<(EntityID, Apple)> apples = new();
+            world.QueryComponents((in EntityID entity) =>
+            {
+                oldEntities.Add(entity);
+            });
+
+            world.QueryComponents((in EntityID entity, ref Apple apple) =>
+            {
+                apples.Add((entity, apple));
+            });
 
             using BinaryWriter writer = new();
-            Dictionary<uint, object> objects = new();
-            writer.WriteSerializable(world, objects);
+            writer.WriteSerializable(world);
             ReadOnlySpan<byte> data = writer.AsSpan();
             using BinaryReader reader = new(data);
-            World loadedWorld = reader.ReadSerializable<World>(objects);
-            Assert.That(loadedWorld.Count, Is.EqualTo(world.Count));
+
+            using World loadedWorld = reader.ReadSerializable<World>();
+            List<EntityID> newEntities = new();
+            List<(EntityID, Apple)> newApples = new();
+            loadedWorld.QueryComponents((in EntityID entity) =>
+            {
+                newEntities.Add(entity);
+            });
+
+            loadedWorld.QueryComponents((in EntityID entity, ref Apple apple) =>
+            {
+                newApples.Add((entity, apple));
+            });
+
+            Assert.That(newEntities, Is.EquivalentTo(oldEntities));
+            Assert.That(newApples, Is.EquivalentTo(apples));
+        }
+
+        [Test]
+        public void SaveAndLoadTypes()
+        {
+            ComponentType.Reset();
+            ComponentType typeAA = ComponentType.Get<byte>();
+            ComponentType typeAB = ComponentType.Get<int>();
+            ComponentType typeAC = ComponentType.Get<float>();
+            RuntimeType?[] setA = ComponentType.Dump();
+
+            ComponentType.Reset();
+            ComponentType typeBA = ComponentType.Get<FixedString>();
+            ComponentType typeBB = ComponentType.Get<Apple>();
+            ComponentType typeBC = ComponentType.Get<byte>();
+            RuntimeType?[] setB = ComponentType.Dump();
+
+            ComponentType.Load(setA);
+            Assert.That(ComponentType.Get<byte>(), Is.EqualTo(typeAA));
+            Assert.That(ComponentType.Get<int>(), Is.EqualTo(typeAB));
+            Assert.That(ComponentType.Get<float>(), Is.EqualTo(typeAC));
+
+            ComponentType.Load(setB);
+            Assert.That(ComponentType.Get<FixedString>(), Is.EqualTo(typeBA));
+            Assert.That(ComponentType.Get<Apple>(), Is.EqualTo(typeBB));
+            Assert.That(ComponentType.Get<byte>(), Is.EqualTo(typeBC));
         }
 
         [Test]
@@ -48,6 +107,33 @@ namespace Game
         }
 
         [Test]
+        public void SaveAndLoadSpans()
+        {
+            using BinaryWriter writer = new();
+            writer.WriteSpan<byte>([1, 2, 3, 4, 5]);
+            writer.WriteSpan<int>([1, 2, 3, 4, 5]);
+            writer.WriteSpan<FixedString>(["Hello", "World", "Goodbye"]);
+
+            using BinaryReader reader = new(writer.AsSpan());
+            ReadOnlySpan<byte> bytes = reader.ReadSpan<byte>(5);
+            ReadOnlySpan<int> ints = reader.ReadSpan<int>(5);
+            ReadOnlySpan<FixedString> strings = reader.ReadSpan<FixedString>(3);
+
+            Assert.That(bytes.ToArray(), Is.EquivalentTo(new byte[] { 1, 2, 3, 4, 5 }));
+            Assert.That(ints.ToArray(), Is.EquivalentTo(new int[] { 1, 2, 3, 4, 5 }));
+            Assert.That(strings.ToArray(), Is.EquivalentTo(new FixedString[] { "Hello", "World", "Goodbye" }));
+        }
+
+        [Test]
+        public void ReadTooMuch()
+        {
+            using BinaryWriter writer = new();
+            writer.WriteSpan<char>("The snake that eats its own tail");
+            using BinaryReader reader = new(writer.AsSpan());
+            Assert.Throws<InvalidOperationException>(() => reader.ReadSpan<char>(100));
+        }
+
+        [Test]
         public void CheckSerializable()
         {
             using Complicated complicated = new();
@@ -62,11 +148,10 @@ namespace Game
             complicated.Add(player2);
             complicated.Add(player3);
 
-            Dictionary<uint, object> objects = new();
             using BinaryWriter writer = new();
-            writer.WriteSerializable(complicated, objects);
+            writer.WriteSerializable(complicated);
             using BinaryReader reader = new(writer.AsSpan());
-            using Complicated loadedComplicated = reader.ReadSerializable<Complicated>(objects);
+            using Complicated loadedComplicated = reader.ReadSerializable<Complicated>();
 
             Assert.That(loadedComplicated.List.Length, Is.EqualTo(complicated.List.Length));
             for (int i = 0; i < complicated.List.Length; i++)
@@ -108,7 +193,7 @@ namespace Game
                 types.Dispose();
             }
 
-            void IDeserializable.Deserialize(ref BinaryReader reader, IReadOnlyDictionary<uint, object> objects)
+            void IDeserializable.Deserialize(ref BinaryReader reader)
             {
                 byte count = reader.ReadValue<byte>();
                 types = new();
@@ -119,7 +204,7 @@ namespace Game
                 }
             }
 
-            void ISerializable.Serialize(BinaryWriter writer, Dictionary<uint, object> objects)
+            void ISerializable.Serialize(BinaryWriter writer)
             {
                 for (uint i = 0; i < types.Count; i++)
                 {
@@ -154,23 +239,23 @@ namespace Game
                 players.Dispose();
             }
 
-            void IDeserializable.Deserialize(ref BinaryReader reader, IReadOnlyDictionary<uint, object> objects)
+            void IDeserializable.Deserialize(ref BinaryReader reader)
             {
                 byte count = reader.ReadValue<byte>();
                 players = new();
                 for (int i = 0; i < count; i++)
                 {
-                    Player player = reader.ReadSerializable<Player>(objects);
+                    Player player = reader.ReadSerializable<Player>();
                     players.Add(player);
                 }
             }
 
-            void ISerializable.Serialize(BinaryWriter writer, Dictionary<uint, object> objects)
+            void ISerializable.Serialize(BinaryWriter writer)
             {
                 writer.WriteValue((byte)players.Count);
                 foreach (Player player in players)
                 {
-                    writer.WriteSerializable(player, objects);
+                    writer.WriteSerializable(player);
                 }
             }
         }
@@ -205,7 +290,7 @@ namespace Game
                 inventory.Add(fruit);
             }
 
-            void IDeserializable.Deserialize(ref BinaryReader reader, IReadOnlyDictionary<uint, object> objects)
+            void IDeserializable.Deserialize(ref BinaryReader reader)
             {
                 hp = reader.ReadValue<uint>();
                 damage = reader.ReadValue<uint>();
@@ -217,7 +302,7 @@ namespace Game
                 }
             }
 
-            void ISerializable.Serialize(BinaryWriter writer, Dictionary<uint, object> objects)
+            void ISerializable.Serialize(BinaryWriter writer)
             {
                 writer.WriteValue(hp);
                 writer.WriteValue(damage);

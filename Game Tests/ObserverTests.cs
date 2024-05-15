@@ -1,6 +1,7 @@
 ﻿using Game.Events;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Unmanaged;
 
 namespace Game
 {
@@ -8,6 +9,12 @@ namespace Game
     {
         private static readonly List<EntityID> added = [];
         private static readonly List<EntityID> removed = [];
+
+        [TearDown]
+        public void CleanUp()
+        {
+            Allocations.ThrowIfAnyAllocation();
+        }
 
         [Test]
         public unsafe void ListenForChanges()

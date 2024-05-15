@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Unmanaged;
 
 namespace Game
@@ -9,6 +10,7 @@ namespace Game
     public readonly struct ComponentType : IEquatable<ComponentType>
     {
         private static readonly RuntimeType[] runtimeTypes = new RuntimeType[MaxTypes];
+        private static readonly Dictionary<RuntimeType, ComponentType> typeMap = [];
         private static ushort count = 0;
 
         public const byte MaxTypes = 64;
@@ -21,24 +23,24 @@ namespace Game
         public readonly RuntimeType RuntimeType => runtimeTypes[value - 1];
         public readonly bool IsValid => value > 0 && value <= count;
 
-        private ComponentType(byte value)
+        public ComponentType(byte value)
         {
             this.value = value;
         }
 
-        public ComponentType(int index)
+        public ComponentType(int value)
         {
-            value = (byte)index;
+            this.value = (byte)value;
+        }
+
+        public ComponentType(uint value)
+        {
+            this.value = (byte)value;
         }
 
         public override string ToString()
         {
             return RuntimeType.ToString();
-        }
-
-        public readonly bool Is<T>() where T : unmanaged
-        {
-            return value == ComponentTypeHash<T>.value.value;
         }
 
         public readonly override bool Equals(object? obj)
@@ -68,23 +70,72 @@ namespace Game
 
         public static ComponentType Get<T>() where T : unmanaged
         {
-            return ComponentTypeHash<T>.value;
+            RuntimeType runtimeType = RuntimeType.Get<T>();
+            if (typeMap.TryGetValue(runtimeType, out ComponentType type))
+            {
+                return type;
+            }
+
+            if (count >= MaxTypes)
+            {
+                throw new InvalidOperationException("Too many component types registered.");
+            }
+
+            type = new ComponentType(count + 1);
+            runtimeTypes[count] = runtimeType;
+            typeMap[runtimeType] = type;
+            count++;
+            return type;
         }
 
-        private static class ComponentTypeHash<T> where T : unmanaged
+        public static void Reset()
         {
-            public static ComponentType value;
+            typeMap.Clear();
+            Array.Clear(runtimeTypes, 0, count);
+            count = 0;
+        }
 
-            static ComponentTypeHash()
+        public static RuntimeType?[] Dump()
+        {
+            RuntimeType?[] types = new RuntimeType?[MaxTypes];
+            for (int i = 0; i < count; i++)
             {
-                if (count >= MaxTypes)
+                ComponentType type = new(i + 1);
+                if (type.IsValid)
                 {
-                    throw new InvalidOperationException("Too many componentTypes registered.");
+                    types[i] = type.RuntimeType;
                 }
+                else
+                {
+                    types[i] = null;
+                }
+            }
 
-                value = new ComponentType((byte)(count + 1));
-                runtimeTypes[count] = RuntimeType.Get<T>();
-                count++;
+            return types;
+        }
+
+        public static void Load(RuntimeType?[] types)
+        {
+            if (types.Length != MaxTypes)
+            {
+                throw new ArgumentException($"Invalid number of types, expected {MaxTypes}.", nameof(types));
+            }
+
+            typeMap.Clear();
+            count = 0;
+            for (int i = 0; i < types.Length; i++)
+            {
+                ComponentType type = new(i + 1);
+                if (types[i] is RuntimeType runtimeType)
+                {
+                    runtimeTypes[i] = runtimeType;
+                    count++;
+                    typeMap[runtimeType] = type;
+                }
+                else
+                {
+                    runtimeTypes[i] = default;
+                }
             }
         }
     }

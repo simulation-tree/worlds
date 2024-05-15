@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Unmanaged;
 using Unmanaged.Collections;
 
@@ -6,6 +7,12 @@ namespace Game
 {
     public class WorldTests
     {
+        [TearDown]
+        public void CleanUp()
+        {
+            Allocations.ThrowIfAnyAllocation();
+        }
+
         [Test]
         public void CreateAndDisposeWorld()
         {
@@ -47,6 +54,7 @@ namespace Game
             EntityID entity = world.CreateEntity();
             world.DestroyEntity(entity);
             Assert.That(world.ContainsEntity(entity), Is.False);
+            Assert.That(world.Count, Is.EqualTo(0));
             Assert.Throws<NullReferenceException>(() => world.GetComponent<SimpleComponent>(entity));
         }
 
@@ -109,6 +117,28 @@ namespace Game
             Assert.That(anotherList.Count, Is.EqualTo(1));
             world.DestroyEntity(another);
             Assert.That(anotherList.IsDisposed, Is.True);
+        }
+
+        [Test]
+        public void QueryComponentsAfterDestroyingEntities()
+        {
+            using World world = new();
+            EntityID entity1 = world.CreateEntity();
+            EntityID entity2 = world.CreateEntity();
+            SimpleComponent component1 = new("apple");
+            SimpleComponent component2 = new("banana");
+            world.AddComponent(entity1, component1);
+            world.AddComponent(entity2, component2);
+            world.DestroyEntity(entity1);
+            world.AddComponent(entity2, new Another(5));
+            world.DestroyEntity(entity2);
+            List<(EntityID, SimpleComponent)> found = new();
+            world.QueryComponents((in EntityID entity, ref SimpleComponent component) =>
+            {
+                found.Add((entity, component));
+            });
+
+            Assert.That(found.Count, Is.EqualTo(0));
         }
 
         public struct SimpleComponent

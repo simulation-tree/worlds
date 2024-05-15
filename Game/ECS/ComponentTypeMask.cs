@@ -6,11 +6,11 @@ namespace Game
     /// <summary>
     /// A mask containing component types.
     /// </summary>
-    public unsafe struct ComponentTypeMask : IEquatable<ComponentTypeMask>
+    public unsafe struct ComponentTypeMask(ulong value) : IEquatable<ComponentTypeMask>
     {
         public const int MaxValues = ComponentType.MaxTypes;
 
-        private ulong value;
+        public ulong value = value;
 
         /// <summary>
         /// Size in bytes encapsulating all component types in this mask.

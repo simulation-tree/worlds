@@ -1,9 +1,16 @@
-﻿using Unmanaged.Collections;
+﻿using Unmanaged;
+using Unmanaged.Collections;
 
 namespace Game
 {
     public class SystemBaseTypeTests
     {
+        [TearDown]
+        public void CleanUp()
+        {
+            Allocations.ThrowIfAnyAllocation();
+        }
+
         [Test]
         public void ListenToEvent()
         {

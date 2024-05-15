@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Game.ECS;
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Unmanaged;
@@ -15,7 +16,15 @@ namespace Game
         /// <summary>
         /// Amount of entities in the world.
         /// </summary>
-        public readonly uint Count => UnsafeWorld.GetEntityCount(value);
+        public readonly uint Count
+        {
+            get
+            {
+                uint slotCount = UnsafeWorld.GetEntitySlots(value).Count;
+                uint freeCount = UnsafeWorld.GetFreeEntities(value).Count;
+                return slotCount - freeCount;
+            }
+        }
 
         public readonly bool IsDisposed => UnsafeWorld.IsDisposed(value);
 
@@ -48,6 +57,10 @@ namespace Game
             {
                 return true;
             }
+            else if (IsDisposed != other.IsDisposed)
+            {
+                return false;
+            }
 
             return ID == other.ID;
         }
@@ -57,71 +70,119 @@ namespace Game
             return value->GetHashCode();
         }
 
-        void ISerializable.Serialize(BinaryWriter writer, Dictionary<uint, object> objects)
+        void ISerializable.Serialize(BinaryWriter writer)
         {
-            Span<char> nameBuffer = stackalloc char[FixedString.MaxLength];
-            Span<byte> typesBuffer = stackalloc byte[Math.Max(ComponentType.MaxTypes, CollectionType.MaxTypes)];
-            int count = 0;
-            for (byte i = 0; i < ComponentType.MaxTypes; i++)
+            UnmanagedList<UnsafeWorld.EntityDescription> slots = UnsafeWorld.GetEntitySlots(value);
+            UnmanagedList<EntityID> free = UnsafeWorld.GetFreeEntities(value);
+            uint id = UnsafeWorld.GetID(value);
+            uint entityCount = slots.Count - free.Count;
+            writer.WriteValue(entityCount);
+            for (uint i = 0; i < slots.Count; i++)
             {
-                ComponentType componentType = new(i + 1);
-                if (componentType.IsValid)
+                UnsafeWorld.EntityDescription description = slots[i];
+                EntityID entity = description.id;
+                if (UnsafeWorld.ContainsEntity(value, entity))
                 {
-                    typesBuffer[count] = i;
-                    count++;
+                    writer.WriteValue(entity.value);
                 }
             }
 
-            writer.WriteValue((byte)count);
-            for (int i = 0; i < count; i++)
+            Dictionary<ComponentTypeMask, CollectionOfComponents> components = Universe.components[(int)id - 1];
+            UnmanagedList<ComponentTypeMask> componentArchetypes = UnsafeWorld.GetComponentArchetypes(value);
+            writer.WriteValue(componentArchetypes.Count);
+            for (uint a = 0; a < componentArchetypes.Count; a++)
             {
-                ComponentType componentType = new(typesBuffer[i] + 1);
-                RuntimeType runtimeType = componentType.RuntimeType;
-                Type systemType = runtimeType.Type;
-                string aqn = systemType.AssemblyQualifiedName ?? throw new InvalidOperationException("AssemblyQualifiedName is null");
-                FixedString name = new(aqn);
-                name.CopyTo(nameBuffer);
-                writer.WriteValue((byte)name.Length);
-                writer.WriteSpan<char>(nameBuffer[..name.Length]);
-            }
-
-            count = 0;
-            for (byte i = 0; i < CollectionType.MaxTypes; i++)
-            {
-                CollectionType collectionType = new(i);
-                if (collectionType.IsValid)
+                ComponentTypeMask typeMask = componentArchetypes[a];
+                CollectionOfComponents data = components[typeMask];
+                UnmanagedList<EntityID> componentEntities = data.Entities;
+                writer.WriteValue(typeMask.value);
+                writer.WriteValue(componentEntities.Count);
+                for (uint e = 0; e < componentEntities.Count; e++)
                 {
-                    typesBuffer[count] = i;
-                    count++;
+                    EntityID entity = componentEntities[e];
+                    writer.WriteValue(entity.value);
+                }
+
+                for (uint t = 0; t < ComponentType.MaxTypes; t++)
+                {
+                    ComponentType type = new(t + 1);
+                    if (typeMask.Contains(type))
+                    {
+                        UnsafeList* componentList = data.GetComponents(type);
+                        Span<byte> listBytes = UnsafeList.AsSpan<byte>(componentList, 0, componentEntities.Count * type.RuntimeType.size);
+                        writer.WriteSpan<byte>(listBytes);
+                    }
                 }
             }
-
-            writer.WriteValue((byte)count);
-            for (int i = 0; i < count; i++)
-            {
-                CollectionType collectionType = new(typesBuffer[i] + 1);
-                RuntimeType runtimeType = collectionType.RuntimeType;
-                Type systemType = runtimeType.Type;
-                string aqn = systemType.AssemblyQualifiedName ?? throw new InvalidOperationException("AssemblyQualifiedName is null");
-                FixedString name = new(aqn);
-                name.CopyTo(nameBuffer);
-                writer.WriteValue((byte)name.Length);
-                writer.WriteSpan<char>(nameBuffer[..name.Length]);
-            }
-
-            writer.WriteValue(Count);
         }
 
-        void IDeserializable.Deserialize(ref BinaryReader reader, IReadOnlyDictionary<uint, object> objects)
+        void IDeserializable.Deserialize(ref BinaryReader reader)
         {
             value = UnsafeWorld.Allocate();
-            byte componentTypeCount = reader.ReadValue<byte>();
-            for (int i = 0; i < componentTypeCount; i++)
+            uint id = UnsafeWorld.GetID(value);
+            uint entityCount = reader.ReadValue<uint>();
+            uint currentEntityId = 1;
+            using UnmanagedList<EntityID> temporaryEntities = new();
+            for (uint i = 0; i < entityCount; i++)
             {
-                byte nameLength = reader.ReadValue<byte>();
-                FixedString name = new(reader.ReadSpan<char>(nameLength));
-                //Type type = Type.GetType(name.ToString()) ?? throw new InvalidOperationException("Type not found");
-                //UnsafeWorld.RegisterComponentType(value, type);
+                uint entityId = reader.ReadValue<uint>();
+                uint catchup = entityId - currentEntityId;
+                for (uint j = 0; j < catchup; j++)
+                {
+                    EntityID temporaryEntity = UnsafeWorld.CreateEntity(value, default);
+                    temporaryEntities.Add(temporaryEntity);
+                }
+
+                UnsafeWorld.CreateEntity(value, default);
+                currentEntityId = entityId + 1;
+            }
+
+            for (uint i = 0; i < temporaryEntities.Count; i++)
+            {
+                UnsafeWorld.DestroyEntity(value, temporaryEntities[i]);
+            }
+
+            Dictionary<ComponentTypeMask, CollectionOfComponents> componentsMap = Universe.components[(int)id - 1];
+            UnmanagedList<ComponentTypeMask> archetypes = UnsafeWorld.GetComponentArchetypes(value);
+            uint componentArchetypeCount = reader.ReadValue<uint>();
+            for (uint i = 0; i < componentArchetypeCount; i++)
+            {
+                ComponentTypeMask typeMask = new(reader.ReadValue<ulong>());
+                uint componentEntityCount = reader.ReadValue<uint>();
+                CollectionOfComponents components = new(typeMask);
+                if (componentsMap.TryGetValue(typeMask, out var existingMap))
+                {
+                    existingMap.Dispose();
+                    componentsMap[typeMask] = components;
+                }
+                else
+                {
+                    componentsMap.Add(typeMask, components);
+                    archetypes.Add(typeMask);
+                }
+
+                for (uint j = 0; j < componentEntityCount; j++)
+                {
+                    EntityID entity = new(reader.ReadValue<uint>());
+                    components.Add(entity);
+                }
+
+                for (uint t = 0; t < ComponentType.MaxTypes; t++)
+                {
+                    ComponentType type = new(t + 1);
+                    if (typeMask.Contains(type))
+                    {
+                        RuntimeType runtimeType = type.RuntimeType;
+                        UnsafeList* componentList = components.GetComponents(type);
+                        ReadOnlySpan<byte> listBytes = reader.ReadSpan<byte>(runtimeType.size * componentEntityCount);
+                        UnsafeList.AddDefault(componentList, componentEntityCount);
+                        for (uint c = 0; c < componentEntityCount; c++)
+                        {
+                            Span<byte> elementBytes = UnsafeList.Get(componentList, c);
+                            listBytes.CopyTo(elementBytes);
+                        }
+                    }
+                }
             }
         }
 
@@ -403,6 +464,20 @@ namespace Game
         public readonly void QueryComponents(ComponentTypeMask types, QueryCallback action)
         {
             UnsafeWorld.QueryComponents(value, types, action);
+        }
+
+        public readonly void QueryComponents(QueryCallback action)
+        {
+            UnmanagedList<UnsafeWorld.EntityDescription> slots = UnsafeWorld.GetEntitySlots(value);
+            for (uint i = 0; i < slots.Count; i++)
+            {
+                UnsafeWorld.EntityDescription description = slots[i];
+                EntityID id = description.id;
+                if (ContainsEntity(id))
+                {
+                    action(id);
+                }
+            }
         }
 
         public readonly void QueryComponents<C1>(QueryCallback action) where C1 : unmanaged
