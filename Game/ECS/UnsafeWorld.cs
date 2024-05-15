@@ -211,6 +211,7 @@ namespace Game
                         if (!UnsafeList.IsDisposed(list))
                         {
                             UnsafeList.Free(list);
+                            list = default;
                         }
                     }
                 }
@@ -363,6 +364,7 @@ namespace Game
                         {
                             ref UnsafeList* array = ref arrayCollection.lists[i];
                             UnsafeList.Free(array);
+                            array = default;
                         }
                     }
                 }
