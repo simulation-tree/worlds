@@ -21,20 +21,16 @@ namespace Game
         private readonly uint id;
         private UnsafeList* slots;
         private UnsafeList* freeEntities;
-        private UnsafeList* collectionArchetypes;
         private UnsafeList* events;
         private UnsafeDictionary* listeners;
         private UnsafeDictionary* listenersWithContext;
         private UnsafeDictionary* components;
 
-        private readonly ref CollectionOfCollections?[] Collections => ref Universe.collections[(int)id - 1];
-
-        private UnsafeWorld(uint id, UnsafeList* slots, UnsafeList* freeEntities, UnsafeList* collectionArchetypes, UnsafeList* events, UnsafeDictionary* listeners, UnsafeDictionary* listenersWithContext, UnsafeDictionary* components)
+        private UnsafeWorld(uint id, UnsafeList* slots, UnsafeList* freeEntities, UnsafeList* events, UnsafeDictionary* listeners, UnsafeDictionary* listenersWithContext, UnsafeDictionary* components)
         {
             this.id = id;
             this.slots = slots;
             this.freeEntities = freeEntities;
-            this.collectionArchetypes = collectionArchetypes;
             this.events = events;
             this.listeners = listeners;
             this.listenersWithContext = listenersWithContext;
@@ -82,6 +78,26 @@ namespace Game
             }
         }
 
+        [Conditional("DEBUG")]
+        private static void ThrowIfCollectionMissing(UnsafeWorld* world, EntityID entity, RuntimeType type)
+        {
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            if (slot.collections.IsDisposed || !slot.collections.Types.Contains(type))
+            {
+                throw new NullReferenceException($"Collection of type {type} not found on {entity}.");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private static void ThrowIfCollectionAlreadyPresent(UnsafeWorld* world, EntityID entity, RuntimeType type)
+        {
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            if (!slot.collections.IsDisposed && slot.collections.Types.Contains(type))
+            {
+                throw new InvalidOperationException($"Collection of type {type} already present on {entity}.");
+            }
+        }
+
         public static uint GetID(UnsafeWorld* world)
         {
             Allocations.ThrowIfNull(world);
@@ -111,29 +127,16 @@ namespace Game
             return new(world->components);
         }
 
-        public static UnmanagedList<CollectionTypeMask> GetCollectionArchetypes(UnsafeWorld* world)
-        {
-            Allocations.ThrowIfNull(world);
-            return new(world->collectionArchetypes);
-        }
-
         public static UnsafeWorld* Allocate()
         {
             if (!Universe.destroyedWorlds.TryTake(out uint id))
             {
                 Universe.createdWorlds++;
                 id = Universe.createdWorlds;
-                if (Universe.collections.Length < Universe.createdWorlds)
-                {
-                    Array.Resize(ref Universe.collections, (int)Universe.createdWorlds * 2);
-                }
-
-                Universe.collections[id - 1] = [];
             }
 
             UnsafeList* entities = UnsafeList.Allocate<EntityDescription>();
             UnsafeList* freeEntities = UnsafeList.Allocate<EntityID>();
-            UnsafeList* collectionArchetypes = UnsafeList.Allocate<CollectionTypeMask>();
             UnsafeList* events = UnsafeList.Allocate<Container>();
             UnsafeDictionary* listeners = UnsafeDictionary.Allocate<RuntimeType, nint>();
             UnsafeDictionary* listenersWithContext = UnsafeDictionary.Allocate<RuntimeType, nint>();
@@ -143,9 +146,8 @@ namespace Game
             int chunkKey = defaultComponentChunk.Key;
             UnsafeDictionary.Add(components, chunkKey, defaultComponentChunk);
 
-            UnsafeList.AddDefault(collectionArchetypes);
             UnsafeWorld* world = Allocations.Allocate<UnsafeWorld>();
-            *world = new(id, entities, freeEntities, collectionArchetypes, events, listeners, listenersWithContext, components);
+            *world = new(id, entities, freeEntities, events, listeners, listenersWithContext, components);
             return world;
         }
 
@@ -198,25 +200,18 @@ namespace Game
                 chunk.Dispose();
             }
 
-            ref CollectionOfCollections?[] collections = ref world->Collections;
-            for (int i = collections.Length - 1; i >= 0; i--)
+            uint slotCount = UnsafeList.GetCount(world->slots);
+            for (uint i = 0; i < slotCount; i++)
             {
-                if (collections[i] is CollectionOfCollections arrayCollection)
+                ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, i);
+                if (!slot.collections.IsDisposed)
                 {
-                    for (int t = 0; t < CollectionType.MaxTypes; t++)
-                    {
-                        ref UnsafeList* list = ref arrayCollection.lists[t];
-                        if (!UnsafeList.IsDisposed(list))
-                        {
-                            UnsafeList.Free(ref list);
-                        }
-                    }
+                    slot.collections.Dispose();
                 }
             }
 
             UnsafeList.Free(ref world->slots);
             UnsafeList.Free(ref world->freeEntities);
-            UnsafeList.Free(ref world->collectionArchetypes);
             UnsafeList.Free(ref world->events);
             UnsafeDictionary.Free(ref world->listeners);
             UnsafeDictionary.Free(ref world->listenersWithContext);
@@ -227,7 +222,7 @@ namespace Game
 
         public readonly override int GetHashCode()
         {
-            return HashCode.Combine(id, slots->GetHashCode(), components->GetHashCode(), collectionArchetypes->GetHashCode());
+            return HashCode.Combine(id, slots->GetHashCode(), components->GetHashCode());
         }
 
         public static void Submit(UnsafeWorld* world, Container message)
@@ -349,26 +344,14 @@ namespace Game
             ComponentChunk chunk = components[slot.componentsKey];
             chunk.Remove(entity);
 
-            ref CollectionOfCollections?[] arrays = ref world->Collections;
-            if (arrays.Length > entity.value - 1)
+            if (!slot.collections.IsDisposed)
             {
-                if (arrays[entity.value - 1] is CollectionOfCollections arrayCollection)
-                {
-                    for (int i = 0; i < CollectionType.MaxTypes; i++)
-                    {
-                        CollectionType type = new(i);
-                        if (slot.collectionTypes.Contains(type))
-                        {
-                            ref UnsafeList* array = ref arrayCollection.lists[i];
-                            UnsafeList.Free(ref array);
-                        }
-                    }
-                }
+                slot.collections.Dispose();
             }
 
             slot.id = default;
             slot.componentsKey = default;
-            slot.collectionTypes = default;
+            slot.collections = default;
             slot.version++;
             UnsafeList.Add(world->freeEntities, entity);
             EntityDestroyed(world, entity);
@@ -409,7 +392,6 @@ namespace Game
                 oldSlot.id = oldEntity;
                 oldSlot.version++;
                 oldSlot.componentsKey = componentsKey;
-                oldSlot.collectionTypes = default;
                 chunk.Add(oldEntity);
                 EntityCreated(world, oldEntity);
                 return oldEntity;
@@ -418,110 +400,84 @@ namespace Game
             {
                 uint index = UnsafeList.GetCount(world->slots) + 1;
                 EntityID newEntity = new(index);
-                EntityDescription newSlot = new(newEntity, 0, componentsKey, default);
+                EntityDescription newSlot = new(newEntity, 0, componentsKey);
                 UnsafeList.Add(world->slots, newSlot);
-
-                ref CollectionOfCollections?[] arrays = ref world->Collections;
-                if (arrays.Length <= index)
-                {
-                    Array.Resize(ref arrays, (int)index * 2);
-                }
-
                 chunk.Add(newEntity);
                 EntityCreated(world, newEntity);
                 return newEntity;
             }
         }
 
-        public static bool ContainsEntity(UnsafeWorld* world, EntityID id)
+        public static bool ContainsEntity(UnsafeWorld* world, EntityID entity)
         {
             Allocations.ThrowIfNull(world);
 
-            uint index = id.value - 1;
-            if (index >= UnsafeList.GetCount(world->slots))
+            uint position = entity.value - 1;
+            if (position >= UnsafeList.GetCount(world->slots))
             {
                 return false;
             }
 
-            ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->slots, index);
-            return entity.id == id;
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, position);
+            return slot.id == entity;
         }
 
-        public static UnmanagedList<T> CreateCollection<T>(UnsafeWorld* world, EntityID id) where T : unmanaged
+        public static UnmanagedList<T> CreateCollection<T>(UnsafeWorld* world, EntityID entity) where T : unmanaged
         {
             Allocations.ThrowIfNull(world);
-            ThrowIfEntityMissing(world, id);
+            ThrowIfEntityMissing(world, entity);
 
-            uint index = id.value - 1;
-            ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->slots, index);
-            CollectionType type = CollectionType.Get<T>();
-            if (entity.collectionTypes.Contains(type))
+            RuntimeType type = RuntimeType.Get<T>();
+            ThrowIfCollectionAlreadyPresent(world, entity, type);
+
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            if (slot.collections.IsDisposed)
             {
-                throw new InvalidOperationException($"Collection of type {type} already present on {id}.");
+                slot.collections = new();
             }
 
-            entity.collectionTypes.Add(type);
-            ref CollectionOfCollections? collections = ref world->Collections[index];
-            if (collections is null)
-            {
-                collections = new CollectionOfCollections();
-            }
-
-            ref UnsafeList* list = ref collections.lists[type.value - 1];
-            list = UnsafeList.Allocate(type.RuntimeType);
+            UnsafeList* list = slot.collections.CreateCollection(type);
             return new(list);
         }
 
-        public static bool ContainsCollection<T>(UnsafeWorld* world, EntityID id) where T : unmanaged
+        public static bool ContainsCollection<T>(UnsafeWorld* world, EntityID entity) where T : unmanaged
         {
             Allocations.ThrowIfNull(world);
-            ThrowIfEntityMissing(world, id);
+            ThrowIfEntityMissing(world, entity);
 
-            uint index = id.value - 1;
-            ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->slots, index);
-            return entity.collectionTypes.Contains<T>();
-        }
-
-        public static UnmanagedList<C> GetCollection<C>(UnsafeWorld* world, EntityID id) where C : unmanaged
-        {
-            Allocations.ThrowIfNull(world);
-            ThrowIfEntityMissing(world, id);
-
-            uint index = id.value - 1;
-            ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->slots, index);
-            CollectionType type = CollectionType.Get<C>();
-            if (entity.collectionTypes.Contains(type))
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            if (!slot.collections.IsDisposed)
             {
-                ref CollectionOfCollections array = ref world->Collections[index]!;
-                ref UnsafeList* list = ref array.lists[type.value - 1];
-                return new(list);
+                return slot.collections.Types.Contains(RuntimeType.Get<T>());
             }
             else
             {
-                throw new NullReferenceException($"Collection of type {type} not found on {id}.");
+                return false;
             }
         }
 
-        public static void DestroyCollection<C>(UnsafeWorld* world, EntityID id) where C : unmanaged
+        public static UnmanagedList<T> GetCollection<T>(UnsafeWorld* world, EntityID entity) where T : unmanaged
         {
             Allocations.ThrowIfNull(world);
-            ThrowIfEntityMissing(world, id);
+            ThrowIfEntityMissing(world, entity);
 
-            uint entityIndex = id.value - 1;
-            ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->slots, entityIndex);
-            CollectionType type = CollectionType.Get<C>();
-            if (entity.collectionTypes.Contains(type))
-            {
-                ref CollectionOfCollections? array = ref world->Collections[entityIndex]!;
-                ref UnsafeList* list = ref array.lists[type.value - 1];
-                UnsafeList.Free(ref list);
-                entity.collectionTypes.Remove(type);
-                list = default;
-            }
-            else
-            {
-                throw new NullReferenceException($"Array {type} not found.");
-            }
+            RuntimeType type = RuntimeType.Get<T>();
+            ThrowIfCollectionMissing(world, entity, type);
+
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            return slot.collections.GetCollection<T>();
+        }
+
+        public static void DestroyCollection<T>(UnsafeWorld* world, EntityID entity) where T : unmanaged
+        {
+            Allocations.ThrowIfNull(world);
+            ThrowIfEntityMissing(world, entity);
+            
+            RuntimeType type = RuntimeType.Get<T>();
+            ThrowIfCollectionMissing(world, entity, type);
+
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            slot.collections.RemoveCollection<T>();
         }
 
         public static ref T AddComponentRef<T>(UnsafeWorld* world, EntityID entity) where T : unmanaged
@@ -777,12 +733,12 @@ namespace Game
             }
         }
 
-        public struct EntityDescription(EntityID id, uint version, int componentsKey, CollectionTypeMask collectionTypes)
+        public struct EntityDescription(EntityID id, uint version, int componentsKey)
         {
             public EntityID id = id;
             public uint version = version;
             public int componentsKey = componentsKey;
-            public CollectionTypeMask collectionTypes = collectionTypes;
+            public EntityCollections collections;
         }
     }
 }
