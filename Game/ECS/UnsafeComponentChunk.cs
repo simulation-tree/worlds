@@ -150,33 +150,19 @@ namespace Game.ECS
             return new(components);
         }
 
-        public static ref T GetComponentRef<T>(UnsafeComponentChunk* chunk, EntityID entity) where T : unmanaged
+        public static void* GetComponent(UnsafeComponentChunk* chunk, EntityID entity, RuntimeType type)
         {
             Allocations.ThrowIfNull(chunk);
             uint index = chunk->entities.IndexOf(entity);
-            return ref GetComponentRef<T>(chunk, index);
+            return GetComponent(chunk, index, type);
         }
 
-        public static ref T GetComponentRef<T>(UnsafeComponentChunk* chunk, uint index) where T : unmanaged
-        {
-            Allocations.ThrowIfNull(chunk);
-            RuntimeType type = RuntimeType.Get<T>();
-            UnsafeList* components = GetComponents(chunk, type);
-            return ref UnsafeList.GetRef<T>(components, index);
-        }
-
-        public static Span<byte> GetComponentBytes(UnsafeComponentChunk* chunk, EntityID entity, RuntimeType type)
-        {
-            Allocations.ThrowIfNull(chunk);
-            uint index = chunk->entities.IndexOf(entity);
-            return GetComponentBytes(chunk, index, type);
-        }
-
-        public static Span<byte> GetComponentBytes(UnsafeComponentChunk* chunk, uint index, RuntimeType type)
+        public static void* GetComponent(UnsafeComponentChunk* chunk, uint index, RuntimeType type)
         {
             Allocations.ThrowIfNull(chunk);
             UnsafeList* components = GetComponents(chunk, type);
-            return UnsafeList.GetBytes(components, index);
+            nint address = UnsafeList.GetAddress(components);
+            return (void*)(address + (int)index * type.size);
         }
     }
 }

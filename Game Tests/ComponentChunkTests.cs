@@ -9,104 +9,104 @@ namespace Game
         [Test]
         public void AddEntityNoComponents()
         {
-            UnsafeComponentChunk* chunk = UnsafeComponentChunk.Allocate([]);
+            ComponentChunk chunk = new([]);
             EntityID entity = EntityID.Assume(7);
-            UnsafeComponentChunk.Add(chunk, entity);
-            Assert.That(UnsafeComponentChunk.GetEntities(chunk), Has.Count.EqualTo(1));
-            Assert.That(UnsafeComponentChunk.GetEntities(chunk)[0], Is.EqualTo(entity));
-            UnsafeComponentChunk.Free(ref chunk);
+            chunk.Add(entity);
+            Assert.That(chunk.Entities, Has.Count.EqualTo(1));
+            Assert.That(chunk.Entities[0], Is.EqualTo(entity));
+            chunk.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
         public void AddEntityWithComponents()
         {
-            UnsafeComponentChunk* chunk = UnsafeComponentChunk.Allocate([RuntimeType.Get<int>(), RuntimeType.Get<float>()]);
+            ComponentChunk chunk = new([RuntimeType.Get<int>(), RuntimeType.Get<float>()]);
             EntityID entity = EntityID.Assume(7);
-            UnsafeComponentChunk.Add(chunk, entity);
-            ref int intComponent = ref UnsafeComponentChunk.GetComponentRef<int>(chunk, entity);
-            ref float floatComponent = ref UnsafeComponentChunk.GetComponentRef<float>(chunk, entity);
+            chunk.Add(entity);
+            ref int intComponent = ref chunk.GetComponentRef<int>(entity);
+            ref float floatComponent = ref chunk.GetComponentRef<float>(entity);
             intComponent = 42;
             floatComponent = 3.14f;
-            Assert.That(UnsafeComponentChunk.GetEntities(chunk), Has.Count.EqualTo(1));
-            Assert.That(UnsafeComponentChunk.GetEntities(chunk)[0], Is.EqualTo(entity));
-            UnmanagedList<int> intComponents = UnsafeComponentChunk.GetComponents<int>(chunk);
-            UnmanagedList<float> floatComponents = UnsafeComponentChunk.GetComponents<float>(chunk);
+            Assert.That(chunk.Entities, Has.Count.EqualTo(1));
+            Assert.That(chunk.Entities[0], Is.EqualTo(entity));
+            UnmanagedList<int> intComponents = chunk.GetComponents<int>();
+            UnmanagedList<float> floatComponents = chunk.GetComponents<float>();
             Assert.That(intComponents, Has.Count.EqualTo(1));
             Assert.That(intComponents[0], Is.EqualTo(42));
             Assert.That(floatComponents, Has.Count.EqualTo(1));
             Assert.That(floatComponents[0], Is.EqualTo(3.14f));
-            UnsafeComponentChunk.Free(ref chunk);
+            chunk.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
         public void RemovingEntity()
         {
-            UnsafeComponentChunk* chunk = UnsafeComponentChunk.Allocate([RuntimeType.Get<int>(), RuntimeType.Get<float>()]);
+            ComponentChunk chunk = new([RuntimeType.Get<int>(), RuntimeType.Get<float>()]);
             EntityID entity = EntityID.Assume(7);
-            UnsafeComponentChunk.Add(chunk, entity);
-            ref int intComponent = ref UnsafeComponentChunk.GetComponentRef<int>(chunk, entity);
-            ref float floatComponent = ref UnsafeComponentChunk.GetComponentRef<float>(chunk, entity);
+            chunk.Add(entity);
+            ref int intComponent = ref chunk.GetComponentRef<int>(entity);
+            ref float floatComponent = ref chunk.GetComponentRef<float>(entity);
             intComponent = 42;
             floatComponent = 3.14f;
-            UnsafeComponentChunk.Remove(chunk, entity);
-            Assert.That(UnsafeComponentChunk.GetEntities(chunk), Is.Empty);
-            UnmanagedList<int> intComponents = UnsafeComponentChunk.GetComponents<int>(chunk);
-            UnmanagedList<float> floatComponents = UnsafeComponentChunk.GetComponents<float>(chunk);
+            chunk.Remove(entity);
+            Assert.That(chunk.Entities, Is.Empty);
+            UnmanagedList<int> intComponents = chunk.GetComponents<int>();
+            UnmanagedList<float> floatComponents = chunk.GetComponents<float>();
             Assert.That(intComponents, Is.Empty);
             Assert.That(floatComponents, Is.Empty);
-            UnsafeComponentChunk.Free(ref chunk);
+            chunk.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
         public void MovingEntity()
         {
-            UnsafeComponentChunk* chunkA = UnsafeComponentChunk.Allocate([]);
+            ComponentChunk chunkA = new([]);
             EntityID entity = EntityID.Assume(7);
-            UnsafeComponentChunk.Add(chunkA, entity);
+            chunkA.Add(entity);
 
-            UnsafeComponentChunk* chunkB = UnsafeComponentChunk.Allocate([RuntimeType.Get<int>()]);
-            UnsafeComponentChunk.Move(chunkA, entity, chunkB);
-            ref int intComponent = ref UnsafeComponentChunk.GetComponentRef<int>(chunkB, entity);
+            ComponentChunk chunkB = new([RuntimeType.Get<int>()]);
+            chunkA.Move(entity, chunkB);
+            ref int intComponent = ref chunkB.GetComponentRef<int>(entity);
             intComponent = 42;
 
-            Assert.That(UnsafeComponentChunk.GetEntities(chunkA), Is.Empty);
-            Assert.That(UnsafeComponentChunk.GetEntities(chunkB), Has.Count.EqualTo(1));
-            Assert.That(UnsafeComponentChunk.GetEntities(chunkB)[0], Is.EqualTo(entity));
-            UnmanagedList<int> intComponents = UnsafeComponentChunk.GetComponents<int>(chunkB);
+            Assert.That(chunkA.Entities, Is.Empty);
+            Assert.That(chunkB.Entities, Has.Count.EqualTo(1));
+            Assert.That(chunkB.Entities[0], Is.EqualTo(entity));
+            UnmanagedList<int> intComponents = chunkB.GetComponents<int>();
             Assert.That(intComponents, Has.Count.EqualTo(1));
             Assert.That(intComponents[0], Is.EqualTo(42));
 
-            UnsafeComponentChunk* chunkC = UnsafeComponentChunk.Allocate([RuntimeType.Get<float>(), RuntimeType.Get<int>()]);
-            UnsafeComponentChunk.Move(chunkB, entity, chunkC);
-            ref float floatComponent = ref UnsafeComponentChunk.GetComponentRef<float>(chunkC, entity);
+            ComponentChunk chunkC = new([RuntimeType.Get<float>(), RuntimeType.Get<int>()]);
+            chunkB.Move(entity, chunkC);
+            ref float floatComponent = ref chunkC.GetComponentRef<float>(entity);
             floatComponent = 3.14f;
 
-            Assert.That(UnsafeComponentChunk.GetEntities(chunkB), Is.Empty);
-            Assert.That(UnsafeComponentChunk.GetEntities(chunkC), Has.Count.EqualTo(1));
-            Assert.That(UnsafeComponentChunk.GetEntities(chunkC)[0], Is.EqualTo(entity));
-            UnmanagedList<float> floatComponents = UnsafeComponentChunk.GetComponents<float>(chunkC);
+            Assert.That(chunkB.Entities, Is.Empty);
+            Assert.That(chunkC.Entities, Has.Count.EqualTo(1));
+            Assert.That(chunkC.Entities[0], Is.EqualTo(entity));
+            UnmanagedList<float> floatComponents = chunkC.GetComponents<float>();
             Assert.That(floatComponents, Has.Count.EqualTo(1));
             Assert.That(floatComponents[0], Is.EqualTo(3.14f));
 
-            UnsafeComponentChunk.Free(ref chunkA);
-            UnsafeComponentChunk.Free(ref chunkB);
-            UnsafeComponentChunk.Free(ref chunkC);
+            chunkA.Dispose();
+            chunkB.Dispose();
+            chunkC.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
         public void HashTypes()
         {
-            UnsafeComponentChunk* chunkA = UnsafeComponentChunk.Allocate([RuntimeType.Get<int>(), RuntimeType.Get<float>()]);
-            UnsafeComponentChunk* chunkB = UnsafeComponentChunk.Allocate([RuntimeType.Get<float>(), RuntimeType.Get<int>()]);
-            int hashA = UnsafeComponentChunk.GetKey(chunkA);
-            int hashB = UnsafeComponentChunk.GetKey(chunkB);
+            ComponentChunk chunkA = new([RuntimeType.Get<int>(), RuntimeType.Get<float>()]);
+            ComponentChunk chunkB = new([RuntimeType.Get<float>(), RuntimeType.Get<int>()]);
+            int hashA = chunkA.Key;
+            int hashB = chunkB.Key;
             Assert.That(hashA, Is.EqualTo(hashB));
-            UnsafeComponentChunk.Free(ref chunkA);
-            UnsafeComponentChunk.Free(ref chunkB);
+            chunkA.Dispose();
+            chunkB.Dispose();
         }
     }
 }

@@ -553,6 +553,34 @@ namespace Game
             return ref destination.GetComponentRef<T>(index);
         }
 
+        public static void* AddComponent(UnsafeWorld* world, EntityID entity, RuntimeType type)
+        {
+            Allocations.ThrowIfNull(world);
+            ThrowIfEntityMissing(world, entity);
+
+            ThrowIfComponentAlreadyPresent(world, entity, type);
+
+            UnmanagedDictionary<int, ComponentChunk> components = GetComponentChunks(world);
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            int previousTypesKey = slot.componentsKey;
+            ComponentChunk current = components[previousTypesKey];
+            ReadOnlySpan<RuntimeType> oldTypes = current.Types;
+            Span<RuntimeType> newTypes = stackalloc RuntimeType[oldTypes.Length + 1];
+            oldTypes.CopyTo(newTypes);
+            newTypes[^1] = type;
+            int newTypesKey = RuntimeType.CalculateHash(newTypes);
+            slot.componentsKey = newTypesKey;
+
+            if (!components.TryGetValue(newTypesKey, out ComponentChunk destination))
+            {
+                destination = new(newTypes);
+                components.Add(newTypesKey, destination);
+            }
+
+            uint index = current.Move(entity, destination);
+            return destination.GetComponent(index, type);
+        }
+
         public static void RemoveComponent<T>(UnsafeWorld* world, EntityID entity) where T : unmanaged
         {
             Allocations.ThrowIfNull(world);

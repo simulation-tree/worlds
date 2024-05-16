@@ -55,17 +55,27 @@ namespace Game.ECS
 
         public readonly ref T GetComponentRef<T>(EntityID entity) where T : unmanaged
         {
-            return ref UnsafeComponentChunk.GetComponentRef<T>(value, entity);
+            void* component = UnsafeComponentChunk.GetComponent(value, entity, RuntimeType.Get<T>());
+            T* ptr = (T*)component;
+            return ref *ptr;
         }
 
         public readonly ref T GetComponentRef<T>(uint index) where T : unmanaged
         {
-            return ref UnsafeComponentChunk.GetComponentRef<T>(value, index);
+            void* component = GetComponent(index, RuntimeType.Get<T>());
+            T* ptr = (T*)component;
+            return ref *ptr;
         }
 
         public readonly Span<byte> GetComponentBytes(EntityID entity, RuntimeType type)
         {
-            return UnsafeComponentChunk.GetComponentBytes(value, entity, type);
+            void* component = UnsafeComponentChunk.GetComponent(value, entity, type);
+            return new Span<byte>(component, type.size);
+        }
+
+        public readonly void* GetComponent(uint index, RuntimeType type)
+        {
+            return UnsafeComponentChunk.GetComponent(value, index, type);
         }
     }
 }
