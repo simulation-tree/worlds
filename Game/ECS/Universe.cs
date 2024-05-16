@@ -9,7 +9,7 @@ namespace Game.ECS
         internal static readonly ConcurrentBag<uint> destroyedWorlds = [];
 
         //todo: replace these with unmanaged collections inside a World
-        internal static Dictionary<ComponentTypeMask, CollectionOfComponents>[] components = [];
+        //internal static Dictionary<ComponentTypeMask, CollectionOfComponents>[] components = [];
         internal static CollectionOfCollections?[][] collections = [];
     }
 }

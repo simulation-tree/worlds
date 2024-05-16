@@ -23,8 +23,8 @@ namespace Game
             StackTrace temp = new(3, true);
             if (temp.FrameCount > 0)
             {
-                string firstFrame = temp.GetFrame(0)!.GetFileName()!;
-                if (firstFrame.EndsWith("World.cs"))
+                string? firstFrame = temp.GetFrame(0)?.GetFileName();
+                if (firstFrame is not null && firstFrame.EndsWith("World.cs"))
                 {
                     temp = new(4, true);
                 }
@@ -68,9 +68,9 @@ namespace Game
         /// <summary>
         /// Returns a <see cref="EntityID"/> value that may or may not be valid.
         /// </summary>
-        public static EntityID Assume(uint value)
+        public unsafe static EntityID Assume(uint value)
         {
-            return new(value);
+            return *(EntityID*)&value;
         }
 
         public static bool operator ==(EntityID left, EntityID right)

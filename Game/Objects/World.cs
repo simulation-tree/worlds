@@ -1,6 +1,4 @@
-﻿using Game.ECS;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Runtime.CompilerServices;
 using Unmanaged;
 using Unmanaged.Collections;
@@ -72,118 +70,115 @@ namespace Game
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            UnmanagedList<UnsafeWorld.EntityDescription> slots = UnsafeWorld.GetEntitySlots(value);
-            UnmanagedList<EntityID> free = UnsafeWorld.GetFreeEntities(value);
-            uint id = UnsafeWorld.GetID(value);
-            uint entityCount = slots.Count - free.Count;
-            writer.WriteValue(entityCount);
-            for (uint i = 0; i < slots.Count; i++)
-            {
-                UnsafeWorld.EntityDescription description = slots[i];
-                EntityID entity = description.id;
-                if (UnsafeWorld.ContainsEntity(value, entity))
-                {
-                    writer.WriteValue(entity.value);
-                }
-            }
-
-            Dictionary<ComponentTypeMask, CollectionOfComponents> components = Universe.components[(int)id - 1];
-            UnmanagedList<ComponentTypeMask> componentArchetypes = UnsafeWorld.GetComponentArchetypes(value);
-            writer.WriteValue(componentArchetypes.Count);
-            for (uint a = 0; a < componentArchetypes.Count; a++)
-            {
-                ComponentTypeMask typeMask = componentArchetypes[a];
-                CollectionOfComponents data = components[typeMask];
-                UnmanagedList<EntityID> componentEntities = data.Entities;
-                writer.WriteValue(typeMask.value);
-                writer.WriteValue(componentEntities.Count);
-                for (uint e = 0; e < componentEntities.Count; e++)
-                {
-                    EntityID entity = componentEntities[e];
-                    writer.WriteValue(entity.value);
-                }
-
-                for (uint t = 0; t < ComponentType.MaxTypes; t++)
-                {
-                    ComponentType type = new(t + 1);
-                    if (typeMask.Contains(type))
-                    {
-                        UnsafeList* componentList = data.GetComponents(type);
-                        Span<byte> listBytes = UnsafeList.AsSpan<byte>(componentList, 0, componentEntities.Count * type.RuntimeType.size);
-                        writer.WriteSpan<byte>(listBytes);
-                    }
-                }
-            }
+            //UnmanagedList<UnsafeWorld.EntityDescription> slots = UnsafeWorld.GetEntitySlots(value);
+            //UnmanagedList<EntityID> free = UnsafeWorld.GetFreeEntities(value);
+            //uint id = UnsafeWorld.GetID(value);
+            //uint entityCount = slots.Count - free.Count;
+            //writer.WriteValue(entityCount);
+            //for (uint i = 0; i < slots.Count; i++)
+            //{
+            //    UnsafeWorld.EntityDescription description = slots[i];
+            //    EntityID entity = description.id;
+            //    if (UnsafeWorld.ContainsEntity(value, entity))
+            //    {
+            //        writer.WriteValue(entity.value);
+            //    }
+            //}
+            //
+            //UnmanagedDictionary<int, nint> components = UnsafeWorld.GetComponentArchetypes(value);
+            //writer.WriteValue(components.Count);
+            //for (uint a = 0; a < components.Count; a++)
+            //{
+            //    UnsafeComponentChunk* chunk = (UnsafeComponentChunk*)components.Values[(int)a];
+            //    UnmanagedList<EntityID> componentEntities = UnsafeComponentChunk.GetEntities(chunk);
+            //    writer.WriteValue(typeMask.value);
+            //    writer.WriteValue(componentEntities.Count);
+            //    for (uint e = 0; e < componentEntities.Count; e++)
+            //    {
+            //        EntityID entity = componentEntities[e];
+            //        writer.WriteValue(entity.value);
+            //    }
+            //
+            //    for (uint t = 0; t < ComponentType.MaxTypes; t++)
+            //    {
+            //        ComponentType type = new(t + 1);
+            //        if (typeMask.Contains(type))
+            //        {
+            //            UnsafeList* componentList = data.GetComponents(type);
+            //            Span<byte> listBytes = UnsafeList.AsSpan<byte>(componentList, 0, componentEntities.Count /* /type.RuntimeType.size);
+            //            writer.WriteSpan<byte>(listBytes);
+            //        }
+            //    }
+            //}
         }
 
         void IDeserializable.Deserialize(ref BinaryReader reader)
         {
-            value = UnsafeWorld.Allocate();
-            uint id = UnsafeWorld.GetID(value);
-            uint entityCount = reader.ReadValue<uint>();
-            uint currentEntityId = 1;
-            using UnmanagedList<EntityID> temporaryEntities = new();
-            for (uint i = 0; i < entityCount; i++)
-            {
-                uint entityId = reader.ReadValue<uint>();
-                uint catchup = entityId - currentEntityId;
-                for (uint j = 0; j < catchup; j++)
-                {
-                    EntityID temporaryEntity = UnsafeWorld.CreateEntity(value, default);
-                    temporaryEntities.Add(temporaryEntity);
-                }
-
-                UnsafeWorld.CreateEntity(value, default);
-                currentEntityId = entityId + 1;
-            }
-
-            for (uint i = 0; i < temporaryEntities.Count; i++)
-            {
-                UnsafeWorld.DestroyEntity(value, temporaryEntities[i]);
-            }
-
-            Dictionary<ComponentTypeMask, CollectionOfComponents> componentsMap = Universe.components[(int)id - 1];
-            UnmanagedList<ComponentTypeMask> archetypes = UnsafeWorld.GetComponentArchetypes(value);
-            uint componentArchetypeCount = reader.ReadValue<uint>();
-            for (uint i = 0; i < componentArchetypeCount; i++)
-            {
-                ComponentTypeMask typeMask = new(reader.ReadValue<ulong>());
-                uint componentEntityCount = reader.ReadValue<uint>();
-                CollectionOfComponents components = new(typeMask);
-                if (componentsMap.TryGetValue(typeMask, out var existingMap))
-                {
-                    existingMap.Dispose();
-                    componentsMap[typeMask] = components;
-                }
-                else
-                {
-                    componentsMap.Add(typeMask, components);
-                    archetypes.Add(typeMask);
-                }
-
-                for (uint j = 0; j < componentEntityCount; j++)
-                {
-                    EntityID entity = new(reader.ReadValue<uint>());
-                    components.Add(entity);
-                }
-
-                for (uint t = 0; t < ComponentType.MaxTypes; t++)
-                {
-                    ComponentType type = new(t + 1);
-                    if (typeMask.Contains(type))
-                    {
-                        RuntimeType runtimeType = type.RuntimeType;
-                        UnsafeList* componentList = components.GetComponents(type);
-                        ReadOnlySpan<byte> listBytes = reader.ReadSpan<byte>(runtimeType.size * componentEntityCount);
-                        UnsafeList.AddDefault(componentList, componentEntityCount);
-                        for (uint c = 0; c < componentEntityCount; c++)
-                        {
-                            Span<byte> elementBytes = UnsafeList.Get(componentList, c);
-                            listBytes.CopyTo(elementBytes);
-                        }
-                    }
-                }
-            }
+            //value = UnsafeWorld.Allocate();
+            //uint id = UnsafeWorld.GetID(value);
+            //uint entityCount = reader.ReadValue<uint>();
+            //uint currentEntityId = 1;
+            //using UnmanagedList<EntityID> temporaryEntities = new();
+            //for (uint i = 0; i < entityCount; i++)
+            //{
+            //    uint entityId = reader.ReadValue<uint>();
+            //    uint catchup = entityId - currentEntityId;
+            //    for (uint j = 0; j < catchup; j++)
+            //    {
+            //        EntityID temporaryEntity = UnsafeWorld.CreateEntity(value, default);
+            //        temporaryEntities.Add(temporaryEntity);
+            //    }
+            //
+            //    UnsafeWorld.CreateEntity(value, default);
+            //    currentEntityId = entityId + 1;
+            //}
+            //
+            //for (uint i = 0; i < temporaryEntities.Count; i++)
+            //{
+            //    UnsafeWorld.DestroyEntity(value, temporaryEntities[i]);
+            //}
+            //
+            //UnmanagedDictionary<int, nint> components = UnsafeWorld.GetComponentArchetypes(value);
+            //uint componentArchetypeCount = reader.ReadValue<uint>();
+            //for (uint i = 0; i < componentArchetypeCount; i++)
+            //{
+            //    ComponentTypeMask typeMask = new(reader.ReadValue<ulong>());
+            //    uint componentEntityCount = reader.ReadValue<uint>();
+            //    CollectionOfComponents components = new(typeMask);
+            //    if (componentsMap.TryGetValue(typeMask, out var existingMap))
+            //    {
+            //        existingMap.Dispose();
+            //        componentsMap[typeMask] = components;
+            //    }
+            //    else
+            //    {
+            //        componentsMap.Add(typeMask, components);
+            //        archetypes.Add(typeMask);
+            //    }
+            //
+            //    for (uint j = 0; j < componentEntityCount; j++)
+            //    {
+            //        EntityID entity = new(reader.ReadValue<uint>());
+            //        components.Add(entity);
+            //    }
+            //
+            //    for (uint t = 0; t < ComponentType.MaxTypes; t++)
+            //    {
+            //        ComponentType type = new(t + 1);
+            //        if (typeMask.Contains(type))
+            //        {
+            //            RuntimeType runtimeType = type.RuntimeType;
+            //            UnsafeList* componentList = components.GetComponents(type);
+            //            ReadOnlySpan<byte> listBytes = reader.ReadSpan<byte>(runtimeType.size * //componentEntityCount);
+            //            UnsafeList.AddDefault(componentList, componentEntityCount);
+            //            for (uint c = 0; c < componentEntityCount; c++)
+            //            {
+            //                Span<byte> elementBytes = UnsafeList.GetBytes(componentList, c);
+            //                listBytes.CopyTo(elementBytes);
+            //            }
+            //        }
+            //    }
+            //}
         }
 
         public readonly void Submit<T>(T message) where T : unmanaged
@@ -220,9 +215,9 @@ namespace Game
             return UnsafeWorld.Listen(value, pointer, eventType, callback);
         }
 
-        public readonly ComponentTypeMask GetComponents(EntityID id)
+        public readonly ReadOnlySpan<RuntimeType> GetComponents(EntityID entity)
         {
-            return UnsafeWorld.GetComponents(value, id);
+            return UnsafeWorld.GetComponents(value, entity);
         }
 
         /// <summary>
@@ -279,7 +274,7 @@ namespace Game
         public readonly bool TryGetFirst<T>(out EntityID id, out T found) where T : unmanaged
         {
             using UnmanagedList<EntityID> entities = new();
-            ReadEntities(ComponentTypeMask.Get<T>(), entities);
+            ReadEntities([RuntimeType.Get<T>()], entities);
             if (entities.Count > 0)
             {
                 id = entities[0];
@@ -319,73 +314,73 @@ namespace Game
             return list.AsSpan();
         }
 
-        public readonly void CreateCollection<T>(EntityID id, ReadOnlySpan<T> values) where T : unmanaged
+        public readonly void CreateCollection<T>(EntityID entity, ReadOnlySpan<T> values) where T : unmanaged
         {
-            UnmanagedList<T> list = UnsafeWorld.CreateCollection<T>(value, id);
+            UnmanagedList<T> list = UnsafeWorld.CreateCollection<T>(value, entity);
             list.AddRange(values);
         }
 
-        public readonly void AddToCollection<T>(EntityID id, T value) where T : unmanaged
+        public readonly void AddToCollection<T>(EntityID entity, T value) where T : unmanaged
         {
-            UnmanagedList<T> list = UnsafeWorld.GetCollection<T>(this.value, id);
+            UnmanagedList<T> list = UnsafeWorld.GetCollection<T>(this.value, entity);
             list.Add(value);
         }
 
-        public readonly bool ContainsCollection<T>(EntityID id) where T : unmanaged
+        public readonly bool ContainsCollection<T>(EntityID entity) where T : unmanaged
         {
-            return UnsafeWorld.ContainsCollection<T>(value, id);
+            return UnsafeWorld.ContainsCollection<T>(value, entity);
         }
 
-        public readonly UnmanagedList<T> GetCollection<T>(EntityID id) where T : unmanaged
+        public readonly UnmanagedList<T> GetCollection<T>(EntityID entity) where T : unmanaged
         {
-            return UnsafeWorld.GetCollection<T>(value, id);
+            return UnsafeWorld.GetCollection<T>(value, entity);
         }
 
-        public readonly void RemoveAtFromCollection<T>(EntityID id, uint index) where T : unmanaged
+        public readonly void RemoveAtFromCollection<T>(EntityID entity, uint index) where T : unmanaged
         {
-            UnmanagedList<T> list = UnsafeWorld.GetCollection<T>(this.value, id);
+            UnmanagedList<T> list = UnsafeWorld.GetCollection<T>(this.value, entity);
             list.RemoveAt(index);
         }
 
-        public readonly void DestroyCollection<T>(EntityID id) where T : unmanaged
+        public readonly void DestroyCollection<T>(EntityID entity) where T : unmanaged
         {
-            UnsafeWorld.DestroyCollection<T>(value, id);
+            UnsafeWorld.DestroyCollection<T>(value, entity);
         }
 
-        public readonly void ClearCollection<T>(EntityID id) where T : unmanaged
+        public readonly void ClearCollection<T>(EntityID entity) where T : unmanaged
         {
-            UnmanagedList<T> list = UnsafeWorld.GetCollection<T>(this.value, id);
+            UnmanagedList<T> list = UnsafeWorld.GetCollection<T>(this.value, entity);
             list.Clear();
         }
 
-        public readonly void AddComponent<T>(EntityID id, T component) where T : unmanaged
+        public readonly void AddComponent<T>(EntityID entity, T component) where T : unmanaged
         {
-            ref T target = ref UnsafeWorld.AddComponentRef<T>(value, id);
+            ref T target = ref UnsafeWorld.AddComponentRef<T>(value, entity);
             target = component;
         }
 
         /// <summary>
         /// Adds a default component and returns it by reference for initialization.
         /// </summary>
-        public readonly ref T AddComponentRef<T>(EntityID id) where T : unmanaged
+        public readonly ref T AddComponentRef<T>(EntityID entity) where T : unmanaged
         {
-            AddComponent<T>(id, default);
-            return ref GetComponentRef<T>(id);
+            AddComponent<T>(entity, default);
+            return ref GetComponentRef<T>(entity);
         }
 
-        public readonly void RemoveComponent<T>(EntityID id) where T : unmanaged
+        public readonly void RemoveComponent<T>(EntityID entity) where T : unmanaged
         {
-            UnsafeWorld.RemoveComponent<T>(value, id);
+            UnsafeWorld.RemoveComponent<T>(value, entity);
         }
 
-        public readonly bool ContainsComponent<T>(EntityID id) where T : unmanaged
+        public readonly bool ContainsComponent<T>(EntityID entity) where T : unmanaged
         {
-            return UnsafeWorld.ContainsComponent(value, id, ComponentType.Get<T>());
+            return ContainsComponent(entity, RuntimeType.Get<T>());
         }
 
-        public readonly bool ContainsComponent(EntityID id, ComponentType type)
+        public readonly bool ContainsComponent(EntityID entity, RuntimeType type)
         {
-            return UnsafeWorld.ContainsComponent(value, id, type);
+            return UnsafeWorld.ContainsComponent(value, entity, type);
         }
 
         public readonly ref T GetComponentRef<T>(EntityID id) where T : unmanaged
@@ -397,11 +392,11 @@ namespace Game
         /// Returns the component of the expected type if it exists, otherwise the default value
         /// is given.
         /// </summary>
-        public readonly T GetComponent<T>(EntityID id, T defaultValue = default) where T : unmanaged
+        public readonly T GetComponent<T>(EntityID entity, T defaultValue = default) where T : unmanaged
         {
-            if (ContainsComponent<T>(id))
+            if (ContainsComponent<T>(entity))
             {
-                return GetComponentRef<T>(id);
+                return GetComponentRef<T>(entity);
             }
             else
             {
@@ -409,16 +404,16 @@ namespace Game
             }
         }
 
-        public readonly Span<byte> GetComponentBytes(EntityID id, ComponentType type)
+        public readonly Span<byte> GetComponentBytes(EntityID entity, RuntimeType type)
         {
-            return UnsafeWorld.GetComponentBytes(value, id, type);
+            return UnsafeWorld.GetComponentBytes(value, entity, type);
         }
 
-        public readonly bool TryGetComponent<T>(EntityID id, out T found) where T : unmanaged
+        public readonly bool TryGetComponent<T>(EntityID entity, out T found) where T : unmanaged
         {
-            if (ContainsComponent<T>(id))
+            if (ContainsComponent<T>(entity))
             {
-                found = GetComponentRef<T>(id);
+                found = GetComponentRef<T>(entity);
                 return true;
             }
             else
@@ -428,12 +423,12 @@ namespace Game
             }
         }
 
-        public readonly ref C TryGetComponentRef<C>(EntityID id, out bool found) where C : unmanaged
+        public readonly ref C TryGetComponentRef<C>(EntityID entity, out bool found) where C : unmanaged
         {
-            if (ContainsComponent<C>(id))
+            if (ContainsComponent<C>(entity))
             {
                 found = true;
-                return ref GetComponentRef<C>(id);
+                return ref GetComponentRef<C>(entity);
             }
             else
             {
@@ -448,20 +443,20 @@ namespace Game
             existing = component;
         }
 
-        public readonly void ReadEntities(ComponentTypeMask componentTypes, UnmanagedList<EntityID> list)
+        public readonly void ReadEntities(ReadOnlySpan<RuntimeType> types, UnmanagedList<EntityID> list)
         {
-            QueryComponents(componentTypes, (in EntityID id) =>
+            QueryComponents(types, (in EntityID id) =>
             {
                 list.Add(id);
             });
         }
 
-        public readonly void QueryComponents(ComponentType type, QueryCallback action)
+        public readonly void QueryComponents(RuntimeType type, QueryCallback action)
         {
-            UnsafeWorld.QueryComponents(value, ComponentTypeMask.Get(type), action);
+            UnsafeWorld.QueryComponents(value, [type], action);
         }
 
-        public readonly void QueryComponents(ComponentTypeMask types, QueryCallback action)
+        public readonly void QueryComponents(ReadOnlySpan<RuntimeType> types, QueryCallback action)
         {
             UnsafeWorld.QueryComponents(value, types, action);
         }
@@ -480,27 +475,22 @@ namespace Game
             }
         }
 
-        public readonly void QueryComponents<C1>(QueryCallback action) where C1 : unmanaged
-        {
-            UnsafeWorld.QueryComponents<C1>(value, action);
-        }
-
-        public readonly void QueryComponents<C1>(QueryCallback<C1> action) where C1 : unmanaged
+        public readonly void QueryComponents<T1>(QueryCallback<T1> action) where T1 : unmanaged
         {
             UnsafeWorld.QueryComponents(value, action);
         }
 
-        public readonly void QueryComponents<C1, C2>(QueryCallback<C1, C2> action) where C1 : unmanaged where C2 : unmanaged
+        public readonly void QueryComponents<T1, T2>(QueryCallback<T1, T2> action) where T1 : unmanaged where T2 : unmanaged
         {
             UnsafeWorld.QueryComponents(value, action);
         }
 
-        public readonly void QueryComponents<C1, C2, C3>(QueryCallback<C1, C2, C3> action) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged
+        public readonly void QueryComponents<T1, T2, T3>(QueryCallback<T1, T2, T3> action) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
             UnsafeWorld.QueryComponents(value, action);
         }
 
-        public readonly void QueryComponents<C1, C2, C3, C4>(QueryCallback<C1, C2, C3, C4> action) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged
+        public readonly void QueryComponents<T1, T2, T3, T4>(QueryCallback<T1, T2, T3, T4> action) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
             UnsafeWorld.QueryComponents(value, action);
         }

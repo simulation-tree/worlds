@@ -21,7 +21,7 @@ namespace Game
         {
             using World world = new();
             EntityID entity = world.CreateEntity();
-            using ComponentObserver observer = new(world, ComponentType.Get<SimpleComponent>(), &OnAdded, &OnRemoved);
+            using ComponentObserver observer = new(world, RuntimeType.Get<SimpleComponent>(), &OnAdded, &OnRemoved);
             world.AddComponent(entity, new SimpleComponent());
             world.Submit(new Update());
             world.Poll();
@@ -41,7 +41,7 @@ namespace Game
         {
             using World world = new();
             EntityID entity = world.CreateEntity();
-            ComponentObserver observer = new(world, ComponentType.Get<SimpleComponent>(), &OnAdded, &OnRemoved);
+            ComponentObserver observer = new(world, RuntimeType.Get<SimpleComponent>(), &OnAdded, &OnRemoved);
             world.AddComponent(entity, new SimpleComponent());
             world.Submit(new Update());
             world.Poll();

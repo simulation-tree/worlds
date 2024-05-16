@@ -62,32 +62,6 @@ namespace Game
         }
 
         [Test]
-        public void SaveAndLoadTypes()
-        {
-            ComponentType.Reset();
-            ComponentType typeAA = ComponentType.Get<byte>();
-            ComponentType typeAB = ComponentType.Get<int>();
-            ComponentType typeAC = ComponentType.Get<float>();
-            RuntimeType?[] setA = ComponentType.Dump();
-
-            ComponentType.Reset();
-            ComponentType typeBA = ComponentType.Get<FixedString>();
-            ComponentType typeBB = ComponentType.Get<Apple>();
-            ComponentType typeBC = ComponentType.Get<byte>();
-            RuntimeType?[] setB = ComponentType.Dump();
-
-            ComponentType.Load(setA);
-            Assert.That(ComponentType.Get<byte>(), Is.EqualTo(typeAA));
-            Assert.That(ComponentType.Get<int>(), Is.EqualTo(typeAB));
-            Assert.That(ComponentType.Get<float>(), Is.EqualTo(typeAC));
-
-            ComponentType.Load(setB);
-            Assert.That(ComponentType.Get<FixedString>(), Is.EqualTo(typeBA));
-            Assert.That(ComponentType.Get<Apple>(), Is.EqualTo(typeBB));
-            Assert.That(ComponentType.Get<byte>(), Is.EqualTo(typeBC));
-        }
-
-        [Test]
         public void BinaryReadAndWrite()
         {
             Span<Fruit> fruits =
@@ -174,9 +148,9 @@ namespace Game
 
         public struct Types : IDisposable, ISerializable, IDeserializable
         {
-            private UnmanagedList<ComponentType> types;
+            private UnmanagedList<RuntimeType> types;
 
-            public readonly ReadOnlySpan<ComponentType> List => types.AsSpan();
+            public readonly ReadOnlySpan<RuntimeType> List => types.AsSpan();
 
             public Types()
             {
@@ -185,7 +159,7 @@ namespace Game
 
             public readonly void Add<T>() where T : unmanaged
             {
-                types.Add(ComponentType.Get<T>());
+                types.Add(RuntimeType.Get<T>());
             }
 
             public void Dispose()
@@ -199,7 +173,7 @@ namespace Game
                 types = new();
                 for (int i = 0; i < count; i++)
                 {
-                    ComponentType type = reader.ReadValue<ComponentType>();
+                    RuntimeType type = reader.ReadValue<RuntimeType>();
                     types.Add(type);
                 }
             }

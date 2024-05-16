@@ -1,4 +1,5 @@
-﻿using Unmanaged;
+﻿using System;
+using Unmanaged;
 using Unmanaged.Collections;
 
 namespace Game
@@ -18,16 +19,20 @@ namespace Game
             TestSystem system = new(world);
             world.Submit(new TestEvent(42));
             world.Poll();
-            Assert.That(system.received.Count, Is.EqualTo(1));
+            Assert.That(system.received, Has.Count.EqualTo(1));
             Assert.That(system.received[0].data, Is.EqualTo(42));
             world.Submit(new TestEvent(43));
             world.Poll();
-            Assert.That(system.received.Count, Is.EqualTo(2));
+            Assert.That(system.received, Has.Count.EqualTo(2));
             Assert.That(system.received[1].data, Is.EqualTo(43));
+            Span<TestEvent> received = stackalloc TestEvent[(int)system.received.Count];
+            system.received.CopyTo(received);
             system.Dispose();
             world.Submit(new TestEvent(44));
             world.Poll();
-            Assert.That(system.received.Count, Is.EqualTo(2));
+            Assert.That(received.ToArray(), Has.Length.EqualTo(2));
+            Assert.That(received[0].data, Is.EqualTo(42));
+            Assert.That(received[1].data, Is.EqualTo(43));
         }
 
         [Test]
@@ -38,8 +43,11 @@ namespace Game
             using TestSystem system2 = new(world);
             world.Submit(new TestEvent(42));
             world.Poll();
-            Assert.That(system1.received.Count, Is.EqualTo(1));
-            Assert.That(system2.received.Count, Is.EqualTo(1));
+            Assert.Multiple(() =>
+            {
+                Assert.That(system1.received, Has.Count.EqualTo(1));
+                Assert.That(system2.received, Has.Count.EqualTo(1));
+            });
         }
 
         public readonly struct TestEvent

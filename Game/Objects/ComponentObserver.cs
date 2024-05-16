@@ -19,7 +19,7 @@ namespace Game
             throw new NotImplementedException();
         }
 
-        public ComponentObserver(World world, ComponentType type, delegate* unmanaged<World, EntityID, void> added, delegate* unmanaged<World, EntityID, void> removed)
+        public ComponentObserver(World world, RuntimeType type, delegate* unmanaged<World, EntityID, void> added, delegate* unmanaged<World, EntityID, void> removed)
         {
             value = UnsafeComponentObserver.Allocate(world, type, added, removed);
             listener = world.Listen((nint)value, RuntimeType.Get<Update>(), &OnUpdate);
@@ -48,7 +48,7 @@ namespace Game
             UnmanagedList<EntityID> tracked = new(observer->tracked);
             UnmanagedList<EntityID> found = new(observer->found);
             found.Clear();
-            world.ReadEntities(ComponentTypeMask.Get(observer->type), found);
+            world.ReadEntities([observer->type], found);
             uint i = 0;
             for (i = 0; i < found.Count; i++)
             {
@@ -78,13 +78,13 @@ namespace Game
 
         private unsafe struct UnsafeComponentObserver
         {
-            public readonly ComponentType type;
+            public readonly RuntimeType type;
             public UnsafeList* tracked;
             public UnsafeList* found;
             public readonly delegate* unmanaged<World, EntityID, void> added;
             public readonly delegate* unmanaged<World, EntityID, void> removed;
 
-            private UnsafeComponentObserver(ComponentType type, UnsafeList* tracked, UnsafeList* found, delegate* unmanaged<World, EntityID, void> added, delegate* unmanaged<World, EntityID, void> removed)
+            private UnsafeComponentObserver(RuntimeType type, UnsafeList* tracked, UnsafeList* found, delegate* unmanaged<World, EntityID, void> added, delegate* unmanaged<World, EntityID, void> removed)
             {
                 this.type = type;
                 this.tracked = tracked;
@@ -93,7 +93,7 @@ namespace Game
                 this.removed = removed;
             }
 
-            public static UnsafeComponentObserver* Allocate(World world, ComponentType type, delegate* unmanaged<World, EntityID, void> added, delegate* unmanaged<World, EntityID, void> removed)
+            public static UnsafeComponentObserver* Allocate(World world, RuntimeType type, delegate* unmanaged<World, EntityID, void> added, delegate* unmanaged<World, EntityID, void> removed)
             {
                 UnsafeComponentObserver* value = Allocations.Allocate<UnsafeComponentObserver>();
                 UnsafeList* tracked = UnsafeList.Allocate<EntityID>();
