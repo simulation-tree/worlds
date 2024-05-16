@@ -30,7 +30,7 @@ namespace Game.ECS
                 componentArray[i] = (nint)UnsafeList.Allocate(type);
             }
 
-            int key = CalculateKey(types);
+            int key = RuntimeType.CalculateHash(types);
             UnsafeComponentChunk* chunk = Allocations.Allocate<UnsafeComponentChunk>();
             chunk[0] = new(entities, typeArray, componentArray, key);
             return chunk;
@@ -177,40 +177,6 @@ namespace Game.ECS
             Allocations.ThrowIfNull(chunk);
             UnsafeList* components = GetComponents(chunk, type);
             return UnsafeList.GetBytes(components, index);
-        }
-
-        public static int CalculateKey(ReadOnlySpan<RuntimeType> types)
-        {
-            int typeCount = types.Length;
-            Span<RuntimeType> typesSpan = stackalloc RuntimeType[typeCount];
-            types.CopyTo(typesSpan);
-            int hash = 0;
-            while (typeCount > 0)
-            {
-                uint max = 0;
-                int index = -1;
-                for (int i = 0; i < typeCount; i++)
-                {
-                    RuntimeType type = typesSpan[i];
-                    uint typeHash = type.AsRawValue();
-                    if (typeHash > max)
-                    {
-                        max = typeHash;
-                        index = i;
-                    }
-                }
-
-                unchecked
-                {
-                    hash += (int)max * 174440041;
-                }
-
-                RuntimeType last = typesSpan[typeCount - 1];
-                typesSpan[index] = last;
-                typeCount--;
-            }
-
-            return hash;
         }
     }
 }

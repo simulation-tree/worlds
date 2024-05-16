@@ -62,9 +62,9 @@ namespace Game
         private static void ThrowIfComponentMissing(UnsafeWorld* world, EntityID entity, RuntimeType type)
         {
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
-            UnsafeComponentChunk* chunk = (UnsafeComponentChunk*)UnsafeDictionary.GetValueRef<int, nint>(world->components, slot.componentsKey);
-            ReadOnlySpan<RuntimeType> types = UnsafeComponentChunk.GetTypes(chunk);
-            if (!types.Contains(type))
+            UnmanagedDictionary<int, ComponentChunk> components = GetComponentChunks(world);
+            ComponentChunk chunk = components[slot.componentsKey];
+            if (!chunk.Types.Contains(type))
             {
                 throw new NullReferenceException($"Component {type} not found on {entity}.");
             }
@@ -74,9 +74,9 @@ namespace Game
         private static void ThrowIfComponentAlreadyPresent(UnsafeWorld* world, EntityID entity, RuntimeType type)
         {
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
-            UnsafeComponentChunk* chunk = (UnsafeComponentChunk*)UnsafeDictionary.GetValueRef<int, nint>(world->components, slot.componentsKey);
-            ReadOnlySpan<RuntimeType> types = UnsafeComponentChunk.GetTypes(chunk);
-            if (types.Contains(type))
+            UnmanagedDictionary<int, ComponentChunk> components = GetComponentChunks(world);
+            ComponentChunk chunk = components[slot.componentsKey];
+            if (chunk.Types.Contains(type))
             {
                 throw new InvalidOperationException($"Component {type} already present on {entity}.");
             }
@@ -105,7 +105,7 @@ namespace Game
             return new(world->freeEntities);
         }
 
-        public static UnmanagedDictionary<int, nint> GetComponentArchetypes(UnsafeWorld* world)
+        public static UnmanagedDictionary<int, ComponentChunk> GetComponentChunks(UnsafeWorld* world)
         {
             Allocations.ThrowIfNull(world);
             return new(world->components);
@@ -137,11 +137,11 @@ namespace Game
             UnsafeList* events = UnsafeList.Allocate<Container>();
             UnsafeDictionary* listeners = UnsafeDictionary.Allocate<RuntimeType, nint>();
             UnsafeDictionary* listenersWithContext = UnsafeDictionary.Allocate<RuntimeType, nint>();
-            UnsafeDictionary* components = UnsafeDictionary.Allocate<int, nint>();
+            UnsafeDictionary* components = UnsafeDictionary.Allocate<int, ComponentChunk>();
 
-            UnsafeComponentChunk* defaultComponentChunk = UnsafeComponentChunk.Allocate([]);
-            int chunkKey = UnsafeComponentChunk.GetKey(defaultComponentChunk);
-            UnsafeDictionary.Add(components, chunkKey, (nint)defaultComponentChunk);
+            ComponentChunk defaultComponentChunk = new([]);
+            int chunkKey = defaultComponentChunk.Key;
+            UnsafeDictionary.Add(components, chunkKey, defaultComponentChunk);
 
             UnsafeList.AddDefault(collectionArchetypes);
             UnsafeWorld* world = Allocations.Allocate<UnsafeWorld>();
@@ -190,12 +190,12 @@ namespace Game
                 UnsafeList.Free(ref listenerList);
             }
 
-            uint componentChunkCount = UnsafeDictionary.GetCount(world->components);
-            for (uint i = 0; i < componentChunkCount; i++)
+            UnmanagedDictionary<int, ComponentChunk> components = GetComponentChunks(world);
+            for (uint i = 0; i < components.Count; i++)
             {
-                int key = UnsafeDictionary.GetKeyRef<int, nint>(world->components, i);
-                UnsafeComponentChunk* chunk = (UnsafeComponentChunk*)UnsafeDictionary.GetValueRef<int, nint>(world->components, key);
-                UnsafeComponentChunk.Free(ref chunk);
+                int key = components.Keys[(int)i];
+                ComponentChunk chunk = components.Values[(int)i];
+                chunk.Dispose();
             }
 
             ref CollectionOfCollections?[] collections = ref world->Collections;
@@ -339,26 +339,25 @@ namespace Game
             }
         }
 
-        public static void DestroyEntity(UnsafeWorld* world, EntityID id)
+        public static void DestroyEntity(UnsafeWorld* world, EntityID entity)
         {
             Allocations.ThrowIfNull(world);
-            ThrowIfEntityMissing(world, id);
+            ThrowIfEntityMissing(world, entity);
 
-            uint index = id.value - 1;
-            ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->slots, index);
-
-            UnsafeComponentChunk* chunk = (UnsafeComponentChunk*)UnsafeDictionary.GetValueRef<int, nint>(world->components, entity.componentsKey);
-            UnsafeComponentChunk.Remove(chunk, id);
+            UnmanagedDictionary<int, ComponentChunk> components = GetComponentChunks(world);
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            ComponentChunk chunk = components[slot.componentsKey];
+            chunk.Remove(entity);
 
             ref CollectionOfCollections?[] arrays = ref world->Collections;
-            if (arrays.Length > index)
+            if (arrays.Length > entity.value - 1)
             {
-                if (arrays[index] is CollectionOfCollections arrayCollection)
+                if (arrays[entity.value - 1] is CollectionOfCollections arrayCollection)
                 {
                     for (int i = 0; i < CollectionType.MaxTypes; i++)
                     {
                         CollectionType type = new(i);
-                        if (entity.collectionTypes.Contains(type))
+                        if (slot.collectionTypes.Contains(type))
                         {
                             ref UnsafeList* array = ref arrayCollection.lists[i];
                             UnsafeList.Free(ref array);
@@ -367,12 +366,12 @@ namespace Game
                 }
             }
 
-            entity.id = default;
-            entity.componentsKey = default;
-            entity.collectionTypes = default;
-            entity.version++;
-            UnsafeList.Add(world->freeEntities, id);
-            EntityDestroyed(world, id);
+            slot.id = default;
+            slot.componentsKey = default;
+            slot.collectionTypes = default;
+            slot.version++;
+            UnsafeList.Add(world->freeEntities, entity);
+            EntityDestroyed(world, entity);
         }
 
         public static ReadOnlySpan<RuntimeType> GetComponents(UnsafeWorld* world, EntityID id)
@@ -381,8 +380,9 @@ namespace Game
             ThrowIfEntityMissing(world, id);
 
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, id.value - 1);
-            UnsafeComponentChunk* chunk = (UnsafeComponentChunk*)UnsafeDictionary.GetValueRef<int, nint>(world->components, slot.componentsKey);
-            return UnsafeComponentChunk.GetTypes(chunk);
+            UnmanagedDictionary<int, ComponentChunk> components = GetComponentChunks(world);
+            ComponentChunk chunk = components[slot.componentsKey];
+            return chunk.Types;
         }
 
         /// <summary>
@@ -391,16 +391,12 @@ namespace Game
         public static EntityID CreateEntity(UnsafeWorld* world, ReadOnlySpan<RuntimeType> componentTypes)
         {
             Allocations.ThrowIfNull(world);
-            int componentsKey = UnsafeComponentChunk.CalculateKey(componentTypes);
-            nint chunk;
-            if (!UnsafeDictionary.ContainsKey<int, nint>(world->components, componentsKey))
+            int componentsKey = RuntimeType.CalculateHash(componentTypes);
+            UnmanagedDictionary<int, ComponentChunk> components = GetComponentChunks(world);
+            if (!components.TryGetValue(componentsKey, out ComponentChunk chunk))
             {
-                chunk = (nint)UnsafeComponentChunk.Allocate(componentTypes);
-                UnsafeDictionary.Add(world->components, componentsKey, chunk);
-            }
-            else
-            {
-                chunk = UnsafeDictionary.GetValueRef<int, nint>(world->components, componentsKey);
+                chunk = new(componentTypes);
+                components.Add(componentsKey, chunk);
             }
 
             if (UnsafeList.GetCount(world->freeEntities) > 0)
@@ -409,13 +405,12 @@ namespace Game
                 EntityID oldEntity = UnsafeList.Get<EntityID>(world->freeEntities, 0);
                 UnsafeList.RemoveAtBySwapping(world->freeEntities, 0);
 
-                uint oldIndex = oldEntity.value - 1;
-                ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->slots, oldIndex);
-                entity.id = oldEntity;
-                entity.version++;
-                entity.componentsKey = componentsKey;
-                entity.collectionTypes = default;
-                UnsafeComponentChunk.Add((UnsafeComponentChunk*)chunk, oldEntity);
+                ref EntityDescription oldSlot = ref UnsafeList.GetRef<EntityDescription>(world->slots, oldEntity.value - 1);
+                oldSlot.id = oldEntity;
+                oldSlot.version++;
+                oldSlot.componentsKey = componentsKey;
+                oldSlot.collectionTypes = default;
+                chunk.Add(oldEntity);
                 EntityCreated(world, oldEntity);
                 return oldEntity;
             }
@@ -432,7 +427,7 @@ namespace Game
                     Array.Resize(ref arrays, (int)index * 2);
                 }
 
-                UnsafeComponentChunk.Add((UnsafeComponentChunk*)chunk, newEntity);
+                chunk.Add(newEntity);
                 EntityCreated(world, newEntity);
                 return newEntity;
             }
@@ -537,29 +532,25 @@ namespace Game
             RuntimeType addingType = RuntimeType.Get<T>();
             ThrowIfComponentAlreadyPresent(world, entity, addingType);
 
+            UnmanagedDictionary<int, ComponentChunk> components = GetComponentChunks(world);
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
             int previousTypesKey = slot.componentsKey;
-            UnsafeComponentChunk* current = (UnsafeComponentChunk*)UnsafeDictionary.GetValueRef<int, nint>(world->components, previousTypesKey);
-            ReadOnlySpan<RuntimeType> oldTypes = UnsafeComponentChunk.GetTypes(current);
+            ComponentChunk current = components[previousTypesKey];
+            ReadOnlySpan<RuntimeType> oldTypes = current.Types;
             Span<RuntimeType> newTypes = stackalloc RuntimeType[oldTypes.Length + 1];
             oldTypes.CopyTo(newTypes);
             newTypes[^1] = addingType;
-            int newTypesKey = UnsafeComponentChunk.CalculateKey(newTypes);
+            int newTypesKey = RuntimeType.CalculateHash(newTypes);
             slot.componentsKey = newTypesKey;
 
-            nint destination;
-            if (UnsafeDictionary.ContainsKey<int, nint>(world->components, newTypesKey))
+            if (!components.TryGetValue(newTypesKey, out ComponentChunk destination))
             {
-                destination = UnsafeDictionary.GetValueRef<int, nint>(world->components, newTypesKey);
-            }
-            else
-            {
-                destination = (nint)UnsafeComponentChunk.Allocate(newTypes);
-                UnsafeDictionary.Add(world->components, newTypesKey, destination);
+                destination = new(newTypes);
+                components.Add(newTypesKey, destination);
             }
 
-            uint index = UnsafeComponentChunk.Move(current, entity, (UnsafeComponentChunk*)destination);
-            return ref UnsafeComponentChunk.GetComponentRef<T>((UnsafeComponentChunk*)destination, index);
+            uint index = current.Move(entity, destination);
+            return ref destination.GetComponentRef<T>(index);
         }
 
         public static void RemoveComponent<T>(UnsafeWorld* world, EntityID entity) where T : unmanaged
@@ -570,10 +561,11 @@ namespace Game
             RuntimeType removingType = RuntimeType.Get<T>();
             ThrowIfComponentMissing(world, entity, removingType);
 
+            UnmanagedDictionary<int, ComponentChunk> components = GetComponentChunks(world);
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
             int previousTypesKey = slot.componentsKey;
-            UnsafeComponentChunk* current = (UnsafeComponentChunk*)UnsafeDictionary.GetValueRef<int, nint>(world->components, previousTypesKey);
-            ReadOnlySpan<RuntimeType> oldTypes = UnsafeComponentChunk.GetTypes(current);
+            ComponentChunk current = components[previousTypesKey];
+            ReadOnlySpan<RuntimeType> oldTypes = current.Types;
             Span<RuntimeType> newTypes = stackalloc RuntimeType[oldTypes.Length - 1];
             int count = 0;
             for (int i = 0; i < oldTypes.Length; i++)
@@ -585,21 +577,16 @@ namespace Game
                 }
             }
 
-            int newTypesKey = UnsafeComponentChunk.CalculateKey(newTypes);
+            int newTypesKey = RuntimeType.CalculateHash(newTypes);
             slot.componentsKey = newTypesKey;
 
-            nint destination;
-            if (UnsafeDictionary.ContainsKey<int, nint>(world->components, newTypesKey))
+            if (!components.TryGetValue(newTypesKey, out ComponentChunk destination))
             {
-                destination = UnsafeDictionary.GetValueRef<int, nint>(world->components, newTypesKey);
-            }
-            else
-            {
-                destination = (nint)UnsafeComponentChunk.Allocate(newTypes);
-                UnsafeDictionary.Add(world->components, newTypesKey, destination);
+                destination = new(newTypes);
+                components.Add(newTypesKey, destination);
             }
 
-            UnsafeComponentChunk.Move(current, entity, (UnsafeComponentChunk*)destination);
+            current.Move(entity, destination);
         }
 
         public static bool ContainsComponent(UnsafeWorld* world, EntityID entity, RuntimeType type)
@@ -608,10 +595,10 @@ namespace Game
             ThrowIfEntityMissing(world, entity);
 
             uint index = entity.value - 1;
+            UnmanagedDictionary<int, ComponentChunk> components = GetComponentChunks(world);
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, index);
-            UnsafeComponentChunk* chunk = (UnsafeComponentChunk*)UnsafeDictionary.GetValueRef<int, nint>(world->components, slot.componentsKey);
-            ReadOnlySpan<RuntimeType> types = UnsafeComponentChunk.GetTypes(chunk);
-            return types.Contains(type);
+            ComponentChunk chunk = components[slot.componentsKey];
+            return chunk.Types.Contains(type);
         }
 
         public static ref T GetComponentRef<T>(UnsafeWorld* world, EntityID entity) where T : unmanaged
@@ -622,9 +609,10 @@ namespace Game
             RuntimeType type = RuntimeType.Get<T>();
             ThrowIfComponentMissing(world, entity, type);
 
+            UnmanagedDictionary<int, ComponentChunk> components = GetComponentChunks(world);
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
-            UnsafeComponentChunk* chunk = (UnsafeComponentChunk*)UnsafeDictionary.GetValueRef<int, nint>(world->components, slot.componentsKey);
-            return ref UnsafeComponentChunk.GetComponentRef<T>(chunk, entity);
+            ComponentChunk chunk = components[slot.componentsKey];
+            return ref chunk.GetComponentRef<T>(entity);
         }
 
         public static Span<byte> GetComponentBytes(UnsafeWorld* world, EntityID entity, RuntimeType type)
@@ -633,9 +621,10 @@ namespace Game
             ThrowIfEntityMissing(world, entity);
             ThrowIfComponentMissing(world, entity, type);
 
+            UnmanagedDictionary<int, ComponentChunk> components = GetComponentChunks(world);
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
-            UnsafeComponentChunk* chunk = (UnsafeComponentChunk*)UnsafeDictionary.GetValueRef<int, nint>(world->components, slot.componentsKey);
-            return UnsafeComponentChunk.GetComponentBytes(chunk, entity, type);
+            ComponentChunk chunk = components[slot.componentsKey];
+            return chunk.GetComponentBytes(entity, type);
         }
 
         private static bool Contains(ReadOnlySpan<RuntimeType> container, ReadOnlySpan<RuntimeType> values)
@@ -654,15 +643,14 @@ namespace Game
         public static void QueryComponents(UnsafeWorld* world, ReadOnlySpan<RuntimeType> types, QueryCallback action)
         {
             Allocations.ThrowIfNull(world);
-            uint count = UnsafeDictionary.GetCount(world->components);
-            for (uint i = 0; i < count; i++)
+            UnmanagedDictionary<int, ComponentChunk> components = GetComponentChunks(world);
+            for (uint i = 0; i < components.Count; i++)
             {
-                int key = UnsafeDictionary.GetKeyRef<int, nint>(world->components, i);
-                UnsafeComponentChunk* chunk = (UnsafeComponentChunk*)UnsafeDictionary.GetValueRef<int, nint>(world->components, key);
-                ReadOnlySpan<RuntimeType> chunkTypes = UnsafeComponentChunk.GetTypes(chunk);
-                if (Contains(chunkTypes, types))
+                int key = components.Keys[(int)i];
+                ComponentChunk chunk = components.Values[(int)i];
+                if (Contains(chunk.Types, types))
                 {
-                    UnmanagedList<EntityID> entities = UnsafeComponentChunk.GetEntities(chunk);
+                    UnmanagedList<EntityID> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
                         action(entities[e]);
@@ -674,19 +662,18 @@ namespace Game
         public static void QueryComponents<T1>(UnsafeWorld* world, QueryCallback<T1> action) where T1 : unmanaged
         {
             Allocations.ThrowIfNull(world);
-            uint count = UnsafeDictionary.GetCount(world->components);
             ReadOnlySpan<RuntimeType> types = [RuntimeType.Get<T1>()];
-            for (uint i = 0; i < count; i++)
+            UnmanagedDictionary<int, ComponentChunk> components = GetComponentChunks(world);
+            for (uint i = 0; i < components.Count; i++)
             {
-                int key = UnsafeDictionary.GetKeyRef<int, nint>(world->components, i);
-                UnsafeComponentChunk* chunk = (UnsafeComponentChunk*)UnsafeDictionary.GetValueRef<int, nint>(world->components, key);
-                ReadOnlySpan<RuntimeType> chunkTypes = UnsafeComponentChunk.GetTypes(chunk);
-                if (Contains(chunkTypes, types))
+                int key = components.Keys[(int)i];
+                ComponentChunk chunk = components.Values[(int)i];
+                if (Contains(chunk.Types, types))
                 {
-                    UnmanagedList<EntityID> entities = UnsafeComponentChunk.GetEntities(chunk);
+                    UnmanagedList<EntityID> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
-                        ref T1 t1 = ref UnsafeComponentChunk.GetComponentRef<T1>(chunk, e);
+                        ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
                         action(entities[e], ref t1);
                     }
                 }
@@ -696,20 +683,19 @@ namespace Game
         public static void QueryComponents<T1, T2>(UnsafeWorld* world, QueryCallback<T1, T2> action) where T1 : unmanaged where T2 : unmanaged
         {
             Allocations.ThrowIfNull(world);
-            uint count = UnsafeDictionary.GetCount(world->components);
             ReadOnlySpan<RuntimeType> types = [RuntimeType.Get<T1>(), RuntimeType.Get<T2>()];
-            for (uint i = 0; i < count; i++)
+            UnmanagedDictionary<int, ComponentChunk> components = GetComponentChunks(world);
+            for (uint i = 0; i < components.Count; i++)
             {
-                int key = UnsafeDictionary.GetKeyRef<int, nint>(world->components, i);
-                UnsafeComponentChunk* chunk = (UnsafeComponentChunk*)UnsafeDictionary.GetValueRef<int, nint>(world->components, key);
-                ReadOnlySpan<RuntimeType> chunkTypes = UnsafeComponentChunk.GetTypes(chunk);
-                if (Contains(chunkTypes, types))
+                int key = components.Keys[(int)i];
+                ComponentChunk chunk = components.Values[(int)i];
+                if (Contains(chunk.Types, types))
                 {
-                    UnmanagedList<EntityID> entities = UnsafeComponentChunk.GetEntities(chunk);
+                    UnmanagedList<EntityID> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
-                        ref T1 t1 = ref UnsafeComponentChunk.GetComponentRef<T1>(chunk, e);
-                        ref T2 t2 = ref UnsafeComponentChunk.GetComponentRef<T2>(chunk, e);
+                        ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
+                        ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
                         action(entities[e], ref t1, ref t2);
                     }
                 }
@@ -719,21 +705,20 @@ namespace Game
         public static void QueryComponents<T1, T2, T3>(UnsafeWorld* world, QueryCallback<T1, T2, T3> action) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
             Allocations.ThrowIfNull(world);
-            uint count = UnsafeDictionary.GetCount(world->components);
             ReadOnlySpan<RuntimeType> types = [RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>()];
-            for (uint i = 0; i < count; i++)
+            UnmanagedDictionary<int, ComponentChunk> components = GetComponentChunks(world);
+            for (uint i = 0; i < components.Count; i++)
             {
-                int key = UnsafeDictionary.GetKeyRef<int, nint>(world->components, i);
-                UnsafeComponentChunk* chunk = (UnsafeComponentChunk*)UnsafeDictionary.GetValueRef<int, nint>(world->components, key);
-                ReadOnlySpan<RuntimeType> chunkTypes = UnsafeComponentChunk.GetTypes(chunk);
-                if (Contains(chunkTypes, types))
+                int key = components.Keys[(int)i];
+                ComponentChunk chunk = components.Values[(int)i];
+                if (Contains(chunk.Types, types))
                 {
-                    UnmanagedList<EntityID> entities = UnsafeComponentChunk.GetEntities(chunk);
+                    UnmanagedList<EntityID> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
-                        ref T1 t1 = ref UnsafeComponentChunk.GetComponentRef<T1>(chunk, e);
-                        ref T2 t2 = ref UnsafeComponentChunk.GetComponentRef<T2>(chunk, e);
-                        ref T3 t3 = ref UnsafeComponentChunk.GetComponentRef<T3>(chunk, e);
+                        ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
+                        ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
+                        ref T3 t3 = ref chunk.GetComponentRef<T3>(e);
                         action(entities[e], ref t1, ref t2, ref t3);
                     }
                 }
@@ -743,22 +728,21 @@ namespace Game
         public static void QueryComponents<T1, T2, T3, T4>(UnsafeWorld* world, QueryCallback<T1, T2, T3, T4> action) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
             Allocations.ThrowIfNull(world);
-            uint count = UnsafeDictionary.GetCount(world->components);
             ReadOnlySpan<RuntimeType> types = [RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>(), RuntimeType.Get<T4>()];
-            for (uint i = 0; i < count; i++)
+            UnmanagedDictionary<int, ComponentChunk> components = GetComponentChunks(world);
+            for (uint i = 0; i < components.Count; i++)
             {
-                int key = UnsafeDictionary.GetKeyRef<int, nint>(world->components, i);
-                UnsafeComponentChunk* chunk = (UnsafeComponentChunk*)UnsafeDictionary.GetValueRef<int, nint>(world->components, key);
-                ReadOnlySpan<RuntimeType> chunkTypes = UnsafeComponentChunk.GetTypes(chunk);
-                if (Contains(chunkTypes, types))
+                int key = components.Keys[(int)i];
+                ComponentChunk chunk = components.Values[(int)i];
+                if (Contains(chunk.Types, types))
                 {
-                    UnmanagedList<EntityID> entities = UnsafeComponentChunk.GetEntities(chunk);
+                    UnmanagedList<EntityID> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
-                        ref T1 t1 = ref UnsafeComponentChunk.GetComponentRef<T1>(chunk, e);
-                        ref T2 t2 = ref UnsafeComponentChunk.GetComponentRef<T2>(chunk, e);
-                        ref T3 t3 = ref UnsafeComponentChunk.GetComponentRef<T3>(chunk, e);
-                        ref T4 t4 = ref UnsafeComponentChunk.GetComponentRef<T4>(chunk, e);
+                        ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
+                        ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
+                        ref T3 t3 = ref chunk.GetComponentRef<T3>(e);
+                        ref T4 t4 = ref chunk.GetComponentRef<T4>(e);
                         action(entities[e], ref t1, ref t2, ref t3, ref t4);
                     }
                 }

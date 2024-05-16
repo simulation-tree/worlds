@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Game.ECS;
+using System;
 using System.Runtime.CompilerServices;
 using Unmanaged;
 using Unmanaged.Collections;
@@ -70,26 +71,26 @@ namespace Game
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            //UnmanagedList<UnsafeWorld.EntityDescription> slots = UnsafeWorld.GetEntitySlots(value);
-            //UnmanagedList<EntityID> free = UnsafeWorld.GetFreeEntities(value);
-            //uint id = UnsafeWorld.GetID(value);
-            //uint entityCount = slots.Count - free.Count;
-            //writer.WriteValue(entityCount);
-            //for (uint i = 0; i < slots.Count; i++)
-            //{
-            //    UnsafeWorld.EntityDescription description = slots[i];
-            //    EntityID entity = description.id;
-            //    if (UnsafeWorld.ContainsEntity(value, entity))
-            //    {
-            //        writer.WriteValue(entity.value);
-            //    }
-            //}
-            //
+            UnmanagedList<UnsafeWorld.EntityDescription> slots = UnsafeWorld.GetEntitySlots(value);
+            UnmanagedList<EntityID> free = UnsafeWorld.GetFreeEntities(value);
+            uint id = UnsafeWorld.GetID(value);
+            uint entityCount = slots.Count - free.Count;
+            writer.WriteValue(entityCount);
+            for (uint i = 0; i < slots.Count; i++)
+            {
+                UnsafeWorld.EntityDescription description = slots[i];
+                EntityID entity = description.id;
+                if (UnsafeWorld.ContainsEntity(value, entity))
+                {
+                    writer.WriteValue(entity.value);
+                }
+            }
+            
             //UnmanagedDictionary<int, nint> components = UnsafeWorld.GetComponentArchetypes(value);
             //writer.WriteValue(components.Count);
             //for (uint a = 0; a < components.Count; a++)
             //{
-            //    UnsafeComponentChunk* chunk = (UnsafeComponentChunk*)components.Values[(int)a];
+            //    //UnsafeComponentChunk* chunk = (UnsafeComponentChunk*)components.Values[(int)a];
             //    UnmanagedList<EntityID> componentEntities = UnsafeComponentChunk.GetEntities(chunk);
             //    writer.WriteValue(typeMask.value);
             //    writer.WriteValue(componentEntities.Count);
@@ -105,7 +106,7 @@ namespace Game
             //        if (typeMask.Contains(type))
             //        {
             //            UnsafeList* componentList = data.GetComponents(type);
-            //            Span<byte> listBytes = UnsafeList.AsSpan<byte>(componentList, 0, componentEntities.Count /* /type.RuntimeType.size);
+            //            Span<byte> listBytes = UnsafeList.AsSpan<byte>(componentList, 0, componentEntities.Count /* //type.RuntimeType.size);
             //            writer.WriteSpan<byte>(listBytes);
             //        }
             //    }
