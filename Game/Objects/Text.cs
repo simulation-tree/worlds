@@ -6,39 +6,41 @@ namespace Game
     public unsafe struct Text : IDisposable
     {
         private Allocation allocation;
+        private uint length;
 
         public uint Length
         {
             get
             {
-                ReadOnlySpan<char> span = allocation.AsSpan<char>();
-                return (uint)span.Length;
+                return length;
             }
             set
             {
-                uint length = Length;
                 allocation.Resize(value * sizeof(char));
-                Span<char> span = allocation.AsSpan<char>();
+                Span<char> span = allocation.AsSpan<char>(0, value);
                 if (value > length)
                 {
                     span.Slice((int)length).Clear();
                 }
+
+                length = value;
             }
         }
 
         public Text(ReadOnlySpan<char> value)
         {
             allocation = Allocation.Create(value);
+            length = (uint)value.Length;
         }
 
-        public ReadOnlySpan<char> AsSpan()
+        public readonly ReadOnlySpan<char> AsSpan()
         {
-            return allocation.AsSpan<char>();
+            return allocation.AsSpan<char>(0, length);
         }
 
-        public override string ToString()
+        public readonly override string ToString()
         {
-            return allocation.AsSpan<char>().ToString();
+            return AsSpan().ToString();
         }
 
         public readonly void Dispose()
@@ -48,10 +50,11 @@ namespace Game
 
         public void Append(ReadOnlySpan<char> value)
         {
-            uint length = Length;
-            allocation.Resize((length + (uint)value.Length) * sizeof(char));
-            Span<char> span = allocation.AsSpan<char>();
-            value.CopyTo(span[(int)length..]);
+            uint previousLength = Length;
+            allocation.Resize((previousLength + (uint)value.Length) * sizeof(char));
+            length = (uint)(previousLength + value.Length);
+            Span<char> span = allocation.AsSpan<char>(0, length);
+            value.CopyTo(span[(int)previousLength..]);
         }
 
         public void Clear()
@@ -61,7 +64,7 @@ namespace Game
 
         public readonly int IndexOf(char value)
         {
-            ReadOnlySpan<char> span = allocation.AsSpan<char>();
+            ReadOnlySpan<char> span = AsSpan();
             for (int i = 0; i < span.Length; i++)
             {
                 if (span[i] == value)
@@ -85,7 +88,7 @@ namespace Game
                 return -1;
             }
 
-            ReadOnlySpan<char> span = allocation.AsSpan<char>();
+            ReadOnlySpan<char> span = AsSpan();
             for (int i = 0; i <= span.Length - value.Length; i++)
             {
                 if (span.Slice(i).StartsWith(value))

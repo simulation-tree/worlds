@@ -41,9 +41,9 @@ namespace Game
             this.value = pointer;
         }
 
-        public readonly void Dispose()
+        public void Dispose()
         {
-            UnsafeWorld.Free(value);
+            UnsafeWorld.Free(ref value);
         }
 
         public readonly override bool Equals(object? obj)

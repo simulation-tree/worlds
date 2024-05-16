@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Unmanaged;
 
 namespace Game
@@ -26,7 +27,17 @@ namespace Game
 
         public readonly void Dispose()
         {
+            ThrowIfDisposed();
             UnsafeWorld.Unlisten(world.value, this);
+        }
+
+        [Conditional("TRACK_ALLOCATIONS")]
+        private readonly void ThrowIfDisposed()
+        {
+            if (IsDisposed)
+            {
+                throw new ObjectDisposedException(nameof(Listener));
+            }
         }
 
         public readonly void Invoke(World world, Container message)
@@ -34,17 +45,17 @@ namespace Game
             UnsafeListener.Invoke(value, world, message);
         }
 
-        public override bool Equals(object? obj)
+        public readonly override bool Equals(object? obj)
         {
             return obj is Listener listener && Equals(listener);
         }
 
-        public bool Equals(Listener other)
+        public readonly bool Equals(Listener other)
         {
             return value == other.value;
         }
 
-        public unsafe override int GetHashCode()
+        public readonly override int GetHashCode()
         {
             return new IntPtr(value).GetHashCode();
         }

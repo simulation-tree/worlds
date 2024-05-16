@@ -1,15 +1,18 @@
 ﻿using Game.Events;
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Unmanaged;
 using Unmanaged.Collections;
 
 namespace Game
 {
-    public readonly unsafe struct ComponentObserver : IDisposable
+    public unsafe struct ComponentObserver : IDisposable
     {
-        private readonly UnsafeComponentObserver* value;
+        private UnsafeComponentObserver* value;
         private readonly ListenerWithContext listener;
+
+        public readonly bool IsDisposed => UnsafeComponentObserver.IsDisposed(value);
 
         public ComponentObserver()
         {
@@ -22,10 +25,20 @@ namespace Game
             listener = world.Listen((nint)value, RuntimeType.Get<Update>(), &OnUpdate);
         }
 
-        public readonly void Dispose()
+        public void Dispose()
         {
+            ThrowIfDisposed();
             listener.Dispose();
-            UnsafeComponentObserver.Free(value);
+            UnsafeComponentObserver.Free(ref value);
+        }
+
+        [Conditional("TRACK_ALLOCATIONS")]
+        private readonly void ThrowIfDisposed()
+        {
+            if (IsDisposed)
+            {
+                throw new ObjectDisposedException(nameof(ComponentObserver));
+            }
         }
 
         [UnmanagedCallersOnly]
@@ -55,7 +68,7 @@ namespace Game
                     if (!found.Contains(id))
                     {
                         observer->removed(world, id);
-                        tracked.RemoveAt(i);
+                        tracked.RemoveAtBySwapping(i);
                     }
 
                     i--;
@@ -66,8 +79,8 @@ namespace Game
         private unsafe struct UnsafeComponentObserver
         {
             public readonly ComponentType type;
-            public readonly UnsafeList* tracked;
-            public readonly UnsafeList* found;
+            public UnsafeList* tracked;
+            public UnsafeList* found;
             public readonly delegate* unmanaged<World, EntityID, void> added;
             public readonly delegate* unmanaged<World, EntityID, void> removed;
 
@@ -82,9 +95,7 @@ namespace Game
 
             public static UnsafeComponentObserver* Allocate(World world, ComponentType type, delegate* unmanaged<World, EntityID, void> added, delegate* unmanaged<World, EntityID, void> removed)
             {
-                nint pointer = Marshal.AllocHGlobal(sizeof(UnsafeComponentObserver));
-                Allocations.Register(pointer);
-                UnsafeComponentObserver* value = (UnsafeComponentObserver*)pointer;
+                UnsafeComponentObserver* value = Allocations.Allocate<UnsafeComponentObserver>();
                 UnsafeList* tracked = UnsafeList.Allocate<EntityID>();
                 UnsafeList* found = UnsafeList.Allocate<EntityID>();
                 value[0] = new(type, tracked, found, added, removed);
@@ -93,16 +104,15 @@ namespace Game
 
             public static bool IsDisposed(UnsafeComponentObserver* observer)
             {
-                return Allocations.IsNull((nint)observer);
+                return Allocations.IsNull(observer);
             }
 
-            public static void Free(UnsafeComponentObserver* observer)
+            public static void Free(ref UnsafeComponentObserver* observer)
             {
-                Allocations.ThrowIfNull((nint)observer);
-                UnsafeList.Free(observer->tracked);
-                UnsafeList.Free(observer->found);
-                Marshal.FreeHGlobal((nint)observer);
-                Allocations.Unregister((nint)observer);
+                Allocations.ThrowIfNull(observer);
+                UnsafeList.Free(ref observer->tracked);
+                UnsafeList.Free(ref observer->found);
+                Allocations.Free(ref observer);
             }
         }
     }

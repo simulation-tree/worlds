@@ -92,7 +92,7 @@ namespace Game
         [Test]
         public void DestroyEntityWithCollection()
         {
-            using World world = new();
+            World world = new();
             EntityID entity = world.CreateEntity();
             UnmanagedList<SimpleComponent> list = world.CreateCollection<SimpleComponent>(entity);
             list.Add(new("Hello World 1"));
@@ -100,12 +100,14 @@ namespace Game
             world.DestroyEntity(entity);
             Assert.That(world.ContainsEntity(entity), Is.False);
             Assert.That(list.IsDisposed, Is.True);
+            world.Dispose();
+            Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
         public void DestroyCollectionTwice()
         {
-            using World world = new();
+            World world = new();
             EntityID entity = world.CreateEntity();
             UnmanagedList<SimpleComponent> list = world.CreateCollection<SimpleComponent>(entity);
             list.Add(new("apple"));
@@ -117,6 +119,8 @@ namespace Game
             Assert.That(anotherList.Count, Is.EqualTo(1));
             world.DestroyEntity(another);
             Assert.That(anotherList.IsDisposed, Is.True);
+            world.Dispose();
+            Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]

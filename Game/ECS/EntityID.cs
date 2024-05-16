@@ -1,4 +1,8 @@
-﻿using System;
+﻿#if !DEBUG
+#define IGNORE_STACKTRACES
+#endif
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -15,7 +19,7 @@ namespace Game
         internal EntityID(uint value)
         {
             this.value = value;
-#if DEBUG
+#if !IGNORE_STACKTRACES
             StackTrace temp = new(3, true);
             if (temp.FrameCount > 0)
             {
@@ -32,7 +36,7 @@ namespace Game
 
         public override string ToString()
         {
-#if DEBUG
+#if !IGNORE_STACKTRACES
             if (DebugToString.createStackTraces.TryGetValue(this, out StackTrace? stackTrace))
             {
                 return $"{value} ({stackTrace})";
@@ -79,7 +83,7 @@ namespace Game
             return !(left == right);
         }
 
-#if DEBUG
+#if !IGNORE_STACKTRACES
         private static class DebugToString
         {
             public static readonly Dictionary<EntityID, StackTrace> createStackTraces = [];

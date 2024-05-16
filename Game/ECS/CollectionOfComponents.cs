@@ -49,14 +49,14 @@ namespace Game.ECS
         public void Remove(EntityID entity)
         {
             uint index = entities.IndexOf(entity);
-            entities.RemoveAt(index);
+            entities.RemoveAtBySwapping(index);
             for (uint i = 0; i < ComponentTypeMask.MaxValues; i++)
             {
                 ComponentType type = new(i + 1);
                 if (types.Contains(type))
                 {
                     UnsafeList* list = (UnsafeList*)lists[i];
-                    UnsafeList.RemoveAt(list, index);
+                    UnsafeList.RemoveAtBySwapping(list, index);
                 }
             }
         }
@@ -110,7 +110,7 @@ namespace Game.ECS
             }
 
             uint oldIndex = entities.IndexOf(id);
-            entities.RemoveAt(oldIndex);
+            entities.RemoveAtBySwapping(oldIndex);
 
             uint newIndex = destination.entities.Count;
             destination.entities.Add(id);
@@ -136,7 +136,7 @@ namespace Game.ECS
                 {
                     //remove
                     UnsafeList* oldList = (UnsafeList*)lists[i];
-                    UnsafeList.RemoveAt(oldList, oldIndex);
+                    UnsafeList.RemoveAtBySwapping(oldList, oldIndex);
                 }
             }
 
@@ -151,8 +151,8 @@ namespace Game.ECS
                 ComponentType type = new(i + 1);
                 if (types.Contains(type))
                 {
-                    UnsafeList* list = (UnsafeList*)lists[i];
-                    UnsafeList.Free(list);
+                    UnsafeList* list = (UnsafeList*)lists.GetRef(i);
+                    UnsafeList.Free(ref list);
                 }
             }
 

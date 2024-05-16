@@ -20,13 +20,13 @@ namespace Game
         public static event DestroyedCallback EntityDestroyed = delegate { };
 
         private readonly uint id;
-        private readonly UnsafeList* slots;
-        private readonly UnsafeList* freeEntities;
-        private readonly UnsafeList* componentArchetypes;
-        private readonly UnsafeList* collectionArchetypes;
-        private readonly UnsafeList* events;
-        private readonly UnsafeDictionary* listeners;
-        private readonly UnsafeDictionary* listenersWithContext;
+        private UnsafeList* slots;
+        private UnsafeList* freeEntities;
+        private UnsafeList* componentArchetypes;
+        private UnsafeList* collectionArchetypes;
+        private UnsafeList* events;
+        private UnsafeDictionary* listeners;
+        private UnsafeDictionary* listenersWithContext;
 
         private readonly ref Dictionary<ComponentTypeMask, CollectionOfComponents> Components => ref Universe.components[(int)id - 1];
         private readonly ref CollectionOfCollections?[] Collections => ref Universe.collections[(int)id - 1];
@@ -151,7 +151,7 @@ namespace Game
             return world;
         }
 
-        public static void Free(UnsafeWorld* world)
+        public static void Free(ref UnsafeWorld* world)
         {
             Allocations.ThrowIfNull(world);
             uint eventCount = UnsafeList.GetCount(world->events);
@@ -168,11 +168,12 @@ namespace Game
                 UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, eventType);
                 while (UnsafeList.GetCount(listenerList) > 0)
                 {
-                    UnsafeList.RemoveAt(listenerList, 0, out Listener removedListener);
-                    UnsafeListener.Free(removedListener.value);
+                    UnsafeList.RemoveAtBySwapping(listenerList, 0, out Listener removedListener);
+                    UnsafeListener* unsafeValue = removedListener.value;
+                    UnsafeListener.Free(ref unsafeValue);
                 }
 
-                UnsafeList.Free(listenerList);
+                UnsafeList.Free(ref listenerList);
             }
 
             listenerTypesCount = UnsafeDictionary.GetCount(world->listenersWithContext);
@@ -182,11 +183,12 @@ namespace Game
                 UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listenersWithContext, eventType);
                 while (UnsafeList.GetCount(listenerList) > 0)
                 {
-                    UnsafeList.RemoveAt(listenerList, 0, out ListenerWithContext removedListener);
-                    UnsafeListener.Free(removedListener.value);
+                    UnsafeList.RemoveAtBySwapping(listenerList, 0, out ListenerWithContext removedListener);
+                    UnsafeListener* unsafeValue = removedListener.value;
+                    UnsafeListener.Free(ref unsafeValue);
                 }
 
-                UnsafeList.Free(listenerList);
+                UnsafeList.Free(ref listenerList);
             }
 
             uint id = world->id;
@@ -210,22 +212,21 @@ namespace Game
                         ref UnsafeList* list = ref arrayCollection.lists[t];
                         if (!UnsafeList.IsDisposed(list))
                         {
-                            UnsafeList.Free(list);
-                            list = default;
+                            UnsafeList.Free(ref list);
                         }
                     }
                 }
             }
 
-            UnsafeList.Free(world->slots);
-            UnsafeList.Free(world->freeEntities);
-            UnsafeList.Free(world->componentArchetypes);
-            UnsafeList.Free(world->collectionArchetypes);
-            UnsafeList.Free(world->events);
-            UnsafeDictionary.Free(world->listeners);
-            UnsafeDictionary.Free(world->listenersWithContext);
+            UnsafeList.Free(ref world->slots);
+            UnsafeList.Free(ref world->freeEntities);
+            UnsafeList.Free(ref world->componentArchetypes);
+            UnsafeList.Free(ref world->collectionArchetypes);
+            UnsafeList.Free(ref world->events);
+            UnsafeDictionary.Free(ref world->listeners);
+            UnsafeDictionary.Free(ref world->listenersWithContext);
             components.Clear();
-            Allocations.Free(world);
+            Allocations.Free(ref world);
             Universe.destroyedWorlds.Add(id);
         }
 
@@ -318,7 +319,8 @@ namespace Game
             if (UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listeners, listener.eventType))
             {
                 UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, listener.eventType);
-                UnsafeListener.Free(listener.value);
+                UnsafeListener* unsafeListener = listener.value;
+                UnsafeListener.Free(ref unsafeListener);
                 UnsafeList.Remove(listenerList, listener);
             }
             else
@@ -332,7 +334,8 @@ namespace Game
             if (UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listenersWithContext, listener.eventType))
             {
                 UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listenersWithContext, listener.eventType);
-                UnsafeListener.Free(listener.value);
+                UnsafeListener* unsafeListener = listener.value;
+                UnsafeListener.Free(ref unsafeListener);
                 UnsafeList.Remove(listenerList, listener);
             }
             else
@@ -363,8 +366,7 @@ namespace Game
                         if (entity.collectionTypes.Contains(type))
                         {
                             ref UnsafeList* array = ref arrayCollection.lists[i];
-                            UnsafeList.Free(array);
-                            array = default;
+                            UnsafeList.Free(ref array);
                         }
                     }
                 }
@@ -407,7 +409,7 @@ namespace Game
             {
                 //reuse destroyed entity branch
                 EntityID oldId = UnsafeList.Get<EntityID>(world->freeEntities, 0);
-                UnsafeList.RemoveAt(world->freeEntities, 0);
+                UnsafeList.RemoveAtBySwapping(world->freeEntities, 0);
 
                 uint oldIndex = oldId.value - 1;
                 ref EntityDescription entity = ref UnsafeList.GetRef<EntityDescription>(world->slots, oldIndex);
@@ -517,7 +519,7 @@ namespace Game
             {
                 ref CollectionOfCollections? array = ref world->Collections[entityIndex]!;
                 ref UnsafeList* list = ref array.lists[type.value - 1];
-                UnsafeList.Free(list);
+                UnsafeList.Free(ref list);
                 entity.collectionTypes.Remove(type);
                 list = default;
             }
