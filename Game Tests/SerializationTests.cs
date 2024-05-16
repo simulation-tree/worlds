@@ -26,6 +26,8 @@ namespace Game
             EntityID c = world.CreateEntity();
             world.AddComponent(c, new Apple("Goodbye, World!"));
             world.DestroyEntity(temporary);
+            EntityID list = world.CreateEntity();
+            world.CreateCollection<char>(list, "Well hello there list");
 
             List<EntityID> oldEntities = new();
             List<(EntityID, Apple)> apples = new();
@@ -59,6 +61,42 @@ namespace Game
 
             Assert.That(newEntities, Is.EquivalentTo(oldEntities));
             Assert.That(newApples, Is.EquivalentTo(apples));
+            Assert.That(loadedWorld.ContainsCollection<char>(list), Is.True);
+            Assert.That(loadedWorld.GetCollection<char>(list).AsSpan().ToArray(), Is.EqualTo("Well hello there list"));
+        }
+
+        [Test]
+        public void AppendSavedWorld()
+        {
+            using World prefabWorld = new();
+            EntityID a = prefabWorld.CreateEntity();
+            prefabWorld.AddComponent(a, new Fruit(42));
+            prefabWorld.AddComponent(a, new Apple("Hello, World!"));
+            prefabWorld.AddComponent(a, new Prefab());
+
+            using BinaryWriter writer = new();
+            writer.WriteSerializable(prefabWorld);
+
+            using World world = new();
+            EntityID b = world.CreateEntity();
+            world.AddComponent(b, new Fruit(43));
+
+            EntityID c = world.CreateEntity();
+            world.AddComponent(c, new Apple("Goodbye, World!"));
+
+            using BinaryReader reader = new(writer.AsSpan());
+            using World loadedWorld = reader.ReadSerializable<World>();
+            world.Append(loadedWorld);
+
+            world.TryGetFirst<Prefab>(out EntityID prefabEntity, out _);
+            Assert.That(world.ContainsEntity(prefabEntity), Is.True);
+            Assert.That(world.GetComponent<Fruit>(prefabEntity).data, Is.EqualTo(42));
+            Assert.That(world.GetComponent<Apple>(prefabEntity).data, Is.EqualTo("Hello, World!"));
+        }
+
+        public struct Prefab
+        {
+
         }
 
         [Test]

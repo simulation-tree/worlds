@@ -10,7 +10,7 @@ namespace Game
         public void AddEntityNoComponents()
         {
             ComponentChunk chunk = new([]);
-            EntityID entity = EntityID.Assume(7);
+            EntityID entity = new(7);
             chunk.Add(entity);
             Assert.That(chunk.Entities, Has.Count.EqualTo(1));
             Assert.That(chunk.Entities[0], Is.EqualTo(entity));
@@ -22,7 +22,7 @@ namespace Game
         public void AddEntityWithComponents()
         {
             ComponentChunk chunk = new([RuntimeType.Get<int>(), RuntimeType.Get<float>()]);
-            EntityID entity = EntityID.Assume(7);
+            EntityID entity = new(7);
             chunk.Add(entity);
             ref int intComponent = ref chunk.GetComponentRef<int>(entity);
             ref float floatComponent = ref chunk.GetComponentRef<float>(entity);
@@ -44,7 +44,7 @@ namespace Game
         public void RemovingEntity()
         {
             ComponentChunk chunk = new([RuntimeType.Get<int>(), RuntimeType.Get<float>()]);
-            EntityID entity = EntityID.Assume(7);
+            EntityID entity = new(7);
             chunk.Add(entity);
             ref int intComponent = ref chunk.GetComponentRef<int>(entity);
             ref float floatComponent = ref chunk.GetComponentRef<float>(entity);
@@ -64,7 +64,7 @@ namespace Game
         public void MovingEntity()
         {
             ComponentChunk chunkA = new([]);
-            EntityID entity = EntityID.Assume(7);
+            EntityID entity = new(7);
             chunkA.Add(entity);
 
             ComponentChunk chunkB = new([RuntimeType.Get<int>()]);

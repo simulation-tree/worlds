@@ -1,5 +1,10 @@
-﻿using Game.ECS;
+﻿#if !DEBUG
+#define IGNORE_STACKTRACES
+#endif
+
+using Game.ECS;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Unmanaged;
 using Unmanaged.Collections;
@@ -8,6 +13,10 @@ namespace Game
 {
     public unsafe struct UnsafeWorld
     {
+#if !IGNORE_STACKTRACES
+        internal static readonly Dictionary<EntityID, StackTrace> createStackTraces = [];
+#endif
+
         /// <summary>
         /// Invoked when any entity is created in any world.
         /// </summary>
@@ -382,9 +391,9 @@ namespace Game
                 components.Add(componentsKey, chunk);
             }
 
+            EntityID createdEntity;
             if (UnsafeList.GetCount(world->freeEntities) > 0)
             {
-                //reuses a previously destroyed entity
                 EntityID oldEntity = UnsafeList.Get<EntityID>(world->freeEntities, 0);
                 UnsafeList.RemoveAtBySwapping(world->freeEntities, 0);
 
@@ -393,8 +402,7 @@ namespace Game
                 oldSlot.version++;
                 oldSlot.componentsKey = componentsKey;
                 chunk.Add(oldEntity);
-                EntityCreated(world, oldEntity);
-                return oldEntity;
+                createdEntity = oldEntity;
             }
             else
             {
@@ -403,9 +411,25 @@ namespace Game
                 EntityDescription newSlot = new(newEntity, 0, componentsKey);
                 UnsafeList.Add(world->slots, newSlot);
                 chunk.Add(newEntity);
-                EntityCreated(world, newEntity);
-                return newEntity;
+                createdEntity = newEntity;
             }
+
+#if !IGNORE_STACKTRACES
+            StackTrace stackTrace = new(2, true);
+            if (stackTrace.FrameCount > 0)
+            {
+                string? firstFrame = stackTrace.GetFrame(0)?.GetFileName();
+                if (firstFrame is not null && firstFrame.EndsWith("World.cs"))
+                {
+                    stackTrace = new(3, true);
+                }
+            }
+
+            createStackTraces[createdEntity] = stackTrace;
+#endif
+
+            EntityCreated(world, createdEntity);
+            return createdEntity;
         }
 
         public static bool ContainsEntity(UnsafeWorld* world, EntityID entity)
@@ -422,12 +446,11 @@ namespace Game
             return slot.id == entity;
         }
 
-        public static UnmanagedList<T> CreateCollection<T>(UnsafeWorld* world, EntityID entity) where T : unmanaged
+        public static UnsafeList* CreateCollection(UnsafeWorld* world, EntityID entity, RuntimeType type, uint initialCapacity = 1)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
 
-            RuntimeType type = RuntimeType.Get<T>();
             ThrowIfCollectionAlreadyPresent(world, entity, type);
 
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
@@ -436,8 +459,7 @@ namespace Game
                 slot.collections = new();
             }
 
-            UnsafeList* list = slot.collections.CreateCollection(type);
-            return new(list);
+            return slot.collections.CreateCollection(type, initialCapacity);
         }
 
         public static bool ContainsCollection<T>(UnsafeWorld* world, EntityID entity) where T : unmanaged
@@ -456,23 +478,21 @@ namespace Game
             }
         }
 
-        public static UnmanagedList<T> GetCollection<T>(UnsafeWorld* world, EntityID entity) where T : unmanaged
+        public static UnsafeList* GetCollection(UnsafeWorld* world, EntityID entity, RuntimeType type)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
-
-            RuntimeType type = RuntimeType.Get<T>();
             ThrowIfCollectionMissing(world, entity, type);
 
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
-            return slot.collections.GetCollection<T>();
+            return slot.collections.GetCollection(type);
         }
 
         public static void DestroyCollection<T>(UnsafeWorld* world, EntityID entity) where T : unmanaged
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
-            
+
             RuntimeType type = RuntimeType.Get<T>();
             ThrowIfCollectionMissing(world, entity, type);
 

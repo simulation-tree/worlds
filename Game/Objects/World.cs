@@ -88,6 +88,22 @@ namespace Game
                 }
             }
 
+            for (uint i = 0; i < slots.Count; i++)
+            {
+                UnsafeWorld.EntityDescription slot = slots[i];
+                if (!slot.collections.IsDisposed)
+                {
+                    for (int j = 0; j < slot.collections.Types.Length; j++)
+                    {
+                        RuntimeType type = slot.collections.Types[j];
+                        if (!uniqueTypes.Contains(type))
+                        {
+                            uniqueTypes.Add(type);
+                        }
+                    }
+                }
+            }
+
             writer.WriteValue(uniqueTypes.Count);
             for (uint a = 0; a < uniqueTypes.Count; a++)
             {
@@ -120,6 +136,26 @@ namespace Game
                         writer.WriteValue(uniqueTypes.IndexOf(type));
                         Span<byte> componentBytes = chunk.GetComponentBytes(entity, type);
                         writer.WriteSpan<byte>(componentBytes);
+                    }
+
+                    if (slot.collections.IsDisposed)
+                    {
+                        writer.WriteValue(0u);
+                    }
+                    else
+                    {
+                        writer.WriteValue((uint)slot.collections.Types.Length);
+                        for (int j = 0; j < slot.collections.Types.Length; j++)
+                        {
+                            RuntimeType type = slot.collections.Types[j];
+                            writer.WriteValue(uniqueTypes.IndexOf(type));
+                            UnsafeList* list = slot.collections.GetCollection(type);
+                            uint listCount = UnsafeList.GetCount(list);
+                            writer.WriteValue(listCount);
+                            nint address = UnsafeList.GetAddress(list);
+                            Span<byte> bytes = new((void*)address, (int)(listCount * type.size));
+                            writer.WriteSpan<byte>(bytes);
+                        }
                     }
                 }
             }
@@ -167,12 +203,69 @@ namespace Game
                     componentBytes.CopyTo(destinationBytes);
                 }
 
+                uint collectionCount = reader.ReadValue<uint>();
+                for (uint j = 0; j < collectionCount; j++)
+                {
+                    uint typeIndex = reader.ReadValue<uint>();
+                    RuntimeType type = uniqueTypes[typeIndex];
+                    uint listCount = reader.ReadValue<uint>();
+                    uint byteCount = listCount * type.size;
+                    UnsafeList* list = UnsafeWorld.CreateCollection(value, entity, type, listCount);
+                    UnsafeList.AddDefault(list, listCount);
+                    nint address = UnsafeList.GetAddress(list);
+                    Span<byte> destinationBytes = new((void*)address, (int)byteCount);
+                    ReadOnlySpan<byte> sourceBytes = reader.ReadSpan<byte>(byteCount);
+                    sourceBytes.CopyTo(destinationBytes);
+                }
+
                 currentEntityId = entityId + 1;
             }
-            
+
             for (uint i = 0; i < temporaryEntities.Count; i++)
             {
                 UnsafeWorld.DestroyEntity(value, temporaryEntities[i]);
+            }
+        }
+
+        /// <summary>
+        /// Creates new entities with the data from the given world.
+        /// </summary>
+        public readonly void Append(World world)
+        {
+            UnmanagedList<UnsafeWorld.EntityDescription> slots = UnsafeWorld.GetEntitySlots(world.value);
+            UnmanagedDictionary<int, ComponentChunk> components = UnsafeWorld.GetComponentChunks(world.value);
+            for (uint i = 0; i < slots.Count; i++)
+            {
+                UnsafeWorld.EntityDescription slot = slots[i];
+                if (world.ContainsEntity(slot.id))
+                {
+                    EntityID entity = CreateEntity();
+                    ComponentChunk chunk = components[slot.componentsKey];
+                    for (int j = 0; j < chunk.Types.Length; j++)
+                    {
+                        RuntimeType type = chunk.Types[j];
+                        Span<byte> bytes = chunk.GetComponentBytes(slot.id, type);
+                        void* component = UnsafeWorld.AddComponent(value, entity, type);
+                        Span<byte> destination = new(component, type.size);
+                        bytes.CopyTo(destination);
+                    }
+
+                    if (!slot.collections.IsDisposed)
+                    {
+                        for (int j = 0; j < slot.collections.Types.Length; j++)
+                        {
+                            RuntimeType type = slot.collections.Types[j];
+                            UnsafeList* list = slot.collections.GetCollection(type);
+                            uint count = UnsafeList.GetCount(list);
+                            UnsafeList* destination = UnsafeWorld.CreateCollection(value, entity, type, count);
+                            nint address = UnsafeList.GetAddress(destination);
+                            Span<byte> destinationBytes = new((void*)address, (int)(count * type.size));
+                            nint sourceAddress = UnsafeList.GetAddress(list);
+                            Span<byte> sourceBytes = new((void*)sourceAddress, (int)(count * type.size));
+                            sourceBytes.CopyTo(destinationBytes);
+                        }
+                    }
+                }
             }
         }
 
@@ -294,30 +387,30 @@ namespace Game
             return UnsafeWorld.ContainsEntity(value, id);
         }
 
-        public readonly UnmanagedList<T> CreateCollection<T>(EntityID id) where T : unmanaged
+        public readonly UnmanagedList<T> CreateCollection<T>(EntityID entity) where T : unmanaged
         {
-            return UnsafeWorld.CreateCollection<T>(value, id);
+            return new(UnsafeWorld.CreateCollection(value, entity, RuntimeType.Get<T>()));
         }
 
         /// <summary>
         /// Creates a new collection of the given count and returns it as a span.
         /// </summary>
-        public readonly Span<T> CreateCollection<T>(EntityID id, uint initialCount) where T : unmanaged
+        public readonly Span<T> CreateCollection<T>(EntityID entity, uint initialCount) where T : unmanaged
         {
-            UnmanagedList<T> list = UnsafeWorld.CreateCollection<T>(value, id);
+            UnmanagedList<T> list = new(UnsafeWorld.CreateCollection(value, entity, RuntimeType.Get<T>()));
             list.AddDefault(initialCount);
             return list.AsSpan();
         }
 
         public readonly void CreateCollection<T>(EntityID entity, ReadOnlySpan<T> values) where T : unmanaged
         {
-            UnmanagedList<T> list = UnsafeWorld.CreateCollection<T>(value, entity);
+            UnmanagedList<T> list = new(UnsafeWorld.CreateCollection(value, entity, RuntimeType.Get<T>()));
             list.AddRange(values);
         }
 
         public readonly void AddToCollection<T>(EntityID entity, T value) where T : unmanaged
         {
-            UnmanagedList<T> list = UnsafeWorld.GetCollection<T>(this.value, entity);
+            UnmanagedList<T> list = new(UnsafeWorld.GetCollection(this.value, entity, RuntimeType.Get<T>()));
             list.Add(value);
         }
 
@@ -328,13 +421,13 @@ namespace Game
 
         public readonly UnmanagedList<T> GetCollection<T>(EntityID entity) where T : unmanaged
         {
-            return UnsafeWorld.GetCollection<T>(value, entity);
+            return new(UnsafeWorld.GetCollection(value, entity, RuntimeType.Get<T>()));
         }
 
         public readonly void RemoveAtFromCollection<T>(EntityID entity, uint index) where T : unmanaged
         {
-            UnmanagedList<T> list = UnsafeWorld.GetCollection<T>(this.value, entity);
-            list.RemoveAt(index);
+            UnsafeList* list = UnsafeWorld.GetCollection(value, entity, RuntimeType.Get<T>());
+            UnsafeList.RemoveAt(list, index);
         }
 
         public readonly void DestroyCollection<T>(EntityID entity) where T : unmanaged
@@ -344,15 +437,14 @@ namespace Game
 
         public readonly void ClearCollection<T>(EntityID entity) where T : unmanaged
         {
-            UnmanagedList<T> list = UnsafeWorld.GetCollection<T>(this.value, entity);
-            list.Clear();
+            UnsafeList* list = UnsafeWorld.GetCollection(value, entity, RuntimeType.Get<T>());
+            UnsafeList.Clear(list);
         }
 
         public readonly void AddComponent<T>(EntityID entity, T component) where T : unmanaged
         {
             UnsafeWorld.AddComponent(value, entity, RuntimeType.Get<T>());
             ref T target = ref UnsafeWorld.GetComponentRef<T>(value, entity);
-            //ref T target = ref UnsafeWorld.AddComponentRef<T>(value, entity);
             target = component;
         }
 

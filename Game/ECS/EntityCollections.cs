@@ -38,6 +38,11 @@ namespace Game.ECS
             return new(list);
         }
 
+        public readonly UnsafeList* GetCollection(RuntimeType type)
+        {
+            return UnsafeEntityCollections.GetCollection(value, type);
+        }
+
         public readonly void RemoveCollection<T>() where T : unmanaged
         {
             UnsafeEntityCollections.RemoveCollection(value, RuntimeType.Get<T>());

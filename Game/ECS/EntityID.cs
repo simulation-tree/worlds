@@ -3,7 +3,6 @@
 #endif
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Game
@@ -16,28 +15,15 @@ namespace Game
     {
         public readonly uint value;
 
-        internal EntityID(uint value)
+        public EntityID(uint value)
         {
             this.value = value;
-#if !IGNORE_STACKTRACES
-            StackTrace temp = new(3, true);
-            if (temp.FrameCount > 0)
-            {
-                string? firstFrame = temp.GetFrame(0)?.GetFileName();
-                if (firstFrame is not null && firstFrame.EndsWith("World.cs"))
-                {
-                    temp = new(4, true);
-                }
-            }
-
-            DebugToString.createStackTraces[this] = temp;
-#endif
         }
 
         public override string ToString()
         {
 #if !IGNORE_STACKTRACES
-            if (DebugToString.createStackTraces.TryGetValue(this, out StackTrace? stackTrace))
+            if (UnsafeWorld.createStackTraces.TryGetValue(this, out StackTrace? stackTrace))
             {
                 return $"{value} ({stackTrace})";
             }
@@ -65,14 +51,6 @@ namespace Game
             return HashCode.Combine(value);
         }
 
-        /// <summary>
-        /// Returns a <see cref="EntityID"/> value that may or may not be valid.
-        /// </summary>
-        public unsafe static EntityID Assume(uint value)
-        {
-            return *(EntityID*)&value;
-        }
-
         public static bool operator ==(EntityID left, EntityID right)
         {
             return left.Equals(right);
@@ -82,12 +60,5 @@ namespace Game
         {
             return !(left == right);
         }
-
-#if !IGNORE_STACKTRACES
-        private static class DebugToString
-        {
-            public static readonly Dictionary<EntityID, StackTrace> createStackTraces = [];
-        }
-#endif
     }
 }
