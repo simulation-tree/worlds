@@ -45,6 +45,11 @@ namespace Game
             UnsafeWorld.Free(ref value);
         }
 
+        public override string ToString()
+        {
+            return $"World {ID}";
+        }
+
         public readonly override bool Equals(object? obj)
         {
             return obj is World world && Equals(world);

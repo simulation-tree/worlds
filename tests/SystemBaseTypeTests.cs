@@ -70,7 +70,7 @@ namespace Game
                 Listen<TestEvent>(OnEvent);
             }
 
-            protected override void Disposed()
+            protected override void OnDisposed()
             {
                 received.Dispose();
             }

@@ -64,7 +64,7 @@ namespace Game
             }
 
             listeners.Dispose();
-            Disposed();
+            OnDisposed();
             world = default;
         }
 
@@ -72,7 +72,7 @@ namespace Game
         /// Called when the system is disposed and no longer part
         /// of the <see cref="Game.World"/> that it was added to.
         /// </summary>
-        protected abstract void Disposed();
+        protected abstract void OnDisposed();
 
         /// <summary>
         /// Subscribes to an event of type <typeparamref name="T"/>.
