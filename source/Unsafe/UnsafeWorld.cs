@@ -9,7 +9,7 @@ using System.Diagnostics;
 using Unmanaged;
 using Unmanaged.Collections;
 
-namespace Game
+namespace Game.Unsafe
 {
     public unsafe struct UnsafeWorld
     {

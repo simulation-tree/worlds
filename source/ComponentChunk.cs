@@ -1,8 +1,9 @@
-﻿using System;
+﻿using Game.Unsafe;
+using System;
 using Unmanaged;
 using Unmanaged.Collections;
 
-namespace Game.ECS
+namespace Game
 {
     public unsafe struct ComponentChunk : IDisposable
     {

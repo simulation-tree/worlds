@@ -1,6 +1,5 @@
-﻿using Game.ECS;
+﻿using Game.Unsafe;
 using System;
-using System.Runtime.CompilerServices;
 using Unmanaged;
 using Unmanaged.Collections;
 
@@ -517,17 +516,17 @@ namespace Game
             }
         }
 
-        public readonly ref C TryGetComponentRef<C>(EntityID entity, out bool found) where C : unmanaged
+        public readonly ref T TryGetComponentRef<T>(EntityID entity, out bool found) where T : unmanaged
         {
-            if (ContainsComponent<C>(entity))
+            if (ContainsComponent<T>(entity))
             {
                 found = true;
-                return ref GetComponentRef<C>(entity);
+                return ref GetComponentRef<T>(entity);
             }
             else
             {
                 found = false;
-                return ref Unsafe.AsRef<C>(null);
+                return ref System.Runtime.CompilerServices.Unsafe.NullRef<T>();
             }
         }
 

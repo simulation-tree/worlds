@@ -2,6 +2,7 @@
 #define IGNORE_STACKTRACES
 #endif
 
+using Game.Unsafe;
 using System;
 using System.Diagnostics;
 

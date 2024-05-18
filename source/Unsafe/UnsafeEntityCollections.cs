@@ -1,7 +1,7 @@
 ﻿using Unmanaged;
 using Unmanaged.Collections;
 
-namespace Game.ECS
+namespace Game.Unsafe
 {
     public unsafe struct UnsafeEntityCollections
     {

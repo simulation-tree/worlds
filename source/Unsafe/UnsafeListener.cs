@@ -1,6 +1,6 @@
 ﻿using Unmanaged;
 
-namespace Game
+namespace Game.Unsafe
 {
     internal unsafe struct UnsafeListener
     {
