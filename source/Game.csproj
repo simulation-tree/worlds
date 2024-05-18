@@ -20,13 +20,9 @@
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <WarningLevel>7</WarningLevel>
   </PropertyGroup>
-
+  
   <ItemGroup>
-    <PackageReference Include="Boring3.FastGenericNew" Version="2.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\unmanaged\Unmanaged\Unmanaged.csproj" />
+    <ProjectReference Include="..\..\unmanaged\source\Unmanaged.csproj" />
   </ItemGroup>
 
 </Project>
