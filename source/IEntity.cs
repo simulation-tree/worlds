@@ -38,9 +38,14 @@
             }
         }
 
-        public T GetComponent<T>(T defaultValue = default) where T : unmanaged
+        public T GetComponent<T>(T defaultValue) where T : unmanaged
         {
             return World.GetComponent(Value, defaultValue);
+        }
+
+        public T GetComponent<T>() where T : unmanaged
+        {
+            return World.GetComponent<T>(Value);
         }
 
         public void SetComponent<T>(T component) where T : unmanaged

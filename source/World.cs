@@ -24,6 +24,8 @@ namespace Game
             }
         }
 
+        public readonly uint SlotCount => UnsafeWorld.GetEntitySlots(value).Count;
+
         public readonly bool IsDisposed => UnsafeWorld.IsDisposed(value);
 
         /// <summary>
@@ -577,7 +579,7 @@ namespace Game
             return ref UnsafeWorld.GetComponentRef<T>(value, entity);
         }
 
-        public readonly T GetComponent<T>(IEntity entity, T defaultValue = default) where T : unmanaged
+        public readonly T GetComponent<T>(IEntity entity, T defaultValue) where T : unmanaged
         {
             return GetComponent(entity.Value, defaultValue);
         }
@@ -586,7 +588,7 @@ namespace Game
         /// Returns the component of the expected type if it exists, otherwise the default value
         /// is given.
         /// </summary>
-        public readonly T GetComponent<T>(EntityID entity, T defaultValue = default) where T : unmanaged
+        public readonly T GetComponent<T>(EntityID entity, T defaultValue) where T : unmanaged
         {
             if (ContainsComponent<T>(entity))
             {
@@ -596,6 +598,11 @@ namespace Game
             {
                 return defaultValue;
             }
+        }
+
+        public readonly T GetComponent<T>(EntityID entity) where T : unmanaged
+        {
+            return GetComponentRef<T>(entity);
         }
 
         public readonly Span<byte> GetComponentBytes(EntityID entity, RuntimeType type)

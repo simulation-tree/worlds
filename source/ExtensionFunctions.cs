@@ -67,14 +67,24 @@
             return ref world.TryGetComponentRef<T>(entity, out has);
         }
 
-        public static T GetComponent<T>(this IWorld world, EntityID entity, T defaultValue = default) where T : unmanaged
+        public static T GetComponent<T>(this IWorld world, EntityID entity, T defaultValue) where T : unmanaged
         {
             return world.GetComponent(entity, defaultValue);
         }
 
-        public static T GetComponent<T>(this IEntity entity, T defaultValue = default) where T : unmanaged
+        public static T GetComponent<T>(this IEntity entity, T defaultValue) where T : unmanaged
         {
             return entity.World.GetComponent(entity.Value, defaultValue);
+        }
+
+        public static T GetComponent<T>(this IEntity entity) where T : unmanaged
+        {
+            return entity.World.GetComponent<T>(entity.Value);
+        }
+
+        public static T GetComponent<T>(this IWorld world, EntityID entity) where T : unmanaged
+        {
+            return world.GetComponent<T>(entity);
         }
 
         public static void SetComponent<T>(this IWorld world, EntityID entity, T component) where T : unmanaged

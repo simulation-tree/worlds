@@ -74,14 +74,24 @@
             entity.GetComponentRef<T>() = component;
         }
 
-        public T GetComponent<T>(IEntity entity, T defaultValue = default) where T : unmanaged
+        public T GetComponent<T>(IEntity entity, T defaultValue) where T : unmanaged
         {
             return entity.GetComponent<T>(defaultValue);
         }
 
-        public T GetComponent<T>(EntityID entity, T defaultValue = default) where T : unmanaged
+        public T GetComponent<T>(EntityID entity, T defaultValue) where T : unmanaged
         {
             return Value.GetComponent(entity, defaultValue);
+        }
+
+        public T GetComponent<T>(EntityID entity) where T : unmanaged
+        {
+            return Value.GetComponent<T>(entity);
+        }
+
+        public T GetComponent<T>(IEntity entity) where T : unmanaged
+        {
+            return entity.GetComponent<T>();
         }
 
         public void SetComponent<T>(EntityID entity, T component) where T : unmanaged
