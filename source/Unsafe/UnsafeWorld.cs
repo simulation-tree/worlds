@@ -130,6 +130,16 @@ namespace Game.Unsafe
             return new(world->freeEntities);
         }
 
+        public static ComponentChunk GetComponentChunk(UnsafeWorld* world, EntityID entity)
+        {
+            Allocations.ThrowIfNull(world);
+            ThrowIfEntityMissing(world, entity);
+
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            UnmanagedDictionary<int, ComponentChunk> components = GetComponentChunks(world);
+            return components[slot.componentsKey];
+        }
+
         public static UnmanagedDictionary<int, ComponentChunk> GetComponentChunks(UnsafeWorld* world)
         {
             Allocations.ThrowIfNull(world);

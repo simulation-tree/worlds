@@ -278,6 +278,11 @@ namespace Game
             UnsafeWorld.Submit(value, Container.Create(message));
         }
 
+        public readonly ComponentChunk GetComponentChunk(EntityID entity)
+        {
+            return UnsafeWorld.GetComponentChunk(value, entity);
+        }
+
         /// <summary>
         /// Iterates over all events that we submitted with <see cref="Submit"/>,
         /// and notifies all registered listeners.
@@ -285,6 +290,11 @@ namespace Game
         public readonly void Poll()
         {
             UnsafeWorld.Poll(value);
+        }
+
+        public readonly void DestroyEntity(IEntity entity)
+        {
+            DestroyEntity(entity.Value);
         }
 
         public readonly void DestroyEntity(EntityID id)
@@ -305,6 +315,11 @@ namespace Game
         public readonly ListenerWithContext Listen(nint pointer, RuntimeType eventType, delegate* unmanaged<nint, World, Container, void> callback)
         {
             return UnsafeWorld.Listen(value, pointer, eventType, callback);
+        }
+
+        public readonly ReadOnlySpan<RuntimeType> GetComponents(IEntity entity)
+        {
+            return UnsafeWorld.GetComponents(value, entity.Value);
         }
 
         public readonly ReadOnlySpan<RuntimeType> GetComponents(EntityID entity)
@@ -386,14 +401,29 @@ namespace Game
             return UnsafeWorld.CreateEntity(value, default);
         }
 
+        public readonly bool ContainsEntity(IEntity entity)
+        {
+            return ContainsEntity(entity.Value);
+        }
+
         public readonly bool ContainsEntity(EntityID id)
         {
             return UnsafeWorld.ContainsEntity(value, id);
         }
 
+        public readonly UnmanagedList<T> CreateCollection<T>(IEntity entity) where T : unmanaged
+        {
+            return CreateCollection<T>(entity.Value);
+        }
+
         public readonly UnmanagedList<T> CreateCollection<T>(EntityID entity) where T : unmanaged
         {
             return new(UnsafeWorld.CreateCollection(value, entity, RuntimeType.Get<T>()));
+        }
+
+        public readonly Span<T> CreateCollection<T>(IEntity entity, uint initialCount) where T : unmanaged
+        {
+            return CreateCollection<T>(entity.Value, initialCount);
         }
 
         /// <summary>
@@ -406,10 +436,20 @@ namespace Game
             return list.AsSpan();
         }
 
+        public readonly void CreateCollection<T>(IEntity entity, ReadOnlySpan<T> values) where T : unmanaged
+        {
+            CreateCollection(entity.Value, values);
+        }
+
         public readonly void CreateCollection<T>(EntityID entity, ReadOnlySpan<T> values) where T : unmanaged
         {
             UnmanagedList<T> list = new(UnsafeWorld.CreateCollection(value, entity, RuntimeType.Get<T>()));
             list.AddRange(values);
+        }
+
+        public readonly void AddToCollection<T>(IEntity entity, T value) where T : unmanaged
+        {
+            AddToCollection(entity.Value, value);
         }
 
         public readonly void AddToCollection<T>(EntityID entity, T value) where T : unmanaged
@@ -418,9 +458,20 @@ namespace Game
             list.Add(value);
         }
 
+        public readonly void AddRangeToCollection<T>(IEntity entity, ReadOnlySpan<T> values) where T : unmanaged
+        {
+            AddRangeToCollection(entity.Value, values);
+        }
+
         public readonly bool ContainsCollection<T>(EntityID entity) where T : unmanaged
         {
             return UnsafeWorld.ContainsCollection<T>(value, entity);
+        }
+
+        public readonly void AddRangeToCollection<T>(EntityID entity, ReadOnlySpan<T> values) where T : unmanaged
+        {
+            UnmanagedList<T> list = new(UnsafeWorld.GetCollection(value, entity, RuntimeType.Get<T>()));
+            list.AddRange(values);
         }
 
         public readonly UnmanagedList<T> GetCollection<T>(EntityID entity) where T : unmanaged
@@ -428,10 +479,20 @@ namespace Game
             return new(UnsafeWorld.GetCollection(value, entity, RuntimeType.Get<T>()));
         }
 
-        public readonly void RemoveAtFromCollection<T>(EntityID entity, uint index) where T : unmanaged
+        public readonly void RemoveAtCollection<T>(IEntity entity, uint index) where T : unmanaged
+        {
+            RemoveAtCollection<T>(entity.Value, index);
+        }
+
+        public readonly void RemoveAtCollection<T>(EntityID entity, uint index) where T : unmanaged
         {
             UnsafeList* list = UnsafeWorld.GetCollection(value, entity, RuntimeType.Get<T>());
             UnsafeList.RemoveAt(list, index);
+        }
+
+        public readonly void DestroyCollection<T>(IEntity entity) where T : unmanaged
+        {
+            DestroyCollection<T>(entity.Value);
         }
 
         public readonly void DestroyCollection<T>(EntityID entity) where T : unmanaged
@@ -439,10 +500,20 @@ namespace Game
             UnsafeWorld.DestroyCollection<T>(value, entity);
         }
 
+        public readonly void ClearCollection<T>(IEntity entity) where T : unmanaged
+        {
+            ClearCollection<T>(entity.Value);
+        }
+
         public readonly void ClearCollection<T>(EntityID entity) where T : unmanaged
         {
             UnsafeList* list = UnsafeWorld.GetCollection(value, entity, RuntimeType.Get<T>());
             UnsafeList.Clear(list);
+        }
+
+        public readonly void AddComponent<T>(IEntity entity, T component) where T : unmanaged
+        {
+            AddComponent(entity.Value, component);
         }
 
         public readonly void AddComponent<T>(EntityID entity, T component) where T : unmanaged
@@ -452,8 +523,13 @@ namespace Game
             target = component;
         }
 
+        public readonly ref T AddComponentRef<T>(IEntity entity) where T : unmanaged
+        {
+            return ref AddComponentRef<T>(entity.Value);
+        }
+
         /// <summary>
-        /// Adds a default component and returns it by reference for initialization.
+        /// Adds a <c>default</c> component value and returns it by reference.
         /// </summary>
         public readonly ref T AddComponentRef<T>(EntityID entity) where T : unmanaged
         {
@@ -461,9 +537,19 @@ namespace Game
             return ref GetComponentRef<T>(entity);
         }
 
+        public readonly void RemoveComponent<T>(IEntity entity) where T : unmanaged
+        {
+            RemoveComponent<T>(entity.Value);
+        }
+
         public readonly void RemoveComponent<T>(EntityID entity) where T : unmanaged
         {
             UnsafeWorld.RemoveComponent<T>(value, entity);
+        }
+
+        public readonly bool ContainsComponent<T>(IEntity entity) where T : unmanaged
+        {
+            return ContainsComponent<T>(entity.Value);
         }
 
         public readonly bool ContainsComponent<T>(EntityID entity) where T : unmanaged
@@ -471,14 +557,29 @@ namespace Game
             return ContainsComponent(entity, RuntimeType.Get<T>());
         }
 
+        public readonly bool ContainsComponent(IEntity entity, RuntimeType type)
+        {
+            return ContainsComponent(entity.Value, type);
+        }
+
         public readonly bool ContainsComponent(EntityID entity, RuntimeType type)
         {
             return UnsafeWorld.ContainsComponent(value, entity, type);
         }
 
-        public readonly ref T GetComponentRef<T>(EntityID id) where T : unmanaged
+        public readonly ref T GetComponentRef<T>(IEntity entity) where T : unmanaged
         {
-            return ref UnsafeWorld.GetComponentRef<T>(value, id);
+            return ref GetComponentRef<T>(entity.Value);
+        }
+
+        public readonly ref T GetComponentRef<T>(EntityID entity) where T : unmanaged
+        {
+            return ref UnsafeWorld.GetComponentRef<T>(value, entity);
+        }
+
+        public readonly T GetComponent<T>(IEntity entity, T defaultValue = default) where T : unmanaged
+        {
+            return GetComponent(entity.Value, defaultValue);
         }
 
         /// <summary>
@@ -502,6 +603,11 @@ namespace Game
             return UnsafeWorld.GetComponentBytes(value, entity, type);
         }
 
+        public readonly bool TryGetComponent<T>(IEntity entity, out T found) where T : unmanaged
+        {
+            return TryGetComponent(entity.Value, out found);
+        }
+
         public readonly bool TryGetComponent<T>(EntityID entity, out T found) where T : unmanaged
         {
             if (ContainsComponent<T>(entity))
@@ -516,6 +622,11 @@ namespace Game
             }
         }
 
+        public readonly ref T TryGetComponentRef<T>(IEntity entity, out bool found) where T : unmanaged
+        {
+            return ref TryGetComponentRef<T>(entity.Value, out found);
+        }
+
         public readonly ref T TryGetComponentRef<T>(EntityID entity, out bool found) where T : unmanaged
         {
             if (ContainsComponent<T>(entity))
@@ -528,6 +639,11 @@ namespace Game
                 found = false;
                 return ref System.Runtime.CompilerServices.Unsafe.NullRef<T>();
             }
+        }
+
+        public readonly void SetComponent<T>(IEntity id, T component) where T : unmanaged
+        {
+            SetComponent(id.Value, component);
         }
 
         public readonly void SetComponent<T>(EntityID id, T component) where T : unmanaged
