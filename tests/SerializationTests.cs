@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Unmanaged;
 using Unmanaged.Collections;
 
@@ -29,13 +30,8 @@ namespace Game
             EntityID list = world.CreateEntity();
             world.CreateCollection<char>(list, "Well hello there list");
 
-            List<EntityID> oldEntities = new();
+            List<EntityID> oldEntities = world.Entities.ToList();
             List<(EntityID, Apple)> apples = new();
-            world.QueryComponents((in EntityID entity) =>
-            {
-                oldEntities.Add(entity);
-            });
-
             world.QueryComponents((in EntityID entity, ref Apple apple) =>
             {
                 apples.Add((entity, apple));
@@ -47,13 +43,8 @@ namespace Game
             using BinaryReader reader = new(data);
 
             using World loadedWorld = reader.ReadSerializable<World>();
-            List<EntityID> newEntities = new();
+            List<EntityID> newEntities = loadedWorld.Entities.ToList();
             List<(EntityID, Apple)> newApples = new();
-            loadedWorld.QueryComponents((in EntityID entity) =>
-            {
-                newEntities.Add(entity);
-            });
-
             loadedWorld.QueryComponents((in EntityID entity, ref Apple apple) =>
             {
                 newApples.Add((entity, apple));

@@ -29,6 +29,28 @@ namespace Game
             UnsafeComponentChunk.Free(ref value);
         }
 
+        /// <summary>
+        /// Checks if the chunk contains all of the given types.
+        /// </summary>
+        public readonly bool ContainsTypes(ReadOnlySpan<RuntimeType> types)
+        {
+            ReadOnlySpan<RuntimeType> myTypes = Types;
+            if (types.Length > myTypes.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < types.Length; i++)
+            {
+                if (!myTypes.Contains(types[i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         public readonly void Add(EntityID entity)
         {
             UnsafeComponentChunk.Add(value, entity);
@@ -51,32 +73,38 @@ namespace Game
 
         public readonly UnmanagedList<T> GetComponents<T>() where T : unmanaged
         {
-            return UnsafeComponentChunk.GetComponents<T>(value);
+            return new(GetComponents(RuntimeType.Get<T>()));
         }
 
         public readonly ref T GetComponentRef<T>(EntityID entity) where T : unmanaged
         {
-            void* component = UnsafeComponentChunk.GetComponent(value, entity, RuntimeType.Get<T>());
-            T* ptr = (T*)component;
-            return ref *ptr;
+            uint index = Entities.IndexOf(entity);
+            return ref GetComponentRef<T>(index);
         }
 
         public readonly ref T GetComponentRef<T>(uint index) where T : unmanaged
         {
-            void* component = GetComponent(index, RuntimeType.Get<T>());
-            T* ptr = (T*)component;
-            return ref *ptr;
+            UnmanagedList<T> components = GetComponents<T>();
+            return ref components.GetRef(index);
         }
 
         public readonly Span<byte> GetComponentBytes(EntityID entity, RuntimeType type)
         {
-            void* component = UnsafeComponentChunk.GetComponent(value, entity, type);
+            void* component = GetComponent(entity, type);
             return new Span<byte>(component, type.size);
+        }
+
+        public readonly void* GetComponent(EntityID entity, RuntimeType type)
+        {
+            uint index = Entities.IndexOf(entity);
+            return GetComponent(index, type);
         }
 
         public readonly void* GetComponent(uint index, RuntimeType type)
         {
-            return UnsafeComponentChunk.GetComponent(value, index, type);
+            UnsafeList* components = GetComponents(type);
+            nint address = UnsafeList.GetAddress(components);
+            return (void*)(address + (int)index * type.size);
         }
     }
 }

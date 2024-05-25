@@ -14,6 +14,8 @@ namespace Game
         public void CleanUp()
         {
             Allocations.ThrowIfAnyAllocation();
+            added.Clear();
+            removed.Clear();
         }
 
         [Test]
@@ -34,6 +36,38 @@ namespace Game
             world.Poll();
 
             Assert.That(removed, Is.EquivalentTo(new[] { entity }));
+        }
+
+        [Test]
+        public unsafe void ListenForManyChanges()
+        {
+            using World world = new();
+            EntityID[] entities = new EntityID[10];
+            for (int i = 0; i < entities.Length; i++)
+            {
+                entities[i] = world.CreateEntity();
+            }
+
+            using ComponentObserver observer = new(world, RuntimeType.Get<Data>(), &OnAdded, &OnRemoved);
+            for (int i = 0; i < entities.Length; i++)
+            {
+                world.AddComponent(entities[i], new Data(i));
+            }
+
+            world.Submit(new Update());
+            world.Poll();
+
+            Assert.That(added, Is.EquivalentTo(entities));
+
+            for (int i = 0; i < entities.Length; i++)
+            {
+                world.RemoveComponent<Data>(entities[i]);
+            }
+
+            world.Submit(new Update());
+            world.Poll();
+
+            Assert.That(removed, Is.EquivalentTo(entities));
         }
 
         [Test]
@@ -62,6 +96,16 @@ namespace Game
 
         public struct SimpleComponent
         {
+        }
+
+        public struct Data
+        {
+            public int value;
+
+            public Data(int value)
+            {
+                this.value = value;
+            }
         }
 
         [UnmanagedCallersOnly]

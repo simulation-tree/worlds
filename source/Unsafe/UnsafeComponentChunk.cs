@@ -142,27 +142,5 @@ namespace Game.Unsafe
 
             return (UnsafeList*)chunk->components[(uint)index];
         }
-
-        public static UnmanagedList<T> GetComponents<T>(UnsafeComponentChunk* chunk) where T : unmanaged
-        {
-            RuntimeType type = RuntimeType.Get<T>();
-            UnsafeList* components = GetComponents(chunk, type);
-            return new(components);
-        }
-
-        public static void* GetComponent(UnsafeComponentChunk* chunk, EntityID entity, RuntimeType type)
-        {
-            Allocations.ThrowIfNull(chunk);
-            uint index = chunk->entities.IndexOf(entity);
-            return GetComponent(chunk, index, type);
-        }
-
-        public static void* GetComponent(UnsafeComponentChunk* chunk, uint index, RuntimeType type)
-        {
-            Allocations.ThrowIfNull(chunk);
-            UnsafeList* components = GetComponents(chunk, type);
-            nint address = UnsafeList.GetAddress(components);
-            return (void*)(address + (int)index * type.size);
-        }
     }
 }

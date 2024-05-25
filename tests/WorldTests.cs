@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Unmanaged;
 using Unmanaged.Collections;
 
@@ -143,6 +144,73 @@ namespace Game
             });
 
             Assert.That(found.Count, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void QueryMultipleComponents()
+        {
+            using World world = new();
+            EntityID entity1 = world.CreateEntity();
+            EntityID entity2 = world.CreateEntity();
+            SimpleComponent component1 = new("apple");
+            SimpleComponent component2 = new("banana");
+            world.AddComponent(entity1, component1);
+            world.AddComponent(entity2, component2);
+            EntityID entity3 = world.CreateEntity();
+            EntityID entity4 = world.CreateEntity();
+            Another another1 = new(5);
+            Another another2 = new(10);
+            world.AddComponent(entity3, another1);
+            world.AddComponent(entity4, another2);
+            EntityID entity5 = world.CreateEntity();
+            world.AddComponent(entity5, component1);
+            world.AddComponent(entity5, another2);
+            List<EntityID> simpleComponents = world.Query<SimpleComponent>().ToList();
+            List<EntityID> anotherComponents = world.Query<Another>().ToList();
+            Assert.That(simpleComponents.Count, Is.EqualTo(3));
+            Assert.That(anotherComponents.Count, Is.EqualTo(3));
+            Assert.That(simpleComponents.Contains(entity1), Is.True);
+            Assert.That(simpleComponents.Contains(entity2), Is.True);
+            Assert.That(simpleComponents.Contains(entity5), Is.True);
+            Assert.That(anotherComponents.Contains(entity3), Is.True);
+            Assert.That(anotherComponents.Contains(entity4), Is.True);
+            Assert.That(anotherComponents.Contains(entity5), Is.True);
+        }
+
+        [Test]
+        public void ComponentBuffer()
+        {
+            using World world = new();
+            EntityID entity1 = world.CreateEntity();
+            EntityID entity2 = world.CreateEntity();
+            SimpleComponent component1 = new("apple");
+            SimpleComponent component2 = new("banana");
+            world.AddComponent(entity1, component1);
+            world.AddComponent(entity2, component2);
+            EntityID entity3 = world.CreateEntity();
+            EntityID entity4 = world.CreateEntity();
+            Another another1 = new(5);
+            Another another2 = new(10);
+            world.AddComponent(entity3, another1);
+            world.AddComponent(entity4, another2);
+            EntityID entity5 = world.CreateEntity();
+            world.AddComponent(entity5, component1);
+            world.AddComponent(entity5, another2);
+            using UnmanagedList<SimpleComponent> buffer = new();
+            using UnmanagedList<EntityID> entities = new();
+            world.Fill(buffer, entities);
+            Assert.That(buffer.Count, Is.EqualTo(3));
+            var entitiesSpan = entities.AsSpan();
+            Assert.That(entities.Contains(entity1), Is.True);
+            Assert.That(entities.Contains(entity2), Is.True);
+            Assert.That(entities.Contains(entity5), Is.True);
+            entities.Clear();
+            using UnmanagedList<Another> anotherBuffer = new();
+            world.Fill(anotherBuffer, entities);
+            Assert.That(anotherBuffer.Count, Is.EqualTo(3));
+            Assert.That(entities.Contains(entity3), Is.True);
+            Assert.That(entities.Contains(entity4), Is.True);
+            Assert.That(entities.Contains(entity5), Is.True);
         }
 
         public struct SimpleComponent

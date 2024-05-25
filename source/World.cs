@@ -1,5 +1,7 @@
 ﻿using Game.Unsafe;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using Unmanaged;
 using Unmanaged.Collections;
 
@@ -12,21 +14,32 @@ namespace Game
         public readonly uint ID => UnsafeWorld.GetID(value);
 
         /// <summary>
-        /// Amount of entities in the world.
+        /// Amount of entities that exist in the world.
         /// </summary>
-        public readonly uint Count
+        public readonly uint Count => Slots.Count - Free.Count;
+
+        public readonly bool IsDisposed => UnsafeWorld.IsDisposed(value);
+        public readonly UnmanagedList<EntityDescription> Slots => UnsafeWorld.GetEntitySlots(value);
+        public readonly UnmanagedList<EntityID> Free => UnsafeWorld.GetFreeEntities(value);
+        public readonly UnmanagedDictionary<int, ComponentChunk> ComponentChunks => UnsafeWorld.GetComponentChunks(value);
+
+        /// <summary>
+        /// All entities that exist in the world.
+        /// </summary>
+        public readonly IEnumerable<EntityID> Entities
         {
             get
             {
-                uint slotCount = UnsafeWorld.GetEntitySlots(value).Count;
-                uint freeCount = UnsafeWorld.GetFreeEntities(value).Count;
-                return slotCount - freeCount;
+                for (uint i = 0; i < Slots.Count; i++)
+                {
+                    EntityDescription description = Slots[i];
+                    if (!Free.Contains(description.entity))
+                    {
+                        yield return description.entity;
+                    }
+                }
             }
         }
-
-        public readonly uint SlotCount => UnsafeWorld.GetEntitySlots(value).Count;
-
-        public readonly bool IsDisposed => UnsafeWorld.IsDisposed(value);
 
         /// <summary>
         /// Creates a new disposable world.
@@ -46,7 +59,7 @@ namespace Game
             UnsafeWorld.Free(ref value);
         }
 
-        public override string ToString()
+        public readonly override string ToString()
         {
             return $"World {ID}";
         }
@@ -77,13 +90,10 @@ namespace Game
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            UnmanagedList<UnsafeWorld.EntityDescription> slots = UnsafeWorld.GetEntitySlots(value);
-            UnmanagedList<EntityID> free = UnsafeWorld.GetFreeEntities(value);
-            UnmanagedDictionary<int, ComponentChunk> components = UnsafeWorld.GetComponentChunks(value);
             using UnmanagedList<RuntimeType> uniqueTypes = new();
-            for (int a = 0; a < components.Count; a++)
+            for (int a = 0; a < ComponentChunks.Count; a++)
             {
-                ComponentChunk chunk = components.Values[a];
+                ComponentChunk chunk = ComponentChunks.Values[a];
                 for (int b = 0; b < chunk.Types.Length; b++)
                 {
                     RuntimeType type = chunk.Types[b];
@@ -94,9 +104,9 @@ namespace Game
                 }
             }
 
-            for (uint i = 0; i < slots.Count; i++)
+            for (uint i = 0; i < Slots.Count; i++)
             {
-                UnsafeWorld.EntityDescription slot = slots[i];
+                EntityDescription slot = Slots[i];
                 if (!slot.collections.IsDisposed)
                 {
                     for (int j = 0; j < slot.collections.Types.Length; j++)
@@ -125,16 +135,15 @@ namespace Game
                 writer.WriteValue(type.AsRawValue());
             }
 
-            uint entityCount = slots.Count - free.Count;
-            writer.WriteValue(entityCount);
-            for (uint i = 0; i < slots.Count; i++)
+            writer.WriteValue(Count);
+            for (uint i = 0; i < Slots.Count; i++)
             {
-                UnsafeWorld.EntityDescription slot = slots[i];
-                EntityID entity = slot.id;
-                if (ContainsEntity(entity))
+                EntityDescription slot = Slots[i];
+                if (!Free.Contains(slot.entity))
                 {
+                    EntityID entity = slot.entity;
                     writer.WriteValue(entity.value);
-                    ComponentChunk chunk = components[slot.componentsKey];
+                    ComponentChunk chunk = ComponentChunks[slot.componentsKey];
                     writer.WriteValue((uint)chunk.Types.Length);
                     for (int j = 0; j < chunk.Types.Length; j++)
                     {
@@ -238,19 +247,16 @@ namespace Game
         /// </summary>
         public readonly void Append(World world)
         {
-            UnmanagedList<UnsafeWorld.EntityDescription> slots = UnsafeWorld.GetEntitySlots(world.value);
-            UnmanagedDictionary<int, ComponentChunk> components = UnsafeWorld.GetComponentChunks(world.value);
-            for (uint i = 0; i < slots.Count; i++)
+            foreach (EntityDescription slot in world.Slots)
             {
-                UnsafeWorld.EntityDescription slot = slots[i];
-                if (world.ContainsEntity(slot.id))
+                if (!world.Free.Contains(slot.entity))
                 {
                     EntityID entity = CreateEntity();
-                    ComponentChunk chunk = components[slot.componentsKey];
+                    ComponentChunk chunk = world.ComponentChunks[slot.componentsKey];
                     for (int j = 0; j < chunk.Types.Length; j++)
                     {
                         RuntimeType type = chunk.Types[j];
-                        Span<byte> bytes = chunk.GetComponentBytes(slot.id, type);
+                        Span<byte> bytes = chunk.GetComponentBytes(slot.entity, type);
                         void* component = UnsafeWorld.AddComponent(value, entity, type);
                         Span<byte> destination = new(component, type.size);
                         bytes.CopyTo(destination);
@@ -278,11 +284,6 @@ namespace Game
         public readonly void Submit<T>(T message) where T : unmanaged
         {
             UnsafeWorld.Submit(value, Container.Create(message));
-        }
-
-        public readonly ComponentChunk GetComponentChunk(EntityID entity)
-        {
-            return UnsafeWorld.GetComponentChunk(value, entity);
         }
 
         /// <summary>
@@ -321,58 +322,15 @@ namespace Game
 
         public readonly ReadOnlySpan<RuntimeType> GetComponents(IEntity entity)
         {
-            return UnsafeWorld.GetComponents(value, entity.Value);
+            return GetComponents(entity.Value);
         }
 
         public readonly ReadOnlySpan<RuntimeType> GetComponents(EntityID entity)
         {
-            return UnsafeWorld.GetComponents(value, entity);
-        }
-
-        /// <summary>
-        /// Finds components for every entity given and writes them into the same index.
-        /// </summary>
-        /// <returns>Amount of components found and copied into destination span.</returns>
-        public readonly void ReadComponents<T>(ReadOnlySpan<EntityID> entities, Span<T> destination, Span<bool> contains) where T : unmanaged
-        {
-            contains.Clear();
-            destination.Clear();
-
-            using UnmanagedArray<EntityID> entityArray = new(entities);
-            using UnmanagedArray<bool> containsArray = new((uint)entities.Length);
-            using UnmanagedArray<T> destinationArray = new((uint)entities.Length);
-            UnsafeWorld.QueryComponents(value, (in EntityID id, ref T component) =>
-            {
-                for (uint i = 0; i < entityArray.Length; i++)
-                {
-                    if (entityArray[i] == id)
-                    {
-                        destinationArray[i] = component;
-                        containsArray[i] = true;
-                    }
-                }
-            });
-
-            destinationArray.CopyTo(destination);
-            containsArray.CopyTo(contains);
-        }
-
-        public readonly void ReadComponents<T>(ReadOnlySpan<EntityID> entities, Span<T> destination) where T : unmanaged
-        {
-            using UnmanagedArray<EntityID> entityArray = new(entities);
-            using UnmanagedArray<T> destinationArray = new((uint)entities.Length);
-            UnsafeWorld.QueryComponents(value, (in EntityID id, ref T component) =>
-            {
-                for (uint i = 0; i < entityArray.Length; i++)
-                {
-                    if (entityArray[i] == id)
-                    {
-                        destinationArray[i] = component;
-                    }
-                }
-            });
-
-            destinationArray.CopyTo(destination);
+            UnsafeWorld.ThrowIfEntityMissing(value, entity);
+            EntityDescription slot = Slots[entity.value - 1];
+            ComponentChunk chunk = ComponentChunks[slot.componentsKey];
+            return chunk.Types;
         }
 
         public readonly bool TryGetFirst<T>(out T found) where T : unmanaged
@@ -380,22 +338,18 @@ namespace Game
             return TryGetFirst(out _, out found);
         }
 
-        public readonly bool TryGetFirst<T>(out EntityID id, out T found) where T : unmanaged
+        public readonly bool TryGetFirst<T>(out EntityID entity, out T component) where T : unmanaged
         {
-            using UnmanagedList<EntityID> entities = new();
-            ReadEntities([RuntimeType.Get<T>()], entities);
-            if (entities.Count > 0)
+            foreach (EntityID e in Query(RuntimeType.Get<T>()))
             {
-                id = entities[0];
-                found = UnsafeWorld.GetComponentRef<T>(value, id);
+                entity = e;
+                component = GetComponentRef<T>(e);
                 return true;
             }
-            else
-            {
-                id = default;
-                found = default;
-                return false;
-            }
+
+            entity = default;
+            component = default;
+            return false;
         }
 
         public readonly EntityID CreateEntity()
@@ -408,9 +362,9 @@ namespace Game
             return ContainsEntity(entity.Value);
         }
 
-        public readonly bool ContainsEntity(EntityID id)
+        public readonly bool ContainsEntity(EntityID entity)
         {
-            return UnsafeWorld.ContainsEntity(value, id);
+            return UnsafeWorld.ContainsEntity(value, entity.value);
         }
 
         public readonly UnmanagedList<T> CreateCollection<T>(IEntity entity) where T : unmanaged
@@ -659,34 +613,155 @@ namespace Game
             existing = component;
         }
 
-        public readonly void ReadEntities(ReadOnlySpan<RuntimeType> types, UnmanagedList<EntityID> list)
+        /// <summary>
+        /// Returns the main component chunk that contains the given entity.
+        /// </summary>
+        public readonly ComponentChunk GetComponentChunk(EntityID entity)
         {
-            QueryComponents(types, (in EntityID id) =>
+            UnsafeWorld.ThrowIfEntityMissing(value, entity);
+            EntityDescription slot = Slots[entity.value - 1];
+            return ComponentChunks[slot.componentsKey];
+        }
+
+        /// <summary>
+        /// Returns the main component chunk that contains all of the given component types.
+        /// </summary>
+        public readonly ComponentChunk GetComponentChunk(ReadOnlySpan<RuntimeType> componentTypes)
+        {
+            int key = RuntimeType.CalculateHash(componentTypes);
+            if (ComponentChunks.TryGetValue(key, out ComponentChunk chunk))
             {
-                list.Add(id);
-            });
-        }
-
-        public readonly void QueryComponents(RuntimeType type, QueryCallback action)
-        {
-            UnsafeWorld.QueryComponents(value, [type], action);
-        }
-
-        public readonly void QueryComponents(ReadOnlySpan<RuntimeType> types, QueryCallback action)
-        {
-            UnsafeWorld.QueryComponents(value, types, action);
-        }
-
-        public readonly void QueryComponents(QueryCallback action)
-        {
-            UnmanagedList<UnsafeWorld.EntityDescription> slots = UnsafeWorld.GetEntitySlots(value);
-            for (uint i = 0; i < slots.Count; i++)
+                return chunk;
+            }
+            else
             {
-                UnsafeWorld.EntityDescription description = slots[i];
-                EntityID id = description.id;
-                if (ContainsEntity(id))
+                throw new NullReferenceException($"No components found for the given types.");
+            }
+        }
+
+        public readonly bool ContainsComponentChunk(ReadOnlySpan<RuntimeType> componentTypes)
+        {
+            int key = RuntimeType.CalculateHash(componentTypes);
+            return ComponentChunks.ContainsKey(key);
+        }
+
+        public readonly bool TryGetComponentChunk(ReadOnlySpan<RuntimeType> componentTypes, out ComponentChunk chunk)
+        {
+            int key = RuntimeType.CalculateHash(componentTypes);
+            return ComponentChunks.TryGetValue(key, out chunk);
+        }
+
+        /// <summary>
+        /// Finds all entities that contain all of the given component types and
+        /// adds them to the given list.
+        /// </summary>
+        public readonly void Fill(ReadOnlySpan<RuntimeType> componentTypes, UnmanagedList<EntityID> list)
+        {
+            for (int i = 0; i < ComponentChunks.Count; i++)
+            {
+                ComponentChunk chunk = ComponentChunks.Values[i];
+                if (chunk.ContainsTypes(componentTypes))
                 {
-                    action(id);
+                    list.AddRange(chunk.Entities.AsSpan());
+                }
+            }
+        }
+
+        public readonly void Fill<T>(UnmanagedList<T> list) where T : unmanaged
+        {
+            RuntimeType type = RuntimeType.Get<T>();
+            for (int i = 0; i < ComponentChunks.Count; i++)
+            {
+                ComponentChunk chunk = ComponentChunks.Values[i];
+                if (chunk.Types.Contains(type))
+                {
+                    UnmanagedList<T> components = chunk.GetComponents<T>();
+                    list.AddRange(components.AsSpan());
+                }
+            }
+        }
+
+        public readonly void Fill<T>(UnmanagedList<EntityID> entities) where T : unmanaged
+        {
+            RuntimeType type = RuntimeType.Get<T>();
+            for (int i = 0; i < ComponentChunks.Count; i++)
+            {
+                ComponentChunk chunk = ComponentChunks.Values[i];
+                if (chunk.Types.Contains(type))
+                {
+                    entities.AddRange(chunk.Entities.AsSpan());
+                }
+            }
+        }
+
+        public readonly void Fill<T>(UnmanagedList<T> components, UnmanagedList<EntityID> entities) where T : unmanaged
+        {
+            RuntimeType type = RuntimeType.Get<T>();
+            for (int i = 0; i < ComponentChunks.Count; i++)
+            {
+                ComponentChunk chunk = ComponentChunks.Values[i];
+                if (chunk.Types.Contains(type))
+                {
+                    components.AddRange(chunk.GetComponents<T>().AsSpan());
+                    var entitiesSpan = chunk.Entities.AsSpan();
+                    entities.AddRange(entitiesSpan);
+                }
+            }
+        }
+
+        public readonly void Fill(RuntimeType componentType, UnmanagedList<EntityID> entities)
+        {
+            for (int i = 0; i < ComponentChunks.Count; i++)
+            {
+                ComponentChunk chunk = ComponentChunks.Values[i];
+                if (chunk.Types.Contains(componentType))
+                {
+                    entities.AddRange(chunk.Entities.AsSpan());
+                }
+            }
+        }
+
+        /// <summary>
+        /// Iterates over all entities that contain the given component type.
+        /// </summary>
+        public readonly IEnumerable<EntityID> Query(RuntimeType componentType)
+        {
+            for (int i = 0; i < ComponentChunks.Count; i++)
+            {
+                ComponentChunk chunk = ComponentChunks.Values[i];
+                if (chunk.Types.Contains(componentType))
+                {
+                    for (uint j = 0; j < chunk.Entities.Count; j++)
+                    {
+                        yield return chunk.Entities[j];
+                    }
+                }
+            }
+        }
+
+        public readonly IEnumerable<EntityID> Query<T>() where T : unmanaged
+        {
+            return Query(RuntimeType.Get<T>());
+        }
+
+        /// <summary>
+        /// Finds all entities that contain all of the given component types
+        /// and invokes the callback for every entity found.
+        /// <para>
+        /// Destroying entities inside the callback is not recommended.
+        /// </para>
+        /// </summary>
+        public readonly void Query(ReadOnlySpan<RuntimeType> componentTypes, Action<EntityID> callback)
+        {
+            for (int i = 0; i < ComponentChunks.Count; i++)
+            {
+                ComponentChunk chunk = ComponentChunks.Values[i];
+                if (chunk.ContainsTypes(componentTypes))
+                {
+                    for (uint j = 0; j < chunk.Entities.Count; j++)
+                    {
+                        callback(chunk.Entities[j]);
+                    }
                 }
             }
         }

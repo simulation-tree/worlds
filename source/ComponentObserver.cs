@@ -48,7 +48,7 @@ namespace Game
             UnmanagedList<EntityID> tracked = new(observer->tracked);
             UnmanagedList<EntityID> found = new(observer->found);
             found.Clear();
-            world.ReadEntities([observer->type], found);
+            world.Fill(observer->type, found);
             uint i = 0;
             for (i = 0; i < found.Count; i++)
             {
