@@ -6,6 +6,11 @@
         EntityID Value { get; }
 
         /// <summary>
+        /// Invoked after the entity has been destroyed from its <see cref="Game.World"/>.
+        /// </summary>
+        void WasDestroyed();
+
+        /// <summary>
         /// <c>true</c> when the entity doesn't exists in its <see cref="Game.World"/> anymore,
         /// or it has been disposed of.
         /// </summary>
