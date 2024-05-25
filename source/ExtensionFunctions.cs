@@ -1,4 +1,6 @@
-﻿namespace Game
+﻿using Unmanaged.Collections;
+
+namespace Game
 {
     public static class ExtensionFunctions
     {
@@ -20,6 +22,46 @@
         public static bool ContainsEntity(this IWorld world, EntityID entity)
         {
             return world.ContainsEntity(entity);
+        }
+
+        public static bool ContainsCollection<T>(this IEntity entity) where T : unmanaged
+        {
+            return entity.World.ContainsCollection<T>(entity.Value);
+        }
+
+        public static bool ContainsCollection<T>(this IWorld world, EntityID entity) where T : unmanaged
+        {
+            return world.ContainsCollection<T>(entity);
+        }
+
+        public static UnmanagedList<T> CreateCollection<T>(this IEntity entity) where T : unmanaged
+        {
+            return entity.World.CreateCollection<T>(entity.Value);
+        }
+
+        public static UnmanagedList<T> CreateCollection<T>(this IWorld world, EntityID entity) where T : unmanaged
+        {
+            return world.Value.CreateCollection<T>(entity);
+        }
+
+        public static void DestroyCollection<T>(this IEntity entity) where T : unmanaged
+        {
+            entity.World.DestroyCollection<T>(entity.Value);
+        }
+
+        public static void DestroyCollection<T>(this IWorld world, EntityID entity) where T : unmanaged
+        {
+            world.Value.DestroyCollection<T>(entity);
+        }
+
+        public static UnmanagedList<T> GetCollection<T>(this IEntity entity) where T : unmanaged
+        {
+            return entity.World.GetCollection<T>(entity.Value);
+        }
+
+        public static UnmanagedList<T> GetCollection<T>(this IWorld world, EntityID entity) where T : unmanaged
+        {
+            return world.GetCollection<T>(entity);
         }
 
         public static bool ContainsComponent<T>(this IWorld world, EntityID entity) where T : unmanaged

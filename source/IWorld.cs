@@ -1,4 +1,6 @@
-﻿namespace Game
+﻿using Unmanaged.Collections;
+
+namespace Game
 {
     public interface IWorld
     {
@@ -19,6 +21,16 @@
             entity.World.DestroyEntity(entity.Value);
         }
 
+        public void Submit<T>(T message) where T : unmanaged
+        {
+            Value.Submit(message);
+        }
+
+        public void Poll()
+        {
+            Value.Poll();
+        }
+
         public bool ContainsEntity(EntityID entity)
         {
             return Value.ContainsEntity(entity);
@@ -32,6 +44,36 @@
         public bool ContainsComponent<T>(IEntity entity) where T : unmanaged
         {
             return entity.World.ContainsComponent<T>(entity.Value);
+        }
+
+        public bool ContainsCollection<T>(EntityID entity) where T : unmanaged
+        {
+            return Value.ContainsCollection<T>(entity);
+        }
+
+        public bool ContainsCollection<T>(IEntity entity) where T : unmanaged
+        {
+            return entity.World.ContainsCollection<T>(entity.Value);
+        }
+
+        public UnmanagedList<T> CreateCollection<T>(EntityID entity) where T : unmanaged
+        {
+            return Value.CreateCollection<T>(entity);
+        }
+
+        public UnmanagedList<T> CreateCollection<T>(IEntity entity) where T : unmanaged
+        {
+            return entity.World.CreateCollection<T>(entity.Value);
+        }
+
+        public UnmanagedList<T> GetCollection<T>(EntityID entity) where T : unmanaged
+        {
+            return Value.GetCollection<T>(entity);
+        }
+
+        public UnmanagedList<T> GetCollection<T>(IEntity entity) where T : unmanaged
+        {
+            return entity.World.GetCollection<T>(entity.Value);
         }
 
         public ref T GetComponentRef<T>(IEntity entity) where T : unmanaged
