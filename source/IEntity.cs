@@ -11,6 +11,14 @@
         void WasDestroyed();
 
         /// <summary>
+        /// Destroys the entity.
+        /// </summary>
+        public void Destroy()
+        {
+            World.DestroyEntity(Value);
+        }
+
+        /// <summary>
         /// <c>true</c> when the entity doesn't exists in its <see cref="Game.World"/> anymore,
         /// or it has been disposed of.
         /// </summary>
