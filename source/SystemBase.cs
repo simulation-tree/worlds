@@ -77,7 +77,7 @@ namespace Game
         /// <summary>
         /// Subscribes to an event of type <typeparamref name="T"/>.
         /// </summary>
-        protected unsafe void Listen<T>(Action<T> callback) where T : unmanaged
+        public unsafe void Listen<T>(Action<T> callback) where T : unmanaged
         {
             RuntimeType eventType = RuntimeType.Get<T>();
             if (!staticCallbacks.TryGetValue(eventType, out HashSet<Action<Container>>? callbacks))
