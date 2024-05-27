@@ -7,7 +7,7 @@ using Unmanaged.Collections;
 
 namespace Game
 {
-    public unsafe struct World : IDisposable, IEquatable<World>, ISerializable, IDeserializable
+    public unsafe struct World : IDisposable, IEquatable<World>, IBinaryObject
     {
         internal UnsafeWorld* value;
 
@@ -88,7 +88,7 @@ namespace Game
             return value->GetHashCode();
         }
 
-        void ISerializable.Serialize(BinaryWriter writer)
+        void IBinaryObject.Write(BinaryWriter writer)
         {
             using UnmanagedList<RuntimeType> uniqueTypes = new();
             for (int a = 0; a < ComponentChunks.Count; a++)
@@ -176,7 +176,7 @@ namespace Game
             }
         }
 
-        void IDeserializable.Deserialize(ref BinaryReader reader)
+        void IBinaryObject.Read(ref BinaryReader reader)
         {
             value = UnsafeWorld.Allocate();
             uint typeCount = reader.ReadValue<uint>();
