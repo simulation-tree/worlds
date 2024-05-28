@@ -175,7 +175,7 @@ namespace Game
             using BinaryWriter writer = new();
         }
 
-        public struct Types : IDisposable, IBinaryObject
+        public struct Types : IDisposable, ISerializable
         {
             private UnmanagedList<RuntimeType> types;
 
@@ -196,7 +196,7 @@ namespace Game
                 types.Dispose();
             }
 
-            void IBinaryObject.Read(ref BinaryReader reader)
+            void ISerializable.Read(BinaryReader reader)
             {
                 byte count = reader.ReadValue<byte>();
                 types = new();
@@ -207,7 +207,7 @@ namespace Game
                 }
             }
 
-            void IBinaryObject.Write(BinaryWriter writer)
+            void ISerializable.Write(BinaryWriter writer)
             {
                 for (uint i = 0; i < types.Count; i++)
                 {
@@ -216,7 +216,7 @@ namespace Game
             }
         }
 
-        public struct Complicated : IDisposable, IBinaryObject
+        public struct Complicated : IDisposable, ISerializable
         {
             private UnmanagedList<Player> players;
 
@@ -242,7 +242,7 @@ namespace Game
                 players.Dispose();
             }
 
-            void IBinaryObject.Read(ref BinaryReader reader)
+            void ISerializable.Read(BinaryReader reader)
             {
                 byte count = reader.ReadValue<byte>();
                 players = new();
@@ -253,7 +253,7 @@ namespace Game
                 }
             }
 
-            void IBinaryObject.Write(BinaryWriter writer)
+            void ISerializable.Write(BinaryWriter writer)
             {
                 writer.WriteValue((byte)players.Count);
                 foreach (Player player in players)
@@ -263,7 +263,7 @@ namespace Game
             }
         }
 
-        public struct Player : IDisposable, IBinaryObject, IEquatable<Player>
+        public struct Player : IDisposable, ISerializable, IEquatable<Player>
         {
             public uint hp;
             public uint damage;
@@ -293,7 +293,7 @@ namespace Game
                 inventory.Add(fruit);
             }
 
-            void IBinaryObject.Read(ref BinaryReader reader)
+            void ISerializable.Read(BinaryReader reader)
             {
                 hp = reader.ReadValue<uint>();
                 damage = reader.ReadValue<uint>();
@@ -305,7 +305,7 @@ namespace Game
                 }
             }
 
-            void IBinaryObject.Write(BinaryWriter writer)
+            void ISerializable.Write(BinaryWriter writer)
             {
                 writer.WriteValue(hp);
                 writer.WriteValue(damage);

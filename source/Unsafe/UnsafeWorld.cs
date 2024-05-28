@@ -55,7 +55,7 @@ namespace Game.Unsafe
             }
 
             uint position = entity.value - 1;
-            uint count = UnsafeList.GetCount(world->slots);
+            uint count = UnsafeList.GetCountRef(world->slots);
             if (position >= count)
             {
                 throw new NullReferenceException($"Entity {entity} not found.");
@@ -169,7 +169,7 @@ namespace Game.Unsafe
         {
             Allocations.ThrowIfNull(world);
             uint id = GetID(world);
-            uint eventCount = UnsafeList.GetCount(world->events);
+            uint eventCount = UnsafeList.GetCountRef(world->events);
             for (uint i = 0; i < eventCount; i++)
             {
                 Container message = UnsafeList.Get<Container>(world->events, i);
@@ -181,7 +181,7 @@ namespace Game.Unsafe
             {
                 RuntimeType eventType = UnsafeDictionary.GetKeyRef<RuntimeType, nint>(world->listeners, i);
                 UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, eventType);
-                while (UnsafeList.GetCount(listenerList) > 0)
+                while (UnsafeList.GetCountRef(listenerList) > 0)
                 {
                     UnsafeList.RemoveAtBySwapping(listenerList, 0, out Listener removedListener);
                     UnsafeListener* unsafeValue = removedListener.value;
@@ -196,7 +196,7 @@ namespace Game.Unsafe
             {
                 RuntimeType eventType = UnsafeDictionary.GetKeyRef<RuntimeType, nint>(world->listenersWithContext, i);
                 UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listenersWithContext, eventType);
-                while (UnsafeList.GetCount(listenerList) > 0)
+                while (UnsafeList.GetCountRef(listenerList) > 0)
                 {
                     UnsafeList.RemoveAtBySwapping(listenerList, 0, out ListenerWithContext removedListener);
                     UnsafeListener* unsafeValue = removedListener.value;
@@ -214,7 +214,7 @@ namespace Game.Unsafe
                 chunk.Dispose();
             }
 
-            uint slotCount = UnsafeList.GetCount(world->slots);
+            uint slotCount = UnsafeList.GetCountRef(world->slots);
             for (uint i = 0; i < slotCount; i++)
             {
                 ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, i);
@@ -261,7 +261,7 @@ namespace Game.Unsafe
                 {
                     UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, eventType);
                     uint j = 0;
-                    while (j < UnsafeList.GetCount(listenerList))
+                    while (j < UnsafeList.GetCountRef(listenerList))
                     {
                         Listener listener = UnsafeList.Get<Listener>(listenerList, j);
                         listener.Invoke(worldValue, message);
@@ -272,7 +272,7 @@ namespace Game.Unsafe
                 if (UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listenersWithContext, eventType))
                 {
                     UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listenersWithContext, eventType);
-                    uint eventListenerCount = UnsafeList.GetCount(listenerList);
+                    uint eventListenerCount = UnsafeList.GetCountRef(listenerList);
                     for (uint j = 0; j < eventListenerCount; j++)
                     {
                         ListenerWithContext listener = UnsafeList.Get<ListenerWithContext>(listenerList, j);
@@ -325,7 +325,8 @@ namespace Game.Unsafe
                 UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, listener.eventType);
                 UnsafeListener* unsafeListener = listener.value;
                 UnsafeListener.Free(ref unsafeListener);
-                UnsafeList.Remove(listenerList, listener);
+                uint index = UnsafeList.IndexOf(listenerList, listener);
+                UnsafeList.RemoveAtBySwapping(listenerList, index);
             }
             else
             {
@@ -340,7 +341,8 @@ namespace Game.Unsafe
                 UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listenersWithContext, listener.eventType);
                 UnsafeListener* unsafeListener = listener.value;
                 UnsafeListener.Free(ref unsafeListener);
-                UnsafeList.Remove(listenerList, listener);
+                uint index = UnsafeList.IndexOf(listenerList, listener);
+                UnsafeList.RemoveAtBySwapping(listenerList, index);
             }
             else
             {
@@ -397,7 +399,7 @@ namespace Game.Unsafe
             }
 
             EntityID createdEntity;
-            if (UnsafeList.GetCount(world->freeEntities) > 0)
+            if (UnsafeList.GetCountRef(world->freeEntities) > 0)
             {
                 EntityID oldEntity = UnsafeList.Get<EntityID>(world->freeEntities, 0);
                 UnsafeList.RemoveAtBySwapping(world->freeEntities, 0);
@@ -411,7 +413,7 @@ namespace Game.Unsafe
             }
             else
             {
-                uint index = UnsafeList.GetCount(world->slots) + 1;
+                uint index = UnsafeList.GetCountRef(world->slots) + 1;
                 EntityID newEntity = new(index);
                 EntityDescription newSlot = new(newEntity, 0, componentsKey);
                 UnsafeList.Add(world->slots, newSlot);
@@ -446,7 +448,7 @@ namespace Game.Unsafe
             }
 
             uint position = value - 1;
-            if (position >= UnsafeList.GetCount(world->slots))
+            if (position >= UnsafeList.GetCountRef(world->slots))
             {
                 return false;
             }

@@ -7,7 +7,7 @@ using Unmanaged.Collections;
 
 namespace Game
 {
-    public unsafe struct World : IDisposable, IEquatable<World>, IBinaryObject
+    public unsafe struct World : IDisposable, IEquatable<World>, ISerializable
     {
         internal UnsafeWorld* value;
 
@@ -88,7 +88,7 @@ namespace Game
             return value->GetHashCode();
         }
 
-        void IBinaryObject.Write(BinaryWriter writer)
+        void ISerializable.Write(BinaryWriter writer)
         {
             using UnmanagedList<RuntimeType> uniqueTypes = new();
             for (int a = 0; a < ComponentChunks.Count; a++)
@@ -165,7 +165,7 @@ namespace Game
                             RuntimeType type = slot.collections.Types[j];
                             writer.WriteValue(uniqueTypes.IndexOf(type));
                             UnsafeList* list = slot.collections.GetCollection(type);
-                            uint listCount = UnsafeList.GetCount(list);
+                            uint listCount = UnsafeList.GetCountRef(list);
                             writer.WriteValue(listCount);
                             nint address = UnsafeList.GetAddress(list);
                             Span<byte> bytes = new((void*)address, (int)(listCount * type.size));
@@ -176,7 +176,7 @@ namespace Game
             }
         }
 
-        void IBinaryObject.Read(ref BinaryReader reader)
+        void ISerializable.Read(BinaryReader reader)
         {
             value = UnsafeWorld.Allocate();
             uint typeCount = reader.ReadValue<uint>();
@@ -268,7 +268,7 @@ namespace Game
                         {
                             RuntimeType type = slot.collections.Types[j];
                             UnsafeList* list = slot.collections.GetCollection(type);
-                            uint count = UnsafeList.GetCount(list);
+                            uint count = UnsafeList.GetCountRef(list);
                             UnsafeList* destination = UnsafeWorld.CreateCollection(value, entity, type, count);
                             nint address = UnsafeList.GetAddress(destination);
                             Span<byte> destinationBytes = new((void*)address, (int)(count * type.size));

@@ -9,7 +9,7 @@ namespace Game.Unsafe
         private UnmanagedList<EntityID> entities;
         private UnmanagedArray<RuntimeType> types;
         private UnmanagedArray<nint> components;
-        private int key;
+        private readonly int key;
 
         private UnsafeComponentChunk(UnmanagedList<EntityID> entities, UnmanagedArray<RuntimeType> types, UnmanagedArray<nint> components, int key)
         {
