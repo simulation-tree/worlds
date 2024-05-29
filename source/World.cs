@@ -12,6 +12,8 @@ namespace Game
 
         public readonly uint ID => UnsafeWorld.GetID(value);
 
+        public readonly nint Address => (nint)value;
+
         /// <summary>
         /// Amount of entities that exist in the world.
         /// </summary>
@@ -56,6 +58,14 @@ namespace Game
         public void Dispose()
         {
             UnsafeWorld.Free(ref value);
+        }
+
+        /// <summary>
+        /// Resets the world to default state.
+        /// </summary>
+        public readonly void Clear()
+        {
+            UnsafeWorld.Clear(value);
         }
 
         public readonly override string ToString()
@@ -805,6 +815,6 @@ namespace Game
     public delegate void ListenerCallback<T>(ref T message) where T : unmanaged;
     public delegate void ListenerCallback(ref Container message);
 
-    public unsafe delegate void CreatedCallback(UnsafeWorld* world, EntityID id);
-    public unsafe delegate void DestroyedCallback(UnsafeWorld* world, EntityID id);
+    public unsafe delegate void CreatedCallback(World world, EntityID id);
+    public unsafe delegate void DestroyedCallback(World world, EntityID id);
 }

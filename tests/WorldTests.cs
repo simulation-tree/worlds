@@ -213,6 +213,55 @@ namespace Game
             Assert.That(entities.Contains(entity5), Is.True);
         }
 
+        [Test]
+        public void PopulateWorldThenClear()
+        {
+            using World world = new();
+            using RandomGenerator rng = new();
+            uint realEntities = 0;
+            for (int i = 0; i < 100; i++)
+            {
+                EntityID entity = world.CreateEntity();
+                if (rng.NextBool())
+                {
+                    world.AddComponent(entity, new SimpleComponent("apple"));
+                }
+
+                if (rng.NextBool())
+                {
+                    world.AddComponent(entity, new Another(5));
+                }
+
+                if (rng.NextBool())
+                {
+                    world.CreateCollection<char>(entity);
+                    uint length = rng.NextUInt(1, 10);
+                    for (uint j = 0; j < length; j++)
+                    {
+                        world.AddToCollection(entity, (char)rng.NextInt('a', 'z'));
+                    }
+                }
+
+                if (rng.NextBool())
+                {
+                    world.DestroyEntity(entity);
+                }
+                else
+                {
+                    realEntities++;
+                }
+            }
+
+            Assert.That(world.Count, Is.EqualTo(realEntities));
+            world.Clear();
+            Assert.That(world.Count, Is.EqualTo(0));
+            for (uint i = 0; i < 100; i++)
+            {
+                EntityID entity = new(i + 1);
+                Assert.That(world.ContainsEntity(entity), Is.False);
+            }
+        }
+
         public struct SimpleComponent
         {
             public FixedString data;

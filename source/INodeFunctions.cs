@@ -5,39 +5,82 @@ namespace Game
 {
     public static class INodeFunctions
     {
-        public static void Add(this INode node, INode add)
+        /// <summary>
+        /// Adds the given child node as a child.
+        /// </summary>
+        public static void AddNode(this INode node, INode child)
         {
-            node.Add(add);
+            child.Parent = node;
         }
 
-        public static void RemoveAt(this INode node, uint index)
+        public static void AddNodes(this INode node, IReadOnlyCollection<INode> children)
         {
-            node.RemoveAt(index);
-        }
-
-        public static bool TryIndexOf(this INode node, INode find, out uint index)
-        {
-            return node.TryIndexOf(find, out index);
-        }
-
-        public static bool Contains(this INode node, INode find)
-        {
-            return node.TryIndexOf(find, out _);
-        }
-
-        public static bool Remove(this INode node, INode remove)
-        {
-            if (node.TryIndexOf(remove, out uint index))
+            foreach (INode child in children)
             {
-                node.RemoveAt(index);
+                node.AddNode(child);
+            }
+        }
+
+        public static int IndexOfNode(this INode node, INode child)
+        {
+            int count = node.Children.Count;
+            for (int i = 0; i < count; i++)
+            {
+                if (node.Children[i] == child)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        public static int CountNodes(this INode node)
+        {
+            return node.Children.Count;
+        }
+
+        /// <summary>
+        /// Checks if the given child is a direct child.
+        /// </summary>
+        public static bool ContainsNode(this INode node, INode child)
+        {
+            return node.IndexOfNode(child) != -1;
+        }
+
+        /// <summary>
+        /// Attempts to remove the given node from the list of children.
+        /// </summary>
+        public static bool RemoveNode(this INode node, INode child)
+        {
+            if (child.Parent == node)
+            {
+                child.Parent = null;
                 return true;
             }
-            else return false;
+            else
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Orphans all children of the given node.
+        /// </summary>
+        public static List<INode> ClearNodes(this INode node)
+        {
+            List<INode> children = new(node.Children);
+            for (int i = 0; i < children.Count; i++)
+            {
+                children[i].Parent = null;
+            }
+
+            return children;
         }
 
         /// <summary>
         /// Broadcasts a message to all descendants of this node,
-        /// and the node itself.
+        /// and the node itself. In descending order of depth.
         /// </summary>
         public static void Broadcast<T>(this INode node, T message) where T : unmanaged
         {
@@ -50,9 +93,10 @@ namespace Game
         }
 
         /// <summary>
-        /// Fills the given list with all descendants of this node.
+        /// Fills the given list with all descendants of this node, in descending
+        /// order of depth.
         /// </summary>
-        public static void FillDescendants(this INode node, ICollection<INode> collection)
+        public static void FillDescendantNodes(this INode node, ICollection<INode> collection)
         {
             Stack<INode> stack = Pool.GetNodeStack();
             for (int i = 0; i < node.Children.Count; i++)
@@ -65,16 +109,20 @@ namespace Game
                 INode n = stack.Pop();
                 collection.Add(n);
 
-                for (uint i = 0; i < n.Count; i++)
+                int nChildrenCount = n.Children.Count;
+                for (int i = 0; i < nChildrenCount; i++)
                 {
-                    stack.Push(n[i]);
+                    stack.Push(n.Children[i]);
                 }
             }
 
             Pool.Return(stack);
         }
 
-        public static bool TryFindFirst<T>(this INode node, [NotNullWhen(true)] out T? found) where T : class, INode
+        /// <summary>
+        /// Tries to find the first node in the tree that is of the given type.
+        /// </summary>
+        public static bool TryFindFirstNode<T>(this INode node, [NotNullWhen(true)] out T? found) where T : class, INode
         {
             foreach (INode child in node.Children)
             {
@@ -84,7 +132,7 @@ namespace Game
                     return true;
                 }
 
-                if (child.TryFindFirst(out T? foundInChild))
+                if (child.TryFindFirstNode(out T? foundInChild))
                 {
                     found = foundInChild;
                     return true;
@@ -95,7 +143,7 @@ namespace Game
             return false;
         }
 
-        public static bool IsDescendantOf(this INode node, INode parent)
+        public static bool IsDescendantNodeOf(this INode node, INode parent)
         {
             INode? current = node.Parent;
             while (current is not null)
@@ -109,6 +157,23 @@ namespace Game
             }
 
             return false;
+        }
+
+        public static INode GetRootNode(this INode node)
+        {
+            INode? current = node;
+            while (current is not null)
+            {
+                INode? next = current.Parent;
+                if (next is null)
+                {
+                    break;
+                }
+
+                current = next;
+            }
+
+            return current ?? throw new System.InvalidOperationException();
         }
 
         internal static class Pool

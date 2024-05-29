@@ -18,12 +18,12 @@ namespace Game.Unsafe
 #endif
 
         /// <summary>
-        /// Invoked when any entity is created in any world.
+        /// Invoked after any entity is created in any world.
         /// </summary>
         public static event CreatedCallback EntityCreated = delegate { };
 
         /// <summary>
-        /// Invoked when any entity is destroyed from any world.
+        /// Invoked after any entity is destroyed from any world.
         /// </summary>
         public static event DestroyedCallback EntityDestroyed = delegate { };
 
@@ -149,7 +149,7 @@ namespace Game.Unsafe
                 id = Universe.createdWorlds;
             }
 
-            UnsafeList* entities = UnsafeList.Allocate<EntityDescription>();
+            UnsafeList* slots = UnsafeList.Allocate<EntityDescription>();
             UnsafeList* freeEntities = UnsafeList.Allocate<EntityID>();
             UnsafeList* events = UnsafeList.Allocate<Container>();
             UnsafeDictionary* listeners = UnsafeDictionary.Allocate<RuntimeType, nint>();
@@ -161,7 +161,7 @@ namespace Game.Unsafe
             UnsafeDictionary.Add(components, chunkKey, defaultComponentChunk);
 
             UnsafeWorld* world = Allocations.Allocate<UnsafeWorld>();
-            *world = new(id, entities, freeEntities, events, listeners, listenersWithContext, components);
+            *world = new(id, slots, freeEntities, events, listeners, listenersWithContext, components);
             return world;
         }
 
@@ -169,6 +169,22 @@ namespace Game.Unsafe
         {
             Allocations.ThrowIfNull(world);
             uint id = GetID(world);
+            Clear(world);
+            UnsafeList.Free(ref world->slots);
+            UnsafeList.Free(ref world->freeEntities);
+            UnsafeList.Free(ref world->events);
+            UnsafeDictionary.Free(ref world->listeners);
+            UnsafeDictionary.Free(ref world->listenersWithContext);
+            UnsafeDictionary.Free(ref world->components);
+            Allocations.Free(ref world);
+            Universe.destroyedWorlds.Add(id);
+        }
+
+        public static void Clear(UnsafeWorld* world)
+        {
+            Allocations.ThrowIfNull(world);
+
+            //clear event containers
             uint eventCount = UnsafeList.GetCountRef(world->events);
             for (uint i = 0; i < eventCount; i++)
             {
@@ -176,36 +192,46 @@ namespace Game.Unsafe
                 message.Dispose();
             }
 
+            UnsafeList.Clear(world->events);
+
+            //clear event listeners
             uint listenerTypesCount = UnsafeDictionary.GetCount(world->listeners);
             for (uint i = 0; i < listenerTypesCount; i++)
             {
                 RuntimeType eventType = UnsafeDictionary.GetKeyRef<RuntimeType, nint>(world->listeners, i);
                 UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, eventType);
-                while (UnsafeList.GetCountRef(listenerList) > 0)
+                uint listenerCount = UnsafeList.GetCountRef(listenerList);
+                for (uint j = 0; j < listenerCount; j++)
                 {
-                    UnsafeList.RemoveAtBySwapping(listenerList, 0, out Listener removedListener);
-                    UnsafeListener* unsafeValue = removedListener.value;
+                    Listener listener = UnsafeList.Get<Listener>(listenerList, j);
+                    UnsafeListener* unsafeValue = listener.value;
                     UnsafeListener.Free(ref unsafeValue);
                 }
 
                 UnsafeList.Free(ref listenerList);
             }
+
+            UnsafeDictionary.Clear(world->listeners);
 
             listenerTypesCount = UnsafeDictionary.GetCount(world->listenersWithContext);
             for (uint i = 0; i < listenerTypesCount; i++)
             {
                 RuntimeType eventType = UnsafeDictionary.GetKeyRef<RuntimeType, nint>(world->listenersWithContext, i);
                 UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listenersWithContext, eventType);
-                while (UnsafeList.GetCountRef(listenerList) > 0)
+                uint listenerCount = UnsafeList.GetCountRef(listenerList);
+                for (uint j = 0; j < listenerCount; j++)
                 {
-                    UnsafeList.RemoveAtBySwapping(listenerList, 0, out ListenerWithContext removedListener);
-                    UnsafeListener* unsafeValue = removedListener.value;
+                    ListenerWithContext listener = UnsafeList.Get<ListenerWithContext>(listenerList, j);
+                    UnsafeListener* unsafeValue = listener.value;
                     UnsafeListener.Free(ref unsafeValue);
                 }
 
                 UnsafeList.Free(ref listenerList);
             }
 
+            UnsafeDictionary.Clear(world->listenersWithContext);
+
+            //clear chunks
             UnmanagedDictionary<int, ComponentChunk> components = GetComponentChunks(world);
             for (uint i = 0; i < components.Count; i++)
             {
@@ -213,6 +239,8 @@ namespace Game.Unsafe
                 ComponentChunk chunk = components.Values[(int)i];
                 chunk.Dispose();
             }
+
+            UnsafeDictionary.Clear(world->components);
 
             uint slotCount = UnsafeList.GetCountRef(world->slots);
             for (uint i = 0; i < slotCount; i++)
@@ -224,14 +252,10 @@ namespace Game.Unsafe
                 }
             }
 
-            UnsafeList.Free(ref world->slots);
-            UnsafeList.Free(ref world->freeEntities);
-            UnsafeList.Free(ref world->events);
-            UnsafeDictionary.Free(ref world->listeners);
-            UnsafeDictionary.Free(ref world->listenersWithContext);
-            UnsafeDictionary.Free(ref world->components);
-            Allocations.Free(ref world);
-            Universe.destroyedWorlds.Add(id);
+            UnsafeList.Clear(world->slots);
+
+            //clear free entities
+            UnsafeList.Clear(world->freeEntities);
         }
 
         public readonly override int GetHashCode()
@@ -370,7 +394,7 @@ namespace Game.Unsafe
             slot.collections = default;
             slot.version++;
             UnsafeList.Add(world->freeEntities, entity);
-            EntityDestroyed(world, entity);
+            EntityDestroyed(new(world), entity);
         }
 
         public static ReadOnlySpan<RuntimeType> GetComponents(UnsafeWorld* world, EntityID id)
@@ -435,7 +459,7 @@ namespace Game.Unsafe
             createStackTraces[createdEntity] = stackTrace;
 #endif
 
-            EntityCreated(world, createdEntity);
+            EntityCreated(new(world), createdEntity);
             return createdEntity;
         }
 
@@ -744,13 +768,5 @@ namespace Game.Unsafe
                 }
             }
         }
-    }
-
-    public struct EntityDescription(EntityID entity, uint version, int componentsKey)
-    {
-        public EntityID entity = entity;
-        public uint version = version;
-        public int componentsKey = componentsKey;
-        public EntityCollections collections;
     }
 }
