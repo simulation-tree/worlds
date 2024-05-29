@@ -5,11 +5,19 @@ namespace Game
     public static class IEntityFunctions
     {
         /// <summary>
-        /// Destroys the entity.
+        /// Destroys the entity and returns <c>true</c> if successful.
         /// </summary>
-        public static void Destroy<T>(this T entity) where T : IEntity
+        public static bool Destroy<T>(this T entity) where T : IEntity
         {
-            entity.World.DestroyEntity(entity.Value);
+            if (entity.World.ContainsEntity(entity.Value))
+            {
+                entity.World.DestroyEntity(entity.Value);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         /// <summary>
