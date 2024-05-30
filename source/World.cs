@@ -347,6 +347,11 @@ namespace Game
             return TryGetFirst(out _, out found);
         }
 
+        public readonly bool TryGetFirst<T>(out EntityID entity) where T : unmanaged
+        {
+            return TryGetFirst<T>(out entity, out _);
+        }
+
         public readonly bool TryGetFirst<T>(out EntityID entity, out T component) where T : unmanaged
         {
             foreach (EntityID e in Query(RuntimeType.Get<T>()))
@@ -510,6 +515,24 @@ namespace Game
         public readonly void RemoveComponent<T>(EntityID entity) where T : unmanaged
         {
             UnsafeWorld.RemoveComponent<T>(value, entity);
+        }
+
+        public readonly bool ContainsComponent<T>(out EntityID entity) where T : unmanaged
+        {
+            UnmanagedDictionary<int, ComponentChunk> components = ComponentChunks;
+            RuntimeType type = RuntimeType.Get<T>();
+            for (int i = 0; i < components.Count; i++)
+            {
+                ComponentChunk chunk = components.Values[i];
+                if (chunk.Types.Contains(type))
+                {
+                    entity = chunk.Entities[0];
+                    return true;
+                }
+            }
+
+            entity = default;
+            return false;
         }
 
         public readonly bool ContainsComponent<T>(IEntity entity) where T : unmanaged
