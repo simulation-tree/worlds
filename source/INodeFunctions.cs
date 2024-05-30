@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Game
@@ -79,17 +80,29 @@ namespace Game
         }
 
         /// <summary>
-        /// Broadcasts a message to all descendants of this node,
-        /// and the node itself. In descending order of depth.
+        /// Iterates through all descendants of the node and invokes the given callback.
         /// </summary>
-        public static void Broadcast<T>(this INode node, T message) where T : unmanaged
+        public static void ForEach(this INode node, Action<INode> callback)
         {
             foreach (INode child in node.Children)
             {
-                child.Broadcast(message);
+                ForEach(child, callback);
             }
 
-            node.Receive(message);
+            callback(node);
+        }
+
+        public static void ForEach<T>(this INode node, Action<T> callback) where T : INode
+        {
+            foreach (INode child in node.Children)
+            {
+                ForEach(child, callback);
+            }
+
+            if (node is T t)
+            {
+                callback(t);
+            }
         }
 
         /// <summary>

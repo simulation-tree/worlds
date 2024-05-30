@@ -258,11 +258,6 @@ namespace Game.Unsafe
             UnsafeList.Clear(world->freeEntities);
         }
 
-        public readonly override int GetHashCode()
-        {
-            return HashCode.Combine(id, slots->GetHashCode(), components->GetHashCode());
-        }
-
         public static void Submit(UnsafeWorld* world, Container message)
         {
             UnsafeList.Add(world->events, message);

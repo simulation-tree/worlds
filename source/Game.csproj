@@ -12,6 +12,7 @@
     <IsTrimmable>True</IsTrimmable>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <WarningLevel>7</WarningLevel>
+	<NoWarn>NU1900</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

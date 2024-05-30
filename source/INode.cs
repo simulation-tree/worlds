@@ -14,8 +14,6 @@ namespace Game
         /// </summary>
         IReadOnlyList<INode> Children { get; }
 
-        void Receive<T>(T message) where T : unmanaged;
-
         /// <summary>
         /// Removes a child node at the given index.
         /// </summary>
