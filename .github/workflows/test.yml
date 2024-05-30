@@ -31,34 +31,32 @@ jobs:
       - name: Install tools
         run: dotnet tool install -g dotnet-reportgenerator-globaltool
 
-      - name: List directory
-        run: ls
-
       - name: Test project
-        run: dotnet test -c Debug --collect:"XPlat Code Coverage" --results-directory:"TestResults" --blame --blame-crash-dump-type full --blame-hang-dump-type full --blame-hang-timeout 60s -v diag
+        run: dotnet test -c Debug --collect:"XPlat Code Coverage" --results-directory:"TestResults"
 
-      - name: Generate HTML report from test results
-        if: always()
-        run: reportgenerator -reports:"TestResults/*/*.xml" -reporttypes:html -targetdir:"TestResults/html"
-        
-      - name: Upload HTML report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: Test Results
-          path: "*/TestResults/html"
-
-      - name: Upload crash dumps
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: Crash Dumps
-          if-no-files-found: ignore
-          path: "*/TestResults/*/*.dmp"
-    
-      - name: Upload test sequence
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: Test Sequence
-          path: "*/TestResults/*/Sequence_*.xml"
+#      - name: Generate HTML report from test results
+#        if: always()
+#        run: reportgenerator -reports:"TestResults/*/*.xml" -reporttypes:html -targetdir:"TestResults/html"
+#        
+#      - name: Upload HTML report
+#        uses: actions/upload-artifact@v4
+#        if: always()
+#        with:
+#          name: Test Results
+#          path: "*/TestResults/html"
+#
+#      - name: Upload crash dumps
+#        uses: actions/upload-artifact@v4
+#        if: always()
+#        with:
+#          name: Crash Dumps
+#          if-no-files-found: ignore
+#          path: "*/TestResults/*/*.dmp"
+#    
+#      - name: Upload test sequence
+#        uses: actions/upload-artifact@v4
+#        if: always()
+#        with:
+#          name: Test Sequence
+#          path: "*/TestResults/*/Sequence_*.xml"
+#
