@@ -10,8 +10,6 @@ namespace Game
     {
         internal UnsafeWorld* value;
 
-        public readonly uint ID => UnsafeWorld.GetID(value);
-
         public readonly nint Address => (nint)value;
 
         /// <summary>
@@ -70,7 +68,7 @@ namespace Game
 
         public readonly override string ToString()
         {
-            return $"World {ID}";
+            return $"World {Address} (count: {Count})";
         }
 
         public readonly override bool Equals(object? obj)
@@ -89,7 +87,7 @@ namespace Game
                 return false;
             }
 
-            return ID == other.ID;
+            return Address == other.Address;
         }
 
         public readonly override int GetHashCode()

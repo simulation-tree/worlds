@@ -2,7 +2,7 @@
 
 namespace Game
 {
-    public static class ExtensionFunctions
+    public static class IWorldFunctions
     {
         public static EntityID CreateEntity(this IWorld world)
         {

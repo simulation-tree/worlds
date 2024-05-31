@@ -2,7 +2,6 @@
 #define IGNORE_STACKTRACES
 #endif
 
-using Game.ECS;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -27,7 +26,6 @@ namespace Game.Unsafe
         /// </summary>
         public static event DestroyedCallback EntityDestroyed = delegate { };
 
-        private readonly uint id;
         private UnsafeList* slots;
         private UnsafeList* freeEntities;
         private UnsafeList* events;
@@ -35,9 +33,8 @@ namespace Game.Unsafe
         private UnsafeDictionary* listenersWithContext;
         private UnsafeDictionary* components;
 
-        private UnsafeWorld(uint id, UnsafeList* slots, UnsafeList* freeEntities, UnsafeList* events, UnsafeDictionary* listeners, UnsafeDictionary* listenersWithContext, UnsafeDictionary* components)
+        private UnsafeWorld(UnsafeList* slots, UnsafeList* freeEntities, UnsafeList* events, UnsafeDictionary* listeners, UnsafeDictionary* listenersWithContext, UnsafeDictionary* components)
         {
-            this.id = id;
             this.slots = slots;
             this.freeEntities = freeEntities;
             this.events = events;
@@ -112,12 +109,6 @@ namespace Game.Unsafe
             }
         }
 
-        public static uint GetID(UnsafeWorld* world)
-        {
-            Allocations.ThrowIfNull(world);
-            return world->id;
-        }
-
         public static bool IsDisposed(UnsafeWorld* world)
         {
             return Allocations.IsNull(world);
@@ -143,12 +134,6 @@ namespace Game.Unsafe
 
         public static UnsafeWorld* Allocate()
         {
-            if (!Universe.destroyedWorlds.TryTake(out uint id))
-            {
-                Universe.createdWorlds++;
-                id = Universe.createdWorlds;
-            }
-
             UnsafeList* slots = UnsafeList.Allocate<EntityDescription>();
             UnsafeList* freeEntities = UnsafeList.Allocate<EntityID>();
             UnsafeList* events = UnsafeList.Allocate<Container>();
@@ -161,14 +146,13 @@ namespace Game.Unsafe
             UnsafeDictionary.Add(components, chunkKey, defaultComponentChunk);
 
             UnsafeWorld* world = Allocations.Allocate<UnsafeWorld>();
-            *world = new(id, slots, freeEntities, events, listeners, listenersWithContext, components);
+            *world = new(slots, freeEntities, events, listeners, listenersWithContext, components);
             return world;
         }
 
         public static void Free(ref UnsafeWorld* world)
         {
             Allocations.ThrowIfNull(world);
-            uint id = GetID(world);
             Clear(world);
             UnsafeList.Free(ref world->slots);
             UnsafeList.Free(ref world->freeEntities);
@@ -177,7 +161,6 @@ namespace Game.Unsafe
             UnsafeDictionary.Free(ref world->listenersWithContext);
             UnsafeDictionary.Free(ref world->components);
             Allocations.Free(ref world);
-            Universe.destroyedWorlds.Add(id);
         }
 
         public static void Clear(UnsafeWorld* world)
