@@ -58,6 +58,11 @@ namespace Game
             return entity.World.GetComponent(entity.Value, defaultValue);
         }
 
+        public static T GetComponent<T>(this IEntity world, EntityID entity) where T : unmanaged
+        {
+            return world.World.GetComponent<T>(entity);
+        }
+
         public static T GetComponent<T>(this IEntity entity) where T : unmanaged
         {
             return entity.World.GetComponent<T>(entity.Value);
@@ -81,6 +86,11 @@ namespace Game
         public static UnmanagedList<T> GetCollection<T>(this IEntity entity) where T : unmanaged
         {
             return entity.World.GetCollection<T>(entity.Value);
+        }
+
+        public static UnmanagedList<T> GetCollection<T>(this IEntity world, EntityID entity) where T : unmanaged
+        {
+            return world.World.GetCollection<T>(entity);
         }
 
         public static bool ContainsCollection<T>(this IEntity entity) where T : unmanaged

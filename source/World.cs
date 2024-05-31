@@ -68,6 +68,11 @@ namespace Game
 
         public readonly override string ToString()
         {
+            if (value == default)
+            {
+                return "World (disposed)";
+            }
+
             return $"World {Address} (count: {Count})";
         }
 
@@ -293,7 +298,7 @@ namespace Game
 
         /// <summary>
         /// Iterates over all events that we submitted with <see cref="Submit"/>,
-        /// and notifies all registered listeners.
+        /// and notifies the registered listeners.
         /// </summary>
         public readonly void Poll()
         {
@@ -731,7 +736,7 @@ namespace Game
                 if (chunk.Types.Contains(type))
                 {
                     components.AddRange(chunk.GetComponents<T>().AsSpan());
-                    var entitiesSpan = chunk.Entities.AsSpan();
+                    Span<EntityID> entitiesSpan = chunk.Entities.AsSpan();
                     entities.AddRange(entitiesSpan);
                 }
             }

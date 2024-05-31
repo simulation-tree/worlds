@@ -87,21 +87,22 @@ namespace Game
             foreach (INode child in node.Children)
             {
                 ForEach(child, callback);
+                callback(child);
             }
-
-            callback(node);
         }
 
+        /// <summary>
+        /// Iterates through all descendants of type <typeparamref name="T"/>.
+        /// </summary>
         public static void ForEach<T>(this INode node, Action<T> callback) where T : INode
         {
             foreach (INode child in node.Children)
             {
                 ForEach(child, callback);
-            }
-
-            if (node is T t)
-            {
-                callback(t);
+                if (child is T t)
+                {
+                    callback(t);
+                }
             }
         }
 

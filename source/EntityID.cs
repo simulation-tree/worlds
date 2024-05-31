@@ -12,29 +12,30 @@ namespace Game
     /// The unique ID of an entity that is always 1 greater than its index,
     /// and is unique to the <see cref="World"/> that it originated from.
     /// </summary>
-    public readonly struct EntityID : IEquatable<EntityID>
+    public readonly struct EntityID(uint value) : IEquatable<EntityID>
     {
-        public readonly uint value;
+        public readonly uint value = value;
 
-        public EntityID(uint value)
+#if !IGNORE_STACKTRACES
+        public StackTrace? Creation
         {
-            this.value = value;
+            get
+            {
+                if (UnsafeWorld.createStackTraces.TryGetValue(this, out StackTrace? stackTrace))
+                {
+                    return stackTrace;
+                }
+                else
+                {
+                    return null;
+                }
+            }
         }
+#endif
 
         public override string ToString()
         {
-#if !IGNORE_STACKTRACES
-            if (UnsafeWorld.createStackTraces.TryGetValue(this, out StackTrace? stackTrace))
-            {
-                return $"{value} ({stackTrace})";
-            }
-            else
-            {
-                return value.ToString();
-            }
-#else
             return value.ToString();
-#endif
         }
 
         public readonly override bool Equals(object? obj)
