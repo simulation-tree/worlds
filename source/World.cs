@@ -772,6 +772,22 @@ namespace Game
             return Query(RuntimeType.Get<T>());
         }
 
+        public readonly void Query<T>(Action<EntityID> callback) where T : unmanaged
+        {
+            RuntimeType componentType = RuntimeType.Get<T>();
+            for (int i = 0; i < ComponentChunks.Count; i++)
+            {
+                ComponentChunk chunk = ComponentChunks.Values[i];
+                if (chunk.Types.Contains(componentType))
+                {
+                    for (uint j = 0; j < chunk.Entities.Count; j++)
+                    {
+                        callback(chunk.Entities[j]);
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// Finds all entities that contain all of the given component types
         /// and invokes the callback for every entity found.
