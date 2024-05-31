@@ -136,11 +136,7 @@ namespace Game
                 Type systemType = type.Type;
                 ReadOnlySpan<char> aqn = systemType.AssemblyQualifiedName.AsSpan();
                 writer.WriteValue((uint)aqn.Length);
-                for (uint b = 0; b < aqn.Length; b++)
-                {
-                    writer.WriteValue(aqn[(int)b]);
-                }
-
+                writer.WriteUTF8Span(aqn);
                 writer.WriteValue(type.AsRawValue());
             }
 
@@ -190,12 +186,14 @@ namespace Game
             value = UnsafeWorld.Allocate();
             uint typeCount = reader.ReadValue<uint>();
             using UnmanagedList<RuntimeType> uniqueTypes = new();
+            Span<char> buffer = stackalloc char[256];
             for (uint i = 0; i < typeCount; i++)
             {
                 uint aqnLength = reader.ReadValue<uint>();
-                ReadOnlySpan<char> aqn = reader.ReadSpan<char>(aqnLength);
+                reader.ReadUTF8Span(buffer[..(int)aqnLength]);
 #pragma warning disable IL2057
-                Type systemType = Type.GetType(aqn.ToString(), true) ?? throw new InvalidOperationException($"Type {aqn.ToString()} not found.");
+                string aqn = new(buffer[..(int)aqnLength]);
+                Type systemType = Type.GetType(aqn, true) ?? throw new InvalidOperationException($"Type {aqn} not found.");
 #pragma warning restore IL2057
                 uint rawValue = reader.ReadValue<uint>();
                 RuntimeType type = new(rawValue);
