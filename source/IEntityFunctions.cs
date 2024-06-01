@@ -107,5 +107,10 @@ namespace Game
         {
             return entity.World.CreateCollection<T>(entity.Value);
         }
+
+        public static UnmanagedList<T> CreateCollection<T>(this IEntity entity, uint initialCapacity) where T : unmanaged
+        {
+            return entity.World.CreateCollection<T>(entity.Value, initialCapacity);
+        }
     }
 }

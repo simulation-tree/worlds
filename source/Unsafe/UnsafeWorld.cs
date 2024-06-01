@@ -463,7 +463,6 @@ namespace Game.Unsafe
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
-
             ThrowIfCollectionAlreadyPresent(world, entity, type);
 
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);

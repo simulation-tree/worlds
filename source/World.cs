@@ -389,22 +389,21 @@ namespace Game
 
         public readonly UnmanagedList<T> CreateCollection<T>(EntityID entity) where T : unmanaged
         {
-            return new(UnsafeWorld.CreateCollection(value, entity, RuntimeType.Get<T>()));
+            return CreateCollection<T>(entity, 1);
         }
 
-        public readonly Span<T> CreateCollection<T>(IEntity entity, uint initialCount) where T : unmanaged
+        public readonly UnmanagedList<T> CreateCollection<T>(IEntity entity, uint initialCapacity = 1) where T : unmanaged
         {
-            return CreateCollection<T>(entity.Value, initialCount);
+            return CreateCollection<T>(entity.Value, initialCapacity);
         }
 
         /// <summary>
         /// Creates a new collection of the given count and returns it as a span.
         /// </summary>
-        public readonly Span<T> CreateCollection<T>(EntityID entity, uint initialCount) where T : unmanaged
+        public readonly UnmanagedList<T> CreateCollection<T>(EntityID entity, uint initialCapacity = 1) where T : unmanaged
         {
-            UnmanagedList<T> list = new(UnsafeWorld.CreateCollection(value, entity, RuntimeType.Get<T>()));
-            list.AddDefault(initialCount);
-            return list.AsSpan();
+            UnmanagedList<T> list = new(UnsafeWorld.CreateCollection(value, entity, RuntimeType.Get<T>(), initialCapacity));
+            return list;
         }
 
         public readonly void CreateCollection<T>(IEntity entity, ReadOnlySpan<T> values) where T : unmanaged
