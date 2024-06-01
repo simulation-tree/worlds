@@ -252,12 +252,14 @@ namespace Game.Unsafe
         public static void Poll(UnsafeWorld* world)
         {
             World worldValue = new(world);
+
+            //todo: remove this temp allocation (exists to make sure iterating over this sequence of events works)
             using UnmanagedArray<Container> tempEvents = new(UnsafeList.AsSpan<Container>(world->events));
             UnsafeList.Clear(world->events);
 
             for (uint i = 0; i < tempEvents.Length; i++)
             {
-                using Container message = tempEvents[i];
+                Container message = tempEvents[i];
                 RuntimeType eventType = message.type;
                 if (UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listeners, eventType))
                 {
@@ -281,6 +283,8 @@ namespace Game.Unsafe
                         listener.Invoke(worldValue, message);
                     }
                 }
+
+                message.Dispose();
             }
         }
 

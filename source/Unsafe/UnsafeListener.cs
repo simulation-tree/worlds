@@ -2,7 +2,7 @@
 
 namespace Game.Unsafe
 {
-    internal unsafe struct UnsafeListener
+    public unsafe struct UnsafeListener
     {
         private delegate* unmanaged<void> callback;
 

@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
 using Unmanaged;
-using Unmanaged.Collections;
 
 namespace Game
 {
@@ -39,8 +39,8 @@ namespace Game
         public void MultipleSystems()
         {
             using World world = new();
-            using TestSystem system1 = new(world);
-            using TestSystem system2 = new(world);
+            TestSystem system1 = new(world);
+            TestSystem system2 = new(world);
             world.Submit(new TestEvent(42));
             world.Poll();
             Assert.Multiple(() =>
@@ -48,6 +48,18 @@ namespace Game
                 Assert.That(system1.received, Has.Count.EqualTo(1));
                 Assert.That(system2.received, Has.Count.EqualTo(1));
             });
+
+            system1.Dispose();
+            world.Submit(new TestEvent(43));
+            world.Poll();
+            Assert.Multiple(() =>
+            {
+                Assert.That(system1.received, Has.Count.EqualTo(1));
+                Assert.That(system2.received, Has.Count.EqualTo(2));
+                Assert.That(system2.received[1].data, Is.EqualTo(43));
+            });
+
+            system2.Dispose();
         }
 
         public readonly struct TestEvent
@@ -62,17 +74,11 @@ namespace Game
 
         public class TestSystem : SystemBase
         {
-            public readonly UnmanagedList<TestEvent> received;
+            public readonly List<TestEvent> received = [];
 
             public TestSystem(World world) : base(world)
             {
-                received = new();
-                Listen<TestEvent>(OnEvent);
-            }
-
-            protected override void OnDisposed()
-            {
-                received.Dispose();
+                Subscribe<TestEvent>(OnEvent);
             }
 
             private void OnEvent(TestEvent e)

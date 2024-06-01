@@ -12,7 +12,7 @@ namespace Game
     /// </summary>
     public abstract class SystemBase : IDisposable
     {
-        private static readonly Dictionary<RuntimeType, HashSet<Action<Container>>> staticCallbacks = [];
+        private static readonly Dictionary<RuntimeType, List<Action<Container>>> staticCallbacks = [];
 
         private World world;
 
@@ -45,49 +45,49 @@ namespace Game
         /// <summary>
         /// Cleans up the resources of this system.
         /// </summary>
-        public void Dispose()
+        public virtual void Dispose()
         {
             if (listeners.IsDisposed)
             {
                 throw new ObjectDisposedException(ToString());
             }
 
-            foreach (Listener listener in listeners)
-            {
-                listener.Dispose();
-            }
-
             foreach (RuntimeType type in callbacks.Keys)
             {
                 Action<Container> callback = this.callbacks[type];
-                if (staticCallbacks.TryGetValue(type, out HashSet<Action<Container>>? callbacks))
+                if (staticCallbacks.TryGetValue(type, out List<Action<Container>>? callbacks))
                 {
                     bool removed = callbacks.Remove(callback);
                     if (callbacks.Count == 0)
                     {
+                        for (uint i = 0; i < listeners.Count; i++)
+                        {
+                            Listener listener = listeners[i];
+                            if (listener.eventType == type)
+                            {
+                                listener.Dispose();
+                                listeners.RemoveAt(i);
+                                break;
+                            }
+                        }
+
                         staticCallbacks.Remove(type);
                     }
                 }
             }
 
             listeners.Dispose();
-            OnDisposed();
             world = default;
         }
 
         /// <summary>
-        /// Called when the system is disposed and no longer part
-        /// of the <see cref="Game.World"/> that it was added to.
-        /// </summary>
-        protected abstract void OnDisposed();
-
-        /// <summary>
         /// Subscribes to an event of type <typeparamref name="T"/>.
+        /// Listener gets disposed together with the system.
         /// </summary>
-        public unsafe void Listen<T>(Action<T> callback) where T : unmanaged
+        public unsafe void Subscribe<T>(Action<T> callback) where T : unmanaged
         {
             RuntimeType eventType = RuntimeType.Get<T>();
-            if (!staticCallbacks.TryGetValue(eventType, out HashSet<Action<Container>>? callbacks))
+            if (!staticCallbacks.TryGetValue(eventType, out List<Action<Container>>? callbacks))
             {
                 callbacks = new();
                 staticCallbacks.Add(eventType, callbacks);
