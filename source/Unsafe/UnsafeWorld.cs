@@ -2,11 +2,9 @@
 #define IGNORE_STACKTRACES
 #endif
 
-using Game.Requests;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Security.Principal;
 using Unmanaged;
 using Unmanaged.Collections;
 
