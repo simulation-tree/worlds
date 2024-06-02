@@ -35,13 +35,6 @@ namespace Game
             callbacks = new();
         }
 
-        public SystemBase(IWorld world)
-        {
-            this.world = world.Value;
-            listeners = new();
-            callbacks = new();
-        }
-
         /// <summary>
         /// Cleans up the resources of this system.
         /// </summary>

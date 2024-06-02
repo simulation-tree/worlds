@@ -9,9 +9,9 @@ namespace Game.Unsafe
         private UnmanagedList<EntityID> entities;
         private UnmanagedArray<RuntimeType> types;
         private UnmanagedArray<nint> components;
-        private readonly int key;
+        private readonly uint key;
 
-        private UnsafeComponentChunk(UnmanagedList<EntityID> entities, UnmanagedArray<RuntimeType> types, UnmanagedArray<nint> components, int key)
+        private UnsafeComponentChunk(UnmanagedList<EntityID> entities, UnmanagedArray<RuntimeType> types, UnmanagedArray<nint> components, uint key)
         {
             this.entities = entities;
             this.types = types;
@@ -30,7 +30,7 @@ namespace Game.Unsafe
                 componentArray[i] = (nint)UnsafeList.Allocate(type);
             }
 
-            int key = RuntimeType.CalculateHash(types);
+            uint key = RuntimeType.CalculateHash(types);
             UnsafeComponentChunk* chunk = Allocations.Allocate<UnsafeComponentChunk>();
             chunk[0] = new(entities, typeArray, componentArray, key);
             return chunk;
@@ -62,7 +62,7 @@ namespace Game.Unsafe
             return chunk->entities;
         }
 
-        public static int GetKey(UnsafeComponentChunk* chunk)
+        public static uint GetKey(UnsafeComponentChunk* chunk)
         {
             Allocations.ThrowIfNull(chunk);
             return chunk->key;

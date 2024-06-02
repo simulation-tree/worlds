@@ -4,11 +4,11 @@
 
 namespace Game.Unsafe
 {
-    public struct EntityDescription(EntityID entity, uint version, int componentsKey)
+    public struct EntityDescription(EntityID entity, uint version, uint componentsKey)
     {
         public EntityID entity = entity;
         public uint version = version;
-        public int componentsKey = componentsKey;
+        public uint componentsKey = componentsKey;
         public EntityCollections collections;
     }
 }

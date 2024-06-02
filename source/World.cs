@@ -20,7 +20,7 @@ namespace Game
         public readonly bool IsDisposed => UnsafeWorld.IsDisposed(value);
         public readonly UnmanagedList<EntityDescription> Slots => UnsafeWorld.GetEntitySlots(value);
         public readonly UnmanagedList<EntityID> Free => UnsafeWorld.GetFreeEntities(value);
-        public readonly UnmanagedDictionary<int, ComponentChunk> ComponentChunks => UnsafeWorld.GetComponentChunks(value);
+        public readonly UnmanagedDictionary<uint, ComponentChunk> ComponentChunks => UnsafeWorld.GetComponentChunks(value);
 
         /// <summary>
         /// All entities that exist in the world.
@@ -140,7 +140,7 @@ namespace Game
                 ReadOnlySpan<char> aqn = systemType.AssemblyQualifiedName.AsSpan();
                 writer.WriteValue((uint)aqn.Length);
                 writer.WriteUTF8Span(aqn);
-                writer.WriteValue(type.AsRawValue());
+                writer.WriteValue(type);
             }
 
             writer.WriteValue(Count);
@@ -176,7 +176,7 @@ namespace Game
                             uint listCount = UnsafeList.GetCountRef(list);
                             writer.WriteValue(listCount);
                             nint address = UnsafeList.GetAddress(list);
-                            Span<byte> bytes = new((void*)address, (int)(listCount * type.size));
+                            Span<byte> bytes = new((void*)address, (int)(listCount * type.Size));
                             writer.WriteSpan<byte>(bytes);
                         }
                     }
@@ -198,8 +198,7 @@ namespace Game
                 string aqn = new(buffer[..(int)aqnLength]);
                 Type systemType = Type.GetType(aqn, true) ?? throw new InvalidOperationException($"Type {aqn} not found.");
 #pragma warning restore IL2057
-                uint rawValue = reader.ReadValue<uint>();
-                RuntimeType type = new(rawValue);
+                RuntimeType type = reader.ReadValue<RuntimeType>();
                 uniqueTypes.Add(type);
             }
 
@@ -212,19 +211,19 @@ namespace Game
                 uint catchup = entityId - currentEntityId;
                 for (uint j = 0; j < catchup; j++)
                 {
-                    EntityID temporaryEntity = UnsafeWorld.CreateEntity(value, default);
+                    EntityID temporaryEntity = CreateEntity();
                     temporaryEntities.Add(temporaryEntity);
                 }
 
-                EntityID entity = UnsafeWorld.CreateEntity(value, default);
+                EntityID entity = CreateEntity();
                 uint componentCount = reader.ReadValue<uint>();
                 for (uint j = 0; j < componentCount; j++)
                 {
                     uint typeIndex = reader.ReadValue<uint>();
                     RuntimeType type = uniqueTypes[typeIndex];
-                    ReadOnlySpan<byte> componentBytes = reader.ReadSpan<byte>(type.size);
+                    ReadOnlySpan<byte> componentBytes = reader.ReadSpan<byte>(type.Size);
                     void* component = UnsafeWorld.AddComponent(value, entity, type);
-                    Span<byte> destinationBytes = new(component, type.size);
+                    Span<byte> destinationBytes = new(component, type.Size);
                     componentBytes.CopyTo(destinationBytes);
                 }
 
@@ -234,7 +233,7 @@ namespace Game
                     uint typeIndex = reader.ReadValue<uint>();
                     RuntimeType type = uniqueTypes[typeIndex];
                     uint listCount = reader.ReadValue<uint>();
-                    uint byteCount = listCount * type.size;
+                    uint byteCount = listCount * type.Size;
                     UnsafeList* list = UnsafeWorld.CreateCollection(value, entity, type, listCount);
                     UnsafeList.AddDefault(list, listCount);
                     nint address = UnsafeList.GetAddress(list);
@@ -268,7 +267,7 @@ namespace Game
                         RuntimeType type = chunk.Types[j];
                         Span<byte> bytes = chunk.GetComponentBytes(slot.entity, type);
                         void* component = UnsafeWorld.AddComponent(value, entity, type);
-                        Span<byte> destination = new(component, type.size);
+                        Span<byte> destination = new(component, type.Size);
                         bytes.CopyTo(destination);
                     }
 
@@ -281,9 +280,9 @@ namespace Game
                             uint count = UnsafeList.GetCountRef(list);
                             UnsafeList* destination = UnsafeWorld.CreateCollection(value, entity, type, count);
                             nint address = UnsafeList.GetAddress(destination);
-                            Span<byte> destinationBytes = new((void*)address, (int)(count * type.size));
+                            Span<byte> destinationBytes = new((void*)address, (int)(count * type.Size));
                             nint sourceAddress = UnsafeList.GetAddress(list);
-                            Span<byte> sourceBytes = new((void*)sourceAddress, (int)(count * type.size));
+                            Span<byte> sourceBytes = new((void*)sourceAddress, (int)(count * type.Size));
                             sourceBytes.CopyTo(destinationBytes);
                         }
                     }
@@ -369,7 +368,26 @@ namespace Game
 
         public readonly EntityID CreateEntity()
         {
-            return UnsafeWorld.CreateEntity(value, default);
+            EntityID entity = GetNextEntity();
+            CreateEntity(entity);
+            return entity;
+        }
+
+        /// <summary>
+        /// Returns the value for the next created entity.
+        /// </summary>
+        public readonly EntityID GetNextEntity()
+        {
+            return UnsafeWorld.GetNextEntity(value);
+        }
+
+        /// <summary>
+        /// Creates an entity with the given value assuming its 
+        /// not already in use.
+        /// </summary>
+        public readonly void CreateEntity(EntityID value)
+        {
+            UnsafeWorld.InitializeEntity(this.value, value, default);
         }
 
         public readonly bool ContainsEntity(IEntity entity)
@@ -517,21 +535,25 @@ namespace Game
             UnsafeWorld.RemoveComponent<T>(value, entity);
         }
 
-        public readonly bool ContainsComponent<T>(out EntityID entity) where T : unmanaged
+        /// <summary>
+        /// Returns <c>true</c> if any entity exists with the given component type.
+        /// </summary>
+        public readonly bool ContainsComponent<T>() where T : unmanaged
         {
-            UnmanagedDictionary<int, ComponentChunk> components = ComponentChunks;
+            UnmanagedDictionary<uint, ComponentChunk> components = ComponentChunks;
             RuntimeType type = RuntimeType.Get<T>();
             for (int i = 0; i < components.Count; i++)
             {
                 ComponentChunk chunk = components.Values[i];
                 if (chunk.Types.Contains(type))
                 {
-                    entity = chunk.Entities[0];
-                    return true;
+                    if (chunk.Entities.Count > 0)
+                    {
+                        return true;
+                    }
                 }
             }
 
-            entity = default;
             return false;
         }
 
@@ -660,7 +682,7 @@ namespace Game
         /// </summary>
         public readonly ComponentChunk GetComponentChunk(ReadOnlySpan<RuntimeType> componentTypes)
         {
-            int key = RuntimeType.CalculateHash(componentTypes);
+            uint key = RuntimeType.CalculateHash(componentTypes);
             if (ComponentChunks.TryGetValue(key, out ComponentChunk chunk))
             {
                 return chunk;
@@ -673,13 +695,13 @@ namespace Game
 
         public readonly bool ContainsComponentChunk(ReadOnlySpan<RuntimeType> componentTypes)
         {
-            int key = RuntimeType.CalculateHash(componentTypes);
+            uint key = RuntimeType.CalculateHash(componentTypes);
             return ComponentChunks.ContainsKey(key);
         }
 
         public readonly bool TryGetComponentChunk(ReadOnlySpan<RuntimeType> componentTypes, out ComponentChunk chunk)
         {
-            int key = RuntimeType.CalculateHash(componentTypes);
+            uint key = RuntimeType.CalculateHash(componentTypes);
             return ComponentChunks.TryGetValue(key, out chunk);
         }
 

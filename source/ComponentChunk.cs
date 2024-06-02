@@ -12,7 +12,7 @@ namespace Game
         public readonly bool IsDisposed => UnsafeComponentChunk.IsDisposed(value);
         public readonly UnmanagedList<EntityID> Entities => UnsafeComponentChunk.GetEntities(value);
         public readonly ReadOnlySpan<RuntimeType> Types => UnsafeComponentChunk.GetTypes(value);
-        public readonly int Key => UnsafeComponentChunk.GetKey(value);
+        public readonly uint Key => UnsafeComponentChunk.GetKey(value);
 
         public ComponentChunk()
         {
@@ -91,7 +91,7 @@ namespace Game
         public readonly Span<byte> GetComponentBytes(EntityID entity, RuntimeType type)
         {
             void* component = GetComponent(entity, type);
-            return new Span<byte>(component, type.size);
+            return new Span<byte>(component, type.Size);
         }
 
         public readonly void* GetComponent(EntityID entity, RuntimeType type)
@@ -104,7 +104,7 @@ namespace Game
         {
             UnsafeList* components = GetComponents(type);
             nint address = UnsafeList.GetAddress(components);
-            return (void*)(address + (int)index * type.size);
+            return (void*)(address + (int)index * type.Size);
         }
     }
 }
