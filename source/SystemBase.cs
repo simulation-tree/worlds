@@ -85,7 +85,7 @@ namespace Game
                 callbacks = new();
                 staticCallbacks.Add(eventType, callbacks);
 
-                Listener listener = World.Listen(eventType, &StaticEvent);
+                Listener listener = World.CreateListener(eventType, &StaticEvent);
                 listeners.Add(listener);
             }
 

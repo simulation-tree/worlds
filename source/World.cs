@@ -317,19 +317,14 @@ namespace Game
             UnsafeWorld.DestroyEntity(value, id);
         }
 
-        public readonly Listener Listen<T>(delegate* unmanaged<World, Container, void> callback) where T : unmanaged
+        public readonly Listener CreateListener<T>(delegate* unmanaged<World, Container, void> callback) where T : unmanaged
         {
-            return Listen(RuntimeType.Get<T>(), callback);
+            return CreateListener(RuntimeType.Get<T>(), callback);
         }
 
-        public readonly Listener Listen(RuntimeType eventType, delegate* unmanaged<World, Container, void> callback)
+        public readonly Listener CreateListener(RuntimeType eventType, delegate* unmanaged<World, Container, void> callback)
         {
-            return UnsafeWorld.Listen(value, eventType, callback);
-        }
-
-        public readonly ListenerWithContext Listen(nint pointer, RuntimeType eventType, delegate* unmanaged<nint, World, Container, void> callback)
-        {
-            return UnsafeWorld.Listen(value, pointer, eventType, callback);
+            return UnsafeWorld.CreateListener(value, eventType, callback);
         }
 
         public readonly ReadOnlySpan<RuntimeType> GetComponents(IEntity entity)

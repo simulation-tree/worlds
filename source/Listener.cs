@@ -29,7 +29,7 @@ namespace Game
         public readonly void Dispose()
         {
             ThrowIfDisposed();
-            UnsafeWorld.Unlisten(world.value, this);
+            UnsafeWorld.RemoveListener(world.value, this);
         }
 
         [Conditional("TRACK_ALLOCATIONS")]

@@ -24,7 +24,7 @@ namespace Game
         public unsafe void SimpleListener()
         {
             using World world = new();
-            world.Listen<SimpleEvent>(&OnSimpleEvent);
+            world.CreateListener<SimpleEvent>(&OnSimpleEvent);
             world.Submit(new SimpleEvent { x = 1 });
             world.Submit(new SimpleEvent { x = 2 });
             world.Poll();
@@ -48,7 +48,7 @@ namespace Game
         public unsafe void AddingListenerThenRemoving()
         {
             using World world = new();
-            Listener listener = world.Listen(RuntimeType.Get<SimpleEvent>(), &OneEventOnly);
+            Listener listener = world.CreateListener(RuntimeType.Get<SimpleEvent>(), &OneEventOnly);
             world.Submit(new SimpleEvent { x = 1 });
             world.Poll();
 
@@ -72,8 +72,8 @@ namespace Game
         public unsafe void OneMethodTwoListeners()
         {
             using World world = new();
-            Listener listener1 = world.Listen(RuntimeType.Get<SimpleEvent>(), &OnSimpleEvent);
-            Listener listener2 = world.Listen(RuntimeType.Get<SimpleEvent>(), &OnSimpleEvent);
+            Listener listener1 = world.CreateListener(RuntimeType.Get<SimpleEvent>(), &OnSimpleEvent);
+            Listener listener2 = world.CreateListener(RuntimeType.Get<SimpleEvent>(), &OnSimpleEvent);
             world.Submit(new SimpleEvent { x = 1 });
             world.Poll();
 

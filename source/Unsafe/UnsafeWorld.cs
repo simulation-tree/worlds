@@ -30,16 +30,14 @@ namespace Game.Unsafe
         private UnsafeList* freeEntities;
         private UnsafeList* events;
         private UnsafeDictionary* listeners;
-        private UnsafeDictionary* listenersWithContext;
         private UnsafeDictionary* components;
 
-        private UnsafeWorld(UnsafeList* slots, UnsafeList* freeEntities, UnsafeList* events, UnsafeDictionary* listeners, UnsafeDictionary* listenersWithContext, UnsafeDictionary* components)
+        private UnsafeWorld(UnsafeList* slots, UnsafeList* freeEntities, UnsafeList* events, UnsafeDictionary* listeners, UnsafeDictionary* components)
         {
             this.slots = slots;
             this.freeEntities = freeEntities;
             this.events = events;
             this.listeners = listeners;
-            this.listenersWithContext = listenersWithContext;
             this.components = components;
         }
 
@@ -158,7 +156,6 @@ namespace Game.Unsafe
             UnsafeList* freeEntities = UnsafeList.Allocate<EntityID>();
             UnsafeList* events = UnsafeList.Allocate<Container>();
             UnsafeDictionary* listeners = UnsafeDictionary.Allocate<RuntimeType, nint>();
-            UnsafeDictionary* listenersWithContext = UnsafeDictionary.Allocate<RuntimeType, nint>();
             UnsafeDictionary* components = UnsafeDictionary.Allocate<uint, ComponentChunk>();
 
             ComponentChunk defaultComponentChunk = new([]);
@@ -166,7 +163,7 @@ namespace Game.Unsafe
             UnsafeDictionary.Add(components, chunkKey, defaultComponentChunk);
 
             UnsafeWorld* world = Allocations.Allocate<UnsafeWorld>();
-            *world = new(slots, freeEntities, events, listeners, listenersWithContext, components);
+            *world = new(slots, freeEntities, events, listeners, components);
             return world;
         }
 
@@ -178,7 +175,6 @@ namespace Game.Unsafe
             UnsafeList.Free(ref world->freeEntities);
             UnsafeList.Free(ref world->events);
             UnsafeDictionary.Free(ref world->listeners);
-            UnsafeDictionary.Free(ref world->listenersWithContext);
             UnsafeDictionary.Free(ref world->components);
             Allocations.Free(ref world);
         }
@@ -215,24 +211,6 @@ namespace Game.Unsafe
             }
 
             UnsafeDictionary.Clear(world->listeners);
-
-            listenerTypesCount = UnsafeDictionary.GetCount(world->listenersWithContext);
-            for (uint i = 0; i < listenerTypesCount; i++)
-            {
-                RuntimeType eventType = UnsafeDictionary.GetKeyRef<RuntimeType, nint>(world->listenersWithContext, i);
-                UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listenersWithContext, eventType);
-                uint listenerCount = UnsafeList.GetCountRef(listenerList);
-                for (uint j = 0; j < listenerCount; j++)
-                {
-                    ListenerWithContext listener = UnsafeList.Get<ListenerWithContext>(listenerList, j);
-                    UnsafeListener* unsafeValue = listener.value;
-                    UnsafeListener.Free(ref unsafeValue);
-                }
-
-                UnsafeList.Free(ref listenerList);
-            }
-
-            UnsafeDictionary.Clear(world->listenersWithContext);
 
             //clear chunks
             UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
@@ -293,22 +271,11 @@ namespace Game.Unsafe
                     }
                 }
 
-                if (UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listenersWithContext, eventType))
-                {
-                    UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listenersWithContext, eventType);
-                    uint eventListenerCount = UnsafeList.GetCountRef(listenerList);
-                    for (uint j = 0; j < eventListenerCount; j++)
-                    {
-                        ListenerWithContext listener = UnsafeList.Get<ListenerWithContext>(listenerList, j);
-                        listener.Invoke(worldValue, message);
-                    }
-                }
-
                 message.Dispose();
             }
         }
 
-        public static Listener Listen(UnsafeWorld* world, RuntimeType eventType, delegate* unmanaged<World, Container, void> callback)
+        public static Listener CreateListener(UnsafeWorld* world, RuntimeType eventType, delegate* unmanaged<World, Container, void> callback)
         {
             Listener listener = new(new(world), eventType, callback);
             if (!UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listeners, eventType))
@@ -326,45 +293,11 @@ namespace Game.Unsafe
             return listener;
         }
 
-        public static ListenerWithContext Listen(UnsafeWorld* world, nint pointer, RuntimeType eventType, delegate* unmanaged<nint, World, Container, void> callback)
-        {
-            ListenerWithContext listener = new(pointer, new(world), eventType, callback);
-            if (!UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listenersWithContext, eventType))
-            {
-                UnsafeList* listenerList = UnsafeList.Allocate<ListenerWithContext>();
-                UnsafeList.Add(listenerList, listener);
-                UnsafeDictionary.Add(world->listenersWithContext, eventType, (nint)listenerList);
-            }
-            else
-            {
-                UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listenersWithContext, eventType);
-                UnsafeList.Add(listenerList, listener);
-            }
-
-            return listener;
-        }
-
-        public static void Unlisten(UnsafeWorld* world, Listener listener)
+        public static void RemoveListener(UnsafeWorld* world, Listener listener)
         {
             if (UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listeners, listener.eventType))
             {
                 UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, listener.eventType);
-                UnsafeListener* unsafeListener = listener.value;
-                UnsafeListener.Free(ref unsafeListener);
-                uint index = UnsafeList.IndexOf(listenerList, listener);
-                UnsafeList.RemoveAtBySwapping(listenerList, index);
-            }
-            else
-            {
-                throw new NullReferenceException($"Listener for {listener.eventType} not found.");
-            }
-        }
-
-        public static void Unlisten(UnsafeWorld* world, ListenerWithContext listener)
-        {
-            if (UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listenersWithContext, listener.eventType))
-            {
-                UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listenersWithContext, listener.eventType);
                 UnsafeListener* unsafeListener = listener.value;
                 UnsafeListener.Free(ref unsafeListener);
                 uint index = UnsafeList.IndexOf(listenerList, listener);
