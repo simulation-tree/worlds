@@ -309,6 +309,9 @@ namespace Game
             DestroyEntity(entity.Value);
         }
 
+        /// <summary>
+        /// Destroys the given entity assuming it exists.
+        /// </summary>
         public readonly void DestroyEntity(EntityID id)
         {
             UnsafeWorld.DestroyEntity(value, id);
@@ -395,6 +398,9 @@ namespace Game
             return ContainsEntity(entity.Value);
         }
 
+        /// <summary>
+        /// Checks if the entity exists and is valid in this world.
+        /// </summary>
         public readonly bool ContainsEntity(EntityID entity)
         {
             return UnsafeWorld.ContainsEntity(value, entity.value);
@@ -462,6 +468,9 @@ namespace Game
             list.AddRange(values);
         }
 
+        /// <summary>
+        /// Retrieves a collection of type <typeparamref name="T"/> on the given entity.
+        /// </summary>
         public readonly UnmanagedList<T> GetCollection<T>(EntityID entity) where T : unmanaged
         {
             return new(UnsafeWorld.GetCollection(value, entity, RuntimeType.Get<T>()));
@@ -703,6 +712,30 @@ namespace Game
         {
             uint key = RuntimeType.CalculateHash(componentTypes);
             return ComponentChunks.TryGetValue(key, out chunk);
+        }
+
+        /// <summary>
+        /// Counts how many entities there are with component of type <typeparamref name="T"/>.
+        /// </summary>
+        public readonly uint CountEntities<T>() where T : unmanaged
+        {
+            RuntimeType type = RuntimeType.Get<T>();
+            return CountEntities(type);
+        }
+
+        public readonly uint CountEntities(RuntimeType type)
+        {
+            uint count = 0;
+            for (int i = 0; i < ComponentChunks.Count; i++)
+            {
+                ComponentChunk chunk = ComponentChunks.Values[i];
+                if (chunk.Types.Contains(type))
+                {
+                    count += chunk.Entities.Count;
+                }
+            }
+
+            return count;
         }
 
         /// <summary>

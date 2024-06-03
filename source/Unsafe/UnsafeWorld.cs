@@ -438,7 +438,7 @@ namespace Game.Unsafe
 
             uint componentsKey = RuntimeType.CalculateHash(componentTypes);
             UnmanagedList<EntityID> freeEntities = GetFreeEntities(world);
-            if (freeEntities.Remove(entity))
+            if (freeEntities.TryRemove(entity))
             {
                 //recycle a previously destroyed slot
                 ref EntityDescription oldSlot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
