@@ -75,7 +75,7 @@ namespace Game
             EntityID c = world.CreateEntity();
             world.AddComponent(c, new Apple("Goodbye, World!"));
 
-            using BinaryReader reader = new(writer.AsSpan());
+            using BinaryReader reader = new(writer);
             using World loadedWorld = reader.ReadObject<World>();
             world.Append(loadedWorld);
 
