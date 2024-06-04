@@ -57,7 +57,7 @@ namespace Game.Unsafe
             }
 
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, position);
-            if (slot.entity != entity)
+            if (slot.IsDestroyed)
             {
                 throw new NullReferenceException($"Entity {entity} not found.");
             }
@@ -76,7 +76,7 @@ namespace Game.Unsafe
             if (position < count)
             {
                 ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, position);
-                if (slot.entity == entity)
+                if (!slot.IsDestroyed)
                 {
                     throw new InvalidOperationException($"Entity {entity} already present.");
                 }
@@ -327,7 +327,7 @@ namespace Game.Unsafe
             slot.entity = default;
             slot.componentsKey = default;
             slot.collections = default;
-            slot.version++;
+            slot.state = EntityDescription.State.Destroyed;
             UnsafeList.Add(world->freeEntities, entity);
             EntityDestroyed(new(world), entity);
         }
@@ -376,14 +376,14 @@ namespace Game.Unsafe
                 //recycle a previously destroyed slot
                 ref EntityDescription oldSlot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
                 oldSlot.entity = entity;
-                oldSlot.version++;
                 oldSlot.componentsKey = componentsKey;
+                oldSlot.state = EntityDescription.State.Enabled;
             }
             else
             {
                 //create new slot
                 EntityID newEntity = new(UnsafeList.GetCountRef(world->slots) + 1);
-                EntityDescription newSlot = new(newEntity, 0, componentsKey);
+                EntityDescription newSlot = new(newEntity, componentsKey);
                 UnsafeList.Add(world->slots, newSlot);
             }
 
@@ -616,109 +616,6 @@ namespace Game.Unsafe
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
             ComponentChunk chunk = components[slot.componentsKey];
             return chunk.GetComponentBytes(entity, type);
-        }
-
-        private static bool Contains(ReadOnlySpan<RuntimeType> container, ReadOnlySpan<RuntimeType> values)
-        {
-            for (int i = 0; i < values.Length; i++)
-            {
-                if (!container.Contains(values[i]))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        public static void QueryComponents<T1>(UnsafeWorld* world, QueryCallback<T1> action) where T1 : unmanaged
-        {
-            Allocations.ThrowIfNull(world);
-            ReadOnlySpan<RuntimeType> types = [RuntimeType.Get<T1>()];
-            UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
-            for (uint i = 0; i < components.Count; i++)
-            {
-                uint key = components.Keys[(int)i];
-                ComponentChunk chunk = components.Values[(int)i];
-                if (Contains(chunk.Types, types))
-                {
-                    UnmanagedList<EntityID> entities = chunk.Entities;
-                    for (uint e = 0; e < entities.Count; e++)
-                    {
-                        ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
-                        action(entities[e], ref t1);
-                    }
-                }
-            }
-        }
-
-        public static void QueryComponents<T1, T2>(UnsafeWorld* world, QueryCallback<T1, T2> action) where T1 : unmanaged where T2 : unmanaged
-        {
-            Allocations.ThrowIfNull(world);
-            ReadOnlySpan<RuntimeType> types = [RuntimeType.Get<T1>(), RuntimeType.Get<T2>()];
-            UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
-            for (uint i = 0; i < components.Count; i++)
-            {
-                uint key = components.Keys[(int)i];
-                ComponentChunk chunk = components.Values[(int)i];
-                if (Contains(chunk.Types, types))
-                {
-                    UnmanagedList<EntityID> entities = chunk.Entities;
-                    for (uint e = 0; e < entities.Count; e++)
-                    {
-                        ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
-                        ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
-                        action(entities[e], ref t1, ref t2);
-                    }
-                }
-            }
-        }
-
-        public static void QueryComponents<T1, T2, T3>(UnsafeWorld* world, QueryCallback<T1, T2, T3> action) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
-        {
-            Allocations.ThrowIfNull(world);
-            ReadOnlySpan<RuntimeType> types = [RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>()];
-            UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
-            for (uint i = 0; i < components.Count; i++)
-            {
-                uint key = components.Keys[(int)i];
-                ComponentChunk chunk = components.Values[(int)i];
-                if (Contains(chunk.Types, types))
-                {
-                    UnmanagedList<EntityID> entities = chunk.Entities;
-                    for (uint e = 0; e < entities.Count; e++)
-                    {
-                        ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
-                        ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
-                        ref T3 t3 = ref chunk.GetComponentRef<T3>(e);
-                        action(entities[e], ref t1, ref t2, ref t3);
-                    }
-                }
-            }
-        }
-
-        public static void QueryComponents<T1, T2, T3, T4>(UnsafeWorld* world, QueryCallback<T1, T2, T3, T4> action) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
-        {
-            Allocations.ThrowIfNull(world);
-            ReadOnlySpan<RuntimeType> types = [RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>(), RuntimeType.Get<T4>()];
-            UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
-            for (uint i = 0; i < components.Count; i++)
-            {
-                uint key = components.Keys[(int)i];
-                ComponentChunk chunk = components.Values[(int)i];
-                if (Contains(chunk.Types, types))
-                {
-                    UnmanagedList<EntityID> entities = chunk.Entities;
-                    for (uint e = 0; e < entities.Count; e++)
-                    {
-                        ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
-                        ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
-                        ref T3 t3 = ref chunk.GetComponentRef<T3>(e);
-                        ref T4 t4 = ref chunk.GetComponentRef<T4>(e);
-                        action(entities[e], ref t1, ref t2, ref t3, ref t4);
-                    }
-                }
-            }
         }
     }
 }

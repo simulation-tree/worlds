@@ -32,12 +32,20 @@ namespace Game
         /// <summary>
         /// Checks if the chunk contains all of the given types.
         /// </summary>
-        public readonly bool ContainsTypes(ReadOnlySpan<RuntimeType> types)
+        public readonly bool ContainsTypes(ReadOnlySpan<RuntimeType> types, bool exact = false)
         {
             ReadOnlySpan<RuntimeType> myTypes = Types;
             if (types.Length > myTypes.Length)
             {
                 return false;
+            }
+
+            if (exact)
+            {
+                if (types.Length != myTypes.Length)
+                {
+                    return false;
+                }
             }
 
             for (int i = 0; i < types.Length; i++)

@@ -32,7 +32,7 @@ namespace Game
 
             List<EntityID> oldEntities = world.Entities.ToList();
             List<(EntityID, Apple)> apples = new();
-            world.QueryComponents((in EntityID entity, ref Apple apple) =>
+            world.ForEach((in EntityID entity, ref Apple apple) =>
             {
                 apples.Add((entity, apple));
             });
@@ -45,7 +45,7 @@ namespace Game
             using World loadedWorld = reader.ReadObject<World>();
             List<EntityID> newEntities = loadedWorld.Entities.ToList();
             List<(EntityID, Apple)> newApples = new();
-            loadedWorld.QueryComponents((in EntityID entity, ref Apple apple) =>
+            loadedWorld.ForEach((in EntityID entity, ref Apple apple) =>
             {
                 newApples.Add((entity, apple));
             });

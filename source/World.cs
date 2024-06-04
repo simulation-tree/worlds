@@ -340,6 +340,20 @@ namespace Game
             return chunk.Types;
         }
 
+        public readonly bool IsEnabled(EntityID entity)
+        {
+            UnsafeWorld.ThrowIfEntityMissing(value, entity);
+            EntityDescription slot = Slots[entity.value - 1];
+            return slot.IsEnabled;
+        }
+
+        public readonly void SetEnabledState(EntityID entity, bool value)
+        {
+            UnsafeWorld.ThrowIfEntityMissing(this.value, entity);
+            ref EntityDescription slot = ref Slots.GetRef(entity.value - 1);
+            slot.SetEnabledState(value);
+        }
+
         public readonly bool TryGetFirst<T>(out T found) where T : unmanaged
         {
             return TryGetFirst(out _, out found);
@@ -352,7 +366,7 @@ namespace Game
 
         public readonly bool TryGetFirst<T>(out EntityID entity, out T component) where T : unmanaged
         {
-            foreach (EntityID e in Query(RuntimeType.Get<T>()))
+            foreach (EntityID e in GetAll(RuntimeType.Get<T>()))
             {
                 entity = e;
                 component = GetComponentRef<T>(e);
@@ -737,12 +751,12 @@ namespace Game
         /// Finds all entities that contain all of the given component types and
         /// adds them to the given list.
         /// </summary>
-        public readonly void Fill(ReadOnlySpan<RuntimeType> componentTypes, UnmanagedList<EntityID> list)
+        public readonly void Fill(ReadOnlySpan<RuntimeType> componentTypes, UnmanagedList<EntityID> list, bool exact = false)
         {
             for (int i = 0; i < ComponentChunks.Count; i++)
             {
                 ComponentChunk chunk = ComponentChunks.Values[i];
-                if (chunk.ContainsTypes(componentTypes))
+                if (chunk.ContainsTypes(componentTypes, exact))
                 {
                     list.AddRange(chunk.Entities.AsSpan());
                 }
@@ -806,7 +820,7 @@ namespace Game
         /// <summary>
         /// Iterates over all entities that contain the given component type.
         /// </summary>
-        public readonly IEnumerable<EntityID> Query(RuntimeType componentType)
+        public readonly IEnumerable<EntityID> GetAll(RuntimeType componentType)
         {
             for (int i = 0; i < ComponentChunks.Count; i++)
             {
@@ -821,12 +835,12 @@ namespace Game
             }
         }
 
-        public readonly IEnumerable<EntityID> Query<T>() where T : unmanaged
+        public readonly IEnumerable<EntityID> GetAll<T>() where T : unmanaged
         {
-            return Query(RuntimeType.Get<T>());
+            return GetAll(RuntimeType.Get<T>());
         }
 
-        public readonly void Query<T>(Action<EntityID> callback) where T : unmanaged
+        public readonly void ForEach<T>(QueryCallback callback) where T : unmanaged
         {
             RuntimeType componentType = RuntimeType.Get<T>();
             for (int i = 0; i < ComponentChunks.Count; i++)
@@ -849,7 +863,7 @@ namespace Game
         /// Destroying entities inside the callback is not recommended.
         /// </para>
         /// </summary>
-        public readonly void Query(ReadOnlySpan<RuntimeType> componentTypes, Action<EntityID> callback)
+        public readonly void ForEach(ReadOnlySpan<RuntimeType> componentTypes, QueryCallback callback)
         {
             for (int i = 0; i < ComponentChunks.Count; i++)
             {
@@ -864,24 +878,82 @@ namespace Game
             }
         }
 
-        public readonly void QueryComponents<T1>(QueryCallback<T1> action) where T1 : unmanaged
+        public readonly void ForEach<T1>(QueryCallback<T1> callback) where T1 : unmanaged
         {
-            UnsafeWorld.QueryComponents(value, action);
+            RuntimeType type = RuntimeType.Get<T1>();
+            for (int i = 0; i < ComponentChunks.Count; i++)
+            {
+                ComponentChunk chunk = ComponentChunks.Values[i];
+                if (chunk.Types.Contains(type))
+                {
+                    UnmanagedList<EntityID> entities = chunk.Entities;
+                    for (uint e = 0; e < entities.Count; e++)
+                    {
+                        ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
+                        callback(entities[e], ref t1);
+                    }
+                }
+            }
         }
 
-        public readonly void QueryComponents<T1, T2>(QueryCallback<T1, T2> action) where T1 : unmanaged where T2 : unmanaged
+        public readonly void ForEach<T1, T2>(QueryCallback<T1, T2> callback) where T1 : unmanaged where T2 : unmanaged
         {
-            UnsafeWorld.QueryComponents(value, action);
+            ReadOnlySpan<RuntimeType> types = [RuntimeType.Get<T1>(), RuntimeType.Get<T2>()];
+            for (int i = 0; i < ComponentChunks.Count; i++)
+            {
+                ComponentChunk chunk = ComponentChunks.Values[i];
+                if (chunk.ContainsTypes(types))
+                {
+                    UnmanagedList<EntityID> entities = chunk.Entities;
+                    for (uint e = 0; e < entities.Count; e++)
+                    {
+                        ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
+                        ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
+                        callback(entities[e], ref t1, ref t2);
+                    }
+                }
+            }
         }
 
-        public readonly void QueryComponents<T1, T2, T3>(QueryCallback<T1, T2, T3> action) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+        public readonly void ForEach<T1, T2, T3>(QueryCallback<T1, T2, T3> callback) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            UnsafeWorld.QueryComponents(value, action);
+            ReadOnlySpan<RuntimeType> types = [RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>()];
+            for (int i = 0; i < ComponentChunks.Count; i++)
+            {
+                ComponentChunk chunk = ComponentChunks.Values[i];
+                if (chunk.ContainsTypes(types))
+                {
+                    UnmanagedList<EntityID> entities = chunk.Entities;
+                    for (uint e = 0; e < entities.Count; e++)
+                    {
+                        ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
+                        ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
+                        ref T3 t3 = ref chunk.GetComponentRef<T3>(e);
+                        callback(entities[e], ref t1, ref t2, ref t3);
+                    }
+                }
+            }
         }
 
-        public readonly void QueryComponents<T1, T2, T3, T4>(QueryCallback<T1, T2, T3, T4> action) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+        public readonly void ForEach<T1, T2, T3, T4>(QueryCallback<T1, T2, T3, T4> callback) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            UnsafeWorld.QueryComponents(value, action);
+            ReadOnlySpan<RuntimeType> types = [RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>(), RuntimeType.Get<T4>()];
+            for (int i = 0; i < ComponentChunks.Count; i++)
+            {
+                ComponentChunk chunk = ComponentChunks.Values[i];
+                if (chunk.ContainsTypes(types))
+                {
+                    UnmanagedList<EntityID> entities = chunk.Entities;
+                    for (uint e = 0; e < entities.Count; e++)
+                    {
+                        ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
+                        ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
+                        ref T3 t3 = ref chunk.GetComponentRef<T3>(e);
+                        ref T4 t4 = ref chunk.GetComponentRef<T4>(e);
+                        callback(entities[e], ref t1, ref t2, ref t3, ref t4);
+                    }
+                }
+            }
         }
 
         public static bool operator ==(World left, World right)
@@ -900,9 +972,6 @@ namespace Game
     public delegate void QueryCallback<T1, T2>(in EntityID id, ref T1 t1, ref T2 t2) where T1 : unmanaged where T2 : unmanaged;
     public delegate void QueryCallback<T1, T2, T3>(in EntityID id, ref T1 t1, ref T2 t2, ref T3 t3) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged;
     public delegate void QueryCallback<T1, T2, T3, T4>(in EntityID id, ref T1 t1, ref T2 t2, ref T3 t3, ref T4 t4) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged;
-
-    public delegate void ListenerCallback<T>(ref T message) where T : unmanaged;
-    public delegate void ListenerCallback(ref Container message);
 
     public unsafe delegate void CreatedCallback(World world, EntityID id);
     public unsafe delegate void DestroyedCallback(World world, EntityID id);
