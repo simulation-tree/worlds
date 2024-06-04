@@ -108,11 +108,17 @@ namespace Game
             return GetComponent(index, type);
         }
 
+        //todo: rename this to become GetComponentAddress instead
         public readonly void* GetComponent(uint index, RuntimeType type)
         {
             UnsafeList* components = GetComponents(type);
             nint address = UnsafeList.GetAddress(components);
             return (void*)(address + (int)index * type.Size);
+        }
+
+        public readonly nint GetComponentAddress<T>(uint index) where T : unmanaged
+        {
+            return (nint)GetComponent(index, RuntimeType.Get<T>());
         }
     }
 }

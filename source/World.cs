@@ -726,21 +726,36 @@ namespace Game
         /// <summary>
         /// Counts how many entities there are with component of type <typeparamref name="T"/>.
         /// </summary>
-        public readonly uint CountEntities<T>() where T : unmanaged
+        public readonly uint CountEntities<T>(Query.Option options = default) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
-            return CountEntities(type);
+            return CountEntities(type, options);
         }
 
-        public readonly uint CountEntities(RuntimeType type)
+        public readonly uint CountEntities(RuntimeType type, Query.Option options = default)
         {
             uint count = 0;
+            bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             for (int i = 0; i < ComponentChunks.Count; i++)
             {
                 ComponentChunk chunk = ComponentChunks.Values[i];
                 if (chunk.Types.Contains(type))
                 {
-                    count += chunk.Entities.Count;
+                    if (includeDisabled)
+                    {
+                        count += chunk.Entities.Count;
+                    }
+                    else
+                    {
+                        for (uint e = 0; e < chunk.Entities.Count; e++)
+                        {
+                            EntityID entity = chunk.Entities[e];
+                            if (IsEnabled(entity))
+                            {
+                                count++;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -751,68 +766,143 @@ namespace Game
         /// Finds all entities that contain all of the given component types and
         /// adds them to the given list.
         /// </summary>
-        public readonly void Fill(ReadOnlySpan<RuntimeType> componentTypes, UnmanagedList<EntityID> list, bool exact = false)
+        public readonly void Fill(ReadOnlySpan<RuntimeType> componentTypes, UnmanagedList<EntityID> list, Query.Option options = default)
         {
+            bool exact = (options & Query.Option.ExactComponentTypes) == Query.Option.ExactComponentTypes;
+            bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             for (int i = 0; i < ComponentChunks.Count; i++)
             {
                 ComponentChunk chunk = ComponentChunks.Values[i];
                 if (chunk.ContainsTypes(componentTypes, exact))
                 {
-                    list.AddRange(chunk.Entities.AsSpan());
+                    if (includeDisabled)
+                    {
+                        list.AddRange(chunk.Entities);
+                    }
+                    else
+                    {
+                        for (uint e = 0; e < chunk.Entities.Count; e++)
+                        {
+                            EntityID entity = chunk.Entities[e];
+                            if (IsEnabled(entity))
+                            {
+                                list.Add(entity);
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        public readonly void Fill<T>(UnmanagedList<T> list) where T : unmanaged
+        public readonly void Fill<T>(UnmanagedList<T> list, Query.Option options = default) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
+            bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             for (int i = 0; i < ComponentChunks.Count; i++)
             {
                 ComponentChunk chunk = ComponentChunks.Values[i];
                 if (chunk.Types.Contains(type))
                 {
-                    UnmanagedList<T> components = chunk.GetComponents<T>();
-                    list.AddRange(components.AsSpan());
+                    if (includeDisabled)
+                    {
+                        list.AddRange(chunk.GetComponents<T>());
+                    }
+                    else
+                    {
+                        for (uint e = 0; e < chunk.Entities.Count; e++)
+                        {
+                            EntityID entity = chunk.Entities[e];
+                            if (IsEnabled(entity))
+                            {
+                                list.Add(chunk.GetComponentRef<T>(e));
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        public readonly void Fill<T>(UnmanagedList<EntityID> entities) where T : unmanaged
+        public readonly void Fill<T>(UnmanagedList<EntityID> entities, Query.Option options = default) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
+            bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             for (int i = 0; i < ComponentChunks.Count; i++)
             {
                 ComponentChunk chunk = ComponentChunks.Values[i];
                 if (chunk.Types.Contains(type))
                 {
-                    entities.AddRange(chunk.Entities.AsSpan());
+                    if (includeDisabled)
+                    {
+                        entities.AddRange(chunk.Entities);
+                    }
+                    else
+                    {
+                        for (uint e = 0; e < chunk.Entities.Count; e++)
+                        {
+                            EntityID entity = chunk.Entities[e];
+                            if (IsEnabled(entity))
+                            {
+                                entities.Add(entity);
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        public readonly void Fill<T>(UnmanagedList<T> components, UnmanagedList<EntityID> entities) where T : unmanaged
+        public readonly void Fill<T>(UnmanagedList<T> components, UnmanagedList<EntityID> entities, Query.Option options = default) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
+            bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             for (int i = 0; i < ComponentChunks.Count; i++)
             {
                 ComponentChunk chunk = ComponentChunks.Values[i];
                 if (chunk.Types.Contains(type))
                 {
-                    components.AddRange(chunk.GetComponents<T>().AsSpan());
-                    Span<EntityID> entitiesSpan = chunk.Entities.AsSpan();
-                    entities.AddRange(entitiesSpan);
+                    if (includeDisabled)
+                    {
+                        components.AddRange(chunk.GetComponents<T>());
+                        entities.AddRange(chunk.Entities);
+                    }
+                    else
+                    {
+                        for (uint e = 0; e < chunk.Entities.Count; e++)
+                        {
+                            EntityID entity = chunk.Entities[e];
+                            if (IsEnabled(entity))
+                            {
+                                components.Add(chunk.GetComponentRef<T>(e));
+                                entities.Add(entity);
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        public readonly void Fill(RuntimeType componentType, UnmanagedList<EntityID> entities)
+        public readonly void Fill(RuntimeType componentType, UnmanagedList<EntityID> entities, Query.Option options = default)
         {
+            bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             for (int i = 0; i < ComponentChunks.Count; i++)
             {
                 ComponentChunk chunk = ComponentChunks.Values[i];
                 if (chunk.Types.Contains(componentType))
                 {
-                    entities.AddRange(chunk.Entities.AsSpan());
+                    if (includeDisabled)
+                    {
+                        entities.AddRange(chunk.Entities);
+                    }
+                    else
+                    {
+                        for (uint e = 0; e < chunk.Entities.Count; e++)
+                        {
+                            EntityID entity = chunk.Entities[e];
+                            if (IsEnabled(entity))
+                            {
+                                entities.Add(entity);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -820,37 +910,61 @@ namespace Game
         /// <summary>
         /// Iterates over all entities that contain the given component type.
         /// </summary>
-        public readonly IEnumerable<EntityID> GetAll(RuntimeType componentType)
+        public readonly IEnumerable<EntityID> GetAll(RuntimeType componentType, Query.Option options = default)
         {
+            bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             for (int i = 0; i < ComponentChunks.Count; i++)
             {
                 ComponentChunk chunk = ComponentChunks.Values[i];
                 if (chunk.Types.Contains(componentType))
                 {
-                    for (uint j = 0; j < chunk.Entities.Count; j++)
+                    for (uint e = 0; e < chunk.Entities.Count; e++)
                     {
-                        yield return chunk.Entities[j];
+                        if (includeDisabled)
+                        {
+                            yield return chunk.Entities[e];
+                        }
+                        else
+                        {
+                            EntityID entity = chunk.Entities[e];
+                            if (IsEnabled(entity))
+                            {
+                                yield return entity;
+                            }
+                        }
                     }
                 }
             }
         }
 
-        public readonly IEnumerable<EntityID> GetAll<T>() where T : unmanaged
+        public readonly IEnumerable<EntityID> GetAll<T>(Query.Option options = default) where T : unmanaged
         {
-            return GetAll(RuntimeType.Get<T>());
+            return GetAll(RuntimeType.Get<T>(), options);
         }
 
-        public readonly void ForEach<T>(QueryCallback callback) where T : unmanaged
+        public readonly void ForEach<T>(QueryCallback callback, Query.Option options = default) where T : unmanaged
         {
             RuntimeType componentType = RuntimeType.Get<T>();
+            bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             for (int i = 0; i < ComponentChunks.Count; i++)
             {
                 ComponentChunk chunk = ComponentChunks.Values[i];
                 if (chunk.Types.Contains(componentType))
                 {
-                    for (uint j = 0; j < chunk.Entities.Count; j++)
+                    for (uint e = 0; e < chunk.Entities.Count; e++)
                     {
-                        callback(chunk.Entities[j]);
+                        if (includeDisabled)
+                        {
+                            callback(chunk.Entities[e]);
+                        }
+                        else
+                        {
+                            EntityID entity = chunk.Entities[e];
+                            if (IsEnabled(entity))
+                            {
+                                callback(entity);
+                            }
+                        }
                     }
                 }
             }
@@ -863,24 +977,38 @@ namespace Game
         /// Destroying entities inside the callback is not recommended.
         /// </para>
         /// </summary>
-        public readonly void ForEach(ReadOnlySpan<RuntimeType> componentTypes, QueryCallback callback)
+        public readonly void ForEach(ReadOnlySpan<RuntimeType> componentTypes, QueryCallback callback, Query.Option options = default)
         {
+            bool exact = (options & Query.Option.ExactComponentTypes) == Query.Option.ExactComponentTypes;
+            bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             for (int i = 0; i < ComponentChunks.Count; i++)
             {
                 ComponentChunk chunk = ComponentChunks.Values[i];
-                if (chunk.ContainsTypes(componentTypes))
+                if (chunk.ContainsTypes(componentTypes, exact))
                 {
-                    for (uint j = 0; j < chunk.Entities.Count; j++)
+                    for (uint e = 0; e < chunk.Entities.Count; e++)
                     {
-                        callback(chunk.Entities[j]);
+                        if (includeDisabled)
+                        {
+                            callback(chunk.Entities[e]);
+                        }
+                        else
+                        {
+                            EntityID entity = chunk.Entities[e];
+                            if (IsEnabled(entity))
+                            {
+                                callback(entity);
+                            }
+                        }
                     }
                 }
             }
         }
 
-        public readonly void ForEach<T1>(QueryCallback<T1> callback) where T1 : unmanaged
+        public readonly void ForEach<T1>(QueryCallback<T1> callback, Query.Option options = default) where T1 : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T1>();
+            bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             for (int i = 0; i < ComponentChunks.Count; i++)
             {
                 ComponentChunk chunk = ComponentChunks.Values[i];
@@ -889,16 +1017,29 @@ namespace Game
                     UnmanagedList<EntityID> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
-                        ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
-                        callback(entities[e], ref t1);
+                        if (includeDisabled)
+                        {
+                            ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
+                            callback(entities[e], ref t1);
+                        }
+                        else
+                        {
+                            EntityID entity = entities[e];
+                            if (IsEnabled(entity))
+                            {
+                                ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
+                                callback(entity, ref t1);
+                            }
+                        }
                     }
                 }
             }
         }
 
-        public readonly void ForEach<T1, T2>(QueryCallback<T1, T2> callback) where T1 : unmanaged where T2 : unmanaged
+        public readonly void ForEach<T1, T2>(QueryCallback<T1, T2> callback, Query.Option options = default) where T1 : unmanaged where T2 : unmanaged
         {
             ReadOnlySpan<RuntimeType> types = [RuntimeType.Get<T1>(), RuntimeType.Get<T2>()];
+            bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             for (int i = 0; i < ComponentChunks.Count; i++)
             {
                 ComponentChunk chunk = ComponentChunks.Values[i];
@@ -907,17 +1048,31 @@ namespace Game
                     UnmanagedList<EntityID> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
-                        ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
-                        ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
-                        callback(entities[e], ref t1, ref t2);
+                        if (includeDisabled)
+                        {
+                            ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
+                            ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
+                            callback(entities[e], ref t1, ref t2);
+                        }
+                        else
+                        {
+                            EntityID entity = entities[e];
+                            if (IsEnabled(entity))
+                            {
+                                ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
+                                ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
+                                callback(entity, ref t1, ref t2);
+                            }
+                        }
                     }
                 }
             }
         }
 
-        public readonly void ForEach<T1, T2, T3>(QueryCallback<T1, T2, T3> callback) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+        public readonly void ForEach<T1, T2, T3>(QueryCallback<T1, T2, T3> callback, Query.Option options = default) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
             ReadOnlySpan<RuntimeType> types = [RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>()];
+            bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             for (int i = 0; i < ComponentChunks.Count; i++)
             {
                 ComponentChunk chunk = ComponentChunks.Values[i];
@@ -926,18 +1081,33 @@ namespace Game
                     UnmanagedList<EntityID> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
-                        ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
-                        ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
-                        ref T3 t3 = ref chunk.GetComponentRef<T3>(e);
-                        callback(entities[e], ref t1, ref t2, ref t3);
+                        if (includeDisabled)
+                        {
+                            ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
+                            ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
+                            ref T3 t3 = ref chunk.GetComponentRef<T3>(e);
+                            callback(entities[e], ref t1, ref t2, ref t3);
+                        }
+                        else
+                        {
+                            EntityID entity = entities[e];
+                            if (IsEnabled(entity))
+                            {
+                                ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
+                                ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
+                                ref T3 t3 = ref chunk.GetComponentRef<T3>(e);
+                                callback(entity, ref t1, ref t2, ref t3);
+                            }
+                        }
                     }
                 }
             }
         }
 
-        public readonly void ForEach<T1, T2, T3, T4>(QueryCallback<T1, T2, T3, T4> callback) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+        public readonly void ForEach<T1, T2, T3, T4>(QueryCallback<T1, T2, T3, T4> callback, Query.Option options = default) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
             ReadOnlySpan<RuntimeType> types = [RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>(), RuntimeType.Get<T4>()];
+            bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             for (int i = 0; i < ComponentChunks.Count; i++)
             {
                 ComponentChunk chunk = ComponentChunks.Values[i];
@@ -946,11 +1116,26 @@ namespace Game
                     UnmanagedList<EntityID> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
-                        ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
-                        ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
-                        ref T3 t3 = ref chunk.GetComponentRef<T3>(e);
-                        ref T4 t4 = ref chunk.GetComponentRef<T4>(e);
-                        callback(entities[e], ref t1, ref t2, ref t3, ref t4);
+                        if (includeDisabled)
+                        {
+                            ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
+                            ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
+                            ref T3 t3 = ref chunk.GetComponentRef<T3>(e);
+                            ref T4 t4 = ref chunk.GetComponentRef<T4>(e);
+                            callback(entities[e], ref t1, ref t2, ref t3, ref t4);
+                        }
+                        else
+                        {
+                            EntityID entity = entities[e];
+                            if (IsEnabled(entity))
+                            {
+                                ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
+                                ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
+                                ref T3 t3 = ref chunk.GetComponentRef<T3>(e);
+                                ref T4 t4 = ref chunk.GetComponentRef<T4>(e);
+                                callback(entity, ref t1, ref t2, ref t3, ref t4);
+                            }
+                        }
                     }
                 }
             }
