@@ -5,22 +5,22 @@ namespace Game
     public interface INode
     {
         /// <summary>
-        /// Parent of this node.
+        /// Modifiable parent of this node.
         /// </summary>
         INode? Parent { get; set; }
 
         /// <summary>
-        /// List of all children of this node.
+        /// All children of this node.
         /// </summary>
         IReadOnlyList<INode> Children { get; }
 
         /// <summary>
-        /// Removes a child node at the given index.
+        /// Removes the an item from the <see cref="Children"/> list.
         /// </summary>
         void RemoveAt(int index);
 
         /// <summary>
-        /// Inserts a child node at the given index.
+        /// Inserts a new item into the <see cref="Children"/> list.
         /// </summary>
         void Insert(int index, INode child);
     }

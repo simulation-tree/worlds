@@ -7,23 +7,13 @@ using Unmanaged.Collections;
 namespace Game
 {
     /// <summary>
-    /// A type that can subscribe to events, with instanced callbacks
-    /// instead of static unmanaged ones.
+    /// Base type that can subscribe to events with local methods.
     /// </summary>
     public abstract class SystemBase : IDisposable
     {
         private static readonly Dictionary<RuntimeType, List<Action<Container>>> staticCallbacks = [];
 
-        private World world;
-
-        /// <summary>
-        /// The world that this system belongs to.
-        /// <para>
-        /// Will be <see cref="default"/> when the system
-        /// is in the disposed state.
-        /// </para>
-        /// </summary>
-        public World World => world;
+        public readonly World world;
 
         private readonly UnmanagedList<Listener> listeners;
         private readonly Dictionary<RuntimeType, Action<Container>> callbacks;
@@ -31,12 +21,16 @@ namespace Game
         public SystemBase(World world)
         {
             this.world = world;
-            listeners = new();
-            callbacks = new();
+            listeners = [];
+            callbacks = [];
         }
 
         /// <summary>
         /// Cleans up the resources of this system.
+        /// <para>
+        /// Will throw <see cref="ObjectDisposedException"/> when 
+        /// invoking it more than once.
+        /// </para>
         /// </summary>
         public virtual void Dispose()
         {
@@ -50,7 +44,7 @@ namespace Game
                 Action<Container> callback = this.callbacks[type];
                 if (staticCallbacks.TryGetValue(type, out List<Action<Container>>? callbacks))
                 {
-                    bool removed = callbacks.Remove(callback);
+                    callbacks.Remove(callback);
                     if (callbacks.Count == 0)
                     {
                         for (uint i = 0; i < listeners.Count; i++)
@@ -70,7 +64,7 @@ namespace Game
             }
 
             listeners.Dispose();
-            world = default;
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
@@ -82,16 +76,16 @@ namespace Game
             RuntimeType eventType = RuntimeType.Get<T>();
             if (!staticCallbacks.TryGetValue(eventType, out List<Action<Container>>? callbacks))
             {
-                callbacks = new();
+                callbacks = [];
                 staticCallbacks.Add(eventType, callbacks);
 
-                Listener listener = World.CreateListener(eventType, &StaticEvent);
+                Listener listener = world.CreateListener(eventType, &StaticEvent);
                 listeners.Add(listener);
             }
 
-            Action<Container> staticCallback = (message) => callback(message.AsRef<T>());
-            callbacks.Add(staticCallback);
-            this.callbacks.Add(eventType, staticCallback);
+            void StaticCallback(Container message) => callback(message.AsRef<T>());
+            callbacks.Add(StaticCallback);
+            this.callbacks.Add(eventType, StaticCallback);
         }
 
         [UnmanagedCallersOnly]

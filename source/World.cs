@@ -97,6 +97,11 @@ namespace Game
 
         public readonly override int GetHashCode()
         {
+            if (value is null)
+            {
+                return 0;
+            }
+
             return value->GetHashCode();
         }
 

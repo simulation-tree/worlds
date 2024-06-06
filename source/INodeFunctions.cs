@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
@@ -7,7 +8,7 @@ namespace Game
     public static class INodeFunctions
     {
         /// <summary>
-        /// Adds the given child node as a child.
+        /// Adds the given node as a child.
         /// </summary>
         public static void AddNode(this INode node, INode child)
         {
@@ -22,6 +23,10 @@ namespace Game
             }
         }
 
+        /// <summary>
+        /// Returns a possibly <c>-1</c> that corresponds to the given node
+        /// as a child.
+        /// </summary>
         public static int IndexOfNode(this INode node, INode child)
         {
             int count = node.Children.Count;
@@ -52,6 +57,7 @@ namespace Game
         /// <summary>
         /// Attempts to remove the given node from the list of children.
         /// </summary>
+        /// <returns><c>true</c> if the node was removed unless it wasn't a child.</returns>
         public static bool RemoveNode(this INode node, INode child)
         {
             if (child.Parent == node)
@@ -81,39 +87,74 @@ namespace Game
 
         /// <summary>
         /// Iterates through all descendants of the node and invokes the given callback.
+        /// In the order of furthest descendant to the closest.
         /// </summary>
         public static void ForEach(this INode node, Action<INode> callback)
         {
             foreach (INode child in node.Children)
             {
-                ForEach(child, callback);
                 callback(child);
+                ForEach(child, callback);
             }
         }
 
         /// <summary>
         /// Iterates through all descendants of type <typeparamref name="T"/>.
+        /// In order of furthest descendant to the closest.
         /// </summary>
         public static void ForEach<T>(this INode node, Action<T> callback) where T : INode
         {
             foreach (INode child in node.Children)
             {
-                ForEach(child, callback);
                 if (child is T t)
                 {
                     callback(t);
                 }
+
+                ForEach(child, callback);
             }
         }
 
         /// <summary>
-        /// Fills the given list with all descendants of this node, in descending
-        /// order of depth.
+        /// Retrieves a collection of all descendants of type <typeparamref name="T"/>
+        /// </summary>
+        /// <returns>An <see cref="INode"/> that can be safely cast to <typeparamref name="T"/></returns>
+        public static IEnumerable<INode> GetAll<T>(this INode node) where T : INode
+        {
+            Stack<INode> stack = Pool.GetNodeStack();
+            int childCount = node.Children.Count;
+            for (int i = childCount - 1; i >= 0; i--)
+            {
+                stack.Push(node.Children[i]);
+            }
+
+            while (stack.Count > 0)
+            {
+                INode n = stack.Pop();
+                if (n is T)
+                {
+                    yield return n;
+                }
+
+                childCount = n.Children.Count;
+                for (int i = childCount - 1; i >= 0; i--)
+                {
+                    stack.Push(n.Children[i]);
+                }
+            }
+
+            Pool.Return(stack);
+        }
+
+        /// <summary>
+        /// Fills the given list with all descendants of this node, in order of
+        /// furthest descendant to the closest.
         /// </summary>
         public static void FillDescendantNodes(this INode node, ICollection<INode> collection)
         {
             Stack<INode> stack = Pool.GetNodeStack();
-            for (int i = 0; i < node.Children.Count; i++)
+            int childCount = node.Children.Count;
+            for (int i = childCount - 1; i >= 0; i--)
             {
                 stack.Push(node.Children[i]);
             }
@@ -123,8 +164,8 @@ namespace Game
                 INode n = stack.Pop();
                 collection.Add(n);
 
-                int nChildrenCount = n.Children.Count;
-                for (int i = 0; i < nChildrenCount; i++)
+                childCount = n.Children.Count;
+                for (int i = childCount - 1; i >= 0; i--)
                 {
                     stack.Push(n.Children[i]);
                 }
@@ -140,15 +181,15 @@ namespace Game
         {
             foreach (INode child in node.Children)
             {
-                if (child is T t)
-                {
-                    found = t;
-                    return true;
-                }
-
                 if (child.TryFindFirstNode(out T? foundInChild))
                 {
                     found = foundInChild;
+                    return true;
+                }
+
+                if (child is T t)
+                {
+                    found = t;
                     return true;
                 }
             }
@@ -187,7 +228,7 @@ namespace Game
                 current = next;
             }
 
-            return current ?? throw new System.InvalidOperationException();
+            return current ?? throw new NullReferenceException($"Node {node} has no root node.");
         }
 
         internal static class Pool
