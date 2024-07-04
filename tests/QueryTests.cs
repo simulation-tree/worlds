@@ -5,14 +5,14 @@ using System.Linq;
 using Unmanaged;
 using Unmanaged.Collections;
 
-namespace Game
+namespace Simulation
 {
     public class QueryTests
     {
         [TearDown]
         public void CleanUp()
         {
-            Allocations.ThrowIfAnyAllocation();
+            Allocations.ThrowIfAny();
         }
 
         [Test]
@@ -273,6 +273,11 @@ namespace Game
         public struct Cherry
         {
             public FixedString stones;
+
+            public Cherry(ReadOnlySpan<char> stones)
+            {
+                this.stones = new(stones);
+            }
 
             public Cherry(FixedString stones)
             {

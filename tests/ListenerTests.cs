@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using Unmanaged;
 
-namespace Game
+namespace Simulation
 {
     public class ListenerTests
     {
@@ -11,7 +11,7 @@ namespace Game
         [TearDown]
         public void CleanUp()
         {
-            Allocations.ThrowIfAnyAllocation();
+            Allocations.ThrowIfAny();
         }
 
         [SetUp]

@@ -8,7 +8,7 @@ using System.Diagnostics;
 using Unmanaged;
 using Unmanaged.Collections;
 
-namespace Game.Unsafe
+namespace Simulation.Unsafe
 {
     public unsafe struct UnsafeWorld
     {
@@ -231,6 +231,11 @@ namespace Game.Unsafe
                 {
                     slot.collections.Dispose();
                 }
+
+                if (!slot.children.IsDisposed)
+                {
+                    slot.children.Dispose();
+                }
             }
 
             UnsafeList.Clear(world->slots);
@@ -309,13 +314,38 @@ namespace Game.Unsafe
             }
         }
 
-        public static void DestroyEntity(UnsafeWorld* world, EntityID entity)
+        public static void DestroyEntity(UnsafeWorld* world, EntityID entity, bool destroyChildren = true)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
 
-            UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+
+            //destroy or orphan the children
+            if (!slot.children.IsDisposed)
+            {
+                if (destroyChildren)
+                {
+                    for (uint i = 0; i < slot.children.Count; i++)
+                    {
+                        EntityID child = new(slot.children[i]);
+                        DestroyEntity(world, child, true);
+                    }
+                }
+                else
+                {
+                    for (uint i = 0; i < slot.children.Count; i++)
+                    {
+                        uint childValue = slot.children[i];
+                        ref EntityDescription childSlot = ref UnsafeList.GetRef<EntityDescription>(world->slots, childValue - 1);
+                        childSlot.parent = default;
+                    }
+                }
+
+                slot.children.Dispose();
+            }
+
+            UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
             ComponentChunk chunk = components[slot.componentsKey];
             chunk.Remove(entity);
 
@@ -325,6 +355,7 @@ namespace Game.Unsafe
             }
 
             slot.entity = default;
+            slot.parent = default;
             slot.componentsKey = default;
             slot.collections = default;
             slot.state = EntityDescription.State.Destroyed;
@@ -341,6 +372,57 @@ namespace Game.Unsafe
             UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
             ComponentChunk chunk = components[slot.componentsKey];
             return chunk.Types;
+        }
+
+        public static EntityID GetParent(UnsafeWorld* world, EntityID entity)
+        {
+            Allocations.ThrowIfNull(world);
+            ThrowIfEntityMissing(world, entity);
+
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            return new(slot.parent);
+        }
+
+        public static bool SetParent(UnsafeWorld* world, EntityID entity, EntityID parent)
+        {
+            Allocations.ThrowIfNull(world);
+            ThrowIfEntityMissing(world, entity);
+
+            if (entity == parent)
+            {
+                throw new InvalidOperationException("Entity cannot be its own parent.");
+            }
+
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            if (slot.parent == parent.value)
+            {
+                return false;
+            }
+
+            //remove from previous parent children
+            if (slot.parent != default)
+            {
+                ref EntityDescription previousParentSlot = ref UnsafeList.GetRef<EntityDescription>(world->slots, slot.parent - 1);
+                previousParentSlot.children.TryRemove(entity.value);
+            }
+
+            if (!ContainsEntity(world, parent.value))
+            {
+                slot.parent = default;
+                return false;
+            }
+            else
+            {
+                slot.parent = parent.value;
+                ref EntityDescription newParentSlot = ref UnsafeList.GetRef<EntityDescription>(world->slots, parent.value - 1);
+                if (newParentSlot.children.IsDisposed)
+                {
+                    newParentSlot.children = new();
+                }
+
+                newParentSlot.children.Add(entity.value);
+                return true;
+            }
         }
 
         /// <summary>
@@ -364,10 +446,26 @@ namespace Game.Unsafe
         /// Initializes the given entity value into existence assuming 
         /// its not already present.
         /// </summary>
-        public static void InitializeEntity(UnsafeWorld* world, EntityID entity, ReadOnlySpan<RuntimeType> componentTypes)
+        public static void InitializeEntity(UnsafeWorld* world, EntityID entity, EntityID parent, ReadOnlySpan<RuntimeType> componentTypes)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityPresent(world, entity);
+
+            //add child reference into parent's slot
+            if (!ContainsEntity(world, parent.value))
+            {
+                parent = default;
+            }
+            else
+            {
+                ref EntityDescription parentSlot = ref UnsafeList.GetRef<EntityDescription>(world->slots, parent.value - 1);
+                if (parentSlot.children.IsDisposed)
+                {
+                    parentSlot.children = new();
+                }
+
+                parentSlot.children.Add(entity.value);
+            }
 
             uint componentsKey = RuntimeType.CalculateHash(componentTypes);
             UnmanagedList<EntityID> freeEntities = GetFreeEntities(world);
@@ -375,7 +473,8 @@ namespace Game.Unsafe
             {
                 //recycle a previously destroyed slot
                 ref EntityDescription oldSlot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
-                oldSlot.entity = entity;
+                oldSlot.entity = entity.value;
+                oldSlot.parent = parent.value;
                 oldSlot.componentsKey = componentsKey;
                 oldSlot.state = EntityDescription.State.Enabled;
             }
@@ -383,7 +482,7 @@ namespace Game.Unsafe
             {
                 //create new slot
                 EntityID newEntity = new(UnsafeList.GetCountRef(world->slots) + 1);
-                EntityDescription newSlot = new(newEntity, componentsKey);
+                EntityDescription newSlot = new(newEntity.value, parent.value, componentsKey);
                 UnsafeList.Add(world->slots, newSlot);
             }
 
@@ -431,7 +530,7 @@ namespace Game.Unsafe
             }
 
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, position);
-            return slot.entity.value == value;
+            return slot.entity == value;
         }
 
         public static UnsafeList* CreateCollection(UnsafeWorld* world, EntityID entity, RuntimeType type, uint initialCapacity = 1)

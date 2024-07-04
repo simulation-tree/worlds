@@ -3,7 +3,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Game
+namespace Simulation
 {
     public static class INodeFunctions
     {

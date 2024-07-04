@@ -1,4 +1,4 @@
-# Game
+# Simulation
 Library for running logic on data through a `World` instance.
 
 ### Components and Systems

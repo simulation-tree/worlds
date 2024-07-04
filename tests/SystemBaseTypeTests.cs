@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using Unmanaged;
 
-namespace Game
+namespace Simulation
 {
     public class SystemBaseTypeTests
     {
         [TearDown]
         public void CleanUp()
         {
-            Allocations.ThrowIfAnyAllocation();
+            Allocations.ThrowIfAny();
         }
 
         [Test]

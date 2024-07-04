@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using Unmanaged;
 using Unmanaged.Collections;
 
-namespace Game
+namespace Simulation
 {
     /// <summary>
     /// Base type that can subscribe to events with local methods.

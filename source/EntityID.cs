@@ -2,11 +2,11 @@
 #define IGNORE_STACKTRACES
 #endif
 
-using Game.Unsafe;
+using Simulation.Unsafe;
 using System;
 using System.Diagnostics;
 
-namespace Game
+namespace Simulation
 {
     /// <summary>
     /// The unique ID of an entity that is always 1 greater than its index,

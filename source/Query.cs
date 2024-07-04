@@ -2,7 +2,7 @@
 using Unmanaged;
 using Unmanaged.Collections;
 
-namespace Game
+namespace Simulation
 {
     public struct Query : IDisposable
     {
@@ -79,6 +79,11 @@ namespace Game
             }
         }
 
+        public readonly bool Contains(EntityID entity)
+        {
+            return entities.Contains(entity);
+        }
+
         public readonly Enumerator GetEnumerator()
         {
             if (!initialized)
@@ -138,7 +143,7 @@ namespace Game
         public enum Option : byte
         {
             /// <summary>
-            /// Only enabled entities that at least contain the required component types.
+            /// Enabled entities that at least contain the required component types.
             /// </summary>
             Default = 0,
             /// <summary>
@@ -197,6 +202,19 @@ namespace Game
                     }
                 }
             }
+        }
+
+        public readonly bool Contains(EntityID entity)
+        {
+            for (uint i = 0; i < Count; i++)
+            {
+                if (results[i].entity == entity)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public Enumerator GetEnumerator()
@@ -284,6 +302,19 @@ namespace Game
                     }
                 }
             }
+        }
+
+        public readonly bool Contains(EntityID entity)
+        {
+            for (uint i = 0; i < Count; i++)
+            {
+                if (results[i].entity == entity)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public Enumerator GetEnumerator()
@@ -375,6 +406,19 @@ namespace Game
                     }
                 }
             }
+        }
+
+        public readonly bool Contains(EntityID entity)
+        {
+            for (uint i = 0; i < Count; i++)
+            {
+                if (results[i].entity == entity)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public Enumerator GetEnumerator()
@@ -470,6 +514,19 @@ namespace Game
                     }
                 }
             }
+        }
+
+        public readonly bool Contains(EntityID entity)
+        {
+            for (uint i = 0; i < Count; i++)
+            {
+                if (results[i].entity == entity)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public Enumerator GetEnumerator()

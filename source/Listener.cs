@@ -1,9 +1,9 @@
-﻿using Game.Unsafe;
+﻿using Simulation.Unsafe;
 using System;
 using System.Diagnostics;
 using Unmanaged;
 
-namespace Game
+namespace Simulation
 {
     public readonly unsafe struct Listener : IDisposable, IEquatable<Listener>
     {

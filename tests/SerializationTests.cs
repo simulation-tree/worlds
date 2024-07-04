@@ -4,14 +4,14 @@ using System.Linq;
 using Unmanaged;
 using Unmanaged.Collections;
 
-namespace Game
+namespace Simulation
 {
     public class SerializationTests
     {
         [TearDown]
         public void CleanUp()
         {
-            Allocations.ThrowIfAnyAllocation();
+            Allocations.ThrowIfAny();
         }
 
         [Test]
@@ -115,7 +115,7 @@ namespace Game
             using BinaryWriter writer = new();
             writer.WriteSpan<byte>([1, 2, 3, 4, 5]);
             writer.WriteSpan<int>([1, 2, 3, 4, 5]);
-            writer.WriteSpan<FixedString>(["Hello", "World", "Goodbye"]);
+            writer.WriteSpan<FixedString>([new("Hello"), new("World"), new("Goodbye")]);
 
             using BinaryReader reader = new(writer.AsSpan());
             ReadOnlySpan<byte> bytes = reader.ReadSpan<byte>(5);
@@ -124,7 +124,7 @@ namespace Game
 
             Assert.That(bytes.ToArray(), Is.EquivalentTo(new byte[] { 1, 2, 3, 4, 5 }));
             Assert.That(ints.ToArray(), Is.EquivalentTo(new int[] { 1, 2, 3, 4, 5 }));
-            Assert.That(strings.ToArray(), Is.EquivalentTo(new FixedString[] { "Hello", "World", "Goodbye" }));
+            Assert.That(strings.ToArray(), Is.EquivalentTo(new FixedString[] { new("Hello"), new("World"), new("Goodbye") }));
         }
 
         [Test]
@@ -418,9 +418,9 @@ namespace Game
         {
             public readonly FixedString data;
 
-            public Apple(FixedString data)
+            public Apple(ReadOnlySpan<char> data)
             {
-                this.data = data;
+                this.data = new(data);
             }
 
             public override bool Equals(object? obj)

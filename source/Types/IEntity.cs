@@ -1,4 +1,4 @@
-﻿namespace Game
+﻿namespace Simulation
 {
     public interface IEntity
     {

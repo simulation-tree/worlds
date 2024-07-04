@@ -1,17 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using Unmanaged;
 using Unmanaged.Collections;
 
-namespace Game
+namespace Simulation
 {
     public class WorldTests
     {
         [TearDown]
         public void CleanUp()
         {
-            Allocations.ThrowIfAnyAllocation();
+            Allocations.ThrowIfAny();
         }
 
         [Test]
@@ -35,6 +33,26 @@ namespace Game
         {
             World world = default;
             Assert.Throws<NullReferenceException>(() => world.Dispose());
+        }
+
+        [Test]
+        public void DestroyParentEntity()
+        {
+            using World world = new();
+            EntityID a = world.CreateEntity();
+            EntityID b = world.CreateEntity(a);
+            EntityID c = world.CreateEntity(a);
+            Assert.That(world.ContainsEntity(a), Is.True);
+            Assert.That(world.ContainsEntity(b), Is.True);
+            Assert.That(world.ContainsEntity(c), Is.True);
+            Assert.That(world.GetParent(b), Is.EqualTo(a));
+            Assert.That(world.GetParent(c), Is.EqualTo(a));
+            Assert.That(world.GetChildren(a).ToArray(), Has.Member(b));
+            Assert.That(world.GetChildren(a).ToArray(), Has.Member(c));
+            world.DestroyEntity(a);
+            Assert.That(world.ContainsEntity(a), Is.False);
+            Assert.That(world.ContainsEntity(b), Is.False);
+            Assert.That(world.ContainsEntity(c), Is.False);
         }
 
         [Test]
@@ -237,9 +255,9 @@ namespace Game
         {
             public FixedString data;
 
-            public SimpleComponent(FixedString data)
+            public SimpleComponent(ReadOnlySpan<char> data)
             {
-                this.data = data;
+                this.data = new(data);
             }
         }
 

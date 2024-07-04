@@ -1,6 +1,6 @@
 ﻿using Unmanaged.Collections;
 
-namespace Game
+namespace Simulation
 {
     public static class IEntityFunctions
     {
@@ -21,7 +21,7 @@ namespace Game
         }
 
         /// <summary>
-        /// <c>true</c> when the entity doesn't exists in its <see cref="Game.World"/> anymore,
+        /// <c>true</c> when the entity doesn't exists in its <see cref="Simulation.World"/> anymore,
         /// or it has been disposed of.
         /// </summary>
         public static bool IsDestroyed<T>(this T entity) where T : IEntity
