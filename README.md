@@ -1,18 +1,15 @@
 # Simulation
-Library for running logic on data through a `World` instance.
+Library for implementing logic on data.
 
-### Components and Systems
-Components and systems form a union and can be closely thought of as verbs and nouns.
-Components must be unmanaged structures, and there is no standardization for "systems", since any
-style will work:
+### Systems and components
+"Systems" and "components" can be thought of as the concept of verbs and nouns.
+Where components must be defined as unmanaged `struct` types, and systems can be any code that
+modifies components. These components are then attached onto entities, where one can store many but
+not more than 1 of the same.
 ```cs
 using World world = new();
 EntityID entity = world.CreateEntity();
 world.AddComponent(entity, new MyComponent(25));
-world.QueryComponents((in EntityID entity, ref MyComponent value) =>
-{
-    value.value++;
-});
 
 public struct MyComponent(uint value)
 {
@@ -20,7 +17,30 @@ public struct MyComponent(uint value)
 }
 ```
 
-### Events and Listeners
+Polling of component data to modify it (a system/verb):
+```cs
+var query = world.Query<MyComponent>();
+foreach (var x in query)
+{
+    EntityID entity = x.entity;
+    ref MyComponent component = ref x.Component1;
+    component.value++;
+}
+```
+
+### Per entity collections
+Each entity is able to contain lists of any kind and any capacity. This allows them to store more
+than 1 of the same type of data:
+```cs
+EntityID textEntity = world.CreateEntity();
+UnmanagedList<char> textChars = world.CreateCollection<char>(textEntity);
+textChars.AddRange("Hello world");
+```
+
+Access time for this data isn't as quick as for components, polling of these isn't available
+directly.
+
+### Events and listeners
 Events operate by first being submitted to `World` instances from any thread, and then calling the 
 `Poll` method while on the main thread, with listeners added before.
 ```cs
@@ -34,7 +54,7 @@ world.Poll();
 private static void ReceivedEvent(World world, Container message)
 {
     ref MyEvent update = ref message.AsRef<MyEvent>();
-    Console.WriteLine($"data: {update.data}");
+    Console.WriteLine($"Received event: {update.data}");
 }
 
 public struct MyEvent(uint data)
@@ -43,11 +63,15 @@ public struct MyEvent(uint data)
 }
 ```
 
-### Instance listeners
-With unmanaged listeners it can be difficult to integrate with instance methods, as it asks for the
-callbacks to be unmanaged static callers only. The following is an approach that can get around this
-by making the static callback aware of what systems are interested.
+### Examples
+<details>
+  <summary>Non static event listeners</summary>
+    
+With unmanaged listeners like above, it can be difficult to integrate with a codebase design
+that isn't static first, as it asks for the callbacks to be such, and unmanaged too.
+The following gets around this by making the static callback aware of what systems are interested.
 ```cs
+//MyProgram.cs
 public class MySystem : IDisposable
 {
     private static readonly List<MySystem> systems = [];
@@ -82,17 +106,17 @@ public class MySystem : IDisposable
     }
 }
 ```
-The example above can then be composed into a `World` like so:
-```cs
-using World world = new();
-using MySystem system = new(world);
-```
 
-### Running program setup
+</details>
+
+<details>
+  <summary>Barebones bootstrap boilerplate</summary>
+    
 The following snippet is an example of a continous program that runs until a `Shutdown` event
 is submitted, emerging a barebones game loop. On its own it doesn't perform anything other than
 run forever, it requires a `Update` listeners to perform the remaining operations of the game:
 ```cs
+//Program.cs
 private static bool stopped;
 
 using World world = new();
@@ -110,10 +134,11 @@ private static void AskedToShutdown(World world, Container message)
 }
 ```
 
+</details>
+
 ### Contributing and Direction
-This library is created to define a baseline layer for "programs" that often want to run
-continously (like games or simulations), while taking the advantage of a CPU's ability to perform
-more efficiently when data is laid out linearly. For this reason, the archetype component-system
-pattern is at the root, and serves as a dependency for other projects.
+This library is created to provide the first layer for computer programs that aim to run
+continously, like games and simulations, while taking advantage of what CPU's can do best.
+Commonly referred to as the "[entity-component-system](https://en.wikipedia.org/wiki/Entity_component_system)" pattern.
 
 Contributions to this are welcome.
