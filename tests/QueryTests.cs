@@ -19,9 +19,9 @@ namespace Simulation
         public void FindComponents()
         {
             using World world = new();
-            EntityID a = world.CreateEntity();
-            EntityID b = world.CreateEntity();
-            EntityID c = world.CreateEntity();
+            eint a = world.CreateEntity();
+            eint b = world.CreateEntity();
+            eint c = world.CreateEntity();
             world.AddComponent(a, new Apple());
             world.AddComponent(b, new Berry());
             world.AddComponent(c, new Apple());
@@ -68,15 +68,15 @@ namespace Simulation
         public void FindOnlyEnabledEntities()
         {
             using World world = new();
-            EntityID a = world.CreateEntity();
-            EntityID b = world.CreateEntity();
-            EntityID c = world.CreateEntity();
+            eint a = world.CreateEntity();
+            eint b = world.CreateEntity();
+            eint c = world.CreateEntity();
             world.AddComponent(a, new Cherry("apple"));
             world.AddComponent(b, new Cherry("pie"));
             world.AddComponent(c, new Cherry("fortune"));
             world.SetEnabledState(a, false);
             List<Cherry> values = [];
-            foreach (EntityID entity in world.GetAll<Cherry>())
+            foreach (eint entity in world.GetAll<Cherry>())
             {
                 values.Add(world.GetComponent<Cherry>(entity));
             }
@@ -85,7 +85,7 @@ namespace Simulation
             Assert.That(values.Contains(new Cherry("pie")), Is.True);
             Assert.That(values.Contains(new Cherry("fortune")), Is.True);
             values.Clear();
-            foreach (EntityID entity in world.GetAll<Cherry>(Query.Option.IncludeDisabledEntities))
+            foreach (eint entity in world.GetAll<Cherry>(Query.Option.IncludeDisabledEntities))
             {
                 values.Add(world.GetComponent<Cherry>(entity));
             }
@@ -98,8 +98,8 @@ namespace Simulation
         public void QueryComponentsAfterDestroyingEntities()
         {
             using World world = new();
-            EntityID entity1 = world.CreateEntity();
-            EntityID entity2 = world.CreateEntity();
+            eint entity1 = world.CreateEntity();
+            eint entity2 = world.CreateEntity();
             Cherry component1 = new("apple");
             Cherry component2 = new("banana");
             world.AddComponent(entity1, component1);
@@ -107,8 +107,8 @@ namespace Simulation
             world.DestroyEntity(entity1);
             world.AddComponent(entity2, new Berry(5));
             world.DestroyEntity(entity2);
-            List<(EntityID, Cherry)> found = new();
-            foreach (EntityID entity in world.GetAll<Cherry>())
+            List<(eint, Cherry)> found = new();
+            foreach (eint entity in world.GetAll<Cherry>())
             {
                 found.Add((entity, world.GetComponent<Cherry>(entity)));
             }
@@ -120,9 +120,9 @@ namespace Simulation
         public void EnumerateQuery()
         {
             using World world = new();
-            EntityID a = world.CreateEntity();
-            EntityID b = world.CreateEntity();
-            EntityID c = world.CreateEntity();
+            eint a = world.CreateEntity();
+            eint b = world.CreateEntity();
+            eint c = world.CreateEntity();
             world.AddComponent(a, new Cherry("apple"));
             world.AddComponent(b, new Cherry("pie"));
             world.AddComponent(c, new Cherry("fortune"));
@@ -147,23 +147,23 @@ namespace Simulation
         public void QueryMultipleComponents()
         {
             using World world = new();
-            EntityID entity1 = world.CreateEntity();
-            EntityID entity2 = world.CreateEntity();
+            eint entity1 = world.CreateEntity();
+            eint entity2 = world.CreateEntity();
             Cherry component1 = new("apple");
             Cherry component2 = new("banana");
             world.AddComponent(entity1, component1);
             world.AddComponent(entity2, component2);
-            EntityID entity3 = world.CreateEntity();
-            EntityID entity4 = world.CreateEntity();
+            eint entity3 = world.CreateEntity();
+            eint entity4 = world.CreateEntity();
             Berry another1 = new(5);
             Berry another2 = new(10);
             world.AddComponent(entity3, another1);
             world.AddComponent(entity4, another2);
-            EntityID entity5 = world.CreateEntity();
+            eint entity5 = world.CreateEntity();
             world.AddComponent(entity5, component1);
             world.AddComponent(entity5, another2);
-            List<EntityID> simpleComponents = world.GetAll<Cherry>().ToList();
-            List<EntityID> anotherComponents = world.GetAll<Berry>().ToList();
+            List<eint> simpleComponents = world.GetAll<Cherry>().ToList();
+            List<eint> anotherComponents = world.GetAll<Berry>().ToList();
             Assert.That(simpleComponents.Count, Is.EqualTo(3));
             Assert.That(anotherComponents.Count, Is.EqualTo(3));
             Assert.That(simpleComponents.Contains(entity1), Is.True);
@@ -179,25 +179,21 @@ namespace Simulation
         {
             using World world = new();
             using RandomGenerator rng = new(1337);
-            uint sampleCount = 30000;
+            uint sampleCount = 50000;
             uint count = 0;
             for (uint i = 0; i < sampleCount; i++)
             {
-                EntityID entity = world.CreateEntity();
-                if (rng.NextBool())
+                eint entity = world.CreateEntity();
+                if ((i % 9 == 0) || (i % 2 == 0))
                 {
                     world.AddComponent(entity, new Apple());
-
-                    if (rng.NextBool())
+                    world.AddComponent(entity, new Berry((byte)(i % byte.MaxValue)));
+                    if (i % 3 == 0)
                     {
-                        world.AddComponent(entity, new Berry((byte)(i % byte.MaxValue)));
-                        if (i % 4 == 0)
-                        {
-                            FixedString name = default;
-                            name.Append(i);
-                            world.AddComponent(entity, new Cherry(name));
-                            count++;
-                        }
+                        FixedString name = default;
+                        name.Append(i);
+                        world.AddComponent(entity, new Cherry(name));
+                        count++;
                     }
                 }
             }
@@ -205,7 +201,7 @@ namespace Simulation
             //benchmark query
             using Query<Apple, Berry, Cherry> query = new(world);
             query.Fill();
-            List<(EntityID, Apple, Berry, Cherry)> results = [];
+            List<(eint, Apple, Berry, Cherry)> results = [];
             Stopwatch stopwatch = Stopwatch.StartNew();
             foreach (Query<Apple, Berry, Cherry>.Result r in query)
             {
@@ -217,7 +213,7 @@ namespace Simulation
             //benchmark ForEach
             results.Clear();
             stopwatch.Restart();
-            world.ForEach((in EntityID entity, ref Apple apple, ref Berry berry, ref Cherry cherry) =>
+            world.ForEach((in eint entity, ref Apple apple, ref Berry berry, ref Cherry cherry) =>
             {
                 results.Add((entity, apple, berry, cherry));
             });
@@ -236,10 +232,10 @@ namespace Simulation
                 ComponentChunk chunk = chunks[key];
                 if (chunk.ContainsTypes(typesSpan))
                 {
-                    UnmanagedList<EntityID> entities = chunk.Entities;
+                    UnmanagedList<eint> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
-                        EntityID entity = entities[e];
+                        eint entity = entities[e];
                         if (world.IsEnabled(entity))
                         {
                             ref Apple apple = ref chunk.GetComponentRef<Apple>(e);

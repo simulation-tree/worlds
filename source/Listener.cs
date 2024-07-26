@@ -5,6 +5,13 @@ using Unmanaged;
 
 namespace Simulation
 {
+    /// <summary>
+    /// A proof object for a callback whenever a <see cref="World"/>
+    /// polls for the registered event type.
+    /// <para>
+    /// Automatically disposed together with its <see cref="World"/>.
+    /// </para>
+    /// </summary>
     public readonly unsafe struct Listener : IDisposable, IEquatable<Listener>
     {
         public readonly RuntimeType eventType;
@@ -14,6 +21,7 @@ namespace Simulation
 
         public readonly bool IsDisposed => UnsafeListener.IsDisposed(value);
 
+#if NET5_0_OR_GREATER
         public Listener()
         {
             throw new NotImplementedException();
@@ -25,14 +33,25 @@ namespace Simulation
             value = UnsafeListener.Allocate(callback);
             this.world = world;
         }
+#else
+        internal Listener(World world, RuntimeType eventType, delegate*<World, Container, void> callback)
+        {
+            this.eventType = eventType;
+            value = UnsafeListener.Allocate(callback);
+            this.world = world;
+        }
+#endif
 
+        /// <summary>
+        /// Unregisters the callback.
+        /// </summary>
         public readonly void Dispose()
         {
             ThrowIfDisposed();
             UnsafeWorld.RemoveListener(world.value, this);
         }
 
-        [Conditional("TRACK_ALLOCATIONS")]
+        [Conditional("DEBUG")]
         private readonly void ThrowIfDisposed()
         {
             if (IsDisposed)

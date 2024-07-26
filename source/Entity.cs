@@ -1,71 +1,38 @@
 ﻿using System;
-using System.Diagnostics;
-using Unmanaged.Collections;
 
 namespace Simulation
 {
-    public readonly struct Entity : IDisposable, IEntity
+    public struct Entity : IEntity, IDisposable
     {
-        public readonly World world;
-
-        private readonly uint value;
-
-        public readonly bool IsDestroyed => !world.ContainsEntity(this);
-
-        public readonly ReadOnlySpan<EntityID> Children
-        {
-            get
-            {
-                ThrowIfDestroyed();
-                return world.GetChildren(this);
-            }
-        }
-
-        public readonly EntityID Parent
-        {
-            get
-            {
-                ThrowIfDestroyed();
-                return world.GetParent(this);
-            }
-            set
-            {
-                ThrowIfDestroyed();
-                world.SetParent(this, value);
-            }
-        }
+        public eint value;
+        public World world;
 
         World IEntity.World => world;
-        EntityID IEntity.Value => new(value);
+        eint IEntity.Value => value;
 
-        public Entity()
+        public Entity(World world, eint existingEntity)
         {
-            throw new InvalidOperationException("Cannot create an entity without a world.");
-        }
-
-        public Entity(World world, EntityID existingEntity)
-        {
-            this.value = existingEntity.value;
+            this.value = existingEntity;
             this.world = world;
         }
 
         public Entity(World world)
         {
             this.world = world;
-            value = world.CreateEntity().value;
+            value = world.CreateEntity();
         }
 
         public readonly override string ToString()
         {
             Span<char> buffer = stackalloc char[32];
             int length = ToString(buffer);
-            return new string(buffer.Slice(0, length));
+            return new string(buffer[..length]);
         }
 
         public readonly int ToString(Span<char> buffer)
         {
             int length = 0;
-            if (IsDestroyed)
+            if (this.IsDestroyed())
             {
                 buffer[length++] = 'D';
                 buffer[length++] = 'e';
@@ -88,72 +55,49 @@ namespace Simulation
         /// </summary>
         public readonly void Dispose()
         {
-            ThrowIfDestroyed();
-            world.DestroyEntity(this);
+            //todo: should this exist? should Dispose be removed so that its only Destroy? ditch it?
+            this.ThrowIfDestroyed();
+            world.DestroyEntity(value);
         }
 
-        [Conditional("DEBUG")]
-        private readonly void ThrowIfDestroyed()
+        public static bool TryFindFirst<T>(World world, out T entity) where T : unmanaged, IEntity
         {
-            if (IsDestroyed)
+            using Query query = T.GetQuery(world);
+            query.Update();
+
+            if (query.Count > 0)
             {
-                throw new InvalidOperationException($"Entity {value} is destroyed.");
+                eint firstEntity = query[0];
+                ref byte firstByte = ref System.Runtime.CompilerServices.Unsafe.As<eint, byte>(ref firstEntity);
+                entity = System.Runtime.CompilerServices.Unsafe.ReadUnaligned<T>(ref firstByte);
+                return true;
+            }
+            else
+            {
+                entity = default;
+                return false;
             }
         }
 
-        public readonly void AddComponent<T>(T component) where T : unmanaged
+        public static T GetFirst<T>(World world) where T : unmanaged, IEntity
         {
-            world.AddComponent(this, component);
+            using Query query = T.GetQuery(world);
+            query.Update();
+
+            if (query.Count > 0)
+            {
+                eint firstEntity = query[0];
+                ref byte firstByte = ref System.Runtime.CompilerServices.Unsafe.As<eint, byte>(ref firstEntity);
+                T entity = System.Runtime.CompilerServices.Unsafe.ReadUnaligned<T>(ref firstByte);
+                return entity;
+            }
+
+            throw new NullReferenceException($"Component of type {typeof(T)} not found in world.");
         }
 
-        public readonly void RemoveComponent<T>() where T : unmanaged
+        public static Query GetQuery(World world)
         {
-            world.RemoveComponent<T>(this);
-        }
-
-        public readonly bool ContainsComponent<T>() where T : unmanaged
-        {
-            return world.ContainsComponent<T>(this);
-        }
-
-        public readonly ref T GetComponentRef<T>() where T : unmanaged
-        {
-            return ref world.GetComponentRef<T>(this);
-        }
-
-        public readonly T GetComponent<T>() where T : unmanaged
-        {
-            return world.GetComponent<T>(this);
-        }
-
-        public readonly void SetComponent<T>(T component) where T : unmanaged
-        {
-            world.SetComponent(this, component);
-        }
-
-        public readonly UnmanagedList<T> CreateCollection<T>(uint initialCapacity = 1) where T : unmanaged
-        {
-            return world.CreateCollection<T>(this, initialCapacity);
-        }
-
-        public readonly void DestroyCollection<T>() where T : unmanaged
-        {
-            world.DestroyCollection<T>(this);
-        }
-
-        public readonly UnmanagedList<T> GetCollection<T>() where T : unmanaged
-        {
-            return world.GetCollection<T>(this);
-        }
-
-        public readonly bool ContainsCollection<T>() where T : unmanaged
-        {
-            return world.ContainsCollection<T>(this);
-        }
-
-        public static implicit operator EntityID(Entity entity)
-        {
-            return new(entity.value);
+            return new Query(world);
         }
     }
 }

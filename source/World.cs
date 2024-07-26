@@ -22,13 +22,13 @@ namespace Simulation
 
         public readonly bool IsDisposed => UnsafeWorld.IsDisposed(value);
         public readonly UnmanagedList<EntityDescription> Slots => UnsafeWorld.GetEntitySlots(value);
-        public readonly UnmanagedList<EntityID> Free => UnsafeWorld.GetFreeEntities(value);
+        public readonly UnmanagedList<eint> Free => UnsafeWorld.GetFreeEntities(value);
         public readonly UnmanagedDictionary<uint, ComponentChunk> ComponentChunks => UnsafeWorld.GetComponentChunks(value);
 
         /// <summary>
         /// All entities that exist in the world.
         /// </summary>
-        public readonly IEnumerable<EntityID> Entities
+        public readonly IEnumerable<eint> Entities
         {
             get
             {
@@ -43,6 +43,30 @@ namespace Simulation
             }
         }
 
+        public readonly eint this[uint index]
+        {
+            get
+            {
+                uint i = 0;
+                for (uint j = 0; j < Slots.Count; j++)
+                {
+                    EntityDescription description = Slots[j];
+                    if (!Free.Contains(description.entity))
+                    {
+                        if (i == index)
+                        {
+                            return new(description.entity);
+                        }
+
+                        i++;
+                    }
+                }
+
+                throw new IndexOutOfRangeException();
+            }
+        }
+
+#if NET5_0_OR_GREATER
         /// <summary>
         /// Creates a new disposable world.
         /// </summary>
@@ -50,12 +74,16 @@ namespace Simulation
         {
             value = UnsafeWorld.Allocate();
         }
+#endif
 
-        internal World(UnsafeWorld* pointer)
+        internal World(UnsafeWorld* value)
         {
-            this.value = pointer;
+            this.value = value;
         }
 
+        /// <summary>
+        /// Disposes everything in the world and the world itself.
+        /// </summary>
         public void Dispose()
         {
             UnsafeWorld.Free(ref value);
@@ -110,7 +138,8 @@ namespace Simulation
 
         void ISerializable.Write(BinaryWriter writer)
         {
-            using UnmanagedList<RuntimeType> uniqueTypes = new();
+            //write info about the type tree
+            using UnmanagedList<RuntimeType> uniqueTypes = UnmanagedList<RuntimeType>.Create();
             for (int a = 0; a < ComponentChunks.Count; a++)
             {
                 ComponentChunk chunk = ComponentChunks.Values[a];
@@ -144,10 +173,6 @@ namespace Simulation
             for (uint a = 0; a < uniqueTypes.Count; a++)
             {
                 RuntimeType type = uniqueTypes[a];
-                Type systemType = type.Type;
-                ReadOnlySpan<char> aqn = systemType.AssemblyQualifiedName.AsSpan();
-                writer.WriteValue((uint)aqn.Length);
-                writer.WriteUTF8Span(aqn);
                 writer.WriteValue(type);
             }
 
@@ -157,8 +182,8 @@ namespace Simulation
                 EntityDescription slot = Slots[i];
                 if (!Free.Contains(slot.entity))
                 {
-                    EntityID entity = new(slot.entity);
-                    writer.WriteValue(entity.value);
+                    eint entity = new(slot.entity);
+                    writer.WriteValue(entity);
                     ComponentChunk chunk = ComponentChunks[slot.componentsKey];
                     writer.WriteValue((uint)chunk.Types.Length);
                     for (int j = 0; j < chunk.Types.Length; j++)
@@ -196,34 +221,28 @@ namespace Simulation
         {
             value = UnsafeWorld.Allocate();
             uint typeCount = reader.ReadValue<uint>();
-            using UnmanagedList<RuntimeType> uniqueTypes = new();
+            using UnmanagedList<RuntimeType> uniqueTypes = UnmanagedList<RuntimeType>.Create();
             Span<char> buffer = stackalloc char[256];
             for (uint i = 0; i < typeCount; i++)
             {
-                uint aqnLength = reader.ReadValue<uint>();
-                reader.ReadUTF8Span(buffer[..(int)aqnLength]);
-#pragma warning disable IL2057
-                string aqn = new(buffer[..(int)aqnLength]);
-                Type systemType = Type.GetType(aqn, true) ?? throw new InvalidOperationException($"Type {aqn} not found.");
-#pragma warning restore IL2057
                 RuntimeType type = reader.ReadValue<RuntimeType>();
                 uniqueTypes.Add(type);
             }
 
             uint entityCount = reader.ReadValue<uint>();
             uint currentEntityId = 1;
-            using UnmanagedList<EntityID> temporaryEntities = new();
+            using UnmanagedList<eint> temporaryEntities = UnmanagedList<eint>.Create();
             for (uint i = 0; i < entityCount; i++)
             {
                 uint entityId = reader.ReadValue<uint>();
                 uint catchup = entityId - currentEntityId;
                 for (uint j = 0; j < catchup; j++)
                 {
-                    EntityID temporaryEntity = CreateEntity();
+                    eint temporaryEntity = CreateEntity();
                     temporaryEntities.Add(temporaryEntity);
                 }
 
-                EntityID entity = CreateEntity();
+                eint entity = CreateEntity();
                 uint componentCount = reader.ReadValue<uint>();
                 for (uint j = 0; j < componentCount; j++)
                 {
@@ -268,7 +287,7 @@ namespace Simulation
             {
                 if (!world.Free.Contains(slot.entity))
                 {
-                    EntityID entity = CreateEntity();
+                    eint entity = CreateEntity();
                     ComponentChunk chunk = world.ComponentChunks[slot.componentsKey];
                     for (int j = 0; j < chunk.Types.Length; j++)
                     {
@@ -317,43 +336,313 @@ namespace Simulation
             UnsafeWorld.Poll(value);
         }
 
+        public readonly void Perform(ReadOnlySpan<Command> commands)
+        {
+            using UnmanagedList<eint> selection = UnmanagedList<eint>.Create();
+            using UnmanagedList<eint> entities = UnmanagedList<eint>.Create();
+            for (int c = 0; c < commands.Length; c++)
+            {
+                Command command = commands[c];
+                if (command.Operation == CommandOperation.CreateEntity)
+                {
+                    uint count = (uint)command.A;
+                    selection.Clear();
+                    for (uint i = 0; i < count; i++)
+                    {
+                        eint newEntity = CreateEntity();
+                        selection.Add(newEntity);
+                        entities.Add(newEntity);
+                    }
+                }
+                else if (command.Operation == CommandOperation.DestroyEntities)
+                {
+                    uint start = (uint)command.A;
+                    uint count = (uint)command.B;
+                    if (start == 0 && count == 0)
+                    {
+                        for (uint i = 0; i < selection.Count; i++)
+                        {
+                            eint entity = selection[i];
+                            DestroyEntity(entity);
+                        }
+                    }
+                    else
+                    {
+                        uint end = start + count;
+                        for (uint i = start; i < end; i++)
+                        {
+                            eint entity = entities[i];
+                            DestroyEntity(entity);
+                        }
+                    }
+                }
+                else if (command.Operation == CommandOperation.ClearSelection)
+                {
+                    selection.Clear();
+                }
+                else if (command.Operation == CommandOperation.AddToSelection)
+                {
+                    if (command.A == 0)
+                    {
+                        uint relativeOffset = (uint)command.B;
+                        eint entity = entities[(entities.Count - 1) - relativeOffset];
+                        selection.Add(entity);
+                    }
+                    else if (command.A == 1)
+                    {
+                        eint entity = new((uint)command.B);
+                        selection.Add(entity);
+                    }
+                }
+                else if (command.Operation == CommandOperation.SelectEntity)
+                {
+                    if (command.A == 0)
+                    {
+                        uint relativeOffset = (uint)command.B;
+                        eint entity = entities[(entities.Count - 1) - relativeOffset];
+                        selection.Clear();
+                        selection.Add(entity);
+                    }
+                    else if (command.A == 1)
+                    {
+                        eint entity = new((uint)command.B);
+                        selection.Clear();
+                        selection.Add(entity);
+                    }
+                }
+                else if (command.Operation == CommandOperation.SetParent)
+                {
+                    if (command.A == 0)
+                    {
+                        uint relativeOffset = (uint)command.B;
+                        eint parent = entities[(entities.Count - 1) - relativeOffset];
+                        for (uint i = 0; i < selection.Count; i++)
+                        {
+                            eint entity = selection[i];
+                            SetParent(entity, parent);
+                        }
+                    }
+                    else if (command.A == 1)
+                    {
+                        eint parent = new((uint)command.B);
+                        for (uint i = 0; i < selection.Count; i++)
+                        {
+                            eint entity = selection[i];
+                            SetParent(entity, parent);
+                        }
+                    }
+                }
+                else if (command.Operation == CommandOperation.AddComponent)
+                {
+                    RuntimeType componentType = new((uint)command.A);
+                    Allocation allocation = new((void*)(nint)command.B);
+                    Span<byte> componentData = allocation.AsSpan<byte>(0, componentType.Size);
+                    for (uint i = 0; i < selection.Count; i++)
+                    {
+                        eint entity = selection[i];
+                        AddComponent(entity, componentType, componentData);
+                    }
+
+                    allocation.Dispose();
+                }
+                else if (command.Operation == CommandOperation.RemoveComponent)
+                {
+                    RuntimeType componentType = new((uint)command.A);
+                    for (uint i = 0; i < selection.Count; i++)
+                    {
+                        eint entity = selection[i];
+                        RemoveComponent(entity, componentType);
+                    }
+                }
+                else if (command.Operation == CommandOperation.SetComponent)
+                {
+                    RuntimeType componentType = new((uint)command.A);
+                    Allocation allocation = new((void*)(nint)command.B);
+                    Span<byte> componentBytes = allocation.AsSpan<byte>(0, componentType.Size);
+                    for (uint i = 0; i < selection.Count; i++)
+                    {
+                        eint entity = selection[i];
+                        SetComponent(entity, componentType, componentBytes);
+                    }
+
+                    allocation.Dispose();
+                }
+                else if (command.Operation == CommandOperation.CreateList)
+                {
+                    RuntimeType listType = new((uint)command.A);
+                    for (uint i = 0; i < selection.Count; i++)
+                    {
+                        eint entity = selection[i];
+                        CreateList(entity, listType);
+                    }
+                }
+                else if (command.Operation == CommandOperation.DestroyList)
+                {
+                    RuntimeType listType = new((uint)command.A);
+                    for (uint i = 0; i < selection.Count; i++)
+                    {
+                        eint entity = selection[i];
+                        DestroyList(entity, listType);
+                    }
+                }
+                else if (command.Operation == CommandOperation.ClearList)
+                {
+                    RuntimeType listType = new((uint)command.A);
+                    for (uint i = 0; i < selection.Count; i++)
+                    {
+                        eint entity = selection[i];
+                        ClearList(entity, listType);
+                    }
+                }
+                else if (command.Operation == CommandOperation.InsertElement)
+                {
+                    RuntimeType listType = new((uint)command.A);
+                    Allocation allocation = new((void*)(nint)command.B);
+                    uint index = (uint)command.C;
+                    Span<byte> elementBytes = allocation.AsSpan<byte>(0, listType.Size);
+                    for (uint i = 0; i < selection.Count; i++)
+                    {
+                        eint entity = selection[i];
+                        UnsafeList* list = GetList(entity, listType);
+                        if (index == uint.MaxValue)
+                        {
+                            UnsafeList.Add(list, elementBytes);
+                        }
+                        else
+                        {
+                            UnsafeList.Insert(list, index, elementBytes);
+                        }
+                    }
+
+                    allocation.Dispose();
+                }
+                else if (command.Operation == CommandOperation.RemoveElement)
+                {
+                    RuntimeType listType = new((uint)command.A);
+                    uint index = (uint)command.B;
+                    for (uint i = 0; i < selection.Count; i++)
+                    {
+                        eint entity = selection[i];
+                        UnsafeList* list = GetList(entity, listType);
+                        UnsafeList.RemoveAt(list, index);
+                    }
+                }
+                else if (command.Operation == CommandOperation.ModifyElement)
+                {
+                    RuntimeType listType = new((uint)command.A);
+                    Allocation allocation = new((void*)(nint)command.B);
+                    uint index = (uint)command.C;
+                    Span<byte> elementBytes = allocation.AsSpan<byte>(0, listType.Size);
+                    for (uint i = 0; i < selection.Count; i++)
+                    {
+                        eint entity = selection[i];
+                        UnsafeList* list = GetList(entity, listType);
+                        Span<byte> slotBytes = UnsafeList.GetElementBytes(list, index);
+                        elementBytes.CopyTo(slotBytes);
+                    }
+
+                    allocation.Dispose();
+                }
+                else
+                {
+                    throw new NotImplementedException($"Unknown command instruction: {command.Operation}");
+                }
+            }
+        }
+
+        public readonly void Perform(Span<Command> commands)
+        {
+            ReadOnlySpan<Command> commandsReadOnly = commands;
+            Perform(commandsReadOnly);
+        }
+
+        public readonly void Perform(IEnumerable<Command> commands)
+        {
+            using UnmanagedList<Command> list = UnmanagedList<Command>.Create();
+            foreach (Command command in commands)
+            {
+                list.Add(command);
+            }
+
+            Perform(list.AsSpan());
+        }
+
         /// <summary>
         /// Destroys the given entity assuming it exists.
         /// </summary>
-        public readonly void DestroyEntity(EntityID entity, bool destroyChildren = true)
+        public readonly void DestroyEntity(eint entity, bool destroyChildren = true)
         {
             UnsafeWorld.DestroyEntity(value, entity, destroyChildren);
         }
 
+#if NET5_0_OR_GREATER
+        /// <summary>
+        /// Creates a new listener for the given static callback.
+        /// <para>Disposing the listener will unregister the callback.
+        /// Their disposal is done automatically when the world is disposed.</para>
+        /// </summary>
         public readonly Listener CreateListener<T>(delegate* unmanaged<World, Container, void> callback) where T : unmanaged
         {
             return CreateListener(RuntimeType.Get<T>(), callback);
         }
 
+        /// <summary>
+        /// Creates a new listener for the given static callback.
+        /// <para>Disposing the listener will unregister the callback.
+        /// Their disposal is done automatically when the world is disposed.</para>
+        /// </summary>
         public readonly Listener CreateListener(RuntimeType eventType, delegate* unmanaged<World, Container, void> callback)
         {
             return UnsafeWorld.CreateListener(value, eventType, callback);
         }
+#else
+        /// <summary>
+        /// Creates a new listener for the given static callback.
+        /// <para>Disposing the listener will unregister the callback.
+        /// Their disposal is done automatically when the world is disposed.</para>
+        /// </summary>
+        public readonly Listener CreateListener<T>(delegate*<World, Container, void> callback) where T : unmanaged
+        {
+            return CreateListener(RuntimeType.Get<T>(), callback);
+        }
+        
+        /// <summary>
+        /// Creates a new listener for the given static callback.
+        /// <para>Disposing the listener will unregister the callback.
+        /// Their disposal is done automatically when the world is disposed.</para>
+        /// </summary>
+        public readonly Listener CreateListener(RuntimeType eventType, delegate*<World, Container, void> callback)
+        {
+            return UnsafeWorld.CreateListener(value, eventType, callback);
+        }
+#endif
 
-        public readonly ReadOnlySpan<RuntimeType> GetComponents(EntityID entity)
+        public readonly ReadOnlySpan<RuntimeType> GetComponentTypes(eint entity)
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
-            EntityDescription slot = Slots[entity.value - 1];
+            EntityDescription slot = Slots[entity - 1];
             ComponentChunk chunk = ComponentChunks[slot.componentsKey];
             return chunk.Types;
         }
 
-        public readonly bool IsEnabled(EntityID entity)
+        public readonly ReadOnlySpan<RuntimeType> GetListTypes(eint entity)
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
-            EntityDescription slot = Slots[entity.value - 1];
+            EntityDescription slot = Slots[entity - 1];
+            return slot.collections.Types;
+        }
+
+        public readonly bool IsEnabled(eint entity)
+        {
+            UnsafeWorld.ThrowIfEntityMissing(value, entity);
+            EntityDescription slot = Slots[entity - 1];
             return slot.IsEnabled;
         }
 
-        public readonly void SetEnabledState(EntityID entity, bool value)
+        public readonly void SetEnabledState(eint entity, bool value)
         {
             UnsafeWorld.ThrowIfEntityMissing(this.value, entity);
-            ref EntityDescription slot = ref Slots.GetRef(entity.value - 1);
+            ref EntityDescription slot = ref Slots.GetRef(entity - 1);
             slot.SetEnabledState(value);
         }
 
@@ -362,14 +651,14 @@ namespace Simulation
             return TryGetFirst(out _, out found);
         }
 
-        public readonly bool TryGetFirst<T>(out EntityID entity) where T : unmanaged
+        public readonly bool TryGetFirst<T>(out eint entity) where T : unmanaged
         {
             return TryGetFirst<T>(out entity, out _);
         }
 
-        public readonly bool TryGetFirst<T>(out EntityID entity, out T component) where T : unmanaged
+        public readonly bool TryGetFirst<T>(out eint entity, out T component) where T : unmanaged
         {
-            foreach (EntityID e in GetAll(RuntimeType.Get<T>()))
+            foreach (eint e in GetAll(RuntimeType.Get<T>()))
             {
                 entity = e;
                 component = GetComponentRef<T>(e);
@@ -381,9 +670,9 @@ namespace Simulation
             return false;
         }
 
-        public readonly EntityID CreateEntity(EntityID parent = default)
+        public readonly eint CreateEntity(eint parent = default)
         {
-            EntityID entity = GetNextEntity();
+            eint entity = GetNextEntity();
             CreateEntity(entity, parent);
             return entity;
         }
@@ -391,33 +680,33 @@ namespace Simulation
         /// <summary>
         /// Returns the value for the next created entity.
         /// </summary>
-        public readonly EntityID GetNextEntity()
+        public readonly eint GetNextEntity()
         {
             return UnsafeWorld.GetNextEntity(value);
         }
 
         /// <summary>
         /// Creates an entity with the given value assuming its 
-        /// not already in use.
+        /// not already in use (otherwise an <see cref="Exception"/> will be thrown).
         /// </summary>
-        public readonly void CreateEntity(EntityID value, EntityID parent)
+        public readonly void CreateEntity(eint value, eint parent)
         {
-            UnsafeWorld.InitializeEntity(this.value, value, parent, default);
+            UnsafeWorld.InitializeEntity(this.value, value, parent, Array.Empty<RuntimeType>());
         }
 
         /// <summary>
         /// Checks if the entity exists and is valid in this world.
         /// </summary>
-        public readonly bool ContainsEntity(EntityID entity)
+        public readonly bool ContainsEntity(uint entity)
         {
-            return UnsafeWorld.ContainsEntity(value, entity.value);
+            return UnsafeWorld.ContainsEntity(value, entity);
         }
 
         /// <summary>
         /// Retrieves the parent of the given entity, <c>default</c> if none
         /// is assigned.
         /// </summary>
-        public readonly EntityID GetParent(EntityID entity)
+        public readonly eint GetParent(eint entity)
         {
             return UnsafeWorld.GetParent(value, entity);
         }
@@ -426,7 +715,7 @@ namespace Simulation
         /// Assigns a new parent.
         /// </summary>
         /// <returns><c>true</c> if the given parent entity was found and assigned successfuly.</returns>
-        public readonly bool SetParent(EntityID entity, EntityID parent)
+        public readonly bool SetParent(eint entity, eint parent)
         {
             return UnsafeWorld.SetParent(value, entity, parent);
         }
@@ -434,80 +723,101 @@ namespace Simulation
         /// <summary>
         /// Retreives all children of the given entity.
         /// </summary>
-        public readonly ReadOnlySpan<EntityID> GetChildren(EntityID entity)
+        public readonly ReadOnlySpan<eint> GetChildren(eint entity)
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
-            EntityDescription slot = Slots[entity.value - 1];
+            EntityDescription slot = Slots[entity - 1];
             if (!slot.children.IsDisposed)
             {
                 return new((void*)slot.children.Address, (int)slot.children.Count);
             }
-            else return [];
+            else return Array.Empty<eint>();
         }
 
-        public readonly UnmanagedList<T> CreateCollection<T>(EntityID entity) where T : unmanaged
+        public readonly UnmanagedList<T> CreateList<T>(eint entity) where T : unmanaged
         {
             return CreateCollection<T>(entity, 1);
+        }
+
+        public readonly UnsafeList* CreateList(eint entity, RuntimeType listType)
+        {
+            return UnsafeWorld.CreateCollection(value, entity, listType);
         }
 
         /// <summary>
         /// Creates a new collection of the given count and returns it as a span.
         /// </summary>
-        public readonly UnmanagedList<T> CreateCollection<T>(EntityID entity, uint initialCapacity = 1) where T : unmanaged
+        public readonly UnmanagedList<T> CreateCollection<T>(eint entity, uint initialCapacity = 1) where T : unmanaged
         {
             UnmanagedList<T> list = new(UnsafeWorld.CreateCollection(value, entity, RuntimeType.Get<T>(), initialCapacity));
             return list;
         }
 
-        public readonly void CreateCollection<T>(EntityID entity, ReadOnlySpan<T> values) where T : unmanaged
+        public readonly void CreateCollection<T>(eint entity, ReadOnlySpan<T> values) where T : unmanaged
         {
             UnmanagedList<T> list = new(UnsafeWorld.CreateCollection(value, entity, RuntimeType.Get<T>()));
             list.AddRange(values);
         }
 
-        public readonly void AddToCollection<T>(EntityID entity, T value) where T : unmanaged
+        public readonly void AddToCollection<T>(eint entity, T value) where T : unmanaged
         {
-            UnmanagedList<T> list = new(UnsafeWorld.GetCollection(this.value, entity, RuntimeType.Get<T>()));
+            UnmanagedList<T> list = new(UnsafeWorld.GetList(this.value, entity, RuntimeType.Get<T>()));
             list.Add(value);
         }
 
-        public readonly bool ContainsCollection<T>(EntityID entity) where T : unmanaged
+        public readonly bool ContainsList<T>(eint entity) where T : unmanaged
         {
-            return UnsafeWorld.ContainsCollection<T>(value, entity);
+            return UnsafeWorld.ContainsList<T>(value, entity);
         }
 
-        public readonly void AddRangeToCollection<T>(EntityID entity, ReadOnlySpan<T> values) where T : unmanaged
+        public readonly void AddRangeToCollection<T>(eint entity, ReadOnlySpan<T> values) where T : unmanaged
         {
-            UnmanagedList<T> list = new(UnsafeWorld.GetCollection(value, entity, RuntimeType.Get<T>()));
+            UnmanagedList<T> list = new(UnsafeWorld.GetList(value, entity, RuntimeType.Get<T>()));
             list.AddRange(values);
         }
 
         /// <summary>
-        /// Retrieves a collection of type <typeparamref name="T"/> on the given entity.
+        /// Retrieves a list of type <typeparamref name="T"/> on the given entity.
         /// </summary>
-        public readonly UnmanagedList<T> GetCollection<T>(EntityID entity) where T : unmanaged
+        public readonly UnmanagedList<T> GetList<T>(eint entity) where T : unmanaged
         {
-            return new(UnsafeWorld.GetCollection(value, entity, RuntimeType.Get<T>()));
+            return new(UnsafeWorld.GetList(value, entity, RuntimeType.Get<T>()));
         }
 
-        public readonly void RemoveAtCollection<T>(EntityID entity, uint index) where T : unmanaged
+        public readonly UnsafeList* GetList(eint entity, RuntimeType listType)
         {
-            UnsafeList* list = UnsafeWorld.GetCollection(value, entity, RuntimeType.Get<T>());
+            return UnsafeWorld.GetList(value, entity, listType);
+        }
+
+        public readonly void RemoveAtCollection<T>(eint entity, uint index) where T : unmanaged
+        {
+            UnsafeList* list = UnsafeWorld.GetList(value, entity, RuntimeType.Get<T>());
             UnsafeList.RemoveAt(list, index);
         }
 
-        public readonly void DestroyCollection<T>(EntityID entity) where T : unmanaged
+        public readonly void DestroyList<T>(eint entity) where T : unmanaged
         {
-            UnsafeWorld.DestroyCollection<T>(value, entity);
+            UnsafeWorld.DestroyList<T>(value, entity);
         }
 
-        public readonly void ClearCollection<T>(EntityID entity) where T : unmanaged
+        public readonly void DestroyList(eint entity, RuntimeType type)
         {
-            UnsafeList* list = UnsafeWorld.GetCollection(value, entity, RuntimeType.Get<T>());
+            UnsafeWorld.DestroyList(value, entity, type);
+        }
+
+        public readonly void ClearList<T>(eint entity) where T : unmanaged
+        {
+            UnsafeList* list = UnsafeWorld.GetList(value, entity, RuntimeType.Get<T>());
             UnsafeList.Clear(list);
         }
 
-        public readonly void AddComponent<T>(EntityID entity, T component) where T : unmanaged
+        public readonly void ClearList(eint entity, RuntimeType listType)
+        {
+            UnsafeList* list = UnsafeWorld.GetList(value, entity, listType);
+            UnsafeList.Clear(list);
+        }
+
+        public readonly void AddComponent<T>(eint entity, T component) where T : unmanaged
         {
             UnsafeWorld.AddComponent(value, entity, RuntimeType.Get<T>());
             ref T target = ref UnsafeWorld.GetComponentRef<T>(value, entity);
@@ -515,17 +825,37 @@ namespace Simulation
         }
 
         /// <summary>
+        /// Adds a new default component with the given type.
+        /// </summary>
+        public readonly void AddComponent(eint entity, RuntimeType componentType)
+        {
+            UnsafeWorld.AddComponent(value, entity, componentType);
+        }
+
+        public readonly void AddComponent(eint entity, RuntimeType componentType, Span<byte> componentData)
+        {
+            UnsafeWorld.AddComponent(value, entity, componentType);
+            Span<byte> bytes = UnsafeWorld.GetComponentBytes(value, entity, componentType);
+            componentData.CopyTo(bytes);
+        }
+
+        /// <summary>
         /// Adds a <c>default</c> component value and returns it by reference.
         /// </summary>
-        public readonly ref T AddComponentRef<T>(EntityID entity) where T : unmanaged
+        public readonly ref T AddComponentRef<T>(eint entity) where T : unmanaged
         {
             AddComponent<T>(entity, default);
             return ref GetComponentRef<T>(entity);
         }
 
-        public readonly void RemoveComponent<T>(EntityID entity) where T : unmanaged
+        public readonly void RemoveComponent<T>(eint entity) where T : unmanaged
         {
             UnsafeWorld.RemoveComponent<T>(value, entity);
+        }
+
+        public readonly void RemoveComponent(eint entity, RuntimeType componentType)
+        {
+            UnsafeWorld.RemoveComponent(value, entity, componentType);
         }
 
         /// <summary>
@@ -550,27 +880,27 @@ namespace Simulation
             return false;
         }
 
-        public readonly bool ContainsComponent<T>(EntityID entity) where T : unmanaged
+        public readonly bool ContainsComponent<T>(eint entity) where T : unmanaged
         {
             return ContainsComponent(entity, RuntimeType.Get<T>());
         }
 
-        public readonly bool ContainsComponent(EntityID entity, RuntimeType type)
+        public readonly bool ContainsComponent(eint entity, RuntimeType type)
         {
             return UnsafeWorld.ContainsComponent(value, entity, type);
         }
 
-        public readonly ref T GetComponentRef<T>(EntityID entity) where T : unmanaged
+        public readonly ref T GetComponentRef<T>(eint entity) where T : unmanaged
         {
             return ref UnsafeWorld.GetComponentRef<T>(value, entity);
         }
 
-        public readonly ref T GetComponentRef<T>(EntityID entity, out bool contains) where T : unmanaged
+        public readonly ref T GetComponentRef<T>(eint entity, out bool contains) where T : unmanaged
         {
             if (!ContainsComponent<T>(entity))
             {
                 contains = false;
-                return ref System.Runtime.CompilerServices.Unsafe.NullRef<T>();
+                return ref System.Runtime.CompilerServices.Unsafe.AsRef<T>(null);
             }
 
             contains = true;
@@ -581,7 +911,7 @@ namespace Simulation
         /// Returns the component of the expected type if it exists, otherwise the default value
         /// is given.
         /// </summary>
-        public readonly T GetComponent<T>(EntityID entity, T defaultValue) where T : unmanaged
+        public readonly T GetComponent<T>(eint entity, T defaultValue) where T : unmanaged
         {
             if (ContainsComponent<T>(entity))
             {
@@ -593,7 +923,7 @@ namespace Simulation
             }
         }
 
-        public readonly T GetComponent<T>(EntityID entity, out bool contains) where T : unmanaged
+        public readonly T GetComponent<T>(eint entity, out bool contains) where T : unmanaged
         {
             if (ContainsComponent<T>(entity))
             {
@@ -607,17 +937,17 @@ namespace Simulation
             }
         }
 
-        public readonly T GetComponent<T>(EntityID entity) where T : unmanaged
+        public readonly T GetComponent<T>(eint entity) where T : unmanaged
         {
             return GetComponentRef<T>(entity);
         }
 
-        public readonly Span<byte> GetComponentBytes(EntityID entity, RuntimeType type)
+        public readonly Span<byte> GetComponentBytes(eint entity, RuntimeType type)
         {
             return UnsafeWorld.GetComponentBytes(value, entity, type);
         }
 
-        public readonly bool TryGetComponent<T>(EntityID entity, out T found) where T : unmanaged
+        public readonly bool TryGetComponent<T>(eint entity, out T found) where T : unmanaged
         {
             if (ContainsComponent<T>(entity))
             {
@@ -631,7 +961,7 @@ namespace Simulation
             }
         }
 
-        public readonly ref T TryGetComponentRef<T>(EntityID entity, out bool found) where T : unmanaged
+        public readonly ref T TryGetComponentRef<T>(eint entity, out bool found) where T : unmanaged
         {
             if (ContainsComponent<T>(entity))
             {
@@ -641,23 +971,29 @@ namespace Simulation
             else
             {
                 found = false;
-                return ref System.Runtime.CompilerServices.Unsafe.NullRef<T>();
+                return ref System.Runtime.CompilerServices.Unsafe.AsRef<T>(null);
             }
         }
 
-        public readonly void SetComponent<T>(EntityID id, T component) where T : unmanaged
+        public readonly void SetComponent<T>(eint id, T component) where T : unmanaged
         {
             ref T existing = ref GetComponentRef<T>(id);
             existing = component;
         }
 
+        public readonly void SetComponent(eint id, RuntimeType componentType, Span<byte> componentData)
+        {
+            Span<byte> bytes = GetComponentBytes(id, componentType);
+            componentData.CopyTo(bytes);
+        }
+
         /// <summary>
         /// Returns the main component chunk that contains the given entity.
         /// </summary>
-        public readonly ComponentChunk GetComponentChunk(EntityID entity)
+        public readonly ComponentChunk GetComponentChunk(eint entity)
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
-            EntityDescription slot = Slots[entity.value - 1];
+            EntityDescription slot = Slots[entity - 1];
             return ComponentChunks[slot.componentsKey];
         }
 
@@ -666,7 +1002,7 @@ namespace Simulation
         /// </summary>
         public readonly ComponentChunk GetComponentChunk(ReadOnlySpan<RuntimeType> componentTypes)
         {
-            uint key = RuntimeType.CalculateHash(componentTypes);
+            uint key = RuntimeType.CombineHash(componentTypes);
             if (ComponentChunks.TryGetValue(key, out ComponentChunk chunk))
             {
                 return chunk;
@@ -679,13 +1015,13 @@ namespace Simulation
 
         public readonly bool ContainsComponentChunk(ReadOnlySpan<RuntimeType> componentTypes)
         {
-            uint key = RuntimeType.CalculateHash(componentTypes);
+            uint key = RuntimeType.CombineHash(componentTypes);
             return ComponentChunks.ContainsKey(key);
         }
 
         public readonly bool TryGetComponentChunk(ReadOnlySpan<RuntimeType> componentTypes, out ComponentChunk chunk)
         {
-            uint key = RuntimeType.CalculateHash(componentTypes);
+            uint key = RuntimeType.CombineHash(componentTypes);
             return ComponentChunks.TryGetValue(key, out chunk);
         }
 
@@ -715,7 +1051,7 @@ namespace Simulation
                     {
                         for (uint e = 0; e < chunk.Entities.Count; e++)
                         {
-                            EntityID entity = chunk.Entities[e];
+                            eint entity = chunk.Entities[e];
                             if (IsEnabled(entity))
                             {
                                 count++;
@@ -729,10 +1065,59 @@ namespace Simulation
         }
 
         /// <summary>
+        /// Copies components from the source entity onto the destination.
+        /// <para>Components will be added if the destination entity doesnt
+        /// contain them. Existing component data will be lost.</para>
+        /// </summary>
+        public readonly void CopyComponentsTo(eint sourceEntity, eint destinationEntity)
+        {
+            ReadOnlySpan<RuntimeType> sourceTypes = GetComponentTypes(sourceEntity);
+            ReadOnlySpan<RuntimeType> destinationTypes = GetComponentTypes(destinationEntity);
+            for (int i = 0; i < sourceTypes.Length; i++)
+            {
+                RuntimeType type = sourceTypes[i];
+                if (!destinationTypes.Contains(type))
+                {
+                    AddComponent(destinationEntity, type);
+                }
+
+                Span<byte> sourceBytes = GetComponentBytes(sourceEntity, type);
+                Span<byte> destinationBytes = GetComponentBytes(destinationEntity, type);
+                sourceBytes.CopyTo(destinationBytes);
+            }
+        }
+
+        /// <summary>
+        /// Copies all lists from the source entity onto the destination.
+        /// <para>Lists will be added if the destination entity doesnt
+        /// contain them. Existing list data will be lost.</para>
+        /// </summary>
+        public readonly void CopyListsTo(eint sourceEntity, eint destinationEntity)
+        {
+            ReadOnlySpan<RuntimeType> sourceTypes = GetListTypes(sourceEntity);
+            ReadOnlySpan<RuntimeType> destinationTypes = GetListTypes(destinationEntity);
+            for (int i = 0; i < sourceTypes.Length; i++)
+            {
+                RuntimeType type = sourceTypes[i];
+                if (!destinationTypes.Contains(type))
+                {
+                    UnsafeList* sourceList = GetList(sourceEntity, type);
+                    uint count = UnsafeList.GetCountRef(sourceList);
+                    UnsafeList* destinationList = CreateList(destinationEntity, type);
+                    nint sourceAddress = UnsafeList.GetAddress(sourceList);
+                    nint destinationAddress = UnsafeList.GetAddress(destinationList);
+                    Span<byte> sourceBytes = new((void*)sourceAddress, (int)(count * type.Size));
+                    Span<byte> destinationBytes = new((void*)destinationAddress, (int)(count * type.Size));
+                    sourceBytes.CopyTo(destinationBytes);
+                }
+            }
+        }
+
+        /// <summary>
         /// Finds all entities that contain all of the given component types and
         /// adds them to the given list.
         /// </summary>
-        public readonly void Fill(ReadOnlySpan<RuntimeType> componentTypes, UnmanagedList<EntityID> list, Query.Option options = default)
+        public readonly void Fill(ReadOnlySpan<RuntimeType> componentTypes, UnmanagedList<eint> list, Query.Option options = default)
         {
             bool exact = (options & Query.Option.ExactComponentTypes) == Query.Option.ExactComponentTypes;
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
@@ -749,7 +1134,7 @@ namespace Simulation
                     {
                         for (uint e = 0; e < chunk.Entities.Count; e++)
                         {
-                            EntityID entity = chunk.Entities[e];
+                            eint entity = chunk.Entities[e];
                             if (IsEnabled(entity))
                             {
                                 list.Add(entity);
@@ -777,7 +1162,7 @@ namespace Simulation
                     {
                         for (uint e = 0; e < chunk.Entities.Count; e++)
                         {
-                            EntityID entity = chunk.Entities[e];
+                            eint entity = chunk.Entities[e];
                             if (IsEnabled(entity))
                             {
                                 list.Add(chunk.GetComponentRef<T>(e));
@@ -788,7 +1173,7 @@ namespace Simulation
             }
         }
 
-        public readonly void Fill<T>(UnmanagedList<EntityID> entities, Query.Option options = default) where T : unmanaged
+        public readonly void Fill<T>(UnmanagedList<eint> entities, Query.Option options = default) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
@@ -805,7 +1190,7 @@ namespace Simulation
                     {
                         for (uint e = 0; e < chunk.Entities.Count; e++)
                         {
-                            EntityID entity = chunk.Entities[e];
+                            eint entity = chunk.Entities[e];
                             if (IsEnabled(entity))
                             {
                                 entities.Add(entity);
@@ -816,7 +1201,7 @@ namespace Simulation
             }
         }
 
-        public readonly void Fill<T>(UnmanagedList<T> components, UnmanagedList<EntityID> entities, Query.Option options = default) where T : unmanaged
+        public readonly void Fill<T>(UnmanagedList<T> components, UnmanagedList<eint> entities, Query.Option options = default) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
@@ -834,7 +1219,7 @@ namespace Simulation
                     {
                         for (uint e = 0; e < chunk.Entities.Count; e++)
                         {
-                            EntityID entity = chunk.Entities[e];
+                            eint entity = chunk.Entities[e];
                             if (IsEnabled(entity))
                             {
                                 components.Add(chunk.GetComponentRef<T>(e));
@@ -846,7 +1231,7 @@ namespace Simulation
             }
         }
 
-        public readonly void Fill(RuntimeType componentType, UnmanagedList<EntityID> entities, Query.Option options = default)
+        public readonly void Fill(RuntimeType componentType, UnmanagedList<eint> entities, Query.Option options = default)
         {
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             for (int i = 0; i < ComponentChunks.Count; i++)
@@ -862,7 +1247,7 @@ namespace Simulation
                     {
                         for (uint e = 0; e < chunk.Entities.Count; e++)
                         {
-                            EntityID entity = chunk.Entities[e];
+                            eint entity = chunk.Entities[e];
                             if (IsEnabled(entity))
                             {
                                 entities.Add(entity);
@@ -876,7 +1261,7 @@ namespace Simulation
         /// <summary>
         /// Iterates over all entities that contain the given component type.
         /// </summary>
-        public readonly IEnumerable<EntityID> GetAll(RuntimeType componentType, Query.Option options = default)
+        public readonly IEnumerable<eint> GetAll(RuntimeType componentType, Query.Option options = default)
         {
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             for (int i = 0; i < ComponentChunks.Count; i++)
@@ -892,7 +1277,7 @@ namespace Simulation
                         }
                         else
                         {
-                            EntityID entity = chunk.Entities[e];
+                            eint entity = chunk.Entities[e];
                             if (IsEnabled(entity))
                             {
                                 yield return entity;
@@ -903,7 +1288,7 @@ namespace Simulation
             }
         }
 
-        public readonly IEnumerable<EntityID> GetAll<T>(Query.Option options = default) where T : unmanaged
+        public readonly IEnumerable<eint> GetAll<T>(Query.Option options = default) where T : unmanaged
         {
             return GetAll(RuntimeType.Get<T>(), options);
         }
@@ -925,7 +1310,7 @@ namespace Simulation
                         }
                         else
                         {
-                            EntityID entity = chunk.Entities[e];
+                            eint entity = chunk.Entities[e];
                             if (IsEnabled(entity))
                             {
                                 callback(entity);
@@ -960,7 +1345,7 @@ namespace Simulation
                         }
                         else
                         {
-                            EntityID entity = chunk.Entities[e];
+                            eint entity = chunk.Entities[e];
                             if (IsEnabled(entity))
                             {
                                 callback(entity);
@@ -971,29 +1356,30 @@ namespace Simulation
             }
         }
 
-        public readonly void ForEach<T1>(QueryCallback<T1> callback, Query.Option options = default) where T1 : unmanaged
+        public readonly void ForEach<T>(QueryCallback<T> callback, Query.Option options = default) where T : unmanaged
         {
-            RuntimeType type = RuntimeType.Get<T1>();
+            Span<RuntimeType> types = stackalloc RuntimeType[1];
+            types[0] = RuntimeType.Get<T>();
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             for (int i = 0; i < ComponentChunks.Count; i++)
             {
                 ComponentChunk chunk = ComponentChunks.Values[i];
-                if (chunk.Types.Contains(type))
+                if (chunk.ContainsTypes(types))
                 {
-                    UnmanagedList<EntityID> entities = chunk.Entities;
+                    UnmanagedList<eint> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
                         if (includeDisabled)
                         {
-                            ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
+                            ref T t1 = ref chunk.GetComponentRef<T>(e);
                             callback(entities[e], ref t1);
                         }
                         else
                         {
-                            EntityID entity = entities[e];
+                            eint entity = entities[e];
                             if (IsEnabled(entity))
                             {
-                                ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
+                                ref T t1 = ref chunk.GetComponentRef<T>(e);
                                 callback(entity, ref t1);
                             }
                         }
@@ -1004,14 +1390,16 @@ namespace Simulation
 
         public readonly void ForEach<T1, T2>(QueryCallback<T1, T2> callback, Query.Option options = default) where T1 : unmanaged where T2 : unmanaged
         {
-            ReadOnlySpan<RuntimeType> types = [RuntimeType.Get<T1>(), RuntimeType.Get<T2>()];
+            Span<RuntimeType> types = stackalloc RuntimeType[2];
+            types[0] = RuntimeType.Get<T1>();
+            types[1] = RuntimeType.Get<T2>();
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             for (int i = 0; i < ComponentChunks.Count; i++)
             {
                 ComponentChunk chunk = ComponentChunks.Values[i];
                 if (chunk.ContainsTypes(types))
                 {
-                    UnmanagedList<EntityID> entities = chunk.Entities;
+                    UnmanagedList<eint> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
                         if (includeDisabled)
@@ -1022,7 +1410,7 @@ namespace Simulation
                         }
                         else
                         {
-                            EntityID entity = entities[e];
+                            eint entity = entities[e];
                             if (IsEnabled(entity))
                             {
                                 ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
@@ -1037,14 +1425,17 @@ namespace Simulation
 
         public readonly void ForEach<T1, T2, T3>(QueryCallback<T1, T2, T3> callback, Query.Option options = default) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            ReadOnlySpan<RuntimeType> types = [RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>()];
+            Span<RuntimeType> types = stackalloc RuntimeType[3];
+            types[0] = RuntimeType.Get<T1>();
+            types[1] = RuntimeType.Get<T2>();
+            types[2] = RuntimeType.Get<T3>();
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             for (int i = 0; i < ComponentChunks.Count; i++)
             {
                 ComponentChunk chunk = ComponentChunks.Values[i];
                 if (chunk.ContainsTypes(types))
                 {
-                    UnmanagedList<EntityID> entities = chunk.Entities;
+                    UnmanagedList<eint> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
                         if (includeDisabled)
@@ -1056,7 +1447,7 @@ namespace Simulation
                         }
                         else
                         {
-                            EntityID entity = entities[e];
+                            eint entity = entities[e];
                             if (IsEnabled(entity))
                             {
                                 ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
@@ -1072,14 +1463,18 @@ namespace Simulation
 
         public readonly void ForEach<T1, T2, T3, T4>(QueryCallback<T1, T2, T3, T4> callback, Query.Option options = default) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            ReadOnlySpan<RuntimeType> types = [RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>(), RuntimeType.Get<T4>()];
+            Span<RuntimeType> types = stackalloc RuntimeType[4];
+            types[0] = RuntimeType.Get<T1>();
+            types[1] = RuntimeType.Get<T2>();
+            types[2] = RuntimeType.Get<T3>();
+            types[3] = RuntimeType.Get<T4>();
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             for (int i = 0; i < ComponentChunks.Count; i++)
             {
                 ComponentChunk chunk = ComponentChunks.Values[i];
                 if (chunk.ContainsTypes(types))
                 {
-                    UnmanagedList<EntityID> entities = chunk.Entities;
+                    UnmanagedList<eint> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
                         if (includeDisabled)
@@ -1092,7 +1487,7 @@ namespace Simulation
                         }
                         else
                         {
-                            EntityID entity = entities[e];
+                            eint entity = entities[e];
                             if (IsEnabled(entity))
                             {
                                 ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
@@ -1107,6 +1502,16 @@ namespace Simulation
             }
         }
 
+        public static World Create()
+        {
+            return new(UnsafeWorld.Allocate());
+        }
+
+        public void CreateListener<T>(object update)
+        {
+            throw new NotImplementedException();
+        }
+
         public static bool operator ==(World left, World right)
         {
             return left.Equals(right);
@@ -1118,12 +1523,12 @@ namespace Simulation
         }
     }
 
-    public delegate void QueryCallback(in EntityID id);
-    public delegate void QueryCallback<T1>(in EntityID id, ref T1 t1) where T1 : unmanaged;
-    public delegate void QueryCallback<T1, T2>(in EntityID id, ref T1 t1, ref T2 t2) where T1 : unmanaged where T2 : unmanaged;
-    public delegate void QueryCallback<T1, T2, T3>(in EntityID id, ref T1 t1, ref T2 t2, ref T3 t3) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged;
-    public delegate void QueryCallback<T1, T2, T3, T4>(in EntityID id, ref T1 t1, ref T2 t2, ref T3 t3, ref T4 t4) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged;
+    public delegate void QueryCallback(in eint id);
+    public delegate void QueryCallback<T1>(in eint id, ref T1 t1) where T1 : unmanaged;
+    public delegate void QueryCallback<T1, T2>(in eint id, ref T1 t1, ref T2 t2) where T1 : unmanaged where T2 : unmanaged;
+    public delegate void QueryCallback<T1, T2, T3>(in eint id, ref T1 t1, ref T2 t2, ref T3 t3) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged;
+    public delegate void QueryCallback<T1, T2, T3, T4>(in eint id, ref T1 t1, ref T2 t2, ref T3 t3, ref T4 t4) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged;
 
-    public unsafe delegate void CreatedCallback(World world, EntityID id);
-    public unsafe delegate void DestroyedCallback(World world, EntityID id);
+    public unsafe delegate void CreatedCallback(World world, eint id);
+    public unsafe delegate void DestroyedCallback(World world, eint id);
 }

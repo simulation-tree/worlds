@@ -10,14 +10,9 @@ namespace Simulation
         private UnsafeComponentChunk* value;
 
         public readonly bool IsDisposed => UnsafeComponentChunk.IsDisposed(value);
-        public readonly UnmanagedList<EntityID> Entities => UnsafeComponentChunk.GetEntities(value);
+        public readonly UnmanagedList<eint> Entities => UnsafeComponentChunk.GetEntities(value);
         public readonly ReadOnlySpan<RuntimeType> Types => UnsafeComponentChunk.GetTypes(value);
         public readonly uint Key => UnsafeComponentChunk.GetKey(value);
-
-        public ComponentChunk()
-        {
-            throw new NotImplementedException();
-        }
 
         public ComponentChunk(ReadOnlySpan<RuntimeType> types)
         {
@@ -59,17 +54,17 @@ namespace Simulation
             return true;
         }
 
-        public readonly void Add(EntityID entity)
+        public readonly void Add(eint entity)
         {
             UnsafeComponentChunk.Add(value, entity);
         }
 
-        public readonly void Remove(EntityID entity)
+        public readonly void Remove(eint entity)
         {
             UnsafeComponentChunk.Remove(value, entity);
         }
 
-        public readonly uint Move(EntityID entity, ComponentChunk destination)
+        public readonly uint Move(eint entity, ComponentChunk destination)
         {
             return UnsafeComponentChunk.Move(value, entity, destination.value);
         }
@@ -84,7 +79,7 @@ namespace Simulation
             return new(GetComponents(RuntimeType.Get<T>()));
         }
 
-        public readonly ref T GetComponentRef<T>(EntityID entity) where T : unmanaged
+        public readonly ref T GetComponentRef<T>(eint entity) where T : unmanaged
         {
             uint index = Entities.IndexOf(entity);
             return ref GetComponentRef<T>(index);
@@ -96,20 +91,19 @@ namespace Simulation
             return ref components.GetRef(index);
         }
 
-        public readonly Span<byte> GetComponentBytes(EntityID entity, RuntimeType type)
+        public readonly Span<byte> GetComponentBytes(eint entity, RuntimeType type)
         {
-            void* component = GetComponent(entity, type);
+            void* component = GetComponentPointer(entity, type);
             return new Span<byte>(component, type.Size);
         }
 
-        public readonly void* GetComponent(EntityID entity, RuntimeType type)
+        public readonly void* GetComponentPointer(eint entity, RuntimeType type)
         {
             uint index = Entities.IndexOf(entity);
-            return GetComponent(index, type);
+            return GetComponentPointer(index, type);
         }
 
-        //todo: rename this to become GetComponentAddress instead
-        public readonly void* GetComponent(uint index, RuntimeType type)
+        public readonly void* GetComponentPointer(uint index, RuntimeType type)
         {
             UnsafeList* components = GetComponents(type);
             nint address = UnsafeList.GetAddress(components);
@@ -118,7 +112,7 @@ namespace Simulation
 
         public readonly nint GetComponentAddress<T>(uint index) where T : unmanaged
         {
-            return (nint)GetComponent(index, RuntimeType.Get<T>());
+            return (nint)GetComponentPointer(index, RuntimeType.Get<T>());
         }
     }
 }

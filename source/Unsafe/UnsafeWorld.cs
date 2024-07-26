@@ -13,7 +13,7 @@ namespace Simulation.Unsafe
     public unsafe struct UnsafeWorld
     {
 #if !IGNORE_STACKTRACES
-        internal static readonly Dictionary<EntityID, StackTrace> createStackTraces = [];
+        internal static readonly Dictionary<eint, StackTrace> createStackTraces = new();
 #endif
 
         /// <summary>
@@ -42,14 +42,14 @@ namespace Simulation.Unsafe
         }
 
         [Conditional("DEBUG")]
-        public static void ThrowIfEntityMissing(UnsafeWorld* world, EntityID entity)
+        public static void ThrowIfEntityMissing(UnsafeWorld* world, eint entity)
         {
-            if (entity.value == uint.MaxValue)
+            if (entity == uint.MaxValue)
             {
                 throw new InvalidOperationException($"Entity {entity} is not valid.");
             }
 
-            uint position = entity.value - 1;
+            uint position = entity - 1;
             uint count = UnsafeList.GetCountRef(world->slots);
             if (position >= count)
             {
@@ -64,14 +64,14 @@ namespace Simulation.Unsafe
         }
 
         [Conditional("DEBUG")]
-        public static void ThrowIfEntityPresent(UnsafeWorld* world, EntityID entity)
+        public static void ThrowIfEntityPresent(UnsafeWorld* world, eint entity)
         {
-            if (entity.value == uint.MaxValue)
+            if (entity == uint.MaxValue)
             {
                 throw new InvalidOperationException($"Entity {entity} is not valid.");
             }
 
-            uint position = entity.value - 1;
+            uint position = entity - 1;
             uint count = UnsafeList.GetCountRef(world->slots);
             if (position < count)
             {
@@ -84,9 +84,9 @@ namespace Simulation.Unsafe
         }
 
         [Conditional("DEBUG")]
-        public static void ThrowIfComponentMissing(UnsafeWorld* world, EntityID entity, RuntimeType type)
+        public static void ThrowIfComponentMissing(UnsafeWorld* world, eint entity, RuntimeType type)
         {
-            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
             UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
             ComponentChunk chunk = components[slot.componentsKey];
             if (!chunk.Types.Contains(type))
@@ -96,9 +96,9 @@ namespace Simulation.Unsafe
         }
 
         [Conditional("DEBUG")]
-        public static void ThrowIfComponentAlreadyPresent(UnsafeWorld* world, EntityID entity, RuntimeType type)
+        public static void ThrowIfComponentAlreadyPresent(UnsafeWorld* world, eint entity, RuntimeType type)
         {
-            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
             UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
             ComponentChunk chunk = components[slot.componentsKey];
             if (chunk.Types.Contains(type))
@@ -108,9 +108,9 @@ namespace Simulation.Unsafe
         }
 
         [Conditional("DEBUG")]
-        public static void ThrowIfCollectionMissing(UnsafeWorld* world, EntityID entity, RuntimeType type)
+        public static void ThrowIfCollectionMissing(UnsafeWorld* world, eint entity, RuntimeType type)
         {
-            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
             if (slot.collections.IsDisposed || !slot.collections.Types.Contains(type))
             {
                 throw new NullReferenceException($"Collection of type {type} not found on {entity}.");
@@ -118,9 +118,9 @@ namespace Simulation.Unsafe
         }
 
         [Conditional("DEBUG")]
-        public static void ThrowIfCollectionAlreadyPresent(UnsafeWorld* world, EntityID entity, RuntimeType type)
+        public static void ThrowIfCollectionAlreadyPresent(UnsafeWorld* world, eint entity, RuntimeType type)
         {
-            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
             if (!slot.collections.IsDisposed && slot.collections.Types.Contains(type))
             {
                 throw new InvalidOperationException($"Collection of type {type} already present on {entity}.");
@@ -138,7 +138,7 @@ namespace Simulation.Unsafe
             return new(world->slots);
         }
 
-        public static UnmanagedList<EntityID> GetFreeEntities(UnsafeWorld* world)
+        public static UnmanagedList<eint> GetFreeEntities(UnsafeWorld* world)
         {
             Allocations.ThrowIfNull(world);
             return new(world->freeEntities);
@@ -153,12 +153,12 @@ namespace Simulation.Unsafe
         public static UnsafeWorld* Allocate()
         {
             UnsafeList* slots = UnsafeList.Allocate<EntityDescription>();
-            UnsafeList* freeEntities = UnsafeList.Allocate<EntityID>();
+            UnsafeList* freeEntities = UnsafeList.Allocate<eint>();
             UnsafeList* events = UnsafeList.Allocate<Container>();
             UnsafeDictionary* listeners = UnsafeDictionary.Allocate<RuntimeType, nint>();
             UnsafeDictionary* components = UnsafeDictionary.Allocate<uint, ComponentChunk>();
 
-            ComponentChunk defaultComponentChunk = new([]);
+            ComponentChunk defaultComponentChunk = new(Array.Empty<RuntimeType>());
             uint chunkKey = defaultComponentChunk.Key;
             UnsafeDictionary.Add(components, chunkKey, defaultComponentChunk);
 
@@ -280,6 +280,7 @@ namespace Simulation.Unsafe
             }
         }
 
+#if NET5_0_OR_GREATER
         public static Listener CreateListener(UnsafeWorld* world, RuntimeType eventType, delegate* unmanaged<World, Container, void> callback)
         {
             Listener listener = new(new(world), eventType, callback);
@@ -297,8 +298,27 @@ namespace Simulation.Unsafe
 
             return listener;
         }
+#else
+        public static Listener CreateListener(UnsafeWorld* world, RuntimeType eventType, delegate*<World, Container, void> callback)
+        {
+            Listener listener = new(new(world), eventType, callback);
+            if (!UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listeners, eventType))
+            {
+                UnsafeList* listenerList = UnsafeList.Allocate<Listener>();
+                UnsafeList.Add(listenerList, listener);
+                UnsafeDictionary.Add(world->listeners, eventType, (nint)listenerList);
+            }
+            else
+            {
+                UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, eventType);
+                UnsafeList.Add(listenerList, listener);
+            }
 
-        public static void RemoveListener(UnsafeWorld* world, Listener listener)
+            return listener;
+        }
+#endif
+
+        internal static void RemoveListener(UnsafeWorld* world, Listener listener)
         {
             if (UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listeners, listener.eventType))
             {
@@ -314,12 +334,12 @@ namespace Simulation.Unsafe
             }
         }
 
-        public static void DestroyEntity(UnsafeWorld* world, EntityID entity, bool destroyChildren = true)
+        public static void DestroyEntity(UnsafeWorld* world, eint entity, bool destroyChildren = true)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
 
-            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
 
             //destroy or orphan the children
             if (!slot.children.IsDisposed)
@@ -328,7 +348,7 @@ namespace Simulation.Unsafe
                 {
                     for (uint i = 0; i < slot.children.Count; i++)
                     {
-                        EntityID child = new(slot.children[i]);
+                        eint child = new(slot.children[i]);
                         DestroyEntity(world, child, true);
                     }
                 }
@@ -363,27 +383,48 @@ namespace Simulation.Unsafe
             EntityDestroyed(new(world), entity);
         }
 
-        public static ReadOnlySpan<RuntimeType> GetComponents(UnsafeWorld* world, EntityID id)
+        public static ref EntityDescription GetEntitySlotRef(UnsafeWorld* world, eint entity)
         {
             Allocations.ThrowIfNull(world);
-            ThrowIfEntityMissing(world, id);
+            ThrowIfEntityMissing(world, entity);
+            return ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
+        }
 
-            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, id.value - 1);
+        public static ReadOnlySpan<RuntimeType> GetComponentTypes(UnsafeWorld* world, eint entity)
+        {
+            Allocations.ThrowIfNull(world);
+            ThrowIfEntityMissing(world, entity);
+
+            EntityDescription slot = GetEntitySlotRef(world, entity);
             UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
             ComponentChunk chunk = components[slot.componentsKey];
             return chunk.Types;
         }
 
-        public static EntityID GetParent(UnsafeWorld* world, EntityID entity)
+        public static ReadOnlySpan<RuntimeType> GetListTypes(UnsafeWorld* world, eint entity)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
 
-            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            EntityDescription slot = GetEntitySlotRef(world, entity);
+            if (slot.collections.IsDisposed)
+            {
+                return ReadOnlySpan<RuntimeType>.Empty;
+            }
+
+            return slot.collections.Types;
+        }
+
+        public static eint GetParent(UnsafeWorld* world, eint entity)
+        {
+            Allocations.ThrowIfNull(world);
+            ThrowIfEntityMissing(world, entity);
+
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
             return new(slot.parent);
         }
 
-        public static bool SetParent(UnsafeWorld* world, EntityID entity, EntityID parent)
+        public static bool SetParent(UnsafeWorld* world, eint entity, eint parent)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
@@ -393,8 +434,8 @@ namespace Simulation.Unsafe
                 throw new InvalidOperationException("Entity cannot be its own parent.");
             }
 
-            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
-            if (slot.parent == parent.value)
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
+            if (slot.parent == parent)
             {
                 return false;
             }
@@ -403,24 +444,24 @@ namespace Simulation.Unsafe
             if (slot.parent != default)
             {
                 ref EntityDescription previousParentSlot = ref UnsafeList.GetRef<EntityDescription>(world->slots, slot.parent - 1);
-                previousParentSlot.children.TryRemove(entity.value);
+                previousParentSlot.children.TryRemove(entity);
             }
 
-            if (!ContainsEntity(world, parent.value))
+            if (!ContainsEntity(world, parent))
             {
                 slot.parent = default;
                 return false;
             }
             else
             {
-                slot.parent = parent.value;
-                ref EntityDescription newParentSlot = ref UnsafeList.GetRef<EntityDescription>(world->slots, parent.value - 1);
+                slot.parent = parent;
+                ref EntityDescription newParentSlot = ref UnsafeList.GetRef<EntityDescription>(world->slots, parent - 1);
                 if (newParentSlot.children.IsDisposed)
                 {
-                    newParentSlot.children = new();
+                    newParentSlot.children = UnmanagedList<uint>.Create();
                 }
 
-                newParentSlot.children.Add(entity.value);
+                newParentSlot.children.Add(entity);
                 return true;
             }
         }
@@ -428,12 +469,12 @@ namespace Simulation.Unsafe
         /// <summary>
         /// Returns the next available entity value.
         /// </summary>
-        public static EntityID GetNextEntity(UnsafeWorld* world)
+        public static eint GetNextEntity(UnsafeWorld* world)
         {
             Allocations.ThrowIfNull(world);
             if (UnsafeList.GetCountRef(world->freeEntities) > 0)
             {
-                return UnsafeList.Get<EntityID>(world->freeEntities, 0);
+                return UnsafeList.Get<eint>(world->freeEntities, 0);
             }
             else
             {
@@ -446,43 +487,43 @@ namespace Simulation.Unsafe
         /// Initializes the given entity value into existence assuming 
         /// its not already present.
         /// </summary>
-        public static void InitializeEntity(UnsafeWorld* world, EntityID entity, EntityID parent, ReadOnlySpan<RuntimeType> componentTypes)
+        public static void InitializeEntity(UnsafeWorld* world, eint entity, eint parent, ReadOnlySpan<RuntimeType> componentTypes)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityPresent(world, entity);
 
             //add child reference into parent's slot
-            if (!ContainsEntity(world, parent.value))
+            if (!ContainsEntity(world, parent))
             {
                 parent = default;
             }
             else
             {
-                ref EntityDescription parentSlot = ref UnsafeList.GetRef<EntityDescription>(world->slots, parent.value - 1);
+                ref EntityDescription parentSlot = ref UnsafeList.GetRef<EntityDescription>(world->slots, parent - 1);
                 if (parentSlot.children.IsDisposed)
                 {
-                    parentSlot.children = new();
+                    parentSlot.children = UnmanagedList<uint>.Create();
                 }
 
-                parentSlot.children.Add(entity.value);
+                parentSlot.children.Add(entity);
             }
 
-            uint componentsKey = RuntimeType.CalculateHash(componentTypes);
-            UnmanagedList<EntityID> freeEntities = GetFreeEntities(world);
+            uint componentsKey = RuntimeType.CombineHash(componentTypes);
+            UnmanagedList<eint> freeEntities = GetFreeEntities(world);
             if (freeEntities.TryRemove(entity))
             {
                 //recycle a previously destroyed slot
-                ref EntityDescription oldSlot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
-                oldSlot.entity = entity.value;
-                oldSlot.parent = parent.value;
+                ref EntityDescription oldSlot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
+                oldSlot.entity = entity;
+                oldSlot.parent = parent;
                 oldSlot.componentsKey = componentsKey;
                 oldSlot.state = EntityDescription.State.Enabled;
             }
             else
             {
                 //create new slot
-                EntityID newEntity = new(UnsafeList.GetCountRef(world->slots) + 1);
-                EntityDescription newSlot = new(newEntity.value, parent.value, componentsKey);
+                eint newEntity = new(UnsafeList.GetCountRef(world->slots) + 1);
+                EntityDescription newSlot = new(newEntity, parent, componentsKey);
                 UnsafeList.Add(world->slots, newSlot);
             }
 
@@ -515,45 +556,45 @@ namespace Simulation.Unsafe
             EntityCreated(new(world), entity);
         }
 
-        public static bool ContainsEntity(UnsafeWorld* world, uint value)
+        public static bool ContainsEntity(UnsafeWorld* world, uint entity)
         {
             Allocations.ThrowIfNull(world);
-            if (value == uint.MaxValue)
+            if (entity == uint.MaxValue)
             {
                 return false;
             }
 
-            uint position = value - 1;
+            uint position = entity - 1;
             if (position >= UnsafeList.GetCountRef(world->slots))
             {
                 return false;
             }
 
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, position);
-            return slot.entity == value;
+            return slot.entity == entity;
         }
 
-        public static UnsafeList* CreateCollection(UnsafeWorld* world, EntityID entity, RuntimeType type, uint initialCapacity = 1)
+        public static UnsafeList* CreateCollection(UnsafeWorld* world, eint entity, RuntimeType type, uint initialCapacity = 1)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
             ThrowIfCollectionAlreadyPresent(world, entity, type);
 
-            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
             if (slot.collections.IsDisposed)
             {
-                slot.collections = new();
+                slot.collections = EntityCollections.Create();
             }
 
             return slot.collections.CreateCollection(type, initialCapacity);
         }
 
-        public static bool ContainsCollection<T>(UnsafeWorld* world, EntityID entity) where T : unmanaged
+        public static bool ContainsList<T>(UnsafeWorld* world, eint entity) where T : unmanaged
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
 
-            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
             if (!slot.collections.IsDisposed)
             {
                 return slot.collections.Types.Contains(RuntimeType.Get<T>());
@@ -564,29 +605,32 @@ namespace Simulation.Unsafe
             }
         }
 
-        public static UnsafeList* GetCollection(UnsafeWorld* world, EntityID entity, RuntimeType type)
+        public static UnsafeList* GetList(UnsafeWorld* world, eint entity, RuntimeType type)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
             ThrowIfCollectionMissing(world, entity, type);
 
-            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
             return slot.collections.GetCollection(type);
         }
 
-        public static void DestroyCollection<T>(UnsafeWorld* world, EntityID entity) where T : unmanaged
+        public static void DestroyList<T>(UnsafeWorld* world, eint entity) where T : unmanaged
+        {
+            DestroyList(world, entity, RuntimeType.Get<T>());
+        }
+
+        public static void DestroyList(UnsafeWorld* world, eint entity, RuntimeType type)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
-
-            RuntimeType type = RuntimeType.Get<T>();
             ThrowIfCollectionMissing(world, entity, type);
 
-            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
-            slot.collections.RemoveCollection<T>();
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
+            slot.collections.RemoveCollection(type);
         }
 
-        public static ref T AddComponentRef<T>(UnsafeWorld* world, EntityID entity) where T : unmanaged
+        public static ref T AddComponentRef<T>(UnsafeWorld* world, eint entity) where T : unmanaged
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
@@ -595,14 +639,14 @@ namespace Simulation.Unsafe
             ThrowIfComponentAlreadyPresent(world, entity, addingType);
 
             UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
-            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
             uint previousTypesKey = slot.componentsKey;
             ComponentChunk current = components[previousTypesKey];
             ReadOnlySpan<RuntimeType> oldTypes = current.Types;
             Span<RuntimeType> newTypes = stackalloc RuntimeType[oldTypes.Length + 1];
             oldTypes.CopyTo(newTypes);
             newTypes[^1] = addingType;
-            uint newTypesKey = RuntimeType.CalculateHash(newTypes);
+            uint newTypesKey = RuntimeType.CombineHash(newTypes);
             slot.componentsKey = newTypesKey;
 
             if (!components.TryGetValue(newTypesKey, out ComponentChunk destination))
@@ -615,22 +659,21 @@ namespace Simulation.Unsafe
             return ref destination.GetComponentRef<T>(index);
         }
 
-        public static void* AddComponent(UnsafeWorld* world, EntityID entity, RuntimeType type)
+        public static void* AddComponent(UnsafeWorld* world, eint entity, RuntimeType type)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
-
             ThrowIfComponentAlreadyPresent(world, entity, type);
 
             UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
-            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
             uint previousTypesKey = slot.componentsKey;
             ComponentChunk current = components[previousTypesKey];
             ReadOnlySpan<RuntimeType> oldTypes = current.Types;
             Span<RuntimeType> newTypes = stackalloc RuntimeType[oldTypes.Length + 1];
             oldTypes.CopyTo(newTypes);
             newTypes[^1] = type;
-            uint newTypesKey = RuntimeType.CalculateHash(newTypes);
+            uint newTypesKey = RuntimeType.CombineHash(newTypes);
             slot.componentsKey = newTypesKey;
 
             if (!components.TryGetValue(newTypesKey, out ComponentChunk destination))
@@ -640,19 +683,22 @@ namespace Simulation.Unsafe
             }
 
             uint index = current.Move(entity, destination);
-            return destination.GetComponent(index, type);
+            return destination.GetComponentPointer(index, type);
         }
 
-        public static void RemoveComponent<T>(UnsafeWorld* world, EntityID entity) where T : unmanaged
+        public static void RemoveComponent<T>(UnsafeWorld* world, eint entity) where T : unmanaged
+        {
+            RemoveComponent(world, entity, RuntimeType.Get<T>());
+        }
+
+        public static void RemoveComponent(UnsafeWorld* world, eint entity, RuntimeType type)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
-
-            RuntimeType removingType = RuntimeType.Get<T>();
-            ThrowIfComponentMissing(world, entity, removingType);
+            ThrowIfComponentMissing(world, entity, type);
 
             UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
-            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
             uint previousTypesKey = slot.componentsKey;
             ComponentChunk current = components[previousTypesKey];
             ReadOnlySpan<RuntimeType> oldTypes = current.Types;
@@ -660,14 +706,14 @@ namespace Simulation.Unsafe
             int count = 0;
             for (int i = 0; i < oldTypes.Length; i++)
             {
-                if (oldTypes[i] != removingType)
+                if (oldTypes[i] != type)
                 {
                     newTypes[count] = oldTypes[i];
                     count++;
                 }
             }
 
-            uint newTypesKey = RuntimeType.CalculateHash(newTypes);
+            uint newTypesKey = RuntimeType.CombineHash(newTypes);
             slot.componentsKey = newTypesKey;
 
             if (!components.TryGetValue(newTypesKey, out ComponentChunk destination))
@@ -679,19 +725,19 @@ namespace Simulation.Unsafe
             current.Move(entity, destination);
         }
 
-        public static bool ContainsComponent(UnsafeWorld* world, EntityID entity, RuntimeType type)
+        public static bool ContainsComponent(UnsafeWorld* world, eint entity, RuntimeType type)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
 
-            uint index = entity.value - 1;
+            uint index = entity - 1;
             UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, index);
             ComponentChunk chunk = components[slot.componentsKey];
             return chunk.Types.Contains(type);
         }
 
-        public static ref T GetComponentRef<T>(UnsafeWorld* world, EntityID entity) where T : unmanaged
+        public static ref T GetComponentRef<T>(UnsafeWorld* world, eint entity) where T : unmanaged
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
@@ -700,19 +746,19 @@ namespace Simulation.Unsafe
             ThrowIfComponentMissing(world, entity, type);
 
             UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
-            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
             ComponentChunk chunk = components[slot.componentsKey];
             return ref chunk.GetComponentRef<T>(entity);
         }
 
-        public static Span<byte> GetComponentBytes(UnsafeWorld* world, EntityID entity, RuntimeType type)
+        public static Span<byte> GetComponentBytes(UnsafeWorld* world, eint entity, RuntimeType type)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
             ThrowIfComponentMissing(world, entity, type);
 
             UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
-            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
             ComponentChunk chunk = components[slot.componentsKey];
             return chunk.GetComponentBytes(entity, type);
         }

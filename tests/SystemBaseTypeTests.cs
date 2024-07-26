@@ -62,16 +62,6 @@ namespace Simulation
             system2.Dispose();
         }
 
-        public readonly struct TestEvent
-        {
-            public readonly uint data;
-
-            public TestEvent(uint data)
-            {
-                this.data = data;
-            }
-        }
-
         public class TestSystem : SystemBase
         {
             public readonly List<TestEvent> received = [];
@@ -85,6 +75,16 @@ namespace Simulation
             {
                 received.Add(e);
             }
+        }
+    }
+
+    public readonly struct TestEvent
+    {
+        public readonly uint data;
+
+        public TestEvent(uint data)
+        {
+            this.data = data;
         }
     }
 }

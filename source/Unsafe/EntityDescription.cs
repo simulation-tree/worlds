@@ -2,11 +2,11 @@
 
 namespace Simulation.Unsafe
 {
-    public struct EntityDescription(uint entity, uint parent, uint componentsKey)
+    public struct EntityDescription
     {
-        public uint entity = entity;
-        public uint parent = parent;
-        public uint componentsKey = componentsKey;
+        public uint entity;
+        public uint parent;
+        public uint componentsKey;
         public EntityCollections collections;
         public UnmanagedList<uint> children;
         public State state;
@@ -14,6 +14,16 @@ namespace Simulation.Unsafe
         public readonly bool IsEnabled => state == State.Enabled;
         public readonly bool IsSelfEnabled => state == State.Enabled || state == State.AncestorDisabledEnabled;
         public readonly bool IsDestroyed => state == State.Destroyed;
+
+        public EntityDescription(uint entity, uint parent, uint componentsKey)
+        {
+            this.entity = entity;
+            this.parent = parent;
+            this.componentsKey = componentsKey;
+            collections = EntityCollections.Create();
+            children = UnmanagedList<uint>.Create();
+            state = State.Enabled;
+        }
 
         public void SetEnabledState(bool value)
         {

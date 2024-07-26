@@ -12,9 +12,9 @@ namespace Simulation
         public readonly bool IsDisposed => UnsafeEntityCollections.IsDisposed(value);
         public readonly ReadOnlySpan<RuntimeType> Types => UnsafeEntityCollections.GetTypes(value).AsSpan();
 
-        public EntityCollections()
+        private EntityCollections(UnsafeEntityCollections* value)
         {
-            value = UnsafeEntityCollections.Allocate();
+            this.value = value;
         }
 
         public void Dispose()
@@ -46,7 +46,18 @@ namespace Simulation
 
         public readonly void RemoveCollection<T>() where T : unmanaged
         {
-            UnsafeEntityCollections.RemoveCollection(value, RuntimeType.Get<T>());
+            RemoveCollection(RuntimeType.Get<T>());
+        }
+
+        public readonly void RemoveCollection(RuntimeType type)
+        {
+            UnsafeEntityCollections.RemoveCollection(value, type);
+        }
+
+        public static EntityCollections Create()
+        {
+            UnsafeEntityCollections* value = UnsafeEntityCollections.Allocate();
+            return new(value);
         }
     }
 }

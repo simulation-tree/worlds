@@ -39,9 +39,9 @@ namespace Simulation
         public void DestroyParentEntity()
         {
             using World world = new();
-            EntityID a = world.CreateEntity();
-            EntityID b = world.CreateEntity(a);
-            EntityID c = world.CreateEntity(a);
+            eint a = world.CreateEntity();
+            eint b = world.CreateEntity(a);
+            eint c = world.CreateEntity(a);
             Assert.That(world.ContainsEntity(a), Is.True);
             Assert.That(world.ContainsEntity(b), Is.True);
             Assert.That(world.ContainsEntity(c), Is.True);
@@ -59,7 +59,7 @@ namespace Simulation
         public void GetAddedComponent()
         {
             using World world = new();
-            EntityID entity = world.CreateEntity();
+            eint entity = world.CreateEntity();
             SimpleComponent component = new("Hello World");
             world.AddComponent(entity, component);
 
@@ -78,7 +78,7 @@ namespace Simulation
         public void CreateAndDestroyEntity()
         {
             using World world = new();
-            EntityID entity = world.CreateEntity();
+            eint entity = world.CreateEntity();
             world.DestroyEntity(entity);
             Assert.That(world.ContainsEntity(entity), Is.False);
             Assert.That(world.Count, Is.EqualTo(0));
@@ -89,7 +89,7 @@ namespace Simulation
         public void TwoComponents()
         {
             using World world = new();
-            EntityID entity = world.CreateEntity();
+            eint entity = world.CreateEntity();
             SimpleComponent component1 = new("Hello World");
             Another component2 = new(42);
             world.AddComponent(entity, component1);
@@ -105,12 +105,12 @@ namespace Simulation
         public void DestroyEntityTwice()
         {
             using World world = new();
-            EntityID entity = world.CreateEntity();
+            eint entity = world.CreateEntity();
             Assert.That(world.ContainsEntity(entity), Is.True);
             world.DestroyEntity(entity);
             Assert.That(world.ContainsEntity(entity), Is.False);
 
-            EntityID another = world.CreateEntity();
+            eint another = world.CreateEntity();
             Assert.That(world.ContainsEntity(another), Is.True);
             world.DestroyEntity(another);
             Assert.That(world.ContainsEntity(another), Is.False);
@@ -120,8 +120,8 @@ namespace Simulation
         public void EnablingAndDisabling()
         {
             using World world = new();
-            EntityID a = world.CreateEntity();
-            EntityID b = world.CreateEntity();
+            eint a = world.CreateEntity();
+            eint b = world.CreateEntity();
             world.AddComponent(a, new SimpleComponent("Hello World"));
             Assert.That(world.IsEnabled(a), Is.True);
             Assert.That(world.IsEnabled(b), Is.True);
@@ -136,8 +136,8 @@ namespace Simulation
         public void DestroyEntityWithCollection()
         {
             World world = new();
-            EntityID entity = world.CreateEntity();
-            UnmanagedList<SimpleComponent> list = world.CreateCollection<SimpleComponent>(entity);
+            eint entity = world.CreateEntity();
+            UnmanagedList<SimpleComponent> list = world.CreateList<SimpleComponent>(entity);
             list.Add(new("Hello World 1"));
             list.Add(new("Hello World 2"));
             world.DestroyEntity(entity);
@@ -151,13 +151,13 @@ namespace Simulation
         public void DestroyCollectionTwice()
         {
             World world = new();
-            EntityID entity = world.CreateEntity();
-            UnmanagedList<SimpleComponent> list = world.CreateCollection<SimpleComponent>(entity);
+            eint entity = world.CreateEntity();
+            UnmanagedList<SimpleComponent> list = world.CreateList<SimpleComponent>(entity);
             list.Add(new("apple"));
             world.DestroyEntity(entity);
             Assert.That(list.IsDisposed, Is.True);
-            EntityID another = world.CreateEntity();
-            UnmanagedList<SimpleComponent> anotherList = world.CreateCollection<SimpleComponent>(another);
+            eint another = world.CreateEntity();
+            UnmanagedList<SimpleComponent> anotherList = world.CreateList<SimpleComponent>(another);
             anotherList.Add(new("banana"));
             Assert.That(anotherList.Count, Is.EqualTo(1));
             world.DestroyEntity(another);
@@ -170,23 +170,23 @@ namespace Simulation
         public void ComponentBuffer()
         {
             using World world = new();
-            EntityID entity1 = world.CreateEntity();
-            EntityID entity2 = world.CreateEntity();
+            eint entity1 = world.CreateEntity();
+            eint entity2 = world.CreateEntity();
             SimpleComponent component1 = new("apple");
             SimpleComponent component2 = new("banana");
             world.AddComponent(entity1, component1);
             world.AddComponent(entity2, component2);
-            EntityID entity3 = world.CreateEntity();
-            EntityID entity4 = world.CreateEntity();
+            eint entity3 = world.CreateEntity();
+            eint entity4 = world.CreateEntity();
             Another another1 = new(5);
             Another another2 = new(10);
             world.AddComponent(entity3, another1);
             world.AddComponent(entity4, another2);
-            EntityID entity5 = world.CreateEntity();
+            eint entity5 = world.CreateEntity();
             world.AddComponent(entity5, component1);
             world.AddComponent(entity5, another2);
-            using UnmanagedList<SimpleComponent> buffer = new();
-            using UnmanagedList<EntityID> entities = new();
+            using UnmanagedList<SimpleComponent> buffer = UnmanagedList<SimpleComponent>.Create();
+            using UnmanagedList<eint> entities = UnmanagedList<eint>.Create();
             world.Fill(buffer, entities);
             Assert.That(buffer.Count, Is.EqualTo(3));
             var entitiesSpan = entities.AsSpan();
@@ -194,7 +194,7 @@ namespace Simulation
             Assert.That(entities.Contains(entity2), Is.True);
             Assert.That(entities.Contains(entity5), Is.True);
             entities.Clear();
-            using UnmanagedList<Another> anotherBuffer = new();
+            using UnmanagedList<Another> anotherBuffer = UnmanagedList<Another>.Create();
             world.Fill(anotherBuffer, entities);
             Assert.That(anotherBuffer.Count, Is.EqualTo(3));
             Assert.That(entities.Contains(entity3), Is.True);
@@ -206,11 +206,11 @@ namespace Simulation
         public void PopulateWorldThenClear()
         {
             using World world = new();
-            using RandomGenerator rng = new();
+            using RandomGenerator rng = RandomGenerator.Create();
             uint realEntities = 0;
             for (int i = 0; i < 100; i++)
             {
-                EntityID entity = world.CreateEntity();
+                eint entity = world.CreateEntity();
                 if (rng.NextBool())
                 {
                     world.AddComponent(entity, new SimpleComponent("apple"));
@@ -223,7 +223,7 @@ namespace Simulation
 
                 if (rng.NextBool())
                 {
-                    world.CreateCollection<char>(entity);
+                    world.CreateList<char>(entity);
                     uint length = rng.NextUInt(1, 10);
                     for (uint j = 0; j < length; j++)
                     {
@@ -246,7 +246,7 @@ namespace Simulation
             Assert.That(world.Count, Is.EqualTo(0));
             for (uint i = 0; i < 100; i++)
             {
-                EntityID entity = new(i + 1);
+                uint entity = i + 1;
                 Assert.That(world.ContainsEntity(entity), Is.False);
             }
         }

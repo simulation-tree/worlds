@@ -11,7 +11,7 @@ namespace Simulation
     /// </summary>
     public abstract class SystemBase : IDisposable
     {
-        private static readonly Dictionary<RuntimeType, List<Action<Container>>> staticCallbacks = [];
+        private static readonly Dictionary<RuntimeType, List<Action<Container>>> staticCallbacks = new();
 
         public readonly World world;
 
@@ -21,12 +21,15 @@ namespace Simulation
         public SystemBase(World world)
         {
             this.world = world;
-            listeners = [];
-            callbacks = [];
+            listeners = new(1);
+            callbacks = new(1);
         }
 
         /// <summary>
         /// Cleans up the resources of this system.
+        /// <para>
+        /// When overriding, make sure to call the <c>base</c> method last.
+        /// </para>
         /// <para>
         /// Will throw <see cref="ObjectDisposedException"/> when 
         /// invoking it more than once.
@@ -68,15 +71,24 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Subscribes to an event of type <typeparamref name="T"/>.
-        /// Listener gets disposed together with the system.
+        /// Registers the given action to receive callbacks whenever
+        /// an event of type <typeparamref name="T"/> is polled through
+        /// a <see cref="World"/>.
+        /// <para>
+        /// Automatically unregistered when this system is disposed.
+        /// </para>
         /// </summary>
         public unsafe void Subscribe<T>(Action<T> callback) where T : unmanaged
         {
             RuntimeType eventType = RuntimeType.Get<T>();
+            if (this.callbacks.ContainsKey(eventType))
+            {
+                throw new InvalidOperationException($"Already subscribed to event type `{eventType}`.");
+            }
+
             if (!staticCallbacks.TryGetValue(eventType, out List<Action<Container>>? callbacks))
             {
-                callbacks = [];
+                callbacks = new();
                 staticCallbacks.Add(eventType, callbacks);
 
                 Listener listener = world.CreateListener(eventType, &StaticEvent);
@@ -88,7 +100,9 @@ namespace Simulation
             this.callbacks.Add(eventType, StaticCallback);
         }
 
+#if NET5_0_OR_GREATER
         [UnmanagedCallersOnly]
+#endif
         private static void StaticEvent(World world, Container message)
         {
             foreach (Action<Container> callback in staticCallbacks[message.type])

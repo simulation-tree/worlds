@@ -18,68 +18,68 @@ namespace Simulation
         public void SaveWorld()
         {
             using World world = new();
-            EntityID a = world.CreateEntity();
+            eint a = world.CreateEntity();
             world.AddComponent(a, new Fruit(42));
             world.AddComponent(a, new Apple("Hello, World!"));
-            EntityID temporary = world.CreateEntity();
-            EntityID b = world.CreateEntity();
+            eint temporary = world.CreateEntity();
+            eint b = world.CreateEntity();
             world.AddComponent(b, new Fruit(43));
-            EntityID c = world.CreateEntity();
+            eint c = world.CreateEntity();
             world.AddComponent(c, new Apple("Goodbye, World!"));
             world.DestroyEntity(temporary);
-            EntityID list = world.CreateEntity();
+            eint list = world.CreateEntity();
             world.CreateCollection<char>(list, "Well hello there list");
 
-            List<EntityID> oldEntities = world.Entities.ToList();
-            List<(EntityID, Apple)> apples = new();
-            world.ForEach((in EntityID entity, ref Apple apple) =>
+            List<eint> oldEntities = world.Entities.ToList();
+            List<(eint, Apple)> apples = new();
+            world.ForEach((in eint entity, ref Apple apple) =>
             {
                 apples.Add((entity, apple));
             });
 
-            using BinaryWriter writer = new();
+            using BinaryWriter writer = BinaryWriter.Create();
             writer.WriteObject(world);
             ReadOnlySpan<byte> data = writer.AsSpan();
             using BinaryReader reader = new(data);
 
             using World loadedWorld = reader.ReadObject<World>();
-            List<EntityID> newEntities = loadedWorld.Entities.ToList();
-            List<(EntityID, Apple)> newApples = new();
-            loadedWorld.ForEach((in EntityID entity, ref Apple apple) =>
+            List<eint> newEntities = loadedWorld.Entities.ToList();
+            List<(eint, Apple)> newApples = new();
+            loadedWorld.ForEach((in eint entity, ref Apple apple) =>
             {
                 newApples.Add((entity, apple));
             });
 
             Assert.That(newEntities, Is.EquivalentTo(oldEntities));
             Assert.That(newApples, Is.EquivalentTo(apples));
-            Assert.That(loadedWorld.ContainsCollection<char>(list), Is.True);
-            Assert.That(loadedWorld.GetCollection<char>(list).AsSpan().ToArray(), Is.EqualTo("Well hello there list"));
+            Assert.That(loadedWorld.ContainsList<char>(list), Is.True);
+            Assert.That(loadedWorld.GetList<char>(list).AsSpan().ToArray(), Is.EqualTo("Well hello there list"));
         }
 
         [Test]
         public void AppendSavedWorld()
         {
             using World prefabWorld = new();
-            EntityID a = prefabWorld.CreateEntity();
+            eint a = prefabWorld.CreateEntity();
             prefabWorld.AddComponent(a, new Fruit(42));
             prefabWorld.AddComponent(a, new Apple("Hello, World!"));
             prefabWorld.AddComponent(a, new Prefab());
 
-            using BinaryWriter writer = new();
+            using BinaryWriter writer = BinaryWriter.Create();
             writer.WriteObject(prefabWorld);
 
             using World world = new();
-            EntityID b = world.CreateEntity();
+            eint b = world.CreateEntity();
             world.AddComponent(b, new Fruit(43));
 
-            EntityID c = world.CreateEntity();
+            eint c = world.CreateEntity();
             world.AddComponent(c, new Apple("Goodbye, World!"));
 
             using BinaryReader reader = new(writer);
             using World loadedWorld = reader.ReadObject<World>();
             world.Append(loadedWorld);
 
-            world.TryGetFirst<Prefab>(out EntityID prefabEntity, out _);
+            world.TryGetFirst<Prefab>(out eint prefabEntity, out _);
             Assert.That(world.ContainsEntity(prefabEntity), Is.True);
             Assert.That(world.GetComponent<Fruit>(prefabEntity).data, Is.EqualTo(42));
             Assert.That(world.GetComponent<Apple>(prefabEntity).data, Is.EqualTo("Hello, World!"));
@@ -102,7 +102,7 @@ namespace Simulation
             ];
 
             Big big = new(32, new Apple("apple"), fruits);
-            using BinaryWriter writer = new();
+            using BinaryWriter writer = BinaryWriter.Create();
             writer.WriteValue(big);
             using BinaryReader reader = new(writer.AsSpan());
             using Big loadedBig = reader.ReadValue<Big>();
@@ -112,7 +112,7 @@ namespace Simulation
         [Test]
         public void SaveAndLoadSpans()
         {
-            using BinaryWriter writer = new();
+            using BinaryWriter writer = BinaryWriter.Create();
             writer.WriteSpan<byte>([1, 2, 3, 4, 5]);
             writer.WriteSpan<int>([1, 2, 3, 4, 5]);
             writer.WriteSpan<FixedString>([new("Hello"), new("World"), new("Goodbye")]);
@@ -130,7 +130,7 @@ namespace Simulation
         [Test]
         public void ReadTooMuch()
         {
-            using BinaryWriter writer = new();
+            using BinaryWriter writer = BinaryWriter.Create();
             writer.WriteSpan<char>("The snake that eats its own tail");
             using BinaryReader reader = new(writer.AsSpan());
             Assert.Throws<InvalidOperationException>(() => reader.ReadSpan<char>(100));
@@ -151,7 +151,7 @@ namespace Simulation
             complicated.Add(player2);
             complicated.Add(player3);
 
-            using BinaryWriter writer = new();
+            using BinaryWriter writer = BinaryWriter.Create();
             writer.WriteObject(complicated);
             using BinaryReader reader = new(writer.AsSpan());
             using Complicated loadedComplicated = reader.ReadObject<Complicated>();
@@ -172,7 +172,7 @@ namespace Simulation
             types.Add<double>();
 
             Dictionary<uint, object> objects = new();
-            using BinaryWriter writer = new();
+            using BinaryWriter writer = BinaryWriter.Create();
         }
 
         public struct Types : IDisposable, ISerializable
@@ -183,7 +183,7 @@ namespace Simulation
 
             public Types()
             {
-                this.types = new();
+                this.types = UnmanagedList<RuntimeType>.Create();
             }
 
             public readonly void Add<T>() where T : unmanaged
@@ -199,7 +199,7 @@ namespace Simulation
             void ISerializable.Read(BinaryReader reader)
             {
                 byte count = reader.ReadValue<byte>();
-                types = new();
+                types = UnmanagedList<RuntimeType>.Create();
                 for (int i = 0; i < count; i++)
                 {
                     RuntimeType type = reader.ReadValue<RuntimeType>();
@@ -224,7 +224,7 @@ namespace Simulation
 
             public Complicated()
             {
-                players = new();
+                players = UnmanagedList<Player>.Create();
             }
 
             public readonly void Add(Player player)
@@ -245,7 +245,7 @@ namespace Simulation
             void ISerializable.Read(BinaryReader reader)
             {
                 byte count = reader.ReadValue<byte>();
-                players = new();
+                players = UnmanagedList<Player>.Create();
                 for (int i = 0; i < count; i++)
                 {
                     Player player = reader.ReadObject<Player>();
@@ -275,7 +275,7 @@ namespace Simulation
             {
                 this.hp = hp;
                 this.damage = damage;
-                this.inventory = new();
+                this.inventory = UnmanagedList<Fruit>.Create();
             }
 
             public override string ToString()
@@ -297,7 +297,7 @@ namespace Simulation
             {
                 hp = reader.ReadValue<uint>();
                 damage = reader.ReadValue<uint>();
-                inventory = new();
+                inventory = UnmanagedList<Fruit>.Create();
                 uint count = reader.ReadValue<uint>();
                 for (int i = 0; i < count; i++)
                 {

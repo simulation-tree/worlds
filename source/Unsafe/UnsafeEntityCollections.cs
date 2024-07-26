@@ -16,8 +16,8 @@ namespace Simulation.Unsafe
 
         public static UnsafeEntityCollections* Allocate()
         {
-            UnmanagedList<nint> collections = new();
-            UnmanagedList<RuntimeType> types = new();
+            UnmanagedList<nint> collections = UnmanagedList<nint>.Create();
+            UnmanagedList<RuntimeType> types = UnmanagedList<RuntimeType>.Create();
             UnsafeEntityCollections* entityCollections = Allocations.Allocate<UnsafeEntityCollections>();
             entityCollections[0] = new(collections, types);
             return entityCollections;
