@@ -1069,20 +1069,20 @@ namespace Simulation
         /// <para>Components will be added if the destination entity doesnt
         /// contain them. Existing component data will be lost.</para>
         /// </summary>
-        public readonly void CopyComponentsTo(eint sourceEntity, eint destinationEntity)
+        public readonly void CopyComponentsTo(eint sourceEntity, World destinationWorld, eint destinationEntity)
         {
             ReadOnlySpan<RuntimeType> sourceTypes = GetComponentTypes(sourceEntity);
-            ReadOnlySpan<RuntimeType> destinationTypes = GetComponentTypes(destinationEntity);
+            ReadOnlySpan<RuntimeType> destinationTypes = destinationWorld.GetComponentTypes(destinationEntity);
             for (int i = 0; i < sourceTypes.Length; i++)
             {
                 RuntimeType type = sourceTypes[i];
                 if (!destinationTypes.Contains(type))
                 {
-                    AddComponent(destinationEntity, type);
+                    destinationWorld.AddComponent(destinationEntity, type);
                 }
 
                 Span<byte> sourceBytes = GetComponentBytes(sourceEntity, type);
-                Span<byte> destinationBytes = GetComponentBytes(destinationEntity, type);
+                Span<byte> destinationBytes = destinationWorld.GetComponentBytes(destinationEntity, type);
                 sourceBytes.CopyTo(destinationBytes);
             }
         }
@@ -1092,10 +1092,10 @@ namespace Simulation
         /// <para>Lists will be added if the destination entity doesnt
         /// contain them. Existing list data will be lost.</para>
         /// </summary>
-        public readonly void CopyListsTo(eint sourceEntity, eint destinationEntity)
+        public readonly void CopyListsTo(eint sourceEntity, World destinationWorld, eint destinationEntity)
         {
             ReadOnlySpan<RuntimeType> sourceTypes = GetListTypes(sourceEntity);
-            ReadOnlySpan<RuntimeType> destinationTypes = GetListTypes(destinationEntity);
+            ReadOnlySpan<RuntimeType> destinationTypes = destinationWorld.GetListTypes(destinationEntity);
             for (int i = 0; i < sourceTypes.Length; i++)
             {
                 RuntimeType type = sourceTypes[i];
@@ -1103,7 +1103,7 @@ namespace Simulation
                 {
                     UnsafeList* sourceList = GetList(sourceEntity, type);
                     uint count = UnsafeList.GetCountRef(sourceList);
-                    UnsafeList* destinationList = CreateList(destinationEntity, type);
+                    UnsafeList* destinationList = destinationWorld.CreateList(destinationEntity, type);
                     nint sourceAddress = UnsafeList.GetAddress(sourceList);
                     nint destinationAddress = UnsafeList.GetAddress(destinationList);
                     Span<byte> sourceBytes = new((void*)sourceAddress, (int)(count * type.Size));
