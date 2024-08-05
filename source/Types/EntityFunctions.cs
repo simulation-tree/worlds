@@ -28,7 +28,7 @@ public static class EntityFunctions
     }
 
     /// <summary>
-    /// Destroys the entity.
+    /// Destroys the entity from its <see cref="World"/>.
     /// </summary>
     public static void Destroy<E>(this E entity) where E : IEntity
     {
@@ -37,8 +37,7 @@ public static class EntityFunctions
     }
 
     /// <summary>
-    /// <c>true</c> when the entity doesn't exists in its <see cref="World"/> anymore,
-    /// or it has been disposed of.
+    /// <c>true</c> when the entity doesn't exists in its <see cref="World"/>.
     /// </summary>
     public static bool IsDestroyed<E>(this E entity) where E : IEntity
     {

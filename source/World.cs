@@ -20,6 +20,13 @@ namespace Simulation
         /// </summary>
         public readonly uint Count => Slots.Count - Free.Count;
 
+        /// <summary>
+        /// The current maximum amount of referrable entities.
+        /// <para>Creating an array of this size is guaranteed to
+        /// be able to store all entity values.</para>
+        /// </summary>
+        public readonly uint MaxEntityValue => Slots.Count;
+
         public readonly bool IsDisposed => UnsafeWorld.IsDisposed(value);
         public readonly UnmanagedList<EntityDescription> Slots => UnsafeWorld.GetEntitySlots(value);
         public readonly UnmanagedList<eint> Free => UnsafeWorld.GetFreeEntities(value);
