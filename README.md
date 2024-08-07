@@ -8,7 +8,7 @@ modifies components. These components are then attached onto entities, where one
 not more than 1 of the same.
 ```cs
 using World world = new();
-EntityID entity = world.CreateEntity();
+eint entity = world.CreateEntity();
 world.AddComponent(entity, new MyComponent(25));
 
 public struct MyComponent(uint value)
@@ -22,7 +22,7 @@ Polling of component data to modify it (a system/verb):
 var query = world.Query<MyComponent>();
 foreach (var x in query)
 {
-    EntityID entity = x.entity;
+    eint entity = x.entity;
     ref MyComponent component = ref x.Component1;
     component.value++;
 }
@@ -32,7 +32,7 @@ foreach (var x in query)
 Each entity is able to contain lists of any kind and any capacity. This allows them to store more
 than 1 of the same type of data:
 ```cs
-EntityID textEntity = world.CreateEntity();
+eint textEntity = world.CreateEntity();
 UnmanagedList<char> textChars = world.CreateCollection<char>(textEntity);
 textChars.AddRange("Hello world");
 ```
@@ -96,7 +96,7 @@ public class MySystem : IDisposable
     }
 
     [UnmanagedCallersOnly]
-    private static void StaticEvent(World world, Container message)
+    private static void StaticEvent(World world, Allocation message)
     {
         MyEvent e = message.AsRef<MyEvent>();
         foreach (MySystem system in systems)
@@ -110,7 +110,7 @@ public class MySystem : IDisposable
 </details>
 
 <details>
-  <summary>Barebones bootstrap boilerplate</summary>
+  <summary>Barebones program boilerplate</summary>
     
 The following snippet is an example of a continous program that runs until a `Shutdown` event
 is submitted, emerging a barebones game loop. On its own it doesn't perform anything other than
@@ -128,7 +128,7 @@ while (!stopped)
 }
 
 [UnmanagedCallersOnly]
-private static void AskedToShutdown(World world, Container message)
+private static void AskedToShutdown(World world, Allocation message)
 {
     stopped = true;
 }
@@ -137,8 +137,7 @@ private static void AskedToShutdown(World world, Container message)
 </details>
 
 ### Contributing and Direction
-This library is created to provide the first layer for computer programs that aim to run
-continously, like games and simulations, while taking advantage of what CPU's can do best.
+This library is created to provide early definitions for building programs that do something.
 Commonly referred to as the "[entity-component-system](https://en.wikipedia.org/wiki/Entity_component_system)" pattern.
 
 Contributions to this are welcome.
