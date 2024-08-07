@@ -1,8 +1,4 @@
 ﻿#pragma warning disable CS8981
-#if !DEBUG
-#define IGNORE_STACKTRACES
-#endif
-
 using Simulation.Unsafe;
 using System;
 using System.Diagnostics;
@@ -18,7 +14,7 @@ namespace Simulation
     {
         private readonly uint value;
 
-#if !IGNORE_STACKTRACES
+#if DEBUG
         public StackTrace? Creation
         {
             get

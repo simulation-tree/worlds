@@ -1,8 +1,4 @@
-﻿#if !DEBUG
-#define IGNORE_STACKTRACES
-#endif
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Unmanaged;
@@ -12,7 +8,7 @@ namespace Simulation.Unsafe
 {
     public unsafe struct UnsafeWorld
     {
-#if !IGNORE_STACKTRACES
+#if DEBUG
         internal static readonly Dictionary<eint, StackTrace> createStackTraces = new();
 #endif
 
@@ -537,7 +533,7 @@ namespace Simulation.Unsafe
 
             chunk.Add(entity);
 
-#if !IGNORE_STACKTRACES
+#if DEBUG
             //trace the stack
             StackTrace stackTrace = new(2, true);
             if (stackTrace.FrameCount > 0)
