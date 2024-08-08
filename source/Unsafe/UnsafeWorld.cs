@@ -24,15 +24,17 @@ namespace Simulation.Unsafe
 
         private UnsafeList* slots;
         private UnsafeList* freeEntities;
-        private UnsafeList* events;
+        private UnsafeList* submittedEvents;
+        private UnsafeList* dispatchingEvents;
         private UnsafeDictionary* listeners;
         private UnsafeDictionary* components;
 
-        private UnsafeWorld(UnsafeList* slots, UnsafeList* freeEntities, UnsafeList* events, UnsafeDictionary* listeners, UnsafeDictionary* components)
+        private UnsafeWorld(UnsafeList* slots, UnsafeList* freeEntities, UnsafeList* submittedEvents, UnsafeList* dispatchingEvents, UnsafeDictionary* listeners, UnsafeDictionary* components)
         {
             this.slots = slots;
             this.freeEntities = freeEntities;
-            this.events = events;
+            this.submittedEvents = submittedEvents;
+            this.dispatchingEvents = dispatchingEvents;
             this.listeners = listeners;
             this.components = components;
         }
@@ -150,7 +152,8 @@ namespace Simulation.Unsafe
         {
             UnsafeList* slots = UnsafeList.Allocate<EntityDescription>();
             UnsafeList* freeEntities = UnsafeList.Allocate<eint>();
-            UnsafeList* events = UnsafeList.Allocate<Container>();
+            UnsafeList* submittedEvents = UnsafeList.Allocate<Container>();
+            UnsafeList* dispatchingEvents = UnsafeList.Allocate<Container>();
             UnsafeDictionary* listeners = UnsafeDictionary.Allocate<RuntimeType, nint>();
             UnsafeDictionary* components = UnsafeDictionary.Allocate<uint, ComponentChunk>();
 
@@ -159,7 +162,7 @@ namespace Simulation.Unsafe
             UnsafeDictionary.Add(components, chunkKey, defaultComponentChunk);
 
             UnsafeWorld* world = Allocations.Allocate<UnsafeWorld>();
-            *world = new(slots, freeEntities, events, listeners, components);
+            *world = new(slots, freeEntities, submittedEvents, dispatchingEvents, listeners, components);
             return world;
         }
 
@@ -169,7 +172,8 @@ namespace Simulation.Unsafe
             Clear(world);
             UnsafeList.Free(ref world->slots);
             UnsafeList.Free(ref world->freeEntities);
-            UnsafeList.Free(ref world->events);
+            UnsafeList.Free(ref world->submittedEvents);
+            UnsafeList.Free(ref world->dispatchingEvents);
             UnsafeDictionary.Free(ref world->listeners);
             UnsafeDictionary.Free(ref world->components);
             Allocations.Free(ref world);
@@ -180,14 +184,23 @@ namespace Simulation.Unsafe
             Allocations.ThrowIfNull(world);
 
             //clear event containers
-            uint eventCount = UnsafeList.GetCountRef(world->events);
+            uint eventCount = UnsafeList.GetCountRef(world->submittedEvents);
             for (uint i = 0; i < eventCount; i++)
             {
-                Container message = UnsafeList.Get<Container>(world->events, i);
+                Container message = UnsafeList.Get<Container>(world->submittedEvents, i);
                 message.Dispose();
             }
 
-            UnsafeList.Clear(world->events);
+            UnsafeList.Clear(world->submittedEvents);
+
+            eventCount = UnsafeList.GetCountRef(world->dispatchingEvents);
+            for (uint i = 0; i < eventCount; i++)
+            {
+                Container message = UnsafeList.Get<Container>(world->dispatchingEvents, i);
+                message.Dispose();
+            }
+
+            UnsafeList.Clear(world->dispatchingEvents);
 
             //clear event listeners
             uint listenerTypesCount = UnsafeDictionary.GetCount(world->listeners);
@@ -242,7 +255,7 @@ namespace Simulation.Unsafe
 
         public static void Submit(UnsafeWorld* world, Container message)
         {
-            UnsafeList.Add(world->events, message);
+            UnsafeList.Add(world->submittedEvents, message);
         }
 
         /// <summary>
@@ -253,12 +266,20 @@ namespace Simulation.Unsafe
             World worldValue = new(world);
 
             //todo: remove this temp allocation (exists to make sure iterating over this sequence of events works)
-            using UnmanagedArray<Container> tempEvents = new(UnsafeList.AsSpan<Container>(world->events));
-            UnsafeList.Clear(world->events);
-
-            for (uint i = 0; i < tempEvents.Length; i++)
+            //using UnmanagedArray<Container> tempEvents = new(UnsafeList.AsSpan<Container>(world->submittedEvents));
+            uint submissionCount = UnsafeList.GetCountRef(world->submittedEvents);
+            for (uint i = 0; i < submissionCount; i++)
             {
-                Container message = tempEvents[i];
+                Container message = UnsafeList.Get<Container>(world->submittedEvents, i);
+                UnsafeList.Add(world->dispatchingEvents, message);
+            }
+
+            UnsafeList.Clear(world->submittedEvents);
+
+            ref uint dispatchCount = ref UnsafeList.GetCountRef(world->dispatchingEvents);
+            while (dispatchCount > 0)
+            {
+                Container message = UnsafeList.RemoveAtBySwapping<Container>(world->dispatchingEvents, 0);
                 RuntimeType eventType = message.type;
                 if (UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listeners, eventType))
                 {

@@ -35,7 +35,7 @@ namespace Simulation
         [UnmanagedCallersOnly]
         private static void OnSimpleEvent(World world, Container message)
         {
-            ref SimpleEvent simpleEvent = ref message.AsRef<SimpleEvent>();
+            ref SimpleEvent simpleEvent = ref message.Read<SimpleEvent>();
             received.Add(simpleEvent.x);
         }
 
@@ -64,7 +64,7 @@ namespace Simulation
         [UnmanagedCallersOnly]
         private static void OneEventOnly(World world, Container message)
         {
-            ref SimpleEvent simpleEvent = ref message.AsRef<SimpleEvent>();
+            ref SimpleEvent simpleEvent = ref message.Read<SimpleEvent>();
             received.Add(simpleEvent.x);
         }
 

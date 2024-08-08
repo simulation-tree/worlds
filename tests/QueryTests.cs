@@ -174,13 +174,16 @@ namespace Simulation
             Assert.That(anotherComponents.Contains(entity5), Is.True);
         }
 
+        /*
+        //query wins long term
+        //commented out because creation itself takes a whopping amount of time...
         [Test]
         public void BenchmarkMethods()
         {
             using World world = new();
-            using RandomGenerator rng = new(1337);
             uint sampleCount = 50000;
             uint count = 0;
+            Stopwatch stopwatch = Stopwatch.StartNew();
             for (uint i = 0; i < sampleCount; i++)
             {
                 eint entity = world.CreateEntity();
@@ -198,11 +201,14 @@ namespace Simulation
                 }
             }
 
+            stopwatch.Stop();
+            Console.WriteLine($"Creating {count} entities took {stopwatch.ElapsedMilliseconds}ms");
+
             //benchmark query
             using Query<Apple, Berry, Cherry> query = new(world);
-            query.Fill();
             List<(eint, Apple, Berry, Cherry)> results = [];
-            Stopwatch stopwatch = Stopwatch.StartNew();
+            stopwatch.Restart();
+            query.Fill();
             foreach (Query<Apple, Berry, Cherry>.Result r in query)
             {
                 results.Add((r.entity, r.Component1, r.Component2, r.Component3));
@@ -250,6 +256,7 @@ namespace Simulation
             stopwatch.Stop();
             Console.WriteLine($"Manual iteration {count} entities took {stopwatch.ElapsedMilliseconds}ms");
         }
+        */
 
         public struct Apple
         {

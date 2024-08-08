@@ -11,7 +11,7 @@ namespace Simulation
         {
             get
             {
-                byte value = state.AsRef<byte>();
+                byte value = state.Read<byte>();
                 return value == 1;
             }
         }
@@ -30,7 +30,7 @@ namespace Simulation
 
         public readonly void HasUpdated()
         {
-            ref byte stateValue = ref state.AsRef<byte>();
+            ref byte stateValue = ref state.Read<byte>();
             stateValue = 1;
         }
 

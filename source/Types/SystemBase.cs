@@ -95,7 +95,7 @@ namespace Simulation
                 listeners.Add(listener);
             }
 
-            void StaticCallback(Container message) => callback(message.AsRef<T>());
+            void StaticCallback(Container message) => callback(message.Read<T>());
             callbacks.Add(StaticCallback);
             this.callbacks.Add(eventType, StaticCallback);
         }
