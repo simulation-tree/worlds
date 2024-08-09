@@ -564,6 +564,12 @@ namespace Simulation.Unsafe
                 {
                     stackTrace = new(3, true);
                 }
+
+                firstFrame = stackTrace.GetFrame(0)?.GetFileName();
+                if (firstFrame is not null && firstFrame.EndsWith("Entity.cs"))
+                {
+                    stackTrace = new(4, true);
+                }
             }
 
             createStackTraces[entity] = stackTrace;
