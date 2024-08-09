@@ -27,6 +27,21 @@ public static class EntityFunctions
         return query.Contains(entity.Value);
     }
 
+    public static World GetWorld<E>(this E entity) where E : IEntity
+    {
+        return entity.World;
+    }
+
+    public static eint GetEntityValue<E>(this E entity) where E : IEntity
+    {
+        return entity.Value;
+    }
+
+    public static Entity AsEntity<E>(this E entity) where E : IEntity
+    {
+        return new(entity.World, entity.Value);
+    }
+
     /// <summary>
     /// Destroys the entity from its <see cref="World"/>.
     /// </summary>

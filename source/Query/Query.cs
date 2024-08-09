@@ -44,7 +44,7 @@ namespace Simulation
         /// <summary>
         /// Creates a new query that is yet to be updated.
         /// </summary>
-        public Query(World world, Option options = default)
+        public Query(World world, Option options = Option.IncludeDisabledEntities)
         {
             this.world = world;
             this.types = UnmanagedArray<RuntimeType>.Create();
@@ -53,7 +53,7 @@ namespace Simulation
             state = QueryState.Create();
         }
 
-        public Query(World world, ReadOnlySpan<RuntimeType> types, Option options = default)
+        public Query(World world, ReadOnlySpan<RuntimeType> types, Option options = Option.IncludeDisabledEntities)
         {
             this.world = world;
             this.types = new(types);
@@ -62,7 +62,7 @@ namespace Simulation
             state = QueryState.Create();
         }
 
-        public Query(World world, RuntimeType type, Option options = default)
+        public Query(World world, RuntimeType type, Option options = Option.IncludeDisabledEntities)
         {
             this.world = world;
             this.types = UnmanagedArray<RuntimeType>.Create(1);
@@ -186,9 +186,10 @@ namespace Simulation
             /// <summary>
             /// Enabled entities that at least contain the required component types.
             /// </summary>
-            Default = 0,
+            OnlyEnabledEntities = 0,
             /// <summary>
-            /// Requires that the entity must have exactly the component types specified, no more.
+            /// Requires that the entity must have exactly the component types specified,
+            /// no more and no less.
             /// </summary>
             ExactComponentTypes = 1,
             /// <summary>

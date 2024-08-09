@@ -28,7 +28,7 @@ namespace Simulation
             world.AddComponent(c, new Berry());
             using Query<Apple> appleQuery = new(world);
             using Query<Berry> berryQuery = new(world);
-            appleQuery.Fill();
+            appleQuery.Update();
             Assert.That(appleQuery.Count, Is.EqualTo(2));
             uint appleIndex = 0;
             for (uint i = 0; i < appleQuery.Count; i++)
@@ -43,7 +43,7 @@ namespace Simulation
             }
 
             world.RemoveComponent<Apple>(a);
-            appleQuery.Fill();
+            appleQuery.Update();
             Assert.That(appleQuery.Count, Is.EqualTo(1));
             for (uint i = 0; i < appleQuery.Count; i++)
             {
@@ -53,14 +53,14 @@ namespace Simulation
             }
 
             using Query<Apple, Berry> comboQuery = new(world);
-            comboQuery.Fill();
+            comboQuery.Update();
             Assert.That(comboQuery.Count, Is.EqualTo(1));
             Query<Apple, Berry>.Result firstResult = comboQuery[0];
             Assert.That(firstResult.Component1.bites, Is.EqualTo(5));
             Assert.That(firstResult.Component2.hearts, Is.EqualTo(0));
 
             using Query<Berry> onlyBerries = new(world, Query.Option.ExactComponentTypes);
-            onlyBerries.Fill();
+            onlyBerries.Update();
             Assert.That(onlyBerries.Count, Is.EqualTo(1));
         }
 
@@ -76,7 +76,7 @@ namespace Simulation
             world.AddComponent(c, new Cherry("fortune"));
             world.SetEnabledState(a, false);
             List<Cherry> values = [];
-            foreach (eint entity in world.GetAll<Cherry>())
+            foreach (eint entity in world.GetAll<Cherry>(Query.Option.OnlyEnabledEntities))
             {
                 values.Add(world.GetComponent<Cherry>(entity));
             }
@@ -127,7 +127,7 @@ namespace Simulation
             world.AddComponent(b, new Cherry("pie"));
             world.AddComponent(c, new Cherry("fortune"));
             using Query<Cherry> query = new(world);
-            query.Fill();
+            query.Update();
             Assert.That(query.Count, Is.EqualTo(3));
             uint count = 0;
             foreach (Query<Cherry>.Result result in query)

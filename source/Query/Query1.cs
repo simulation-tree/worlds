@@ -32,7 +32,7 @@ namespace Simulation
             }
         }
 
-        public Query(World world, Query.Option options = default)
+        public Query(World world, Query.Option options = Query.Option.IncludeDisabledEntities)
         {
             this.world = world;
             this.options = options;
@@ -52,7 +52,7 @@ namespace Simulation
             state.Dispose();
         }
 
-        public void Fill()
+        public void Update()
         {
             state.HasUpdated();
             results.Clear();
@@ -61,19 +61,39 @@ namespace Simulation
             types[0] = RuntimeType.Get<T1>();
             bool exact = (options & Query.Option.ExactComponentTypes) == Query.Option.ExactComponentTypes;
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
-            for (int i = 0; i < chunks.Count; i++)
+            if (includeDisabled)
             {
-                ComponentChunk chunk = chunks.Values[i];
-                if (chunk.ContainsTypes(types, exact))
+                for (int i = 0; i < chunks.Count; i++)
                 {
-                    UnmanagedList<eint> entities = chunk.Entities;
-                    for (uint e = 0; e < entities.Count; e++)
+                    ComponentChunk chunk = chunks.Values[i];
+                    if (chunk.ContainsTypes(types, exact))
                     {
-                        eint entity = entities[e];
-                        if (includeDisabled || world.IsEnabled(entity))
+                        UnmanagedList<eint> entities = chunk.Entities;
+                        for (uint e = 0; e < entities.Count; e++)
                         {
+                            eint entity = entities[e];
                             nint component1 = chunk.GetComponentAddress<T1>(e);
                             results.Add(new(entity, component1));
+                        }
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < chunks.Count; i++)
+                {
+                    ComponentChunk chunk = chunks.Values[i];
+                    if (chunk.ContainsTypes(types, exact))
+                    {
+                        UnmanagedList<eint> entities = chunk.Entities;
+                        for (uint e = 0; e < entities.Count; e++)
+                        {
+                            eint entity = entities[e];
+                            if (world.IsEnabled(entity))
+                            {
+                                nint component1 = chunk.GetComponentAddress<T1>(e);
+                                results.Add(new(entity, component1));
+                            }
                         }
                     }
                 }

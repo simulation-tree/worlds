@@ -1035,13 +1035,13 @@ namespace Simulation
         /// <summary>
         /// Counts how many entities there are with component of type <typeparamref name="T"/>.
         /// </summary>
-        public readonly uint CountEntities<T>(Query.Option options = default) where T : unmanaged
+        public readonly uint CountEntities<T>(Query.Option options = Query.Option.IncludeDisabledEntities) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
             return CountEntities(type, options);
         }
 
-        public readonly uint CountEntities(RuntimeType type, Query.Option options = default)
+        public readonly uint CountEntities(RuntimeType type, Query.Option options = Query.Option.IncludeDisabledEntities)
         {
             uint count = 0;
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
@@ -1124,7 +1124,7 @@ namespace Simulation
         /// Finds all entities that contain all of the given component types and
         /// adds them to the given list.
         /// </summary>
-        public readonly void Fill(ReadOnlySpan<RuntimeType> componentTypes, UnmanagedList<eint> list, Query.Option options = default)
+        public readonly void Fill(ReadOnlySpan<RuntimeType> componentTypes, UnmanagedList<eint> list, Query.Option options = Query.Option.IncludeDisabledEntities)
         {
             bool exact = (options & Query.Option.ExactComponentTypes) == Query.Option.ExactComponentTypes;
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
@@ -1152,7 +1152,7 @@ namespace Simulation
             }
         }
 
-        public readonly void Fill<T>(UnmanagedList<T> list, Query.Option options = default) where T : unmanaged
+        public readonly void Fill<T>(UnmanagedList<T> list, Query.Option options = Query.Option.IncludeDisabledEntities) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
@@ -1180,7 +1180,7 @@ namespace Simulation
             }
         }
 
-        public readonly void Fill<T>(UnmanagedList<eint> entities, Query.Option options = default) where T : unmanaged
+        public readonly void Fill<T>(UnmanagedList<eint> entities, Query.Option options = Query.Option.IncludeDisabledEntities) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
@@ -1208,7 +1208,7 @@ namespace Simulation
             }
         }
 
-        public readonly void Fill<T>(UnmanagedList<T> components, UnmanagedList<eint> entities, Query.Option options = default) where T : unmanaged
+        public readonly void Fill<T>(UnmanagedList<T> components, UnmanagedList<eint> entities, Query.Option options = Query.Option.IncludeDisabledEntities) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
@@ -1238,7 +1238,7 @@ namespace Simulation
             }
         }
 
-        public readonly void Fill(RuntimeType componentType, UnmanagedList<eint> entities, Query.Option options = default)
+        public readonly void Fill(RuntimeType componentType, UnmanagedList<eint> entities, Query.Option options = Query.Option.IncludeDisabledEntities)
         {
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             for (int i = 0; i < ComponentChunks.Count; i++)
@@ -1268,7 +1268,7 @@ namespace Simulation
         /// <summary>
         /// Iterates over all entities that contain the given component type.
         /// </summary>
-        public readonly IEnumerable<eint> GetAll(RuntimeType componentType, Query.Option options = default)
+        public readonly IEnumerable<eint> GetAll(RuntimeType componentType, Query.Option options = Query.Option.IncludeDisabledEntities)
         {
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             for (int i = 0; i < ComponentChunks.Count; i++)
@@ -1295,12 +1295,12 @@ namespace Simulation
             }
         }
 
-        public readonly IEnumerable<eint> GetAll<T>(Query.Option options = default) where T : unmanaged
+        public readonly IEnumerable<eint> GetAll<T>(Query.Option options = Query.Option.IncludeDisabledEntities) where T : unmanaged
         {
             return GetAll(RuntimeType.Get<T>(), options);
         }
 
-        public readonly void ForEach<T>(QueryCallback callback, Query.Option options = default) where T : unmanaged
+        public readonly void ForEach<T>(QueryCallback callback, Query.Option options = Query.Option.IncludeDisabledEntities) where T : unmanaged
         {
             RuntimeType componentType = RuntimeType.Get<T>();
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
@@ -1335,7 +1335,7 @@ namespace Simulation
         /// Destroying entities inside the callback is not recommended.
         /// </para>
         /// </summary>
-        public readonly void ForEach(ReadOnlySpan<RuntimeType> componentTypes, QueryCallback callback, Query.Option options = default)
+        public readonly void ForEach(ReadOnlySpan<RuntimeType> componentTypes, QueryCallback callback, Query.Option options = Query.Option.IncludeDisabledEntities)
         {
             bool exact = (options & Query.Option.ExactComponentTypes) == Query.Option.ExactComponentTypes;
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
@@ -1363,7 +1363,7 @@ namespace Simulation
             }
         }
 
-        public readonly void ForEach<T>(QueryCallback<T> callback, Query.Option options = default) where T : unmanaged
+        public readonly void ForEach<T>(QueryCallback<T> callback, Query.Option options = Query.Option.IncludeDisabledEntities) where T : unmanaged
         {
             Span<RuntimeType> types = stackalloc RuntimeType[1];
             types[0] = RuntimeType.Get<T>();
@@ -1395,7 +1395,7 @@ namespace Simulation
             }
         }
 
-        public readonly void ForEach<T1, T2>(QueryCallback<T1, T2> callback, Query.Option options = default) where T1 : unmanaged where T2 : unmanaged
+        public readonly void ForEach<T1, T2>(QueryCallback<T1, T2> callback, Query.Option options = Query.Option.IncludeDisabledEntities) where T1 : unmanaged where T2 : unmanaged
         {
             Span<RuntimeType> types = stackalloc RuntimeType[2];
             types[0] = RuntimeType.Get<T1>();
@@ -1430,7 +1430,7 @@ namespace Simulation
             }
         }
 
-        public readonly void ForEach<T1, T2, T3>(QueryCallback<T1, T2, T3> callback, Query.Option options = default) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+        public readonly void ForEach<T1, T2, T3>(QueryCallback<T1, T2, T3> callback, Query.Option options = Query.Option.IncludeDisabledEntities) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
             Span<RuntimeType> types = stackalloc RuntimeType[3];
             types[0] = RuntimeType.Get<T1>();
@@ -1468,7 +1468,7 @@ namespace Simulation
             }
         }
 
-        public readonly void ForEach<T1, T2, T3, T4>(QueryCallback<T1, T2, T3, T4> callback, Query.Option options = default) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+        public readonly void ForEach<T1, T2, T3, T4>(QueryCallback<T1, T2, T3, T4> callback, Query.Option options = Query.Option.IncludeDisabledEntities) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
             Span<RuntimeType> types = stackalloc RuntimeType[4];
             types[0] = RuntimeType.Get<T1>();
