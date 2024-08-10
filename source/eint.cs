@@ -38,7 +38,11 @@ namespace Simulation
 
         public override string ToString()
         {
-            return value.ToString();
+            if (value == default)
+            {
+                return "null";
+            }
+            else return value.ToString();
         }
 
         public readonly override bool Equals(object? obj)

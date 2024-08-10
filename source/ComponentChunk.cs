@@ -24,6 +24,28 @@ namespace Simulation
             UnsafeComponentChunk.Free(ref value);
         }
 
+        public readonly override string ToString()
+        {
+            Span<char> buffer = stackalloc char[512];
+            int bufferCount = 0;
+            foreach (RuntimeType type in Types)
+            {
+                bufferCount += type.ToString(buffer[bufferCount..]);
+                buffer[bufferCount++] = ',';
+                buffer[bufferCount++] = ' ';
+            }
+
+            if (bufferCount > 0)
+            {
+                bufferCount -= 2;
+                return new string(buffer[..bufferCount]);
+            }
+            else
+            {
+                return "Empty";
+            }
+        }
+
         /// <summary>
         /// Checks if the chunk contains all of the given types.
         /// </summary>

@@ -41,6 +41,12 @@ namespace Simulation
             }
         }
 
+        [Obsolete("Default constructor not available", true)]
+        public Query()
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Creates a new query that is yet to be updated.
         /// </summary>

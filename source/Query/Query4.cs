@@ -32,6 +32,12 @@ namespace Simulation
             }
         }
 
+        [Obsolete("Default constructor not available", true)]
+        public Query()
+        {
+            throw new NotImplementedException();
+        }
+
         public Query(World world, Query.Option options = Query.Option.IncludeDisabledEntities)
         {
             this.world = world;

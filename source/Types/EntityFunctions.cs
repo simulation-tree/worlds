@@ -1,6 +1,7 @@
 ﻿using Simulation;
 using System;
 using System.Diagnostics;
+using Unmanaged;
 using Unmanaged.Collections;
 
 public static class EntityFunctions
@@ -20,11 +21,33 @@ public static class EntityFunctions
     /// Checks by testing the query filter against the entity.
     /// </para>
     /// </summary>
-    public static bool IsCompliant<E>(this E entity) where E : IEntity
+    public static bool Is<E, T>(this E entity) where E : IEntity where T : IEntity
     {
-        using Query query = E.GetQuery(entity.World);
-        query.Update();
-        return query.Contains(entity.Value);
+        using Query query = T.GetQuery(entity.World);
+        foreach (RuntimeType type in query.Types)
+        {
+            if (!entity.ContainsComponent(type))
+            {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Adds all of the required components to qualify the entity of type <typeparamref name="T"/>.
+    /// </summary>
+    public static void Become<E, T>(this E entity) where E : IEntity where T : IEntity
+    {
+        using Query query = T.GetQuery(entity.World);
+        foreach (RuntimeType type in query.Types)
+        {
+            if (!entity.ContainsComponent(type))
+            {
+                entity.AddComponent(type);
+            }
+        }
     }
 
     public static World GetWorld<E>(this E entity) where E : IEntity
@@ -90,6 +113,12 @@ public static class EntityFunctions
         return entity.World.ContainsComponent<T>(entity.Value);
     }
 
+    public static bool ContainsComponent<E>(this E entity, RuntimeType componentType) where E : IEntity
+    {
+        ThrowIfDestroyed(entity);
+        return entity.World.ContainsComponent(entity.Value, componentType);
+    }
+
     public static ref T GetComponentRef<E, T>(this E entity) where E : IEntity where T : unmanaged
     {
         ThrowIfDestroyed(entity);
@@ -123,6 +152,9 @@ public static class EntityFunctions
         }
     }
 
+    /// <summary>
+    /// Retrieves an existing component of type <typeparamref name="T"/>, or the default value.
+    /// </summary>
     public static T GetComponent<E, T>(this E entity, T defaultValue) where E : IEntity where T : unmanaged
     {
         ThrowIfDestroyed(entity);
@@ -147,10 +179,22 @@ public static class EntityFunctions
         entity.GetComponentRef<E, T>() = component;
     }
 
+    /// <summary>
+    /// Adds a new <typeparamref name="T"/> component to the entity.
+    /// </summary>
     public static void AddComponent<E, T>(this E entity, T component) where E : IEntity where T : unmanaged
     {
         ThrowIfDestroyed(entity);
         entity.World.AddComponent(entity.Value, component);
+    }
+
+    /// <summary>
+    /// Adds a new component of the given type.
+    /// </summary>
+    public static void AddComponent<E>(this E entity, RuntimeType componentType) where E : IEntity
+    {
+        ThrowIfDestroyed(entity);
+        entity.World.AddComponent(entity.Value, componentType);
     }
 
     public static void RemoveComponent<E, T>(this E entity) where E : IEntity where T : unmanaged
