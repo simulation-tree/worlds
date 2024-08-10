@@ -949,6 +949,9 @@ namespace Simulation
             return GetComponentRef<T>(entity);
         }
 
+        /// <summary>
+        /// Fetches the component from this entity as a span of bytes.
+        /// </summary>
         public readonly Span<byte> GetComponentBytes(eint entity, RuntimeType type)
         {
             return UnsafeWorld.GetComponentBytes(value, entity, type);

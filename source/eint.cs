@@ -121,6 +121,7 @@ namespace Simulation
             return new(left.value - right.value);
         }
 
+        //todo: this extension function is carrying this entire API on its back...
         public static implicit operator uint(eint value)
         {
             return value.value;
