@@ -9,7 +9,6 @@ namespace Simulation
     {
         private readonly World world;
         private readonly UnmanagedList<Result> results;
-        private readonly Query.Option options;
         private readonly QueryState state;
 
         public readonly bool IsDisposed => state.IsDisposed;
@@ -38,10 +37,9 @@ namespace Simulation
             throw new NotImplementedException();
         }
 
-        public Query(World world, Query.Option options = Query.Option.IncludeDisabledEntities)
+        public Query(World world)
         {
             this.world = world;
-            this.options = options;
             results = UnmanagedList<Result>.Create();
             state = QueryState.Create();
         }
@@ -58,7 +56,7 @@ namespace Simulation
             state.Dispose();
         }
 
-        public void Update()
+        public void Update(Query.Option options = Query.Option.IncludeDisabledEntities)
         {
             state.HasUpdated();
             results.Clear();

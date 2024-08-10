@@ -59,8 +59,8 @@ namespace Simulation
             Assert.That(firstResult.Component1.bites, Is.EqualTo(5));
             Assert.That(firstResult.Component2.hearts, Is.EqualTo(0));
 
-            using Query<Berry> onlyBerries = new(world, Query.Option.ExactComponentTypes);
-            onlyBerries.Update();
+            using Query<Berry> onlyBerries = new(world);
+            onlyBerries.Update(Query.Option.ExactComponentTypes);
             Assert.That(onlyBerries.Count, Is.EqualTo(1));
         }
 

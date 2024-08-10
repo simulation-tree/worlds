@@ -50,6 +50,18 @@ public static class EntityFunctions
         }
     }
 
+    public static void SetEnabledState<E>(this E entity, bool enabled) where E : IEntity
+    {
+        ThrowIfDestroyed(entity);
+        entity.World.SetEnabledState(entity.Value, enabled);
+    }
+
+    public static bool IsEnabled<E>(this E entity) where E : IEntity
+    {
+        ThrowIfDestroyed(entity);
+        return entity.World.IsEnabled(entity.Value);
+    }
+
     public static World GetWorld<E>(this E entity) where E : IEntity
     {
         return entity.World;

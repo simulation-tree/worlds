@@ -7,7 +7,6 @@ namespace Simulation
 {
     public readonly struct Query : IDisposable
     {
-        private readonly Option options;
         private readonly QueryState state;
         private readonly World world;
         private readonly UnmanagedList<eint> entities;
@@ -50,31 +49,28 @@ namespace Simulation
         /// <summary>
         /// Creates a new query that is yet to be updated.
         /// </summary>
-        public Query(World world, Option options = Option.IncludeDisabledEntities)
+        public Query(World world)
         {
             this.world = world;
             this.types = UnmanagedArray<RuntimeType>.Create();
-            this.options = options;
             entities = UnmanagedList<eint>.Create();
             state = QueryState.Create();
         }
 
-        public Query(World world, ReadOnlySpan<RuntimeType> types, Option options = Option.IncludeDisabledEntities)
+        public Query(World world, ReadOnlySpan<RuntimeType> types)
         {
             this.world = world;
             this.types = new(types);
-            this.options = options;
             entities = UnmanagedList<eint>.Create();
             state = QueryState.Create();
         }
 
-        public Query(World world, RuntimeType type, Option options = Option.IncludeDisabledEntities)
+        public Query(World world, RuntimeType type)
         {
             this.world = world;
             this.types = UnmanagedArray<RuntimeType>.Create(1);
             this.types.Set(0, type);
 
-            this.options = options;
             entities = UnmanagedList<eint>.Create();
             state = QueryState.Create();
         }
@@ -95,7 +91,7 @@ namespace Simulation
         /// <summary>
         /// Updates the query with the latest data.
         /// </summary>
-        public void Update()
+        public void Update(Query.Option options = Query.Option.IncludeDisabledEntities)
         {
             state.HasUpdated();
             entities.Clear();
