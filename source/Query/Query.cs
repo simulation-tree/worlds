@@ -40,11 +40,13 @@ namespace Simulation
             }
         }
 
+#if NET5_0_OR_GREATER
         [Obsolete("Default constructor not available", true)]
         public Query()
         {
             throw new NotImplementedException();
         }
+#endif
 
         /// <summary>
         /// Creates a new query that is yet to be updated.

@@ -21,9 +21,9 @@ public static class EntityFunctions
     /// Checks by testing the query filter against the entity.
     /// </para>
     /// </summary>
-    public static bool Is<E, T>(this E entity) where E : IEntity where T : IEntity
+    public static bool Is<E, T>(this E entity) where E : IEntity where T : unmanaged, IEntity
     {
-        using Query query = T.GetQuery(entity.World);
+        using Query query = new T().GetQuery(entity.World);
         foreach (RuntimeType type in query.Types)
         {
             if (!entity.ContainsComponent(type))
@@ -38,9 +38,9 @@ public static class EntityFunctions
     /// <summary>
     /// Adds all of the required components to qualify the entity of type <typeparamref name="T"/>.
     /// </summary>
-    public static void Become<E, T>(this E entity) where E : IEntity where T : IEntity
+    public static void Become<E, T>(this E entity) where E : IEntity where T : unmanaged, IEntity
     {
-        using Query query = T.GetQuery(entity.World);
+        using Query query = new T().GetQuery(entity.World);
         foreach (RuntimeType type in query.Types)
         {
             if (!entity.ContainsComponent(type))

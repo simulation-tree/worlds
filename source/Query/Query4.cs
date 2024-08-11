@@ -31,11 +31,13 @@ namespace Simulation
             }
         }
 
+#if NET5_0_OR_GREATER
         [Obsolete("Default constructor not available", true)]
         public Query()
         {
             throw new NotImplementedException();
         }
+#endif
 
         public Query(World world)
         {

@@ -62,7 +62,7 @@ namespace Simulation
 
         public static bool TryFindFirst<T>(World world, out T entity) where T : unmanaged, IEntity
         {
-            using Query query = T.GetQuery(world);
+            using Query query = new T().GetQuery(world);
             query.Update();
 
             if (query.Count > 0)
@@ -81,7 +81,7 @@ namespace Simulation
 
         public static T GetFirst<T>(World world) where T : unmanaged, IEntity
         {
-            using Query query = T.GetQuery(world);
+            using Query query = new T().GetQuery(world);
             query.Update();
 
             if (query.Count > 0)
@@ -95,7 +95,7 @@ namespace Simulation
             throw new NullReferenceException($"Component of type {typeof(T)} not found in world.");
         }
 
-        public static Query GetQuery(World world)
+        Query IEntity.GetQuery(World world)
         {
             return new Query(world);
         }
