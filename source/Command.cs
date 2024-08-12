@@ -149,6 +149,13 @@ namespace Simulation
             return command;
         }
 
+        public static Command AddComponent(RuntimeType componentType, ReadOnlySpan<byte> componentData)
+        {
+            Allocation allocation = Allocation.Create(componentData);
+            Command command = new(CommandOperation.AddComponent, componentType.value, (ulong)allocation.Address, 0);
+            return command;
+        }
+
         public static Command RemoveComponent<T>() where T : unmanaged
         {
             return RemoveComponent(RuntimeType.Get<T>());
@@ -167,7 +174,7 @@ namespace Simulation
             return command;
         }
 
-        public static Command SetComponent(RuntimeType componentType, Span<byte> componentData)
+        public static Command SetComponent(RuntimeType componentType, ReadOnlySpan<byte> componentData)
         {
             Allocation allocation = Allocation.Create(componentData);
             Command command = new(CommandOperation.SetComponent, componentType.value, (ulong)allocation.Address, 0);
@@ -224,7 +231,7 @@ namespace Simulation
             return command;
         }
 
-        public static Command InsertElement(RuntimeType elementType, Span<byte> elementData, uint index)
+        public static Command InsertElement(RuntimeType elementType, ReadOnlySpan<byte> elementData, uint index)
         {
             Allocation allocation = Allocation.Create(elementData);
             Command command = new(CommandOperation.InsertElement, elementType.value, (ulong)allocation.Address, index);
@@ -250,7 +257,7 @@ namespace Simulation
             return command;
         }
 
-        public static Command ModifyElement(RuntimeType elementType, Span<byte> elementData, uint index)
+        public static Command ModifyElement(RuntimeType elementType, ReadOnlySpan<byte> elementData, uint index)
         {
             Allocation allocation = Allocation.Create(elementData);
             Command command = new(CommandOperation.ModifyElement, elementType.value, (ulong)allocation.Address, index);

@@ -509,6 +509,17 @@ namespace Simulation.Unsafe
             Allocations.ThrowIfNull(world);
             ThrowIfEntityPresent(world, entity);
 
+            UnmanagedList<EntityDescription> slots = GetEntitySlots(world);
+            UnmanagedList<eint> freeEntities = GetFreeEntities(world);
+
+            //make sure islands dont exist
+            while (entity > slots.Count + 1)
+            {
+                EntityDescription slot = new(slots.Count + 1, default, default);
+                UnsafeList.Add(world->slots, slot);
+                freeEntities.Add(new(slot.entity));
+            }
+
             //add child reference into parent's slot
             if (!ContainsEntity(world, parent))
             {
@@ -516,7 +527,7 @@ namespace Simulation.Unsafe
             }
             else
             {
-                ref EntityDescription parentSlot = ref UnsafeList.GetRef<EntityDescription>(world->slots, parent - 1);
+                ref EntityDescription parentSlot = ref slots.GetRef(parent - 1);
                 if (parentSlot.children.IsDisposed)
                 {
                     parentSlot.children = UnmanagedList<uint>.Create();
@@ -526,11 +537,10 @@ namespace Simulation.Unsafe
             }
 
             uint componentsKey = RuntimeType.CombineHash(componentTypes);
-            UnmanagedList<eint> freeEntities = GetFreeEntities(world);
             if (freeEntities.TryRemove(entity))
             {
                 //recycle a previously destroyed slot
-                ref EntityDescription oldSlot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
+                ref EntityDescription oldSlot = ref slots.GetRef(entity - 1);
                 oldSlot.entity = entity;
                 oldSlot.parent = parent;
                 oldSlot.componentsKey = componentsKey;
@@ -539,9 +549,9 @@ namespace Simulation.Unsafe
             else
             {
                 //create new slot
-                eint newEntity = new(UnsafeList.GetCountRef(world->slots) + 1);
+                eint newEntity = new(slots.Count + 1);
                 EntityDescription newSlot = new(newEntity, parent, componentsKey);
-                UnsafeList.Add(world->slots, newSlot);
+                slots.Add(newSlot);
             }
 
             //put entity into correct chunk
@@ -560,13 +570,13 @@ namespace Simulation.Unsafe
             if (stackTrace.FrameCount > 0)
             {
                 string? firstFrame = stackTrace.GetFrame(0)?.GetFileName();
-                if (firstFrame is not null && firstFrame.EndsWith("World.cs"))
+                if (firstFrame != null && firstFrame.EndsWith("World.cs"))
                 {
                     stackTrace = new(3, true);
                 }
 
                 firstFrame = stackTrace.GetFrame(0)?.GetFileName();
-                if (firstFrame is not null && firstFrame.EndsWith("Entity.cs"))
+                if (firstFrame != null && firstFrame.EndsWith("Entity.cs"))
                 {
                     stackTrace = new(4, true);
                 }

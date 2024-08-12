@@ -839,7 +839,7 @@ namespace Simulation
             UnsafeWorld.AddComponent(value, entity, componentType);
         }
 
-        public readonly void AddComponent(eint entity, RuntimeType componentType, Span<byte> componentData)
+        public readonly void AddComponent(eint entity, RuntimeType componentType, ReadOnlySpan<byte> componentData)
         {
             UnsafeWorld.AddComponent(value, entity, componentType);
             Span<byte> bytes = UnsafeWorld.GetComponentBytes(value, entity, componentType);
@@ -991,7 +991,7 @@ namespace Simulation
             existing = component;
         }
 
-        public readonly void SetComponent(eint id, RuntimeType componentType, Span<byte> componentData)
+        public readonly void SetComponent(eint id, RuntimeType componentType, ReadOnlySpan<byte> componentData)
         {
             Span<byte> bytes = GetComponentBytes(id, componentType);
             componentData.CopyTo(bytes);
