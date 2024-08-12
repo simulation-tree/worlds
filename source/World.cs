@@ -187,10 +187,11 @@ namespace Simulation
             for (uint i = 0; i < Slots.Count; i++)
             {
                 EntityDescription slot = Slots[i];
-                if (!Free.Contains(slot.entity))
+                eint entity = new(slot.entity);
+                if (!Free.Contains(entity))
                 {
-                    eint entity = new(slot.entity);
                     writer.WriteValue(entity);
+                    writer.WriteValue(slot.parent);
                     ComponentChunk chunk = ComponentChunks[slot.componentsKey];
                     writer.WriteValue((uint)chunk.Types.Length);
                     for (int j = 0; j < chunk.Types.Length; j++)
@@ -236,12 +237,16 @@ namespace Simulation
                 uniqueTypes.Add(type);
             }
 
+            //create entities and fill them with components and lists
             uint entityCount = reader.ReadValue<uint>();
             uint currentEntityId = 1;
             using UnmanagedList<eint> temporaryEntities = UnmanagedList<eint>.Create();
             for (uint i = 0; i < entityCount; i++)
             {
                 uint entityId = reader.ReadValue<uint>();
+                uint parentId = reader.ReadValue<uint>();
+
+                //skip through the island of free entities
                 uint catchup = entityId - currentEntityId;
                 for (uint j = 0; j < catchup; j++)
                 {
@@ -250,6 +255,12 @@ namespace Simulation
                 }
 
                 eint entity = CreateEntity();
+                if (parentId != default)
+                {
+                    ref EntityDescription slot = ref Slots.GetRef(entity - 1);
+                    slot.parent = parentId;
+                }
+
                 uint componentCount = reader.ReadValue<uint>();
                 for (uint j = 0; j < componentCount; j++)
                 {
@@ -279,6 +290,23 @@ namespace Simulation
                 currentEntityId = entityId + 1;
             }
 
+            //assign children
+            foreach (eint entity in Entities)
+            {
+                eint parent = GetParent(entity);
+                if (parent != default)
+                {
+                    ref EntityDescription parentSlot = ref Slots.GetRef(parent - 1);
+                    if (parentSlot.children == default)
+                    {
+                        parentSlot.children = new();
+                    }
+
+                    parentSlot.children.Add(entity);
+                }
+            }
+
+            //destroy temporary entities
             for (uint i = 0; i < temporaryEntities.Count; i++)
             {
                 UnsafeWorld.DestroyEntity(value, temporaryEntities[i]);
@@ -612,7 +640,7 @@ namespace Simulation
         {
             return CreateListener(RuntimeType.Get<T>(), callback);
         }
-        
+
         /// <summary>
         /// Creates a new listener for the given static callback.
         /// <para>Disposing the listener will unregister the callback.
