@@ -23,22 +23,12 @@ public static class EntityFunctions
     /// </summary>
     public static bool Is<E, T>(this E entity) where E : IEntity where T : unmanaged, IEntity
     {
-        using Query query = default(T).GetQuery(entity.World);
-        foreach (RuntimeType type in query.Types)
-        {
-            if (!entity.ContainsComponent(type))
-            {
-                return false;
-            }
-        }
-
-        return true;
+        return Entity.Is<T>(entity.World, entity.Value);
     }
 
-    public unsafe static T As<E, T>(this E entity) where E : IEntity where T : unmanaged, IEntity
+    public static T As<E, T>(this E entity) where E : IEntity where T : unmanaged, IEntity
     {
-        Entity e = new(entity.World, entity.Value);
-        return *(T*)&e;
+        return Entity.As<T>(entity.World, entity.Value);
     }
 
     /// <summary>

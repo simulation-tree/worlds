@@ -1,4 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reflection;
+using Unmanaged;
 
 namespace Simulation
 {
@@ -98,6 +102,76 @@ namespace Simulation
         Query IEntity.GetQuery(World world)
         {
             return new Query(world);
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the entity complies with the given type.
+        /// </summary>
+        public static bool Is<T>(World world, eint entity) where T : unmanaged, IEntity
+        {
+            using Query query = default(T).GetQuery(world);
+            ReadOnlySpan<RuntimeType> entityComponentTypes = world.GetComponentTypes(entity);
+            foreach (RuntimeType type in query.Types)
+            {
+                if (!entityComponentTypes.Contains(type))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Retrieves the given entity as a <typeparamref name="T"/>,
+        /// assuming it is that type.
+        /// </summary>
+        public unsafe static T As<T>(World world, eint entity) where T : unmanaged, IEntity
+        {
+            ThrowIfTypeLayoutMismatches(typeof(T));
+            Entity e = new(world, entity);
+            return *(T*)&e;
+        }
+
+        [Conditional("DEBUG")]
+        private static void ThrowIfTypeLayoutMismatches(Type type)
+        {
+            BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+            Stack<Type> checkStack = new();
+            checkStack.Push(type);
+            while (checkStack.Count > 0)
+            {
+                Type checkingType = checkStack.Pop();
+                if (checkingType == typeof(Entity))
+                {
+                    return;
+                }
+                else if (typeof(IEntity).IsAssignableFrom(checkingType))
+                {
+#pragma warning disable IL2075
+                    FieldInfo[] checkingFields = checkingType.GetFields(flags);
+#pragma warning restore IL2075
+                    if (checkingFields.Length == 1)
+                    {
+                        checkStack.Push(checkingFields[0].FieldType);
+                    }
+                    else if (checkingFields.Length == 2)
+                    {
+                        Type first = checkingFields[0].FieldType;
+                        Type second = checkingFields[1].FieldType;
+                        if (first == typeof(eint) && second == typeof(World))
+                        {
+                            return;
+                        }
+                        else
+                        {
+                            throw new Exception($"Unexpected entity layout in `{checkingType}`. Was expecting `{nameof(eint)}`, then `{nameof(World)}`");
+                        }
+                    }
+                }
+            }
+
+            throw new Exception($"The type `{type}` does not align with the `{nameof(Entity)}` type");
         }
     }
 }

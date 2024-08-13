@@ -145,7 +145,7 @@ namespace Simulation
             return value->GetHashCode();
         }
 
-        void ISerializable.Write(BinaryWriter writer)
+        readonly void ISerializable.Write(BinaryWriter writer)
         {
             //write info about the type tree
             using UnmanagedList<RuntimeType> uniqueTypes = UnmanagedList<RuntimeType>.Create();
@@ -283,7 +283,7 @@ namespace Simulation
                     RuntimeType type = uniqueTypes[typeIndex];
                     uint listCount = reader.ReadValue<uint>();
                     uint byteCount = listCount * type.Size;
-                    UnsafeList* list = UnsafeWorld.CreateCollection(value, entity, type, listCount);
+                    UnsafeList* list = UnsafeWorld.CreateCollection(value, entity, type, listCount == 0 ? 1 : listCount);
                     UnsafeList.AddDefault(list, listCount);
                     nint address = UnsafeList.GetAddress(list);
                     Span<byte> destinationBytes = new((void*)address, (int)byteCount);
@@ -665,6 +665,9 @@ namespace Simulation
             return chunk.Types;
         }
 
+        /// <summary>
+        /// Retrieves the types for all lists on this entity.
+        /// </summary>
         public readonly ReadOnlySpan<RuntimeType> GetListTypes(eint entity)
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
