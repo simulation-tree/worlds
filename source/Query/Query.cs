@@ -138,6 +138,29 @@ namespace Simulation
             return new(this);
         }
 
+        public static Query Create<T>(World world) where T : unmanaged
+        {
+            return new(world, RuntimeType.Get<T>());
+        }
+
+        public static Query Create<T1, T2>(World world) where T1 : unmanaged where T2 : unmanaged
+        {
+            Span<RuntimeType> types = stackalloc RuntimeType[2] { RuntimeType.Get<T1>(), RuntimeType.Get<T2>() };
+            return new(world, types);
+        }
+
+        public static Query Create<T1, T2, T3>(World world) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+        {
+            Span<RuntimeType> types = stackalloc RuntimeType[3] { RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>() };
+            return new(world, types);
+        }
+
+        public static Query Create<T1, T2, T3, T4>(World world) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+        {
+            Span<RuntimeType> types = stackalloc RuntimeType[4] { RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>(), RuntimeType.Get<T4>() };
+            return new(world, types);
+        }
+
         public readonly struct Result
         {
             private readonly eint entity;

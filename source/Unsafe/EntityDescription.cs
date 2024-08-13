@@ -15,10 +15,10 @@ namespace Simulation.Unsafe
         public readonly bool IsSelfEnabled => state == State.Enabled || state == State.AncestorDisabledEnabled;
         public readonly bool IsDestroyed => state == State.Destroyed;
 
-        public EntityDescription(uint entity, uint parent, uint componentsKey)
+        public EntityDescription(uint entity, uint componentsKey)
         {
             this.entity = entity;
-            this.parent = parent;
+            this.parent = default;
             this.componentsKey = componentsKey;
             collections = EntityCollections.Create();
             children = UnmanagedList<uint>.Create();

@@ -15,12 +15,16 @@ namespace Simulation.Unsafe
         /// <summary>
         /// Invoked after any entity is created in any world.
         /// </summary>
-        public static event CreatedCallback EntityCreated = delegate { };
+        public static event EntityCreatedCallback EntityCreated = delegate { };
 
         /// <summary>
         /// Invoked after any entity is destroyed from any world.
         /// </summary>
-        public static event DestroyedCallback EntityDestroyed = delegate { };
+        public static event EntityDestroyedCallback EntityDestroyed = delegate { };
+
+        public static event EntityParentChangedCallback EntityParentChanged = delegate { };
+        public static event ComponentAddedCallback ComponentAdded = delegate { };
+        public static event ComponentRemovedCallback ComponentRemoved = delegate { };
 
         private UnsafeList* slots;
         private UnsafeList* freeEntities;
@@ -397,7 +401,7 @@ namespace Simulation.Unsafe
             slot.collections = default;
             slot.state = EntityDescription.State.Destroyed;
             UnsafeList.Add(world->freeEntities, entity);
-            EntityDestroyed(new(world), entity);
+            NotifyDestruction(new(world), entity);
         }
 
         public static ref EntityDescription GetEntitySlotRef(UnsafeWorld* world, eint entity)
@@ -467,6 +471,7 @@ namespace Simulation.Unsafe
             if (!ContainsEntity(world, parent))
             {
                 slot.parent = default;
+                NotifyParentChange(new(world), entity, default);
                 return false;
             }
             else
@@ -479,6 +484,7 @@ namespace Simulation.Unsafe
                 }
 
                 newParentSlot.children.Add(entity);
+                NotifyParentChange(new(world), entity, parent);
                 return true;
             }
         }
@@ -515,7 +521,7 @@ namespace Simulation.Unsafe
             //make sure islands dont exist
             while (entity > slots.Count + 1)
             {
-                EntityDescription slot = new(slots.Count + 1, default, default);
+                EntityDescription slot = new(slots.Count + 1, default);
                 UnsafeList.Add(world->slots, slot);
                 freeEntities.Add(new(slot.entity));
             }
@@ -550,7 +556,8 @@ namespace Simulation.Unsafe
             {
                 //create new slot
                 eint newEntity = new(slots.Count + 1);
-                EntityDescription newSlot = new(newEntity, parent, componentsKey);
+                EntityDescription newSlot = new(newEntity, componentsKey);
+                newSlot.parent = parent;
                 slots.Add(newSlot);
             }
 
@@ -586,7 +593,11 @@ namespace Simulation.Unsafe
 #endif
 
             //finally
-            EntityCreated(new(world), entity);
+            NotifyCreation(new(world), entity);
+            if (parent != default)
+            {
+                NotifyParentChange(new(world), entity, parent);
+            }
         }
 
         public static bool ContainsEntity(UnsafeWorld* world, uint entity)
@@ -663,35 +674,6 @@ namespace Simulation.Unsafe
             slot.collections.RemoveCollection(type);
         }
 
-        public static ref T AddComponentRef<T>(UnsafeWorld* world, eint entity) where T : unmanaged
-        {
-            Allocations.ThrowIfNull(world);
-            ThrowIfEntityMissing(world, entity);
-
-            RuntimeType addingType = RuntimeType.Get<T>();
-            ThrowIfComponentAlreadyPresent(world, entity, addingType);
-
-            UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
-            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
-            uint previousTypesKey = slot.componentsKey;
-            ComponentChunk current = components[previousTypesKey];
-            ReadOnlySpan<RuntimeType> oldTypes = current.Types;
-            Span<RuntimeType> newTypes = stackalloc RuntimeType[oldTypes.Length + 1];
-            oldTypes.CopyTo(newTypes);
-            newTypes[^1] = addingType;
-            uint newTypesKey = RuntimeType.CombineHash(newTypes);
-            slot.componentsKey = newTypesKey;
-
-            if (!components.TryGetValue(newTypesKey, out ComponentChunk destination))
-            {
-                destination = new(newTypes);
-                components.Add(newTypesKey, destination);
-            }
-
-            uint index = current.Move(entity, destination);
-            return ref destination.GetComponentRef<T>(index);
-        }
-
         public static void* AddComponent(UnsafeWorld* world, eint entity, RuntimeType type)
         {
             Allocations.ThrowIfNull(world);
@@ -756,6 +738,7 @@ namespace Simulation.Unsafe
             }
 
             current.Move(entity, destination);
+            NotifyComponentRemoved(new(world), entity, type);
         }
 
         public static bool ContainsComponent(UnsafeWorld* world, eint entity, RuntimeType type)
@@ -794,6 +777,31 @@ namespace Simulation.Unsafe
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
             ComponentChunk chunk = components[slot.componentsKey];
             return chunk.GetComponentBytes(entity, type);
+        }
+
+        internal static void NotifyCreation(World world, eint entity)
+        {
+            EntityCreated(world, entity);
+        }
+
+        internal static void NotifyDestruction(World world, eint entity)
+        {
+            EntityDestroyed(world, entity);
+        }
+
+        internal static void NotifyParentChange(World world, eint entity, eint parent)
+        {
+            EntityParentChanged(world, entity, parent);
+        }
+
+        internal static void NotifyComponentAdded(World world, eint entity, RuntimeType type)
+        {
+            ComponentAdded(world, entity, type);
+        }
+
+        internal static void NotifyComponentRemoved(World world, eint entity, RuntimeType type)
+        {
+            ComponentRemoved(world, entity, type);
         }
     }
 }

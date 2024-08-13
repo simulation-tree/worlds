@@ -23,7 +23,7 @@ public static class EntityFunctions
     /// </summary>
     public static bool Is<E, T>(this E entity) where E : IEntity where T : unmanaged, IEntity
     {
-        using Query query = new T().GetQuery(entity.World);
+        using Query query = default(T).GetQuery(entity.World);
         foreach (RuntimeType type in query.Types)
         {
             if (!entity.ContainsComponent(type))
@@ -32,7 +32,13 @@ public static class EntityFunctions
             }
         }
 
-        return false;
+        return true;
+    }
+
+    public unsafe static T As<E, T>(this E entity) where E : IEntity where T : unmanaged, IEntity
+    {
+        Entity e = new(entity.World, entity.Value);
+        return *(T*)&e;
     }
 
     /// <summary>
@@ -40,7 +46,7 @@ public static class EntityFunctions
     /// </summary>
     public static void Become<E, T>(this E entity) where E : IEntity where T : unmanaged, IEntity
     {
-        using Query query = new T().GetQuery(entity.World);
+        using Query query = default(T).GetQuery(entity.World);
         foreach (RuntimeType type in query.Types)
         {
             if (!entity.ContainsComponent(type))
@@ -107,6 +113,10 @@ public static class EntityFunctions
         return parent != default;
     }
 
+    /// <summary>
+    /// Retrieves the parent of this entity.
+    /// <para><c>default</c> in the absence of one.</para>
+    /// </summary>
     public static eint GetParent<E>(this E entity) where E : IEntity
     {
         ThrowIfDestroyed(entity);
@@ -183,6 +193,12 @@ public static class EntityFunctions
     {
         ThrowIfDestroyed(entity);
         return entity.World.GetComponent<T>(entity.Value);
+    }
+
+    public static ReadOnlySpan<RuntimeType> GetComponentTypes<E>(this E entity) where E : IEntity
+    {
+        ThrowIfDestroyed(entity);
+        return entity.World.GetComponentTypes(entity.Value);
     }
 
     public static void SetComponent<E, T>(this E entity, T component) where E : IEntity where T : unmanaged

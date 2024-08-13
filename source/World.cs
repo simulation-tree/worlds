@@ -39,10 +39,12 @@ namespace Simulation
         {
             get
             {
-                for (uint i = 0; i < Slots.Count; i++)
+                UnmanagedList<EntityDescription> slots = Slots;
+                UnmanagedList<eint> free = Free;
+                for (uint i = 0; i < slots.Count; i++)
                 {
-                    EntityDescription description = Slots[i];
-                    if (!Free.Contains(description.entity))
+                    EntityDescription description = slots[i];
+                    if (!free.Contains(description.entity))
                     {
                         yield return new(description.entity);
                     }
@@ -259,6 +261,7 @@ namespace Simulation
                 {
                     ref EntityDescription slot = ref Slots.GetRef(entity - 1);
                     slot.parent = parentId;
+                    //todo: lifecycle fault: missing invokation of UnsafeWorld.ParentAssigned
                 }
 
                 uint componentCount = reader.ReadValue<uint>();
@@ -270,6 +273,7 @@ namespace Simulation
                     void* component = UnsafeWorld.AddComponent(value, entity, type);
                     Span<byte> destinationBytes = new(component, type.Size);
                     componentBytes.CopyTo(destinationBytes);
+                    UnsafeWorld.NotifyComponentAdded(this, entity, type);
                 }
 
                 uint collectionCount = reader.ReadValue<uint>();
@@ -299,7 +303,7 @@ namespace Simulation
                     ref EntityDescription parentSlot = ref Slots.GetRef(parent - 1);
                     if (parentSlot.children == default)
                     {
-                        parentSlot.children = new();
+                        parentSlot.children = UnmanagedList<uint>.Create();
                     }
 
                     parentSlot.children.Add(entity);
@@ -331,6 +335,7 @@ namespace Simulation
                         void* component = UnsafeWorld.AddComponent(value, entity, type);
                         Span<byte> destination = new(component, type.Size);
                         bytes.CopyTo(destination);
+                        UnsafeWorld.NotifyComponentAdded(this, entity, type);
                     }
 
                     if (!slot.collections.IsDisposed)
@@ -854,9 +859,11 @@ namespace Simulation
 
         public readonly void AddComponent<T>(eint entity, T component) where T : unmanaged
         {
-            UnsafeWorld.AddComponent(value, entity, RuntimeType.Get<T>());
+            RuntimeType type = RuntimeType.Get<T>();
+            UnsafeWorld.AddComponent(value, entity, type);
             ref T target = ref UnsafeWorld.GetComponentRef<T>(value, entity);
             target = component;
+            UnsafeWorld.NotifyComponentAdded(this, entity, type);
         }
 
         /// <summary>
@@ -865,6 +872,7 @@ namespace Simulation
         public readonly void AddComponent(eint entity, RuntimeType componentType)
         {
             UnsafeWorld.AddComponent(value, entity, componentType);
+            UnsafeWorld.NotifyComponentAdded(this, entity, componentType);
         }
 
         public readonly void AddComponent(eint entity, RuntimeType componentType, ReadOnlySpan<byte> componentData)
@@ -872,6 +880,7 @@ namespace Simulation
             UnsafeWorld.AddComponent(value, entity, componentType);
             Span<byte> bytes = UnsafeWorld.GetComponentBytes(value, entity, componentType);
             componentData.CopyTo(bytes);
+            UnsafeWorld.NotifyComponentAdded(this, entity, componentType);
         }
 
         /// <summary>
@@ -1567,6 +1576,9 @@ namespace Simulation
     public delegate void QueryCallback<T1, T2, T3>(in eint id, ref T1 t1, ref T2 t2, ref T3 t3) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged;
     public delegate void QueryCallback<T1, T2, T3, T4>(in eint id, ref T1 t1, ref T2 t2, ref T3 t3, ref T4 t4) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged;
 
-    public unsafe delegate void CreatedCallback(World world, eint id);
-    public unsafe delegate void DestroyedCallback(World world, eint id);
+    public delegate void EntityCreatedCallback(World world, eint entity);
+    public delegate void EntityDestroyedCallback(World world, eint entity);
+    public delegate void EntityParentChangedCallback(World world, eint entity, eint parent);
+    public delegate void ComponentAddedCallback(World world, eint entity, RuntimeType componentType);
+    public delegate void ComponentRemovedCallback(World world, eint entity, RuntimeType componentType);
 }
