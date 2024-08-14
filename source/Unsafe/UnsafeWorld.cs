@@ -281,6 +281,7 @@ namespace Simulation.Unsafe
             UnsafeList.Clear(world->submittedEvents);
 
             ref uint dispatchCount = ref UnsafeList.GetCountRef(world->dispatchingEvents);
+            Exception? caughtException = null;
             while (dispatchCount > 0)
             {
                 Container message = UnsafeList.RemoveAtBySwapping<Container>(world->dispatchingEvents, 0);
@@ -292,12 +293,25 @@ namespace Simulation.Unsafe
                     while (j < UnsafeList.GetCountRef(listenerList))
                     {
                         Listener listener = UnsafeList.Get<Listener>(listenerList, j);
-                        listener.Invoke(worldValue, message);
+                        try
+                        {
+                            listener.Invoke(worldValue, message);
+                        }
+                        catch (Exception ex)
+                        {
+                            caughtException = ex;
+                            break;
+                        }
+
                         j++;
                     }
                 }
 
                 message.Dispose();
+                if (caughtException is not null)
+                {
+                    throw caughtException;
+                }
             }
         }
 
