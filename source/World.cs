@@ -713,6 +713,26 @@ namespace Simulation
             return false;
         }
 
+        public readonly T GetFirst<T>() where T : unmanaged
+        {
+            foreach (eint e in GetAll(RuntimeType.Get<T>()))
+            {
+                return GetComponentRef<T>(e);
+            }
+
+            throw new NullReferenceException($"No entity with component of type {typeof(T)} found.");
+        }
+
+        public readonly ref T GetFirstRef<T>() where T : unmanaged
+        {
+            foreach (eint e in GetAll(RuntimeType.Get<T>()))
+            {
+                return ref GetComponentRef<T>(e);
+            }
+
+            throw new NullReferenceException($"No entity with component of type {typeof(T)} found.");
+        }
+
         public readonly eint CreateEntity(eint parent = default)
         {
             eint entity = GetNextEntity();
@@ -870,6 +890,16 @@ namespace Simulation
         }
 
         /// <summary>
+        /// Adds a new component of the given type with uninitialized data.
+        /// </summary>
+        public readonly void AddComponent<T>(eint entity) where T : unmanaged
+        {
+            RuntimeType type = RuntimeType.Get<T>();
+            UnsafeWorld.AddComponent(value, entity, type);
+            UnsafeWorld.NotifyComponentAdded(this, entity, type);
+        }
+
+        /// <summary>
         /// Adds a new default component with the given type.
         /// </summary>
         public readonly void AddComponent(eint entity, RuntimeType componentType)
@@ -906,7 +936,7 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Returns <c>true</c> if any entity exists with the given component type.
+        /// Returns <c>true</c> if any entity in the world contains this component.
         /// </summary>
         public readonly bool ContainsComponent<T>() where T : unmanaged
         {
