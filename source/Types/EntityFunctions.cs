@@ -257,6 +257,6 @@ public static class EntityFunctions
     public static UnmanagedList<T> CreateList<E, T>(this E entity, uint initialCapacity) where E : IEntity where T : unmanaged
     {
         ThrowIfDestroyed(entity);
-        return entity.World.CreateCollection<T>(entity.Value, initialCapacity);
+        return entity.World.CreateList<T>(entity.Value, initialCapacity);
     }
 }

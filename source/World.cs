@@ -101,9 +101,19 @@ namespace Simulation
         /// <summary>
         /// Resets the world to default state.
         /// </summary>
-        public readonly void Clear()
+        public readonly void Clear(bool clearEvents = false, bool clearListeners = false)
         {
-            UnsafeWorld.Clear(value);
+            if (clearEvents)
+            {
+                UnsafeWorld.ClearEvents(value);
+            }
+
+            if (clearListeners)
+            {
+                UnsafeWorld.ClearListeners(value);
+            }
+
+            UnsafeWorld.ClearEntities(value);
         }
 
         public readonly override string ToString()
@@ -283,7 +293,7 @@ namespace Simulation
                     RuntimeType type = uniqueTypes[typeIndex];
                     uint listCount = reader.ReadValue<uint>();
                     uint byteCount = listCount * type.Size;
-                    UnsafeList* list = UnsafeWorld.CreateCollection(value, entity, type, listCount == 0 ? 1 : listCount);
+                    UnsafeList* list = UnsafeWorld.CreateList(value, entity, type, listCount == 0 ? 1 : listCount);
                     UnsafeList.AddDefault(list, listCount);
                     nint address = UnsafeList.GetAddress(list);
                     Span<byte> destinationBytes = new((void*)address, (int)byteCount);
@@ -322,40 +332,35 @@ namespace Simulation
         /// </summary>
         public readonly void Append(World world)
         {
-            foreach (EntityDescription slot in world.Slots)
+            foreach (EntityDescription sourceSlot in world.Slots)
             {
-                if (!world.Free.Contains(slot.entity))
+                eint sourceEntity = new(sourceSlot.entity);
+                if (!world.Free.Contains(sourceEntity))
                 {
-                    eint entity = CreateEntity();
-                    ComponentChunk chunk = world.ComponentChunks[slot.componentsKey];
+                    eint destinationEntity = CreateEntity();
+                    ComponentChunk chunk = world.ComponentChunks[sourceSlot.componentsKey];
                     for (int j = 0; j < chunk.Types.Length; j++)
                     {
                         RuntimeType type = chunk.Types[j];
-                        Span<byte> bytes = chunk.GetComponentBytes(new(slot.entity), type);
-                        void* component = UnsafeWorld.AddComponent(value, entity, type);
+                        Span<byte> bytes = chunk.GetComponentBytes(sourceEntity, type);
+                        void* component = UnsafeWorld.AddComponent(value, destinationEntity, type);
                         Span<byte> destination = new(component, type.Size);
                         bytes.CopyTo(destination);
-                        UnsafeWorld.NotifyComponentAdded(this, entity, type);
+                        UnsafeWorld.NotifyComponentAdded(this, destinationEntity, type);
                     }
 
-                    if (!slot.collections.IsDisposed)
+                    if (!sourceSlot.collections.IsDisposed)
                     {
-                        for (int j = 0; j < slot.collections.Types.Length; j++)
+                        for (int j = 0; j < sourceSlot.collections.Types.Length; j++)
                         {
-                            RuntimeType type = slot.collections.Types[j];
-                            UnsafeList* list = slot.collections.GetCollection(type);
-                            uint count = UnsafeList.GetCountRef(list);
-                            if (count < 0)
+                            RuntimeType type = sourceSlot.collections.Types[j];
+                            UnsafeList* sourceList = sourceSlot.collections.GetCollection(type);
+                            uint count = UnsafeList.GetCountRef(sourceList);
+                            UnsafeList* destinationList = UnsafeWorld.CreateList(value, destinationEntity, type, count + 1);
+                            for (uint e = 0; e < count; e++)
                             {
-                                count = 1;
+                                UnsafeList.CopyElementTo(sourceList, e, destinationList, e);
                             }
-
-                            UnsafeList* destination = UnsafeWorld.CreateCollection(value, entity, type, count);
-                            nint address = UnsafeList.GetAddress(destination);
-                            Span<byte> destinationBytes = new((void*)address, (int)(count * type.Size));
-                            nint sourceAddress = UnsafeList.GetAddress(list);
-                            Span<byte> sourceBytes = new((void*)sourceAddress, (int)(count * type.Size));
-                            sourceBytes.CopyTo(destinationBytes);
                         }
                     }
                 }
@@ -804,30 +809,30 @@ namespace Simulation
 
         public readonly UnmanagedList<T> CreateList<T>(eint entity) where T : unmanaged
         {
-            return CreateCollection<T>(entity, 1);
+            return CreateList<T>(entity, 1);
         }
 
         public readonly UnsafeList* CreateList(eint entity, RuntimeType listType)
         {
-            return UnsafeWorld.CreateCollection(value, entity, listType);
+            return UnsafeWorld.CreateList(value, entity, listType);
         }
 
         /// <summary>
         /// Creates a new collection of the given count and returns it as a span.
         /// </summary>
-        public readonly UnmanagedList<T> CreateCollection<T>(eint entity, uint initialCapacity = 1) where T : unmanaged
+        public readonly UnmanagedList<T> CreateList<T>(eint entity, uint initialCapacity = 1) where T : unmanaged
         {
-            UnmanagedList<T> list = new(UnsafeWorld.CreateCollection(value, entity, RuntimeType.Get<T>(), initialCapacity));
+            UnmanagedList<T> list = new(UnsafeWorld.CreateList(value, entity, RuntimeType.Get<T>(), initialCapacity));
             return list;
         }
 
-        public readonly void CreateCollection<T>(eint entity, ReadOnlySpan<T> values) where T : unmanaged
+        public readonly void CreateList<T>(eint entity, ReadOnlySpan<T> values) where T : unmanaged
         {
-            UnmanagedList<T> list = new(UnsafeWorld.CreateCollection(value, entity, RuntimeType.Get<T>()));
+            UnmanagedList<T> list = new(UnsafeWorld.CreateList(value, entity, RuntimeType.Get<T>()));
             list.AddRange(values);
         }
 
-        public readonly void AddToCollection<T>(eint entity, T value) where T : unmanaged
+        public readonly void AddToList<T>(eint entity, T value) where T : unmanaged
         {
             UnmanagedList<T> list = new(UnsafeWorld.GetList(this.value, entity, RuntimeType.Get<T>()));
             list.Add(value);
@@ -843,7 +848,7 @@ namespace Simulation
             return UnsafeWorld.ContainsList(value, entity, listType);
         }
 
-        public readonly void AddRangeToCollection<T>(eint entity, ReadOnlySpan<T> values) where T : unmanaged
+        public readonly void AddRangeToList<T>(eint entity, ReadOnlySpan<T> values) where T : unmanaged
         {
             UnmanagedList<T> list = new(UnsafeWorld.GetList(value, entity, RuntimeType.Get<T>()));
             list.AddRange(values);
@@ -862,7 +867,7 @@ namespace Simulation
             return UnsafeWorld.GetList(value, entity, listType);
         }
 
-        public readonly void RemoveAtCollection<T>(eint entity, uint index) where T : unmanaged
+        public readonly void RemoveAtList<T>(eint entity, uint index) where T : unmanaged
         {
             UnsafeList* list = UnsafeWorld.GetList(value, entity, RuntimeType.Get<T>());
             UnsafeList.RemoveAt(list, index);

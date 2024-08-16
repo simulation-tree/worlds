@@ -173,7 +173,9 @@ namespace Simulation.Unsafe
         public static void Free(ref UnsafeWorld* world)
         {
             Allocations.ThrowIfNull(world);
-            Clear(world);
+            ClearEvents(world);
+            ClearListeners(world);
+            ClearEntities(world);
             UnsafeList.Free(ref world->slots);
             UnsafeList.Free(ref world->freeEntities);
             UnsafeList.Free(ref world->submittedEvents);
@@ -183,48 +185,8 @@ namespace Simulation.Unsafe
             Allocations.Free(ref world);
         }
 
-        public static void Clear(UnsafeWorld* world)
+        public static void ClearEntities(UnsafeWorld* world)
         {
-            Allocations.ThrowIfNull(world);
-
-            //clear event containers
-            uint eventCount = UnsafeList.GetCountRef(world->submittedEvents);
-            for (uint i = 0; i < eventCount; i++)
-            {
-                Container message = UnsafeList.Get<Container>(world->submittedEvents, i);
-                message.Dispose();
-            }
-
-            UnsafeList.Clear(world->submittedEvents);
-
-            eventCount = UnsafeList.GetCountRef(world->dispatchingEvents);
-            for (uint i = 0; i < eventCount; i++)
-            {
-                Container message = UnsafeList.Get<Container>(world->dispatchingEvents, i);
-                message.Dispose();
-            }
-
-            UnsafeList.Clear(world->dispatchingEvents);
-
-            //clear event listeners
-            uint listenerTypesCount = UnsafeDictionary.GetCount(world->listeners);
-            for (uint i = 0; i < listenerTypesCount; i++)
-            {
-                RuntimeType eventType = UnsafeDictionary.GetKeyRef<RuntimeType, nint>(world->listeners, i);
-                UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, eventType);
-                uint listenerCount = UnsafeList.GetCountRef(listenerList);
-                for (uint j = 0; j < listenerCount; j++)
-                {
-                    Listener listener = UnsafeList.Get<Listener>(listenerList, j);
-                    UnsafeListener* unsafeValue = listener.value;
-                    UnsafeListener.Free(ref unsafeValue);
-                }
-
-                UnsafeList.Free(ref listenerList);
-            }
-
-            UnsafeDictionary.Clear(world->listeners);
-
             //clear chunks
             UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
             for (uint i = 0; i < components.Count; i++)
@@ -255,6 +217,48 @@ namespace Simulation.Unsafe
 
             //clear free entities
             UnsafeList.Clear(world->freeEntities);
+        }
+
+        public static void ClearListeners(UnsafeWorld* world)
+        {
+            uint listenerTypesCount = UnsafeDictionary.GetCount(world->listeners);
+            for (uint i = 0; i < listenerTypesCount; i++)
+            {
+                RuntimeType eventType = UnsafeDictionary.GetKeyRef<RuntimeType, nint>(world->listeners, i);
+                UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, eventType);
+                uint listenerCount = UnsafeList.GetCountRef(listenerList);
+                for (uint j = 0; j < listenerCount; j++)
+                {
+                    Listener listener = UnsafeList.Get<Listener>(listenerList, j);
+                    UnsafeListener* unsafeValue = listener.value;
+                    UnsafeListener.Free(ref unsafeValue);
+                }
+
+                UnsafeList.Free(ref listenerList);
+            }
+
+            UnsafeDictionary.Clear(world->listeners);
+        }
+
+        public static void ClearEvents(UnsafeWorld* world)
+        {
+            uint eventCount = UnsafeList.GetCountRef(world->submittedEvents);
+            for (uint i = 0; i < eventCount; i++)
+            {
+                Container message = UnsafeList.Get<Container>(world->submittedEvents, i);
+                message.Dispose();
+            }
+
+            UnsafeList.Clear(world->submittedEvents);
+
+            eventCount = UnsafeList.GetCountRef(world->dispatchingEvents);
+            for (uint i = 0; i < eventCount; i++)
+            {
+                Container message = UnsafeList.Get<Container>(world->dispatchingEvents, i);
+                message.Dispose();
+            }
+
+            UnsafeList.Clear(world->dispatchingEvents);
         }
 
         public static void Submit(UnsafeWorld* world, Container message)
@@ -632,7 +636,7 @@ namespace Simulation.Unsafe
             return slot.entity == entity;
         }
 
-        public static UnsafeList* CreateCollection(UnsafeWorld* world, eint entity, RuntimeType type, uint initialCapacity = 1)
+        public static UnsafeList* CreateList(UnsafeWorld* world, eint entity, RuntimeType type, uint initialCapacity = 1)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);

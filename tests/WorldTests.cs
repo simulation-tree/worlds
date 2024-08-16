@@ -227,7 +227,7 @@ namespace Simulation
                     uint length = rng.NextUInt(1, 10);
                     for (uint j = 0; j < length; j++)
                     {
-                        world.AddToCollection(entity, (char)rng.NextInt('a', 'z'));
+                        world.AddToList(entity, (char)rng.NextInt('a', 'z'));
                     }
                 }
 

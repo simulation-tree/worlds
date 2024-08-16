@@ -28,7 +28,7 @@ namespace Simulation
             world.AddComponent(c, new Apple("Goodbye, World!"));
             world.DestroyEntity(temporary);
             eint list = world.CreateEntity();
-            world.CreateCollection<char>(list, "Well hello there list");
+            world.CreateList<char>(list, "Well hello there list");
 
             List<eint> oldEntities = world.Entities.ToList();
             List<(eint, Apple)> apples = new();
