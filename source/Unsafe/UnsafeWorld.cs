@@ -647,7 +647,7 @@ namespace Simulation.Unsafe
             return slot.collections.CreateCollection(type, initialCapacity);
         }
 
-        public static bool ContainsList<T>(UnsafeWorld* world, eint entity) where T : unmanaged
+        public static bool ContainsList(UnsafeWorld* world, eint entity, RuntimeType listType)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
@@ -655,7 +655,7 @@ namespace Simulation.Unsafe
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
             if (!slot.collections.IsDisposed)
             {
-                return slot.collections.Types.Contains(RuntimeType.Get<T>());
+                return slot.collections.Types.Contains(listType);
             }
             else
             {

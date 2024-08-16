@@ -345,6 +345,11 @@ namespace Simulation
                             RuntimeType type = slot.collections.Types[j];
                             UnsafeList* list = slot.collections.GetCollection(type);
                             uint count = UnsafeList.GetCountRef(list);
+                            if (count < 0)
+                            {
+                                count = 1;
+                            }
+
                             UnsafeList* destination = UnsafeWorld.CreateCollection(value, entity, type, count);
                             nint address = UnsafeList.GetAddress(destination);
                             Span<byte> destinationBytes = new((void*)address, (int)(count * type.Size));
@@ -830,7 +835,12 @@ namespace Simulation
 
         public readonly bool ContainsList<T>(eint entity) where T : unmanaged
         {
-            return UnsafeWorld.ContainsList<T>(value, entity);
+            return ContainsList(entity, RuntimeType.Get<T>());
+        }
+
+        public readonly bool ContainsList(eint entity, RuntimeType listType)
+        {
+            return UnsafeWorld.ContainsList(value, entity, listType);
         }
 
         public readonly void AddRangeToCollection<T>(eint entity, ReadOnlySpan<T> values) where T : unmanaged
@@ -1147,7 +1157,7 @@ namespace Simulation
         /// <summary>
         /// Copies components from the source entity onto the destination.
         /// <para>Components will be added if the destination entity doesnt
-        /// contain them. Existing component data will be lost.</para>
+        /// contain them. Existing component data will be overwritten.</para>
         /// </summary>
         public readonly void CopyComponentsTo(eint sourceEntity, World destinationWorld, eint destinationEntity)
         {
@@ -1170,26 +1180,29 @@ namespace Simulation
         /// <summary>
         /// Copies all lists from the source entity onto the destination.
         /// <para>Lists will be added if the destination entity doesnt
-        /// contain them. Existing list data will be lost.</para>
+        /// contain them. Existing list data will be overwritten.</para>
         /// </summary>
         public readonly void CopyListsTo(eint sourceEntity, World destinationWorld, eint destinationEntity)
         {
-            ReadOnlySpan<RuntimeType> sourceTypes = GetListTypes(sourceEntity);
-            ReadOnlySpan<RuntimeType> destinationTypes = destinationWorld.GetListTypes(destinationEntity);
-            for (int i = 0; i < sourceTypes.Length; i++)
+            foreach (RuntimeType sourceListType in GetListTypes(sourceEntity))
             {
-                RuntimeType type = sourceTypes[i];
-                if (!destinationTypes.Contains(type))
+                UnsafeList* sourceList = GetList(sourceEntity, sourceListType);
+                uint count = UnsafeList.GetCountRef(sourceList);
+                UnsafeList* destinationList;
+                if (!destinationWorld.ContainsList(destinationEntity, sourceListType))
                 {
-                    UnsafeList* sourceList = GetList(sourceEntity, type);
-                    uint count = UnsafeList.GetCountRef(sourceList);
-                    UnsafeList* destinationList = destinationWorld.CreateList(destinationEntity, type);
-                    nint sourceAddress = UnsafeList.GetAddress(sourceList);
-                    nint destinationAddress = UnsafeList.GetAddress(destinationList);
-                    Span<byte> sourceBytes = new((void*)sourceAddress, (int)(count * type.Size));
-                    Span<byte> destinationBytes = new((void*)destinationAddress, (int)(count * type.Size));
-                    sourceBytes.CopyTo(destinationBytes);
+                    destinationList = destinationWorld.CreateList(destinationEntity, sourceListType);
                 }
+                else
+                {
+                    destinationList = destinationWorld.GetList(destinationEntity, sourceListType);
+                }
+
+                nint sourceAddress = UnsafeList.GetAddress(sourceList);
+                nint destinationAddress = UnsafeList.GetAddress(destinationList);
+                Span<byte> sourceBytes = new((void*)sourceAddress, (int)(count * sourceListType.Size));
+                Span<byte> destinationBytes = new((void*)destinationAddress, (int)(count * sourceListType.Size));
+                sourceBytes.CopyTo(destinationBytes);
             }
         }
 
