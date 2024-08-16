@@ -9,6 +9,7 @@ namespace Simulation.Unsafe
         public uint componentsKey;
         public EntityCollections collections;
         public UnmanagedList<uint> children;
+        public UnmanagedList<uint> references;
         public State state;
 
         public readonly bool IsEnabled => state == State.Enabled;
@@ -21,7 +22,6 @@ namespace Simulation.Unsafe
             this.parent = default;
             this.componentsKey = componentsKey;
             collections = EntityCollections.Create();
-            children = UnmanagedList<uint>.Create();
             state = State.Enabled;
         }
 

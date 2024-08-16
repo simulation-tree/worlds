@@ -211,6 +211,11 @@ namespace Simulation.Unsafe
                 {
                     slot.children.Dispose();
                 }
+
+                if (!slot.references.IsDisposed)
+                {
+                    slot.references.Dispose();
+                }
             }
 
             UnsafeList.Clear(world->slots);
@@ -401,7 +406,12 @@ namespace Simulation.Unsafe
                     }
                 }
 
-                slot.children.Dispose();
+                slot.children.Clear();
+            }
+
+            if (slot.references != default)
+            {
+                slot.references.Clear();
             }
 
             UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
@@ -552,7 +562,7 @@ namespace Simulation.Unsafe
             else
             {
                 ref EntityDescription parentSlot = ref slots.GetRef(parent - 1);
-                if (parentSlot.children.IsDisposed)
+                if (parentSlot.children == default)
                 {
                     parentSlot.children = UnmanagedList<uint>.Create();
                 }

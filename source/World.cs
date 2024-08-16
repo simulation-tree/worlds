@@ -157,14 +157,13 @@ namespace Simulation
 
         readonly void ISerializable.Write(BinaryWriter writer)
         {
-            //write info about the type tree
+            //collect info about all types referenced
             using UnmanagedList<RuntimeType> uniqueTypes = UnmanagedList<RuntimeType>.Create();
-            for (int a = 0; a < ComponentChunks.Count; a++)
+            for (int i = 0; i < ComponentChunks.Count; i++)
             {
-                ComponentChunk chunk = ComponentChunks.Values[a];
-                for (int b = 0; b < chunk.Types.Length; b++)
+                ComponentChunk chunk = ComponentChunks.Values[i];
+                foreach (RuntimeType type in chunk.Types)
                 {
-                    RuntimeType type = chunk.Types[b];
                     if (!uniqueTypes.Contains(type))
                     {
                         uniqueTypes.Add(type);
@@ -177,9 +176,8 @@ namespace Simulation
                 EntityDescription slot = Slots[i];
                 if (!slot.collections.IsDisposed)
                 {
-                    for (int j = 0; j < slot.collections.Types.Length; j++)
+                    foreach (RuntimeType type in slot.collections.Types)
                     {
-                        RuntimeType type = slot.collections.Types[j];
                         if (!uniqueTypes.Contains(type))
                         {
                             uniqueTypes.Add(type);
@@ -188,6 +186,7 @@ namespace Simulation
                 }
             }
 
+            //write info about the type tree
             writer.WriteValue(uniqueTypes.Count);
             for (uint a = 0; a < uniqueTypes.Count; a++)
             {
@@ -195,6 +194,7 @@ namespace Simulation
                 writer.WriteValue(type);
             }
 
+            //write each entity and its components
             writer.WriteValue(Count);
             for (uint i = 0; i < Slots.Count; i++)
             {
@@ -204,16 +204,18 @@ namespace Simulation
                 {
                     writer.WriteValue(entity);
                     writer.WriteValue(slot.parent);
+
+                    //write component
                     ComponentChunk chunk = ComponentChunks[slot.componentsKey];
                     writer.WriteValue((uint)chunk.Types.Length);
-                    for (int j = 0; j < chunk.Types.Length; j++)
+                    foreach (RuntimeType type in chunk.Types)
                     {
-                        RuntimeType type = chunk.Types[j];
                         writer.WriteValue(uniqueTypes.IndexOf(type));
                         Span<byte> componentBytes = chunk.GetComponentBytes(entity, type);
                         writer.WriteSpan<byte>(componentBytes);
                     }
 
+                    //write lists
                     if (slot.collections.IsDisposed)
                     {
                         writer.WriteValue(0u);
@@ -221,9 +223,8 @@ namespace Simulation
                     else
                     {
                         writer.WriteValue((uint)slot.collections.Types.Length);
-                        for (int j = 0; j < slot.collections.Types.Length; j++)
+                        foreach (RuntimeType type in slot.collections.Types)
                         {
-                            RuntimeType type = slot.collections.Types[j];
                             writer.WriteValue(uniqueTypes.IndexOf(type));
                             UnsafeList* list = slot.collections.GetCollection(type);
                             uint listCount = UnsafeList.GetCountRef(list);
@@ -234,6 +235,20 @@ namespace Simulation
                                 Span<byte> bytes = new((void*)address, (int)(listCount * type.Size));
                                 writer.WriteSpan<byte>(bytes);
                             }
+                        }
+                    }
+
+                    //write references
+                    if (slot.references == default)
+                    {
+                        writer.WriteValue(0u);
+                    }
+                    else
+                    {
+                        writer.WriteValue(slot.references.Count);
+                        foreach (uint referencedEntity in slot.references)
+                        {
+                            writer.WriteValue(referencedEntity);
                         }
                     }
                 }
@@ -277,6 +292,7 @@ namespace Simulation
                     UnsafeWorld.NotifyParentChange(this, entity, new(parentId));
                 }
 
+                //read components
                 uint componentCount = reader.ReadValue<uint>();
                 for (uint j = 0; j < componentCount; j++)
                 {
@@ -287,22 +303,31 @@ namespace Simulation
                     UnsafeWorld.NotifyComponentAdded(this, entity, type);
                 }
 
-                uint collectionCount = reader.ReadValue<uint>();
-                for (uint j = 0; j < collectionCount; j++)
+                //read lists
+                uint listCount = reader.ReadValue<uint>();
+                for (uint j = 0; j < listCount; j++)
                 {
                     uint typeIndex = reader.ReadValue<uint>();
                     RuntimeType type = uniqueTypes[typeIndex];
-                    uint listCount = reader.ReadValue<uint>();
-                    uint byteCount = listCount * type.Size;
-                    UnsafeList* list = UnsafeWorld.CreateList(value, entity, type, listCount == 0 ? 1 : listCount);
-                    if (listCount > 0)
+                    uint listLength = reader.ReadValue<uint>();
+                    uint byteCount = listLength * type.Size;
+                    UnsafeList* list = UnsafeWorld.CreateList(value, entity, type, listLength == 0 ? 1 : listLength);
+                    if (listLength > 0)
                     {
-                        UnsafeList.AddDefault(list, listCount);
+                        UnsafeList.AddDefault(list, listLength);
                         nint address = UnsafeList.GetAddress(list);
                         Span<byte> destinationBytes = new((void*)address, (int)byteCount);
                         ReadOnlySpan<byte> sourceBytes = reader.ReadSpan<byte>(byteCount);
                         sourceBytes.CopyTo(destinationBytes);
                     }
+                }
+
+                //read references
+                uint referenceCount = reader.ReadValue<uint>();
+                for (uint j = 0; j < referenceCount; j++)
+                {
+                    eint referencedEntity = new(reader.ReadValue<uint>());
+                    AddReference(entity, referencedEntity);
                 }
 
                 currentEntityId = entityId + 1;
@@ -334,36 +359,59 @@ namespace Simulation
         /// <summary>
         /// Creates new entities with the data from the given world.
         /// </summary>
-        public readonly void Append(World world)
+        public readonly void Append(World sourceWorld)
         {
-            foreach (EntityDescription sourceSlot in world.Slots)
+            uint start = Slots.Count;
+            uint entityIndex = 1;
+            foreach (EntityDescription sourceSlot in sourceWorld.Slots)
             {
                 eint sourceEntity = new(sourceSlot.entity);
-                if (!world.Free.Contains(sourceEntity))
+                if (!sourceWorld.Free.Contains(sourceEntity))
                 {
-                    eint destinationEntity = CreateEntity();
-                    ComponentChunk sourceChunk = world.ComponentChunks[sourceSlot.componentsKey];
-                    for (int j = 0; j < sourceChunk.Types.Length; j++)
+                    eint destinationEntity = new(start + entityIndex);
+                    InitializeEntity(destinationEntity, new(start + sourceSlot.parent));
+                    entityIndex++;
+
+                    //add components
+                    ComponentChunk sourceChunk = sourceWorld.ComponentChunks[sourceSlot.componentsKey];
+                    foreach (RuntimeType componentType in sourceChunk.Types)
                     {
-                        RuntimeType type = sourceChunk.Types[j];
-                        UnsafeWorld.AddComponent(value, destinationEntity, type);
-                        UnsafeWorld.SetComponentBytes(value, destinationEntity, type, sourceChunk.GetComponentBytes(sourceEntity, type));
-                        UnsafeWorld.NotifyComponentAdded(this, destinationEntity, type);
+                        UnsafeWorld.AddComponent(value, destinationEntity, componentType);
+                        UnsafeWorld.SetComponentBytes(value, destinationEntity, componentType, sourceChunk.GetComponentBytes(sourceEntity, componentType));
+                        UnsafeWorld.NotifyComponentAdded(this, destinationEntity, componentType);
                     }
 
+                    //add lists
                     if (!sourceSlot.collections.IsDisposed)
                     {
-                        for (int j = 0; j < sourceSlot.collections.Types.Length; j++)
+                        foreach (RuntimeType listType in sourceSlot.collections.Types)
                         {
-                            RuntimeType type = sourceSlot.collections.Types[j];
-                            UnsafeList* sourceList = sourceSlot.collections.GetCollection(type);
+                            UnsafeList* sourceList = sourceSlot.collections.GetCollection(listType);
                             uint count = UnsafeList.GetCountRef(sourceList);
-                            UnsafeList* destinationList = UnsafeWorld.CreateList(value, destinationEntity, type, count + 1);
+                            UnsafeList* destinationList = UnsafeWorld.CreateList(value, destinationEntity, listType, count + 1);
                             UnsafeList.AddDefault(destinationList, count);
                             for (uint e = 0; e < count; e++)
                             {
                                 UnsafeList.CopyElementTo(sourceList, e, destinationList, e);
                             }
+                        }
+                    }
+                }
+            }
+
+            //assign references last
+            entityIndex = 1;
+            foreach (EntityDescription sourceSlot in sourceWorld.Slots)
+            {
+                eint sourceEntity = new(sourceSlot.entity);
+                if (!sourceWorld.Free.Contains(sourceEntity))
+                {
+                    if (sourceSlot.references != default)
+                    {
+                        eint destinationEntity = new(start + entityIndex);
+                        foreach (uint referencedEntity in sourceSlot.references)
+                        {
+                            AddReference(destinationEntity, new(start + referencedEntity));
                         }
                     }
                 }
@@ -736,6 +784,17 @@ namespace Simulation
             throw new NullReferenceException($"No entity with component of type {typeof(T)} found.");
         }
 
+        public readonly T GetFirst<T>(out eint entity) where T : unmanaged
+        {
+            foreach (eint e in GetAll(RuntimeType.Get<T>()))
+            {
+                entity = e;
+                return GetComponentRef<T>(e);
+            }
+
+            throw new NullReferenceException($"No entity with component of type {typeof(T)} found.");
+        }
+
         public readonly ref T GetFirstRef<T>() where T : unmanaged
         {
             foreach (eint e in GetAll(RuntimeType.Get<T>()))
@@ -749,7 +808,7 @@ namespace Simulation
         public readonly eint CreateEntity(eint parent = default)
         {
             eint entity = GetNextEntity();
-            CreateEntity(entity, parent);
+            InitializeEntity(entity, parent);
             return entity;
         }
 
@@ -765,7 +824,7 @@ namespace Simulation
         /// Creates an entity with the given value assuming its 
         /// not already in use (otherwise an <see cref="Exception"/> will be thrown).
         /// </summary>
-        public readonly void CreateEntity(eint value, eint parent)
+        public readonly void InitializeEntity(eint value, eint parent)
         {
             UnsafeWorld.InitializeEntity(this.value, value, parent, Array.Empty<RuntimeType>());
         }
@@ -808,6 +867,108 @@ namespace Simulation
                 return new((void*)slot.children.Address, (int)slot.children.Count);
             }
             else return Array.Empty<eint>();
+        }
+
+        /// <summary>
+        /// Adds a new reference to the given entity.
+        /// </summary>
+        /// <returns>An index offset by 1 that refers to this entity.</returns>
+        public readonly uint AddReference(eint entity, eint referencedEntity)
+        {
+            UnsafeWorld.ThrowIfEntityMissing(value, entity);
+            UnsafeWorld.ThrowIfEntityMissing(value, referencedEntity);
+            ref EntityDescription slot = ref Slots.GetRef(entity - 1);
+            if (slot.references == default)
+            {
+                slot.references = UnmanagedList<uint>.Create();
+            }
+
+            slot.references.Add(referencedEntity);
+            return slot.references.Count;
+        }
+
+        public readonly void SetReference(eint entity, uint index, eint referencedEntity)
+        {
+            UnsafeWorld.ThrowIfEntityMissing(value, entity);
+            UnsafeWorld.ThrowIfEntityMissing(value, referencedEntity);
+            ref EntityDescription slot = ref Slots.GetRef(entity - 1);
+            if (slot.references == default)
+            {
+                throw new IndexOutOfRangeException($"No references found on entity `{entity}`.");
+            }
+
+            slot.references[index - 1] = referencedEntity;
+        }
+
+        public readonly bool ContainsReference(eint entity, eint referencedEntity)
+        {
+            UnsafeWorld.ThrowIfEntityMissing(value, entity);
+            UnsafeWorld.ThrowIfEntityMissing(value, referencedEntity);
+            ref EntityDescription slot = ref Slots.GetRef(entity - 1);
+            if (slot.references == default)
+            {
+                return false;
+            }
+
+            return slot.references.Contains(referencedEntity);
+        }
+
+        public readonly bool ContainsReference(eint entity, uint index)
+        {
+            UnsafeWorld.ThrowIfEntityMissing(value, entity);
+            ref EntityDescription slot = ref Slots.GetRef(entity - 1);
+            if (slot.references == default)
+            {
+                return false;
+            }
+
+            return (index - 1) < slot.references.Count;
+        }
+
+        public readonly eint GetReference(eint entity, uint index)
+        {
+            UnsafeWorld.ThrowIfEntityMissing(value, entity);
+            ref EntityDescription slot = ref Slots.GetRef(entity - 1);
+            if (slot.references == default)
+            {
+                throw new IndexOutOfRangeException($"No references found on entity `{entity}`.");
+            }
+
+            return new(slot.references[index - 1]);
+        }
+
+        public readonly bool TryGetReference(eint entity, uint index, out eint referencedEntity)
+        {
+            UnsafeWorld.ThrowIfEntityMissing(value, entity);
+            ref EntityDescription slot = ref Slots.GetRef(entity - 1);
+            if (slot.references == default)
+            {
+                referencedEntity = default;
+                return false;
+            }
+
+            if (index - 1 < slot.references.Count)
+            {
+                referencedEntity = new(slot.references[index - 1]);
+                return true;
+            }
+
+            referencedEntity = default;
+            return false;
+        }
+
+        public readonly void RemoveReference(eint entity, eint referencedEntity)
+        {
+            UnsafeWorld.ThrowIfEntityMissing(value, entity);
+            UnsafeWorld.ThrowIfEntityMissing(value, referencedEntity);
+            ref EntityDescription slot = ref Slots.GetRef(entity - 1);
+            if (slot.references == default)
+            {
+                throw new IndexOutOfRangeException($"No references found on entity `{entity}`.");
+            }
+
+            uint index = slot.references.IndexOf(referencedEntity);
+            slot.references.RemoveAtBySwapping(index);
         }
 
         public readonly UnmanagedList<T> CreateList<T>(eint entity) where T : unmanaged
