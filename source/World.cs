@@ -1161,12 +1161,9 @@ namespace Simulation
         /// </summary>
         public readonly void CopyComponentsTo(eint sourceEntity, World destinationWorld, eint destinationEntity)
         {
-            ReadOnlySpan<RuntimeType> sourceTypes = GetComponentTypes(sourceEntity);
-            ReadOnlySpan<RuntimeType> destinationTypes = destinationWorld.GetComponentTypes(destinationEntity);
-            for (int i = 0; i < sourceTypes.Length; i++)
+            foreach (RuntimeType type in GetComponentTypes(sourceEntity))
             {
-                RuntimeType type = sourceTypes[i];
-                if (!destinationTypes.Contains(type))
+                if (!destinationWorld.ContainsComponent(destinationEntity, type))
                 {
                     destinationWorld.AddComponent(destinationEntity, type);
                 }
@@ -1187,22 +1184,26 @@ namespace Simulation
             foreach (RuntimeType sourceListType in GetListTypes(sourceEntity))
             {
                 UnsafeList* sourceList = GetList(sourceEntity, sourceListType);
-                uint count = UnsafeList.GetCountRef(sourceList);
-                UnsafeList* destinationList;
+                uint sourceLength = UnsafeList.GetCountRef(sourceList);
                 if (!destinationWorld.ContainsList(destinationEntity, sourceListType))
                 {
-                    destinationList = destinationWorld.CreateList(destinationEntity, sourceListType);
+                    UnsafeList* destinationList = destinationWorld.CreateList(destinationEntity, sourceListType);
+                    UnsafeList.AddDefault(destinationList, UnsafeList.GetCountRef(sourceList));
+                    for (uint i = 0; i < sourceLength; i++)
+                    {
+                        UnsafeList.CopyElementTo(sourceList, i, destinationList, i);
+                    }
                 }
                 else
                 {
-                    destinationList = destinationWorld.GetList(destinationEntity, sourceListType);
+                    UnsafeList* destinationList = destinationWorld.GetList(destinationEntity, sourceListType);
+                    uint destinationIndex = UnsafeList.GetCountRef(destinationList);
+                    UnsafeList.AddDefault(destinationList, sourceLength);
+                    for (uint i = 0; i < sourceLength; i++)
+                    {
+                        UnsafeList.CopyElementTo(sourceList, i, destinationList, destinationIndex + i);
+                    }
                 }
-
-                nint sourceAddress = UnsafeList.GetAddress(sourceList);
-                nint destinationAddress = UnsafeList.GetAddress(destinationList);
-                Span<byte> sourceBytes = new((void*)sourceAddress, (int)(count * sourceListType.Size));
-                Span<byte> destinationBytes = new((void*)destinationAddress, (int)(count * sourceListType.Size));
-                sourceBytes.CopyTo(destinationBytes);
             }
         }
 

@@ -120,7 +120,7 @@ namespace Simulation.Unsafe
                     uint d = destination->types.IndexOf(type);
                     UnsafeList* destinationList = (UnsafeList*)destination->components[d];
                     UnsafeList* sourceList = (UnsafeList*)source->components[i];
-                    UnsafeList.CopyTo(sourceList, oldIndex, destinationList, newIndex);
+                    UnsafeList.CopyElementTo(sourceList, oldIndex, destinationList, newIndex);
                 }
 
                 UnsafeList* oldList = (UnsafeList*)source->components[i];
