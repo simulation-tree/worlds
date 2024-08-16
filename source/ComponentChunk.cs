@@ -136,5 +136,11 @@ namespace Simulation
         {
             return (nint)GetComponentPointer(index, RuntimeType.Get<T>());
         }
+
+        public readonly void SetComponentBytes(eint entity, RuntimeType type, ReadOnlySpan<byte> bytes)
+        {
+            void* component = GetComponentPointer(entity, type);
+            bytes.CopyTo(new Span<byte>(component, bytes.Length));
+        }
     }
 }

@@ -228,9 +228,12 @@ namespace Simulation
                             UnsafeList* list = slot.collections.GetCollection(type);
                             uint listCount = UnsafeList.GetCountRef(list);
                             writer.WriteValue(listCount);
-                            nint address = UnsafeList.GetAddress(list);
-                            Span<byte> bytes = new((void*)address, (int)(listCount * type.Size));
-                            writer.WriteSpan<byte>(bytes);
+                            if (listCount > 0)
+                            {
+                                nint address = UnsafeList.GetAddress(list);
+                                Span<byte> bytes = new((void*)address, (int)(listCount * type.Size));
+                                writer.WriteSpan<byte>(bytes);
+                            }
                         }
                     }
                 }
@@ -271,7 +274,7 @@ namespace Simulation
                 {
                     ref EntityDescription slot = ref Slots.GetRef(entity - 1);
                     slot.parent = parentId;
-                    //todo: lifecycle fault: missing invokation of UnsafeWorld.ParentAssigned
+                    UnsafeWorld.NotifyParentChange(this, entity, new(parentId));
                 }
 
                 uint componentCount = reader.ReadValue<uint>();
@@ -279,10 +282,8 @@ namespace Simulation
                 {
                     uint typeIndex = reader.ReadValue<uint>();
                     RuntimeType type = uniqueTypes[typeIndex];
-                    ReadOnlySpan<byte> componentBytes = reader.ReadSpan<byte>(type.Size);
-                    void* component = UnsafeWorld.AddComponent(value, entity, type);
-                    Span<byte> destinationBytes = new(component, type.Size);
-                    componentBytes.CopyTo(destinationBytes);
+                    UnsafeWorld.AddComponent(value, entity, type);
+                    UnsafeWorld.SetComponentBytes(value, entity, type, reader.ReadSpan<byte>(type.Size));
                     UnsafeWorld.NotifyComponentAdded(this, entity, type);
                 }
 
@@ -294,11 +295,14 @@ namespace Simulation
                     uint listCount = reader.ReadValue<uint>();
                     uint byteCount = listCount * type.Size;
                     UnsafeList* list = UnsafeWorld.CreateList(value, entity, type, listCount == 0 ? 1 : listCount);
-                    UnsafeList.AddDefault(list, listCount);
-                    nint address = UnsafeList.GetAddress(list);
-                    Span<byte> destinationBytes = new((void*)address, (int)byteCount);
-                    ReadOnlySpan<byte> sourceBytes = reader.ReadSpan<byte>(byteCount);
-                    sourceBytes.CopyTo(destinationBytes);
+                    if (listCount > 0)
+                    {
+                        UnsafeList.AddDefault(list, listCount);
+                        nint address = UnsafeList.GetAddress(list);
+                        Span<byte> destinationBytes = new((void*)address, (int)byteCount);
+                        ReadOnlySpan<byte> sourceBytes = reader.ReadSpan<byte>(byteCount);
+                        sourceBytes.CopyTo(destinationBytes);
+                    }
                 }
 
                 currentEntityId = entityId + 1;
@@ -338,14 +342,12 @@ namespace Simulation
                 if (!world.Free.Contains(sourceEntity))
                 {
                     eint destinationEntity = CreateEntity();
-                    ComponentChunk chunk = world.ComponentChunks[sourceSlot.componentsKey];
-                    for (int j = 0; j < chunk.Types.Length; j++)
+                    ComponentChunk sourceChunk = world.ComponentChunks[sourceSlot.componentsKey];
+                    for (int j = 0; j < sourceChunk.Types.Length; j++)
                     {
-                        RuntimeType type = chunk.Types[j];
-                        Span<byte> bytes = chunk.GetComponentBytes(sourceEntity, type);
-                        void* component = UnsafeWorld.AddComponent(value, destinationEntity, type);
-                        Span<byte> destination = new(component, type.Size);
-                        bytes.CopyTo(destination);
+                        RuntimeType type = sourceChunk.Types[j];
+                        UnsafeWorld.AddComponent(value, destinationEntity, type);
+                        UnsafeWorld.SetComponentBytes(value, destinationEntity, type, sourceChunk.GetComponentBytes(sourceEntity, type));
                         UnsafeWorld.NotifyComponentAdded(this, destinationEntity, type);
                     }
 
@@ -357,6 +359,7 @@ namespace Simulation
                             UnsafeList* sourceList = sourceSlot.collections.GetCollection(type);
                             uint count = UnsafeList.GetCountRef(sourceList);
                             UnsafeList* destinationList = UnsafeWorld.CreateList(value, destinationEntity, type, count + 1);
+                            UnsafeList.AddDefault(destinationList, count);
                             for (uint e = 0; e < count; e++)
                             {
                                 UnsafeList.CopyElementTo(sourceList, e, destinationList, e);

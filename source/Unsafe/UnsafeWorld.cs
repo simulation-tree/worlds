@@ -719,6 +719,18 @@ namespace Simulation.Unsafe
             return destination.GetComponentPointer(index, type);
         }
 
+        public static void SetComponentBytes(UnsafeWorld* world, eint entity, RuntimeType type, ReadOnlySpan<byte> bytes)
+        {
+            Allocations.ThrowIfNull(world);
+            ThrowIfEntityMissing(world, entity);
+            ThrowIfComponentMissing(world, entity, type);
+
+            UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
+            ComponentChunk chunk = components[slot.componentsKey];
+            chunk.SetComponentBytes(entity, type, bytes);
+        }
+
         public static void RemoveComponent<T>(UnsafeWorld* world, eint entity) where T : unmanaged
         {
             RemoveComponent(world, entity, RuntimeType.Get<T>());
