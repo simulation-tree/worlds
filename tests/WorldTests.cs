@@ -125,10 +125,10 @@ namespace Simulation
             world.AddComponent(a, new SimpleComponent("Hello World"));
             Assert.That(world.IsEnabled(a), Is.True);
             Assert.That(world.IsEnabled(b), Is.True);
-            world.SetEnabledState(a, false);
+            world.SetEnabled(a, false);
             Assert.That(world.IsEnabled(a), Is.False);
             Assert.That(world.IsEnabled(b), Is.True);
-            world.SetEnabledState(a, true);
+            world.SetEnabled(a, true);
             Assert.That(world.IsEnabled(a), Is.True);
         }
 
@@ -338,9 +338,9 @@ namespace Simulation
 
         public struct ComponentThatReferences
         {
-            public uint reference;
+            public rint reference;
 
-            public ComponentThatReferences(uint reference)
+            public ComponentThatReferences(rint reference)
             {
                 this.reference = reference;
             }

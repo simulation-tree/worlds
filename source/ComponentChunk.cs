@@ -137,6 +137,12 @@ namespace Simulation
             return (nint)GetComponentPointer(index, RuntimeType.Get<T>());
         }
 
+        public readonly nint GetComponentAddress<T>(eint entity) where T : unmanaged
+        {
+            uint index = Entities.IndexOf(entity);
+            return GetComponentAddress<T>(index);
+        }
+
         public readonly void SetComponentBytes(eint entity, RuntimeType type, ReadOnlySpan<byte> bytes)
         {
             void* component = GetComponentPointer(entity, type);

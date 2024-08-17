@@ -74,7 +74,7 @@ namespace Simulation
             world.AddComponent(a, new Cherry("apple"));
             world.AddComponent(b, new Cherry("pie"));
             world.AddComponent(c, new Cherry("fortune"));
-            world.SetEnabledState(a, false);
+            world.SetEnabled(a, false);
             List<Cherry> values = [];
             foreach (eint entity in world.GetAll<Cherry>(Query.Option.OnlyEnabledEntities))
             {

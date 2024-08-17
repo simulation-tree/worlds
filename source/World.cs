@@ -743,7 +743,7 @@ namespace Simulation
             return slot.IsEnabled;
         }
 
-        public readonly void SetEnabledState(eint entity, bool value)
+        public readonly void SetEnabled(eint entity, bool value)
         {
             UnsafeWorld.ThrowIfEntityMissing(this.value, entity);
             ref EntityDescription slot = ref Slots.GetRef(entity - 1);
@@ -837,6 +837,11 @@ namespace Simulation
             return UnsafeWorld.ContainsEntity(value, entity);
         }
 
+        public readonly bool ContainsEntity<T>(T entity) where T : unmanaged, IEntity
+        {
+            return ContainsEntity(entity.Value);
+        }
+
         /// <summary>
         /// Retrieves the parent of the given entity, <c>default</c> if none
         /// is assigned.
@@ -873,7 +878,7 @@ namespace Simulation
         /// Adds a new reference to the given entity.
         /// </summary>
         /// <returns>An index offset by 1 that refers to this entity.</returns>
-        public readonly uint AddReference(eint entity, eint referencedEntity)
+        public readonly rint AddReference(eint entity, eint referencedEntity)
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
             UnsafeWorld.ThrowIfEntityMissing(value, referencedEntity);
@@ -884,10 +889,10 @@ namespace Simulation
             }
 
             slot.references.Add(referencedEntity);
-            return slot.references.Count;
+            return new(slot.references.Count);
         }
 
-        public readonly void SetReference(eint entity, uint index, eint referencedEntity)
+        public readonly void SetReference(eint entity, rint reference, eint referencedEntity)
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
             UnsafeWorld.ThrowIfEntityMissing(value, referencedEntity);
@@ -897,7 +902,7 @@ namespace Simulation
                 throw new IndexOutOfRangeException($"No references found on entity `{entity}`.");
             }
 
-            slot.references[index - 1] = referencedEntity;
+            slot.references[reference.value - 1] = referencedEntity;
         }
 
         public readonly bool ContainsReference(eint entity, eint referencedEntity)
@@ -913,7 +918,7 @@ namespace Simulation
             return slot.references.Contains(referencedEntity);
         }
 
-        public readonly bool ContainsReference(eint entity, uint index)
+        public readonly bool ContainsReference(eint entity, rint reference)
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
             ref EntityDescription slot = ref Slots.GetRef(entity - 1);
@@ -922,22 +927,27 @@ namespace Simulation
                 return false;
             }
 
-            return (index - 1) < slot.references.Count;
+            return (reference.value - 1) < slot.references.Count;
         }
 
-        public readonly eint GetReference(eint entity, uint index)
+        public readonly eint GetReference(eint entity, rint reference)
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
+            if (reference == default)
+            {
+                return default;
+            }
+
             ref EntityDescription slot = ref Slots.GetRef(entity - 1);
             if (slot.references == default)
             {
                 throw new IndexOutOfRangeException($"No references found on entity `{entity}`.");
             }
 
-            return new(slot.references[index - 1]);
+            return new(slot.references[reference.value - 1]);
         }
 
-        public readonly bool TryGetReference(eint entity, uint index, out eint referencedEntity)
+        public readonly bool TryGetReference(eint entity, rint position, out eint referencedEntity)
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
             ref EntityDescription slot = ref Slots.GetRef(entity - 1);
@@ -947,9 +957,10 @@ namespace Simulation
                 return false;
             }
 
-            if (index - 1 < slot.references.Count)
+            uint index = position.value - 1;
+            if (index < slot.references.Count)
             {
-                referencedEntity = new(slot.references[index - 1]);
+                referencedEntity = new(slot.references[index]);
                 return true;
             }
 
