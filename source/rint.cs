@@ -39,5 +39,10 @@ namespace Simulation
         {
             return !(left == right);
         }
+
+        public static implicit operator uint(rint value)
+        {
+            return value.value;
+        }
     }
 }

@@ -12,7 +12,7 @@ namespace Simulation
     /// </summary>
     public readonly struct eint : IEquatable<eint>
     {
-        private readonly uint value;
+        internal readonly uint value;
 
 #if DEBUG
         public StackTrace? Creation
@@ -75,57 +75,6 @@ namespace Simulation
             return !(left == right);
         }
 
-        public static eint operator +(eint left, uint right)
-        {
-            return new(left.value + right);
-        }
-
-        public static eint operator +(uint left, eint right)
-        {
-            return new(left + right.value);
-        }
-
-        public static eint operator +(eint left, int right)
-        {
-            return new(left.value + (uint)right);
-        }
-
-        public static eint operator +(int left, eint right)
-        {
-            return new((uint)left + right.value);
-        }
-
-        public static eint operator +(eint left, eint right)
-        {
-            return new(left.value + right.value);
-        }
-
-        public static eint operator -(eint left, uint right)
-        {
-            return new(left.value - right);
-        }
-
-        public static eint operator -(uint left, eint right)
-        {
-            return new(left - right.value);
-        }
-
-        public static eint operator -(eint left, int right)
-        {
-            return new(left.value - (uint)right);
-        }
-
-        public static eint operator -(int left, eint right)
-        {
-            return new((uint)left - right.value);
-        }
-
-        public static eint operator -(eint left, eint right)
-        {
-            return new(left.value - right.value);
-        }
-
-        //todo: this extension function is carrying this entire API on its back...
         public static implicit operator uint(eint value)
         {
             return value.value;

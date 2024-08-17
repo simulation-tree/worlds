@@ -82,7 +82,7 @@ namespace Simulation
         /// </summary>
         public static Command AddToSelection(eint entity)
         {
-            Command command = new(CommandOperation.AddToSelection, 1, entity, 0);
+            Command command = new(CommandOperation.AddToSelection, 1, entity.value, 0);
             return command;
         }
 
@@ -100,7 +100,7 @@ namespace Simulation
         /// </summary>
         public static Command SelectEntity(eint entity)
         {
-            Command command = new(CommandOperation.SelectEntity, 1, entity, 0);
+            Command command = new(CommandOperation.SelectEntity, 1, entity.value, 0);
             return command;
         }
 
@@ -120,7 +120,7 @@ namespace Simulation
         /// </summary>
         public static Command SetParent(eint entity)
         {
-            Command command = new(CommandOperation.SetParent, 1, entity, 0);
+            Command command = new(CommandOperation.SetParent, 1, entity.value, 0);
             return command;
         }
 

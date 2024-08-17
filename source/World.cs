@@ -287,7 +287,7 @@ namespace Simulation
                 eint entity = CreateEntity();
                 if (parentId != default)
                 {
-                    ref EntityDescription slot = ref Slots.GetRef(entity - 1);
+                    ref EntityDescription slot = ref Slots.GetRef(entity.value - 1);
                     slot.parent = parentId;
                     UnsafeWorld.NotifyParentChange(this, entity, new(parentId));
                 }
@@ -339,13 +339,13 @@ namespace Simulation
                 eint parent = GetParent(entity);
                 if (parent != default)
                 {
-                    ref EntityDescription parentSlot = ref Slots.GetRef(parent - 1);
+                    ref EntityDescription parentSlot = ref Slots.GetRef(parent.value - 1);
                     if (parentSlot.children == default)
                     {
                         parentSlot.children = UnmanagedList<uint>.Create();
                     }
 
-                    parentSlot.children.Add(entity);
+                    parentSlot.children.Add(entity.value);
                 }
             }
 
@@ -721,7 +721,7 @@ namespace Simulation
         public readonly ReadOnlySpan<RuntimeType> GetComponentTypes(eint entity)
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
-            EntityDescription slot = Slots[entity - 1];
+            EntityDescription slot = Slots[entity.value - 1];
             ComponentChunk chunk = ComponentChunks[slot.componentsKey];
             return chunk.Types;
         }
@@ -732,21 +732,21 @@ namespace Simulation
         public readonly ReadOnlySpan<RuntimeType> GetListTypes(eint entity)
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
-            EntityDescription slot = Slots[entity - 1];
+            EntityDescription slot = Slots[entity.value - 1];
             return slot.collections.Types;
         }
 
         public readonly bool IsEnabled(eint entity)
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
-            EntityDescription slot = Slots[entity - 1];
+            EntityDescription slot = Slots[entity.value - 1];
             return slot.IsEnabled;
         }
 
         public readonly void SetEnabled(eint entity, bool value)
         {
             UnsafeWorld.ThrowIfEntityMissing(this.value, entity);
-            ref EntityDescription slot = ref Slots.GetRef(entity - 1);
+            ref EntityDescription slot = ref Slots.GetRef(entity.value - 1);
             slot.SetEnabledState(value);
         }
 
@@ -832,6 +832,11 @@ namespace Simulation
         /// <summary>
         /// Checks if the entity exists and is valid in this world.
         /// </summary>
+        public readonly bool ContainsEntity(eint entity)
+        {
+            return UnsafeWorld.ContainsEntity(value, entity.value);
+        }
+
         public readonly bool ContainsEntity(uint entity)
         {
             return UnsafeWorld.ContainsEntity(value, entity);
@@ -866,7 +871,7 @@ namespace Simulation
         public readonly ReadOnlySpan<eint> GetChildren(eint entity)
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
-            EntityDescription slot = Slots[entity - 1];
+            EntityDescription slot = Slots[entity.value - 1];
             if (!slot.children.IsDisposed)
             {
                 return new((void*)slot.children.Address, (int)slot.children.Count);
@@ -882,13 +887,13 @@ namespace Simulation
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
             UnsafeWorld.ThrowIfEntityMissing(value, referencedEntity);
-            ref EntityDescription slot = ref Slots.GetRef(entity - 1);
+            ref EntityDescription slot = ref Slots.GetRef(entity.value - 1);
             if (slot.references == default)
             {
                 slot.references = UnmanagedList<uint>.Create();
             }
 
-            slot.references.Add(referencedEntity);
+            slot.references.Add(referencedEntity.value);
             return new(slot.references.Count);
         }
 
@@ -896,20 +901,20 @@ namespace Simulation
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
             UnsafeWorld.ThrowIfEntityMissing(value, referencedEntity);
-            ref EntityDescription slot = ref Slots.GetRef(entity - 1);
+            ref EntityDescription slot = ref Slots.GetRef(entity.value - 1);
             if (slot.references == default)
             {
-                throw new IndexOutOfRangeException($"No references found on entity `{entity}`.");
+                throw new IndexOutOfRangeException($"No references found on entity `{entity.value}`.");
             }
 
-            slot.references[reference.value - 1] = referencedEntity;
+            slot.references[reference.value - 1] = referencedEntity.value;
         }
 
         public readonly bool ContainsReference(eint entity, eint referencedEntity)
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
             UnsafeWorld.ThrowIfEntityMissing(value, referencedEntity);
-            ref EntityDescription slot = ref Slots.GetRef(entity - 1);
+            ref EntityDescription slot = ref Slots.GetRef(entity.value - 1);
             if (slot.references == default)
             {
                 return false;
@@ -921,7 +926,7 @@ namespace Simulation
         public readonly bool ContainsReference(eint entity, rint reference)
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
-            ref EntityDescription slot = ref Slots.GetRef(entity - 1);
+            ref EntityDescription slot = ref Slots.GetRef(entity.value - 1);
             if (slot.references == default)
             {
                 return false;
@@ -938,10 +943,10 @@ namespace Simulation
                 return default;
             }
 
-            ref EntityDescription slot = ref Slots.GetRef(entity - 1);
+            ref EntityDescription slot = ref Slots.GetRef(entity.value - 1);
             if (slot.references == default)
             {
-                throw new IndexOutOfRangeException($"No references found on entity `{entity}`.");
+                throw new IndexOutOfRangeException($"No references found on entity `{entity.value}`.");
             }
 
             return new(slot.references[reference.value - 1]);
@@ -950,7 +955,7 @@ namespace Simulation
         public readonly bool TryGetReference(eint entity, rint position, out eint referencedEntity)
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
-            ref EntityDescription slot = ref Slots.GetRef(entity - 1);
+            ref EntityDescription slot = ref Slots.GetRef(entity.value - 1);
             if (slot.references == default)
             {
                 referencedEntity = default;
@@ -972,10 +977,10 @@ namespace Simulation
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
             UnsafeWorld.ThrowIfEntityMissing(value, referencedEntity);
-            ref EntityDescription slot = ref Slots.GetRef(entity - 1);
+            ref EntityDescription slot = ref Slots.GetRef(entity.value - 1);
             if (slot.references == default)
             {
-                throw new IndexOutOfRangeException($"No references found on entity `{entity}`.");
+                throw new IndexOutOfRangeException($"No references found on entity `{entity.value}`.");
             }
 
             uint index = slot.references.IndexOf(referencedEntity);
@@ -1245,15 +1250,15 @@ namespace Simulation
             }
         }
 
-        public readonly void SetComponent<T>(eint id, T component) where T : unmanaged
+        public readonly void SetComponent<T>(eint entity, T component) where T : unmanaged
         {
-            ref T existing = ref GetComponentRef<T>(id);
+            ref T existing = ref GetComponentRef<T>(entity);
             existing = component;
         }
 
-        public readonly void SetComponent(eint id, RuntimeType componentType, ReadOnlySpan<byte> componentData)
+        public readonly void SetComponent(eint entity, RuntimeType componentType, ReadOnlySpan<byte> componentData)
         {
-            Span<byte> bytes = GetComponentBytes(id, componentType);
+            Span<byte> bytes = GetComponentBytes(entity, componentType);
             componentData.CopyTo(bytes);
         }
 
@@ -1263,7 +1268,7 @@ namespace Simulation
         public readonly ComponentChunk GetComponentChunk(eint entity)
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
-            EntityDescription slot = Slots[entity - 1];
+            EntityDescription slot = Slots[entity.value - 1];
             return ComponentChunks[slot.componentsKey];
         }
 
