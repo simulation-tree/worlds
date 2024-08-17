@@ -897,6 +897,11 @@ namespace Simulation
             return new(slot.references.Count);
         }
 
+        public readonly rint AddReference<T>(eint entity, T referencedEntity) where T : unmanaged, IEntity
+        {
+            return AddReference(entity, referencedEntity.Value);
+        }
+
         public readonly void SetReference(eint entity, rint reference, eint referencedEntity)
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
@@ -910,6 +915,11 @@ namespace Simulation
             slot.references[reference.value - 1] = referencedEntity.value;
         }
 
+        public readonly void SetReference<T>(eint entity, rint reference, T referencedEntity) where T : unmanaged, IEntity
+        {
+            SetReference(entity, reference, referencedEntity.Value);
+        }
+
         public readonly bool ContainsReference(eint entity, eint referencedEntity)
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
@@ -921,6 +931,11 @@ namespace Simulation
             }
 
             return slot.references.Contains(referencedEntity);
+        }
+
+        public readonly bool ContainsReference<T>(eint entity, T referencedEntity) where T : unmanaged, IEntity
+        {
+            return ContainsReference(entity, referencedEntity.Value);
         }
 
         public readonly bool ContainsReference(eint entity, rint reference)
