@@ -124,6 +124,12 @@ namespace Simulation
             return world.GetList<T>(value);
         }
 
+        public readonly T GetListElement<T>(uint index) where T : unmanaged
+        {
+            ThrowIfDestroyed();
+            return world.GetListElement<T>(value, index);
+        }
+
         public readonly bool ContainsList<T>() where T : unmanaged
         {
             ThrowIfDestroyed();

@@ -39,7 +39,7 @@ namespace Simulation
             return new(list);
         }
 
-        public readonly UnsafeList* GetCollection(RuntimeType type)
+        public readonly UnsafeList* GetList(RuntimeType type)
         {
             return UnsafeEntityCollections.GetCollection(value, type);
         }

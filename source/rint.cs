@@ -4,7 +4,7 @@ using System;
 namespace Simulation
 {
     /// <summary>
-    /// A <see cref="uint"/> type that refers to a reference.
+    /// A <see cref="uint"/> type that refers to a reference local to its entity.
     /// </summary>
     public readonly struct rint : IEquatable<rint>
     {

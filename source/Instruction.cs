@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Xml.Linq;
 using Unmanaged;
 using Unmanaged.Collections;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Simulation
 {
@@ -115,27 +113,6 @@ namespace Simulation
                 buffer[length++] = 'o';
                 buffer[length++] = 'n';
                 buffer[length++] = '(';
-                buffer[length++] = ')';
-            }
-            else if (type == Type.AddToSelection)
-            {
-                buffer[length++] = 'A';
-                buffer[length++] = 'd';
-                buffer[length++] = 'd';
-                buffer[length++] = 'T';
-                buffer[length++] = 'o';
-                buffer[length++] = 'S';
-                buffer[length++] = 'e';
-                buffer[length++] = 'l';
-                buffer[length++] = 'e';
-                buffer[length++] = 'c';
-                buffer[length++] = 't';
-                buffer[length++] = 'i';
-                buffer[length++] = 'o';
-                buffer[length++] = 'n';
-                buffer[length++] = '(';
-                a.TryFormat(buffer[length..], out int written);
-                length += written;
                 buffer[length++] = ')';
             }
             else if (type == Type.SelectEntity)
@@ -512,19 +489,11 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Creates entities and makes them the only selection.
+        /// Creates entities and adds them into the selection.
         /// </summary>
         public static Instruction CreateEntity(uint count = 1)
         {
-#if DEBUG
-            if (count == 0)
-            {
-                throw new ArgumentException("Cannot create 0 entities.");
-            }
-#endif
-
-            Instruction command = new(Type.CreateEntity, count, 0, 0);
-            return command;
+            return new(Type.CreateEntity, count, 0, 0);
         }
 
         /// <summary>
@@ -532,60 +501,37 @@ namespace Simulation
         /// </summary>
         public static Instruction DestroySelection()
         {
-            Instruction command = new(Type.DestroyEntities, 0, 0, 0);
-            return command;
+            return new(Type.DestroyEntities, 0, 0, 0);
         }
 
-        public static Instruction DestroyRange(uint start, uint count)
+        /// <summary>
+        /// Destroys a range of selected entities in added order.
+        /// </summary>
+        public static Instruction DestroySelection(uint start, uint count)
         {
-            Instruction command = new(Type.DestroyEntities, start, count, 0);
-            return command;
+            return new(Type.DestroyEntities, start, count, 0);
         }
 
         public static Instruction ClearSelection()
         {
-            Instruction command = new(Type.ClearSelection, 0, 0, 0);
-            return command;
+            return new(Type.ClearSelection, 0, 0, 0);
         }
 
         /// <summary>
-        /// Adds a previously created entity into the selection buffer.
-        /// <para>
-        /// Offset of 0 indicates the last entity created.
-        /// </para>
-        /// </summary>
-        public static Instruction AddToSelection(uint relativeOffset)
-        {
-            Instruction command = new(Type.AddToSelection, 0, relativeOffset, 0);
-            return command;
-        }
-
-        /// <summary>
-        /// Adds an existing entity into the selection.
-        /// </summary>
-        public static Instruction AddToSelection(eint entity)
-        {
-            Instruction command = new(Type.AddToSelection, 1, entity.value, 0);
-            return command;
-        }
-
-        /// <summary>
-        /// Makes the entity at this relative index the only selected one,
-        /// where 0 represents the last created entity.
+        /// Adds the entity at this relative index, where 0 represents
+        /// the last created entity.
         /// </summary>
         public static Instruction SelectEntity(uint relativeOffset)
         {
-            Instruction command = new(Type.SelectEntity, 0, relativeOffset, 0);
-            return command;
+            return new(Type.SelectEntity, 0, relativeOffset, 0);
         }
 
         /// <summary>
-        /// Makes the given entity the only selected one.
+        /// Adds the given entity to the selection.
         /// </summary>
         public static Instruction SelectEntity(eint entity)
         {
-            Instruction command = new(Type.SelectEntity, 1, entity.value, 0);
-            return command;
+            return new(Type.SelectEntity, 1, entity.value, 0);
         }
 
         /// <summary>
@@ -595,8 +541,7 @@ namespace Simulation
         /// </summary>
         public static Instruction SetParent(uint relativeOffset)
         {
-            Instruction command = new(Type.SetParent, 0, relativeOffset, 0);
-            return command;
+            return new(Type.SetParent, 0, relativeOffset, 0);
         }
 
         /// <summary>
@@ -605,8 +550,7 @@ namespace Simulation
         /// </summary>
         public static Instruction SetParent(eint entity)
         {
-            Instruction command = new(Type.SetParent, 1, entity.value, 0);
-            return command;
+            return new(Type.SetParent, 1, entity.value, 0);
         }
 
         /// <summary>
@@ -615,22 +559,12 @@ namespace Simulation
         /// </summary>
         public static Instruction AddReference(uint relativeOffset)
         {
-            Instruction command = new(Type.AddReference, 0, relativeOffset, 0);
-            return command;
+            return new(Type.AddReference, 0, relativeOffset, 0);
         }
 
         public static Instruction AddReference(eint entity)
         {
-            Instruction command = new(Type.AddReference, 1, entity.value, 0);
-            return command;
-        }
-
-        /// <summary>
-        /// Adds the specified component type to all entities inside the selection.
-        /// </summary>
-        public static Instruction AddComponent<T>() where T : unmanaged
-        {
-            return AddComponent(new T());
+            return new(Type.AddReference, 1, entity.value, 0);
         }
 
         /// <summary>
@@ -644,22 +578,19 @@ namespace Simulation
         public static Instruction AddComponent<T>(T component, out Allocation allocation) where T : unmanaged
         {
             allocation = Allocation.Create(component);
-            Instruction command = new(Type.AddComponent, RuntimeType.Get<T>().value, (ulong)allocation.Address, 0);
-            return command;
+            return new(Type.AddComponent, RuntimeType.Get<T>().value, (ulong)allocation.Address, 0);
         }
 
         public static Instruction AddComponent(RuntimeType componentType)
         {
             Allocation allocation = Allocation.Create(componentType.Size);
-            Instruction command = new(Type.AddComponent, componentType.value, (ulong)allocation.Address, 0);
-            return command;
+            return new(Type.AddComponent, componentType.value, (ulong)allocation.Address, 0);
         }
 
         public static Instruction AddComponent(RuntimeType componentType, ReadOnlySpan<byte> componentData)
         {
             Allocation allocation = Allocation.Create(componentData);
-            Instruction command = new(Type.AddComponent, componentType.value, (ulong)allocation.Address, 0);
-            return command;
+            return new(Type.AddComponent, componentType.value, (ulong)allocation.Address, 0);
         }
 
         public static Instruction RemoveComponent<T>() where T : unmanaged
@@ -669,8 +600,7 @@ namespace Simulation
 
         public static Instruction RemoveComponent(RuntimeType componentType)
         {
-            Instruction command = new(Type.RemoveComponent, componentType.value, 0, 0);
-            return command;
+            return new(Type.RemoveComponent, componentType.value, 0, 0);
         }
 
         /// <summary>
@@ -679,15 +609,13 @@ namespace Simulation
         public static Instruction SetComponent<T>(T component) where T : unmanaged
         {
             Allocation allocation = Allocation.Create(component);
-            Instruction command = new(Type.SetComponent, RuntimeType.Get<T>().value, (ulong)allocation.Address, 0);
-            return command;
+            return new(Type.SetComponent, RuntimeType.Get<T>().value, (ulong)allocation.Address, 0);
         }
 
         public static Instruction SetComponent(RuntimeType componentType, ReadOnlySpan<byte> componentData)
         {
             Allocation allocation = Allocation.Create(componentData);
-            Instruction command = new(Type.SetComponent, componentType.value, (ulong)allocation.Address, 0);
-            return command;
+            return new(Type.SetComponent, componentType.value, (ulong)allocation.Address, 0);
         }
 
         /// <summary>
@@ -695,26 +623,22 @@ namespace Simulation
         /// </summary>
         public static Instruction CreateList<T>(uint count = 0) where T : unmanaged
         {
-            Instruction command = new(Type.CreateList, RuntimeType.Get<T>().value, count, 0);
-            return command;
+            return new(Type.CreateList, RuntimeType.Get<T>().value, count, 0);
         }
 
         public static Instruction CreateList(RuntimeType elementType, uint count = 0)
         {
-            Instruction command = new(Type.CreateList, elementType.value, count, 0);
-            return command;
+            return new(Type.CreateList, elementType.value, count, 0);
         }
 
         public static Instruction DestroyList<T>() where T : unmanaged
         {
-            Instruction command = new(Type.DestroyList, RuntimeType.Get<T>().value, 0, 0);
-            return command;
+            return new(Type.DestroyList, RuntimeType.Get<T>().value, 0, 0);
         }
 
         public static Instruction DestroyList(RuntimeType elementType)
         {
-            Instruction command = new(Type.DestroyList, elementType.value, 0, 0);
-            return command;
+            return new(Type.DestroyList, elementType.value, 0, 0);
         }
 
         /// <summary>
@@ -722,92 +646,60 @@ namespace Simulation
         /// </summary>
         public static Instruction ClearList<T>() where T : unmanaged
         {
-            Instruction command = new(Type.ClearList, RuntimeType.Get<T>().value, 0, 0);
-            return command;
+            return new(Type.ClearList, RuntimeType.Get<T>().value, 0, 0);
         }
 
         public static Instruction ClearCollection(RuntimeType elementType)
         {
-            Instruction command = new(Type.ClearList, elementType.value, 0, 0);
-            return command;
+            return new(Type.ClearList, elementType.value, 0, 0);
         }
 
-        public unsafe static Instruction AddElement<T>(T element) where T : unmanaged
+        public unsafe static Instruction AppendToList<T>(T element) where T : unmanaged
         {
             UnsafeArray* array = UnsafeArray.Allocate<T>(1);
             UnsafeArray.GetRef<T>(array, 0) = element;
-            Instruction command = new(Type.InsertElement, RuntimeType.Get<T>().value, (ulong)(nint)array, uint.MaxValue);
-            return command;
+            return new(Type.InsertElement, RuntimeType.Get<T>().value, (ulong)(nint)array, uint.MaxValue);
         }
 
-        public unsafe static Instruction AddElements<T>(ReadOnlySpan<T> elements) where T : unmanaged
+        public unsafe static Instruction AppendToList<T>(ReadOnlySpan<T> elements) where T : unmanaged
         {
-#if DEBUG
-            if (elements.IsEmpty)
-            {
-                throw new ArgumentException("Cannot add 0 elements.");
-            }
-#endif
-
             UnsafeArray* array = UnsafeArray.Allocate(elements);
-            Instruction command = new(Type.InsertElement, RuntimeType.Get<T>().value, (ulong)(nint)array, uint.MaxValue);
-            return command;
-        }
-
-        public unsafe static Instruction AddElements<T>(UnmanagedList<T> elements) where T : unmanaged
-        {
-            return AddElements<T>(elements.AsSpan());
-        }
-
-        public unsafe static Instruction AddElements<T>(UnmanagedArray<T> elements) where T : unmanaged
-        {
-            return AddElements<T>(elements.AsSpan());
-        }
-
-        public unsafe static Instruction AddElements<T>(void* pointer, uint length) where T : unmanaged
-        {
-            return AddElements<T>(new Span<T>(pointer, (int)length));
+            return new(Type.InsertElement, RuntimeType.Get<T>().value, (ulong)(nint)array, uint.MaxValue);
         }
 
         public unsafe static Instruction InsertElement<T>(T element, uint index) where T : unmanaged
         {
             UnsafeArray* array = UnsafeArray.Allocate<T>(1);
             UnsafeArray.GetRef<T>(array, 0) = element;
-            Instruction command = new(Type.InsertElement, RuntimeType.Get<T>().value, (ulong)(nint)array, index);
-            return command;
+            return new(Type.InsertElement, RuntimeType.Get<T>().value, (ulong)(nint)array, index);
         }
 
         public unsafe static Instruction InsertElement(RuntimeType elementType, ReadOnlySpan<byte> elementData, uint index)
         {
             UnsafeArray* array = UnsafeArray.Allocate(elementData);
-            Instruction command = new(Type.InsertElement, elementType.value, (ulong)(nint)array, index);
-            return command;
+            return new(Type.InsertElement, elementType.value, (ulong)(nint)array, index);
         }
 
         public static Instruction RemoveElement<T>(uint index) where T : unmanaged
         {
-            Instruction command = new(Type.RemoveElement, RuntimeType.Get<T>().value, index, 0);
-            return command;
+            return new(Type.RemoveElement, RuntimeType.Get<T>().value, index, 0);
         }
 
         public static Instruction RemoveElement(RuntimeType elementType, uint index)
         {
-            Instruction command = new(Type.RemoveElement, elementType.value, index, 0);
-            return command;
+            return new(Type.RemoveElement, elementType.value, index, 0);
         }
 
         public static Instruction ModifyElement<T>(T element, uint index) where T : unmanaged
         {
             Allocation allocation = Allocation.Create(element);
-            Instruction command = new(Type.ModifyElement, RuntimeType.Get<T>().value, (ulong)allocation.Address, index);
-            return command;
+            return new(Type.ModifyElement, RuntimeType.Get<T>().value, (ulong)allocation.Address, index);
         }
 
         public static Instruction ModifyElement(RuntimeType elementType, ReadOnlySpan<byte> elementData, uint index)
         {
             Allocation allocation = Allocation.Create(elementData);
-            Instruction command = new(Type.ModifyElement, elementType.value, (ulong)allocation.Address, index);
-            return command;
+            return new(Type.ModifyElement, elementType.value, (ulong)allocation.Address, index);
         }
 
         void ISerializable.Write(BinaryWriter writer)
@@ -858,7 +750,6 @@ namespace Simulation
             DestroyEntities,
 
             ClearSelection,
-            AddToSelection,
             SelectEntity,
 
             SetParent,

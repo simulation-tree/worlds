@@ -75,7 +75,7 @@ namespace Simulation
             return !(left == right);
         }
 
-        public static implicit operator uint(eint value)
+        public static explicit operator uint(eint value)
         {
             return value.value;
         }

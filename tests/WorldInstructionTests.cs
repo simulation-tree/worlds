@@ -4,9 +4,9 @@ using System.Linq;
 using Unmanaged;
 using Unmanaged.Collections;
 
-namespace Simulation
+namespace Simulation.Tests
 {
-    public class CommandTests
+    public class WorldInstructionTests
     {
         [TearDown]
         public void CleanUp()
@@ -18,11 +18,11 @@ namespace Simulation
         public void CreateOneEntity()
         {
             using World world = new();
-            using UnmanagedList<Instruction> commands = new();
-            commands.Add(Instruction.CreateEntity());
-            commands.Add(Instruction.AddComponent(new TestComponent(1337)));
+            using Operation operation = new();
+            operation.CreateEntity();
+            operation.AddComponent(new TestComponent(1337));
 
-            world.Perform(commands);
+            world.Perform(operation);
             eint entity = world.Entities.First();
             Assert.That(world.ContainsComponent<TestComponent>(entity), Is.True);
             Assert.That(world.GetComponent<TestComponent>(entity).value, Is.EqualTo(1337));
@@ -37,18 +37,17 @@ namespace Simulation
                 world.CreateEntity();
             }
 
-            using UnmanagedList<Instruction> commands = new();
+            using Operation operation = new();
             foreach (eint entity in world.Entities)
             {
-                commands.Add(Instruction.AddToSelection(entity));
+                operation.SelectEntity(entity);
             }
 
-            commands.RemoveAt(0);
-            commands.Add(Instruction.DestroySelection());
+            operation.RemoveInstructionAt(0);
+            operation.DestroySelected();
+            world.Perform(operation);
 
-            world.Perform(commands);
-
-            Assert.That(world.Count, Is.EqualTo(1));
+            Assert.That(world.Count, Is.EqualTo(29));
             Assert.That((uint)world.Entities.First(), Is.EqualTo(1));
         }
 
@@ -56,10 +55,10 @@ namespace Simulation
         public void CreateManyWithData()
         {
             using World world = new();
-            using UnmanagedList<Instruction> commands = new();
-            commands.Add(Instruction.CreateEntity(40));
-            commands.Add(Instruction.AddComponent(new TestComponent(2)));
-            world.Perform(commands);
+            using Operation operation = new();
+            operation.CreateEntities(40);
+            operation.AddComponent(new TestComponent(2));
+            world.Perform(operation);
             List<eint> createdEntities = new();
             foreach (eint entity in world.Entities)
             {
@@ -73,23 +72,25 @@ namespace Simulation
         [Test]
         public void CreateThreeObjects()
         {
-            using UnmanagedList<Instruction> commands = new();
-            commands.Add(Instruction.CreateEntity());
-            commands.Add(Instruction.AddComponent(new TestComponent(4)));
+            using Operation operation = new();
+            operation.CreateEntity();
+            operation.AddComponent(new TestComponent(4));
+            operation.ClearSelection();
 
-            commands.Add(Instruction.CreateEntity());
-            commands.Add(Instruction.AddComponent(new TestComponent(5)));
+            operation.CreateEntity();
+            operation.AddComponent(new TestComponent(5));
+            operation.ClearSelection();
 
-            commands.Add(Instruction.CreateEntity());
-            commands.Add(Instruction.SetParent(2));
-            commands.Add(Instruction.AddComponent(new TestComponent(6)));
-            commands.Add(Instruction.CreateList<char>());
-            commands.Add(Instruction.AddElement<char>('a'));
-            commands.Add(Instruction.AddElement<char>('b'));
-            commands.Add(Instruction.AddElement<char>('c'));
+            operation.CreateEntity();
+            operation.SetParent(2);
+            operation.AddComponent(new TestComponent(6));
+            operation.CreateList<char>();
+            operation.AppendToList('a');
+            operation.AppendToList('b');
+            operation.AppendToList('c');
 
             using World world = new();
-            world.Perform(commands);
+            world.Perform(operation);
 
             eint firstEntity = world[0];
             eint secondEntity = world[1];
@@ -145,13 +146,13 @@ namespace Simulation
         [Test]
         public void AddSpanIntoList()
         {
-            using UnmanagedList<Instruction> commands = new();
-            commands.Add(Instruction.CreateEntity());
-            commands.Add(Instruction.CreateList<char>());
-            commands.Add(Instruction.AddElements("this is not an abacus".AsSpan()));
+            using Operation operation = new();
+            operation.CreateEntity();
+            operation.CreateList<char>();
+            operation.AppendToList("this is not an abacus".AsSpan());
 
             using World world = new();
-            world.Perform(commands);
+            world.Perform(operation);
 
             eint entity = world.Entities.First();
             UnmanagedList<char> list = world.GetList<char>(entity);

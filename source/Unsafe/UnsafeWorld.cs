@@ -29,16 +29,14 @@ namespace Simulation.Unsafe
         private UnsafeList* slots;
         private UnsafeList* freeEntities;
         private UnsafeList* submittedEvents;
-        private UnsafeList* dispatchingEvents;
         private UnsafeDictionary* listeners;
         private UnsafeDictionary* components;
 
-        private UnsafeWorld(UnsafeList* slots, UnsafeList* freeEntities, UnsafeList* submittedEvents, UnsafeList* dispatchingEvents, UnsafeDictionary* listeners, UnsafeDictionary* components)
+        private UnsafeWorld(UnsafeList* slots, UnsafeList* freeEntities, UnsafeList* submittedEvents, UnsafeDictionary* listeners, UnsafeDictionary* components)
         {
             this.slots = slots;
             this.freeEntities = freeEntities;
             this.submittedEvents = submittedEvents;
-            this.dispatchingEvents = dispatchingEvents;
             this.listeners = listeners;
             this.components = components;
         }
@@ -115,7 +113,7 @@ namespace Simulation.Unsafe
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
             if (slot.collections.IsDisposed || !slot.collections.Types.Contains(type))
             {
-                throw new NullReferenceException($"Collection of type {type} not found on {entity.value}.");
+                throw new NullReferenceException($"Collection of type {type} not found on entity `{entity.value}`.");
             }
         }
 
@@ -157,7 +155,6 @@ namespace Simulation.Unsafe
             UnsafeList* slots = UnsafeList.Allocate<EntityDescription>();
             UnsafeList* freeEntities = UnsafeList.Allocate<eint>();
             UnsafeList* submittedEvents = UnsafeList.Allocate<Container>();
-            UnsafeList* dispatchingEvents = UnsafeList.Allocate<Container>();
             UnsafeDictionary* listeners = UnsafeDictionary.Allocate<RuntimeType, nint>();
             UnsafeDictionary* components = UnsafeDictionary.Allocate<uint, ComponentChunk>();
 
@@ -166,7 +163,7 @@ namespace Simulation.Unsafe
             UnsafeDictionary.Add(components, chunkKey, defaultComponentChunk);
 
             UnsafeWorld* world = Allocations.Allocate<UnsafeWorld>();
-            *world = new(slots, freeEntities, submittedEvents, dispatchingEvents, listeners, components);
+            *world = new(slots, freeEntities, submittedEvents, listeners, components);
             return world;
         }
 
@@ -179,7 +176,6 @@ namespace Simulation.Unsafe
             UnsafeList.Free(ref world->slots);
             UnsafeList.Free(ref world->freeEntities);
             UnsafeList.Free(ref world->submittedEvents);
-            UnsafeList.Free(ref world->dispatchingEvents);
             UnsafeDictionary.Free(ref world->listeners);
             UnsafeDictionary.Free(ref world->components);
             Allocations.Free(ref world);
@@ -255,15 +251,6 @@ namespace Simulation.Unsafe
             }
 
             UnsafeList.Clear(world->submittedEvents);
-
-            eventCount = UnsafeList.GetCountRef(world->dispatchingEvents);
-            for (uint i = 0; i < eventCount; i++)
-            {
-                Container message = UnsafeList.Get<Container>(world->dispatchingEvents, i);
-                message.Dispose();
-            }
-
-            UnsafeList.Clear(world->dispatchingEvents);
         }
 
         public static void Submit(UnsafeWorld* world, Container message)
@@ -278,22 +265,21 @@ namespace Simulation.Unsafe
         {
             World worldValue = new(world);
 
-            //todo: remove this temp allocation (exists to make sure iterating over this sequence of events works)
-            //using UnmanagedArray<Container> tempEvents = new(UnsafeList.AsSpan<Container>(world->submittedEvents));
             uint submissionCount = UnsafeList.GetCountRef(world->submittedEvents);
+            Span<Container> events = stackalloc Container[(int)submissionCount]; //<-- is this gonna blow up?
             for (uint i = 0; i < submissionCount; i++)
             {
                 Container message = UnsafeList.Get<Container>(world->submittedEvents, i);
-                UnsafeList.Add(world->dispatchingEvents, message);
+                events[(int)i] = message; //<-- (cringe)works
             }
 
             UnsafeList.Clear(world->submittedEvents);
 
-            ref uint dispatchCount = ref UnsafeList.GetCountRef(world->dispatchingEvents);
             Exception? caughtException = null;
-            while (dispatchCount > 0)
+            uint dispatchIndex = 0;
+            while (dispatchIndex < submissionCount)
             {
-                Container message = UnsafeList.RemoveAtBySwapping<Container>(world->dispatchingEvents, 0);
+                Container message = events[(int)dispatchIndex];
                 RuntimeType eventType = message.type;
                 if (UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listeners, eventType))
                 {
@@ -317,10 +303,16 @@ namespace Simulation.Unsafe
                 }
 
                 message.Dispose();
+                dispatchIndex++;
                 if (caughtException is not null)
                 {
-                    throw caughtException;
+                    break;
                 }
+            }
+
+            if (caughtException is not null)
+            {
+                throw caughtException;
             }
         }
 
@@ -684,7 +676,7 @@ namespace Simulation.Unsafe
             ThrowIfCollectionMissing(world, entity, type);
 
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
-            return slot.collections.GetCollection(type);
+            return slot.collections.GetList(type);
         }
 
         public static void DestroyList<T>(UnsafeWorld* world, eint entity) where T : unmanaged
@@ -702,7 +694,7 @@ namespace Simulation.Unsafe
             slot.collections.RemoveCollection(type);
         }
 
-        public static void* AddComponent(UnsafeWorld* world, eint entity, RuntimeType type)
+        public static Span<byte> AddComponent(UnsafeWorld* world, eint entity, RuntimeType type)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
@@ -726,7 +718,7 @@ namespace Simulation.Unsafe
             }
 
             uint index = current.Move(entity, destination);
-            return destination.GetComponentPointer(index, type);
+            return destination.GetComponentBytes(index, type);
         }
 
         public static void SetComponentBytes(UnsafeWorld* world, eint entity, RuntimeType type, ReadOnlySpan<byte> bytes)

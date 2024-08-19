@@ -226,7 +226,7 @@ namespace Simulation
                         foreach (RuntimeType type in slot.collections.Types)
                         {
                             writer.WriteValue(uniqueTypes.IndexOf(type));
-                            UnsafeList* list = slot.collections.GetCollection(type);
+                            UnsafeList* list = slot.collections.GetList(type);
                             uint listCount = UnsafeList.GetCountRef(list);
                             writer.WriteValue(listCount);
                             if (listCount > 0)
@@ -298,8 +298,8 @@ namespace Simulation
                 {
                     uint typeIndex = reader.ReadValue<uint>();
                     RuntimeType type = uniqueTypes[typeIndex];
-                    UnsafeWorld.AddComponent(value, entity, type);
-                    UnsafeWorld.SetComponentBytes(value, entity, type, reader.ReadSpan<byte>(type.Size));
+                    Span<byte> bytes = UnsafeWorld.AddComponent(value, entity, type);
+                    reader.ReadSpan<byte>(type.Size).CopyTo(bytes);
                     UnsafeWorld.NotifyComponentAdded(this, entity, type);
                 }
 
@@ -376,8 +376,8 @@ namespace Simulation
                     ComponentChunk sourceChunk = sourceWorld.ComponentChunks[sourceSlot.componentsKey];
                     foreach (RuntimeType componentType in sourceChunk.Types)
                     {
-                        UnsafeWorld.AddComponent(value, destinationEntity, componentType);
-                        UnsafeWorld.SetComponentBytes(value, destinationEntity, componentType, sourceChunk.GetComponentBytes(sourceEntity, componentType));
+                        Span<byte> bytes = UnsafeWorld.AddComponent(value, destinationEntity, componentType);
+                        sourceChunk.GetComponentBytes(sourceEntity, componentType).CopyTo(bytes);
                         UnsafeWorld.NotifyComponentAdded(this, destinationEntity, componentType);
                     }
 
@@ -386,7 +386,7 @@ namespace Simulation
                     {
                         foreach (RuntimeType listType in sourceSlot.collections.Types)
                         {
-                            UnsafeList* sourceList = sourceSlot.collections.GetCollection(listType);
+                            UnsafeList* sourceList = sourceSlot.collections.GetList(listType);
                             uint count = UnsafeList.GetCountRef(sourceList);
                             UnsafeList* destinationList = UnsafeWorld.CreateList(value, destinationEntity, listType, count + 1);
                             UnsafeList.AddDefault(destinationList, count);
@@ -437,267 +437,266 @@ namespace Simulation
             UnsafeWorld.Poll(value);
         }
 
-        public readonly void Perform(ReadOnlySpan<Instruction> commands)
+        private readonly void Perform(Instruction instruction, UnmanagedList<eint> selection, UnmanagedList<eint> entities)
         {
-            using UnmanagedList<eint> selection = UnmanagedList<eint>.Create();
-            using UnmanagedList<eint> entities = UnmanagedList<eint>.Create();
-            for (int c = 0; c < commands.Length; c++)
+            if (instruction.type == Instruction.Type.CreateEntity)
             {
-                Instruction command = commands[c];
-                Console.WriteLine(command);
-                if (command.type == Instruction.Type.CreateEntity)
+                uint count = (uint)instruction.A;
+                for (uint i = 0; i < count; i++)
                 {
-                    uint count = (uint)command.A;
-                    selection.Clear();
-                    for (uint i = 0; i < count; i++)
-                    {
-                        eint newEntity = CreateEntity();
-                        selection.Add(newEntity);
-                        entities.Add(newEntity);
-                    }
+                    eint newEntity = CreateEntity();
+                    selection.Add(newEntity);
+                    entities.Add(newEntity);
                 }
-                else if (command.type == Instruction.Type.DestroyEntities)
+            }
+            else if (instruction.type == Instruction.Type.DestroyEntities)
+            {
+                uint start = (uint)instruction.A;
+                uint count = (uint)instruction.B;
+                if (start == 0 && count == 0)
                 {
-                    uint start = (uint)command.A;
-                    uint count = (uint)command.B;
-                    if (start == 0 && count == 0)
-                    {
-                        for (uint i = 0; i < selection.Count; i++)
-                        {
-                            eint entity = selection[i];
-                            DestroyEntity(entity);
-                        }
-                    }
-                    else
-                    {
-                        uint end = start + count;
-                        for (uint i = start; i < end; i++)
-                        {
-                            eint entity = entities[i];
-                            DestroyEntity(entity);
-                        }
-                    }
-                }
-                else if (command.type == Instruction.Type.ClearSelection)
-                {
-                    selection.Clear();
-                }
-                else if (command.type == Instruction.Type.AddToSelection)
-                {
-                    if (command.A == 0)
-                    {
-                        uint relativeOffset = (uint)command.B;
-                        eint entity = entities[(entities.Count - 1) - relativeOffset];
-                        selection.Add(entity);
-                    }
-                    else if (command.A == 1)
-                    {
-                        eint entity = new((uint)command.B);
-                        selection.Add(entity);
-                    }
-                }
-                else if (command.type == Instruction.Type.SelectEntity)
-                {
-                    if (command.A == 0)
-                    {
-                        uint relativeOffset = (uint)command.B;
-                        eint entity = entities[(entities.Count - 1) - relativeOffset];
-                        selection.Clear();
-                        selection.Add(entity);
-                    }
-                    else if (command.A == 1)
-                    {
-                        eint entity = new((uint)command.B);
-                        selection.Clear();
-                        selection.Add(entity);
-                    }
-                }
-                else if (command.type == Instruction.Type.SetParent)
-                {
-                    bool isRelative = command.A == 0;
-                    if (isRelative)
-                    {
-                        uint relativeOffset = (uint)command.B;
-                        eint parent = entities[(entities.Count - 1) - relativeOffset];
-                        for (uint i = 0; i < selection.Count; i++)
-                        {
-                            eint entity = selection[i];
-                            SetParent(entity, parent);
-                        }
-                    }
-                    else
-                    {
-                        eint parent = new((uint)command.B);
-                        for (uint i = 0; i < selection.Count; i++)
-                        {
-                            eint entity = selection[i];
-                            SetParent(entity, parent);
-                        }
-                    }
-                }
-                else if (command.type == Instruction.Type.AddReference)
-                {
-                    bool isRelative = command.A == 0;
-                    if (isRelative)
-                    {
-                        uint relativeOffset = (uint)command.B;
-                        eint referencedEntity = entities[(entities.Count - 1) - relativeOffset];
-                        for (uint i = 0; i < selection.Count; i++)
-                        {
-                            eint entity = selection[i];
-                            AddReference(entity, referencedEntity);
-                        }
-                    }
-                    else
-                    {
-                        eint referencedEntity = new((uint)command.B);
-                        for (uint i = 0; i < selection.Count; i++)
-                        {
-                            eint entity = selection[i];
-                            AddReference(entity, referencedEntity);
-                        }
-                    }
-                }
-                else if (command.type == Instruction.Type.AddComponent)
-                {
-                    RuntimeType componentType = new((uint)command.A);
-                    Allocation allocation = new((void*)(nint)command.B);
-                    Span<byte> componentData = allocation.AsSpan<byte>(0, componentType.Size);
                     for (uint i = 0; i < selection.Count; i++)
                     {
                         eint entity = selection[i];
-                        AddComponent(entity, componentType, componentData);
-                    }
-                }
-                else if (command.type == Instruction.Type.RemoveComponent)
-                {
-                    RuntimeType componentType = new((uint)command.A);
-                    for (uint i = 0; i < selection.Count; i++)
-                    {
-                        eint entity = selection[i];
-                        RemoveComponent(entity, componentType);
-                    }
-                }
-                else if (command.type == Instruction.Type.SetComponent)
-                {
-                    RuntimeType componentType = new((uint)command.A);
-                    Allocation allocation = new((void*)(nint)command.B);
-                    Span<byte> componentBytes = allocation.AsSpan<byte>(0, componentType.Size);
-                    for (uint i = 0; i < selection.Count; i++)
-                    {
-                        eint entity = selection[i];
-                        SetComponent(entity, componentType, componentBytes);
-                    }
-                }
-                else if (command.type == Instruction.Type.CreateList)
-                {
-                    RuntimeType listType = new((uint)command.A);
-                    uint count = (uint)command.B;
-                    uint initialCapacity = count == 0 ? 1 : count;
-                    for (uint i = 0; i < selection.Count; i++)
-                    {
-                        eint entity = selection[i];
-                        UnsafeList* list = CreateList(entity, listType, initialCapacity);
-                        UnsafeList.AddDefault(list, count);
-                    }
-                }
-                else if (command.type == Instruction.Type.DestroyList)
-                {
-                    RuntimeType listType = new((uint)command.A);
-                    for (uint i = 0; i < selection.Count; i++)
-                    {
-                        eint entity = selection[i];
-                        DestroyList(entity, listType);
-                    }
-                }
-                else if (command.type == Instruction.Type.ClearList)
-                {
-                    RuntimeType listType = new((uint)command.A);
-                    for (uint i = 0; i < selection.Count; i++)
-                    {
-                        eint entity = selection[i];
-                        ClearList(entity, listType);
-                    }
-                }
-                else if (command.type == Instruction.Type.InsertElement)
-                {
-                    RuntimeType listType = new((uint)command.A);
-                    uint elementSize = listType.Size;
-                    UnsafeArray* array = (UnsafeArray*)(nint)command.B;
-                    uint index = (uint)command.C;
-                    uint arrayLength = UnsafeArray.GetLength(array);
-                    int length = (int)(arrayLength * elementSize);
-                    Span<byte> elementBytes = new((void*)UnsafeArray.GetAddress(array), length);
-                    if (index == uint.MaxValue)
-                    {
-                        for (uint i = 0; i < selection.Count; i++)
-                        {
-                            eint entity = selection[i];
-                            UnsafeList* list = GetList(entity, listType);
-                            //UnsafeList.Add(list, elementBytes);
-                            for (uint e = 0; e < elementBytes.Length; e += elementSize)
-                            {
-                                UnsafeList.Add(list, elementBytes.Slice((int)e, (int)elementSize));
-                            }
-                        }
-                    }
-                    else
-                    {
-                        for (uint i = 0; i < selection.Count; i++)
-                        {
-                            eint entity = selection[i];
-                            UnsafeList* list = GetList(entity, listType);
-                            //UnsafeList.Insert(list, index, elementBytes);
-                            for (uint e = 0; e < elementBytes.Length; e += elementSize)
-                            {
-                                UnsafeList.Insert(list, index, elementBytes.Slice((int)e, (int)elementSize));
-                                index++;
-                            }
-                        }
-                    }
-                }
-                else if (command.type == Instruction.Type.RemoveElement)
-                {
-                    RuntimeType listType = new((uint)command.A);
-                    uint index = (uint)command.B;
-                    for (uint i = 0; i < selection.Count; i++)
-                    {
-                        eint entity = selection[i];
-                        UnsafeList* list = GetList(entity, listType);
-                        UnsafeList.RemoveAt(list, index);
-                    }
-                }
-                else if (command.type == Instruction.Type.ModifyElement)
-                {
-                    RuntimeType listType = new((uint)command.A);
-                    Allocation allocation = new((void*)(nint)command.B);
-                    uint index = (uint)command.C;
-                    Span<byte> elementBytes = allocation.AsSpan<byte>(0, listType.Size);
-                    for (uint i = 0; i < selection.Count; i++)
-                    {
-                        eint entity = selection[i];
-                        UnsafeList* list = GetList(entity, listType);
-                        Span<byte> slotBytes = UnsafeList.GetElementBytes(list, index);
-                        elementBytes.CopyTo(slotBytes);
+                        DestroyEntity(entity);
                     }
                 }
                 else
                 {
-                    throw new NotImplementedException($"Unknown command instruction: {command.type}");
+                    uint end = start + count;
+                    for (uint i = start; i < end; i++)
+                    {
+                        eint entity = entities[i];
+                        DestroyEntity(entity);
+                    }
                 }
-
-                command.Dispose();
+            }
+            else if (instruction.type == Instruction.Type.ClearSelection)
+            {
+                selection.Clear();
+            }
+            else if (instruction.type == Instruction.Type.SelectEntity)
+            {
+                if (instruction.A == 0)
+                {
+                    uint relativeOffset = (uint)instruction.B;
+                    eint entity = entities[(entities.Count - 1) - relativeOffset];
+                    selection.Clear();
+                    selection.Add(entity);
+                }
+                else if (instruction.A == 1)
+                {
+                    eint entity = new((uint)instruction.B);
+                    selection.Clear();
+                    selection.Add(entity);
+                }
+            }
+            else if (instruction.type == Instruction.Type.SetParent)
+            {
+                bool isRelative = instruction.A == 0;
+                if (isRelative)
+                {
+                    uint relativeOffset = (uint)instruction.B;
+                    eint parent = entities[(entities.Count - 1) - relativeOffset];
+                    for (uint i = 0; i < selection.Count; i++)
+                    {
+                        eint entity = selection[i];
+                        SetParent(entity, parent);
+                    }
+                }
+                else
+                {
+                    eint parent = new((uint)instruction.B);
+                    for (uint i = 0; i < selection.Count; i++)
+                    {
+                        eint entity = selection[i];
+                        SetParent(entity, parent);
+                    }
+                }
+            }
+            else if (instruction.type == Instruction.Type.AddReference)
+            {
+                bool isRelative = instruction.A == 0;
+                if (isRelative)
+                {
+                    uint relativeOffset = (uint)instruction.B;
+                    eint referencedEntity = entities[(entities.Count - 1) - relativeOffset];
+                    for (uint i = 0; i < selection.Count; i++)
+                    {
+                        eint entity = selection[i];
+                        AddReference(entity, referencedEntity);
+                    }
+                }
+                else
+                {
+                    eint referencedEntity = new((uint)instruction.B);
+                    for (uint i = 0; i < selection.Count; i++)
+                    {
+                        eint entity = selection[i];
+                        AddReference(entity, referencedEntity);
+                    }
+                }
+            }
+            else if (instruction.type == Instruction.Type.AddComponent)
+            {
+                RuntimeType componentType = new((uint)instruction.A);
+                Allocation allocation = new((void*)(nint)instruction.B);
+                Span<byte> componentData = allocation.AsSpan<byte>(0, componentType.Size);
+                for (uint i = 0; i < selection.Count; i++)
+                {
+                    eint entity = selection[i];
+                    AddComponent(entity, componentType, componentData);
+                }
+            }
+            else if (instruction.type == Instruction.Type.RemoveComponent)
+            {
+                RuntimeType componentType = new((uint)instruction.A);
+                for (uint i = 0; i < selection.Count; i++)
+                {
+                    eint entity = selection[i];
+                    RemoveComponent(entity, componentType);
+                }
+            }
+            else if (instruction.type == Instruction.Type.SetComponent)
+            {
+                RuntimeType componentType = new((uint)instruction.A);
+                Allocation allocation = new((void*)(nint)instruction.B);
+                Span<byte> componentBytes = allocation.AsSpan<byte>(0, componentType.Size);
+                for (uint i = 0; i < selection.Count; i++)
+                {
+                    eint entity = selection[i];
+                    SetComponent(entity, componentType, componentBytes);
+                }
+            }
+            else if (instruction.type == Instruction.Type.CreateList)
+            {
+                RuntimeType listType = new((uint)instruction.A);
+                uint count = (uint)instruction.B;
+                uint initialCapacity = count == 0 ? 1 : count;
+                for (uint i = 0; i < selection.Count; i++)
+                {
+                    eint entity = selection[i];
+                    UnsafeList* list = CreateList(entity, listType, initialCapacity);
+                    UnsafeList.AddDefault(list, count);
+                }
+            }
+            else if (instruction.type == Instruction.Type.DestroyList)
+            {
+                RuntimeType listType = new((uint)instruction.A);
+                for (uint i = 0; i < selection.Count; i++)
+                {
+                    eint entity = selection[i];
+                    DestroyList(entity, listType);
+                }
+            }
+            else if (instruction.type == Instruction.Type.ClearList)
+            {
+                RuntimeType listType = new((uint)instruction.A);
+                for (uint i = 0; i < selection.Count; i++)
+                {
+                    eint entity = selection[i];
+                    ClearList(entity, listType);
+                }
+            }
+            else if (instruction.type == Instruction.Type.InsertElement)
+            {
+                RuntimeType listType = new((uint)instruction.A);
+                uint elementSize = listType.Size;
+                UnsafeArray* array = (UnsafeArray*)(nint)instruction.B;
+                uint index = (uint)instruction.C;
+                uint arrayLength = UnsafeArray.GetLength(array);
+                int length = (int)(arrayLength * elementSize);
+                Span<byte> elementBytes = new((void*)UnsafeArray.GetAddress(array), length);
+                if (index == uint.MaxValue)
+                {
+                    for (uint i = 0; i < selection.Count; i++)
+                    {
+                        eint entity = selection[i];
+                        UnsafeList* list = GetList(entity, listType);
+                        for (uint e = 0; e < elementBytes.Length; e += elementSize)
+                        {
+                            UnsafeList.Add(list, elementBytes.Slice((int)e, (int)elementSize));
+                        }
+                    }
+                }
+                else
+                {
+                    for (uint i = 0; i < selection.Count; i++)
+                    {
+                        eint entity = selection[i];
+                        UnsafeList* list = GetList(entity, listType);
+                        for (uint e = 0; e < elementBytes.Length; e += elementSize)
+                        {
+                            UnsafeList.Insert(list, index, elementBytes.Slice((int)e, (int)elementSize));
+                            index++;
+                        }
+                    }
+                }
+            }
+            else if (instruction.type == Instruction.Type.RemoveElement)
+            {
+                RuntimeType listType = new((uint)instruction.A);
+                uint index = (uint)instruction.B;
+                for (uint i = 0; i < selection.Count; i++)
+                {
+                    eint entity = selection[i];
+                    UnsafeList* list = GetList(entity, listType);
+                    UnsafeList.RemoveAt(list, index);
+                }
+            }
+            else if (instruction.type == Instruction.Type.ModifyElement)
+            {
+                RuntimeType listType = new((uint)instruction.A);
+                Allocation allocation = new((void*)(nint)instruction.B);
+                uint index = (uint)instruction.C;
+                Span<byte> elementBytes = allocation.AsSpan<byte>(0, listType.Size);
+                for (uint i = 0; i < selection.Count; i++)
+                {
+                    eint entity = selection[i];
+                    UnsafeList* list = GetList(entity, listType);
+                    Span<byte> slotBytes = UnsafeList.GetElementBytes(list, index);
+                    elementBytes.CopyTo(slotBytes);
+                }
+            }
+            else
+            {
+                throw new NotImplementedException($"Unknown instruction: {instruction.type}");
             }
         }
 
-        public readonly void Perform(UnmanagedList<Instruction> commands)
+        public readonly void Perform(ReadOnlySpan<Instruction> instructions)
         {
-            Perform(commands.AsSpan());
+            using UnmanagedList<eint> selection = UnmanagedList<eint>.Create();
+            using UnmanagedList<eint> entities = UnmanagedList<eint>.Create();
+            foreach (Instruction instruction in instructions)
+            {
+                Perform(instruction, selection, entities);
+            }
         }
 
-        public readonly void Perform(UnmanagedArray<Instruction> commands)
+        public readonly void Perform(UnmanagedList<Instruction> instructions)
         {
-            Perform(commands.AsSpan());
+            Perform(instructions.AsSpan());
+        }
+
+        public readonly void Perform(UnmanagedArray<Instruction> instructions)
+        {
+            Perform(instructions.AsSpan());
+        }
+
+        /// <summary>
+        /// Performs all instructions in the given operation.
+        /// </summary>
+        public readonly void Perform(Operation operation)
+        {
+            using UnmanagedList<eint> selection = UnmanagedList<eint>.Create();
+            using UnmanagedList<eint> entities = UnmanagedList<eint>.Create();
+            uint length = operation.Length;
+            for (uint i = 0; i < length; i++)
+            {
+                Instruction instruction = operation[i];
+                Perform(instruction, selection, entities);
+            }
         }
 
         /// <summary>
@@ -982,6 +981,19 @@ namespace Simulation
             return (reference.value - 1) < slot.references.Count;
         }
 
+        //todo: polish: this is kinda like `rint GetLastReference(eint entity)` <-- should it be like this instead?
+        public readonly uint GetReferenceCount(eint entity)
+        {
+            UnsafeWorld.ThrowIfEntityMissing(value, entity);
+            ref EntityDescription slot = ref Slots.GetRef(entity.value - 1);
+            if (slot.references == default)
+            {
+                return 0;
+            }
+
+            return slot.references.Count;
+        }
+
         public readonly eint GetReference(eint entity, rint reference)
         {
             UnsafeWorld.ThrowIfEntityMissing(value, entity);
@@ -1103,6 +1115,55 @@ namespace Simulation
             return UnsafeWorld.GetList(value, entity, listType);
         }
 
+        /// <summary>
+        /// Retrieves the element at the index from an existing list on this entity.
+        /// </summary>
+        public readonly T GetListElement<T>(eint entity, uint index) where T : unmanaged
+        {
+            EntityDescription slot = UnsafeWorld.GetEntitySlotRef(value, entity);
+            if (slot.collections.IsDisposed)
+            {
+                throw new InvalidOperationException($"No lists found on entity `{entity.value}`.");
+            }
+
+            RuntimeType listType = RuntimeType.Get<T>();
+            if (!slot.collections.Types.Contains(listType))
+            {
+                throw new InvalidOperationException($"No list of type `{typeof(T)}` found on entity `{entity.value}`.");
+            }
+
+            UnsafeList* list = slot.collections.GetList(listType);
+            return UnsafeList.GetRef<T>(list, index);
+        }
+
+        /// <summary>
+        /// Retrieves the length of an existing list on this entity.
+        /// </summary>
+        public readonly uint GetListLength<T>(eint entity, out bool contains) where T : unmanaged
+        {
+            EntityDescription slot = UnsafeWorld.GetEntitySlotRef(value, entity);
+            if (slot.collections.IsDisposed)
+            {
+                contains = false;
+                return 0;
+            }
+
+            RuntimeType listType = RuntimeType.Get<T>();
+            if (!slot.collections.Types.Contains(listType))
+            {
+                contains = false;
+                return 0;
+            }
+
+            contains = true;
+            return UnsafeList.GetCountRef(slot.collections.GetList(listType));
+        }
+        
+        public readonly uint GetListLength<T>(eint entity) where T : unmanaged
+        {
+            return GetListLength<T>(entity, out _);
+        }
+
         public readonly void RemoveAtList<T>(eint entity, uint index) where T : unmanaged
         {
             UnsafeList* list = UnsafeWorld.GetList(value, entity, RuntimeType.Get<T>());
@@ -1133,6 +1194,7 @@ namespace Simulation
 
         public readonly void AddComponent<T>(eint entity, T component) where T : unmanaged
         {
+            //todo: efficiency: polling component chunk twice here
             RuntimeType type = RuntimeType.Get<T>();
             UnsafeWorld.AddComponent(value, entity, type);
             ref T target = ref UnsafeWorld.GetComponentRef<T>(value, entity);
@@ -1161,8 +1223,7 @@ namespace Simulation
 
         public readonly void AddComponent(eint entity, RuntimeType componentType, ReadOnlySpan<byte> componentData)
         {
-            UnsafeWorld.AddComponent(value, entity, componentType);
-            Span<byte> bytes = UnsafeWorld.GetComponentBytes(value, entity, componentType);
+            Span<byte> bytes = UnsafeWorld.AddComponent(value, entity, componentType);
             componentData.CopyTo(bytes);
             UnsafeWorld.NotifyComponentAdded(this, entity, componentType);
         }

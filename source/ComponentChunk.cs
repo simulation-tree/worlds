@@ -119,6 +119,12 @@ namespace Simulation
             return new Span<byte>(component, type.Size);
         }
 
+        public readonly Span<byte> GetComponentBytes(uint index, RuntimeType type)
+        {
+            void* component = GetComponentPointer(index, type);
+            return new Span<byte>(component, type.Size);
+        }
+
         public readonly void* GetComponentPointer(eint entity, RuntimeType type)
         {
             uint index = Entities.IndexOf(entity);
