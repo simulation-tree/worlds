@@ -48,7 +48,7 @@ namespace Simulation.Unsafe
             return entityCollections->types;
         }
 
-        public static UnsafeList* CreateCollection(UnsafeEntityCollections* entityCollections, RuntimeType type, uint initialCapacity = 1)
+        public static UnsafeList* CreateList(UnsafeEntityCollections* entityCollections, RuntimeType type, uint initialCapacity = 1)
         {
             Allocations.ThrowIfNull(entityCollections);
             entityCollections->types.Add(type);

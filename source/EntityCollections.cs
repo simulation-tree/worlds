@@ -30,7 +30,7 @@ namespace Simulation
 
         public readonly UnsafeList* CreateCollection(RuntimeType type, uint initialCapacity = 1)
         {
-            return UnsafeEntityCollections.CreateCollection(value, type, initialCapacity);
+            return UnsafeEntityCollections.CreateList(value, type, initialCapacity);
         }
 
         public readonly UnmanagedList<T> GetCollection<T>() where T : unmanaged

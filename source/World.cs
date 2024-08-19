@@ -437,14 +437,15 @@ namespace Simulation
             UnsafeWorld.Poll(value);
         }
 
-        public readonly void Perform(ReadOnlySpan<Command> commands)
+        public readonly void Perform(ReadOnlySpan<Instruction> commands)
         {
             using UnmanagedList<eint> selection = UnmanagedList<eint>.Create();
             using UnmanagedList<eint> entities = UnmanagedList<eint>.Create();
             for (int c = 0; c < commands.Length; c++)
             {
-                Command command = commands[c];
-                if (command.Operation == CommandOperation.CreateEntity)
+                Instruction command = commands[c];
+                Console.WriteLine(command);
+                if (command.type == Instruction.Type.CreateEntity)
                 {
                     uint count = (uint)command.A;
                     selection.Clear();
@@ -455,7 +456,7 @@ namespace Simulation
                         entities.Add(newEntity);
                     }
                 }
-                else if (command.Operation == CommandOperation.DestroyEntities)
+                else if (command.type == Instruction.Type.DestroyEntities)
                 {
                     uint start = (uint)command.A;
                     uint count = (uint)command.B;
@@ -477,11 +478,11 @@ namespace Simulation
                         }
                     }
                 }
-                else if (command.Operation == CommandOperation.ClearSelection)
+                else if (command.type == Instruction.Type.ClearSelection)
                 {
                     selection.Clear();
                 }
-                else if (command.Operation == CommandOperation.AddToSelection)
+                else if (command.type == Instruction.Type.AddToSelection)
                 {
                     if (command.A == 0)
                     {
@@ -495,7 +496,7 @@ namespace Simulation
                         selection.Add(entity);
                     }
                 }
-                else if (command.Operation == CommandOperation.SelectEntity)
+                else if (command.type == Instruction.Type.SelectEntity)
                 {
                     if (command.A == 0)
                     {
@@ -511,9 +512,10 @@ namespace Simulation
                         selection.Add(entity);
                     }
                 }
-                else if (command.Operation == CommandOperation.SetParent)
+                else if (command.type == Instruction.Type.SetParent)
                 {
-                    if (command.A == 0)
+                    bool isRelative = command.A == 0;
+                    if (isRelative)
                     {
                         uint relativeOffset = (uint)command.B;
                         eint parent = entities[(entities.Count - 1) - relativeOffset];
@@ -523,7 +525,7 @@ namespace Simulation
                             SetParent(entity, parent);
                         }
                     }
-                    else if (command.A == 1)
+                    else
                     {
                         eint parent = new((uint)command.B);
                         for (uint i = 0; i < selection.Count; i++)
@@ -533,7 +535,30 @@ namespace Simulation
                         }
                     }
                 }
-                else if (command.Operation == CommandOperation.AddComponent)
+                else if (command.type == Instruction.Type.AddReference)
+                {
+                    bool isRelative = command.A == 0;
+                    if (isRelative)
+                    {
+                        uint relativeOffset = (uint)command.B;
+                        eint referencedEntity = entities[(entities.Count - 1) - relativeOffset];
+                        for (uint i = 0; i < selection.Count; i++)
+                        {
+                            eint entity = selection[i];
+                            AddReference(entity, referencedEntity);
+                        }
+                    }
+                    else
+                    {
+                        eint referencedEntity = new((uint)command.B);
+                        for (uint i = 0; i < selection.Count; i++)
+                        {
+                            eint entity = selection[i];
+                            AddReference(entity, referencedEntity);
+                        }
+                    }
+                }
+                else if (command.type == Instruction.Type.AddComponent)
                 {
                     RuntimeType componentType = new((uint)command.A);
                     Allocation allocation = new((void*)(nint)command.B);
@@ -543,10 +568,8 @@ namespace Simulation
                         eint entity = selection[i];
                         AddComponent(entity, componentType, componentData);
                     }
-
-                    allocation.Dispose();
                 }
-                else if (command.Operation == CommandOperation.RemoveComponent)
+                else if (command.type == Instruction.Type.RemoveComponent)
                 {
                     RuntimeType componentType = new((uint)command.A);
                     for (uint i = 0; i < selection.Count; i++)
@@ -555,7 +578,7 @@ namespace Simulation
                         RemoveComponent(entity, componentType);
                     }
                 }
-                else if (command.Operation == CommandOperation.SetComponent)
+                else if (command.type == Instruction.Type.SetComponent)
                 {
                     RuntimeType componentType = new((uint)command.A);
                     Allocation allocation = new((void*)(nint)command.B);
@@ -565,19 +588,20 @@ namespace Simulation
                         eint entity = selection[i];
                         SetComponent(entity, componentType, componentBytes);
                     }
-
-                    allocation.Dispose();
                 }
-                else if (command.Operation == CommandOperation.CreateList)
+                else if (command.type == Instruction.Type.CreateList)
                 {
                     RuntimeType listType = new((uint)command.A);
+                    uint count = (uint)command.B;
+                    uint initialCapacity = count == 0 ? 1 : count;
                     for (uint i = 0; i < selection.Count; i++)
                     {
                         eint entity = selection[i];
-                        CreateList(entity, listType);
+                        UnsafeList* list = CreateList(entity, listType, initialCapacity);
+                        UnsafeList.AddDefault(list, count);
                     }
                 }
-                else if (command.Operation == CommandOperation.DestroyList)
+                else if (command.type == Instruction.Type.DestroyList)
                 {
                     RuntimeType listType = new((uint)command.A);
                     for (uint i = 0; i < selection.Count; i++)
@@ -586,7 +610,7 @@ namespace Simulation
                         DestroyList(entity, listType);
                     }
                 }
-                else if (command.Operation == CommandOperation.ClearList)
+                else if (command.type == Instruction.Type.ClearList)
                 {
                     RuntimeType listType = new((uint)command.A);
                     for (uint i = 0; i < selection.Count; i++)
@@ -595,29 +619,44 @@ namespace Simulation
                         ClearList(entity, listType);
                     }
                 }
-                else if (command.Operation == CommandOperation.InsertElement)
+                else if (command.type == Instruction.Type.InsertElement)
                 {
                     RuntimeType listType = new((uint)command.A);
-                    Allocation allocation = new((void*)(nint)command.B);
+                    uint elementSize = listType.Size;
+                    UnsafeArray* array = (UnsafeArray*)(nint)command.B;
                     uint index = (uint)command.C;
-                    Span<byte> elementBytes = allocation.AsSpan<byte>(0, listType.Size);
-                    for (uint i = 0; i < selection.Count; i++)
+                    uint arrayLength = UnsafeArray.GetLength(array);
+                    int length = (int)(arrayLength * elementSize);
+                    Span<byte> elementBytes = new((void*)UnsafeArray.GetAddress(array), length);
+                    if (index == uint.MaxValue)
                     {
-                        eint entity = selection[i];
-                        UnsafeList* list = GetList(entity, listType);
-                        if (index == uint.MaxValue)
+                        for (uint i = 0; i < selection.Count; i++)
                         {
-                            UnsafeList.Add(list, elementBytes);
-                        }
-                        else
-                        {
-                            UnsafeList.Insert(list, index, elementBytes);
+                            eint entity = selection[i];
+                            UnsafeList* list = GetList(entity, listType);
+                            //UnsafeList.Add(list, elementBytes);
+                            for (uint e = 0; e < elementBytes.Length; e += elementSize)
+                            {
+                                UnsafeList.Add(list, elementBytes.Slice((int)e, (int)elementSize));
+                            }
                         }
                     }
-
-                    allocation.Dispose();
+                    else
+                    {
+                        for (uint i = 0; i < selection.Count; i++)
+                        {
+                            eint entity = selection[i];
+                            UnsafeList* list = GetList(entity, listType);
+                            //UnsafeList.Insert(list, index, elementBytes);
+                            for (uint e = 0; e < elementBytes.Length; e += elementSize)
+                            {
+                                UnsafeList.Insert(list, index, elementBytes.Slice((int)e, (int)elementSize));
+                                index++;
+                            }
+                        }
+                    }
                 }
-                else if (command.Operation == CommandOperation.RemoveElement)
+                else if (command.type == Instruction.Type.RemoveElement)
                 {
                     RuntimeType listType = new((uint)command.A);
                     uint index = (uint)command.B;
@@ -628,7 +667,7 @@ namespace Simulation
                         UnsafeList.RemoveAt(list, index);
                     }
                 }
-                else if (command.Operation == CommandOperation.ModifyElement)
+                else if (command.type == Instruction.Type.ModifyElement)
                 {
                     RuntimeType listType = new((uint)command.A);
                     Allocation allocation = new((void*)(nint)command.B);
@@ -641,31 +680,24 @@ namespace Simulation
                         Span<byte> slotBytes = UnsafeList.GetElementBytes(list, index);
                         elementBytes.CopyTo(slotBytes);
                     }
-
-                    allocation.Dispose();
                 }
                 else
                 {
-                    throw new NotImplementedException($"Unknown command instruction: {command.Operation}");
+                    throw new NotImplementedException($"Unknown command instruction: {command.type}");
                 }
+
+                command.Dispose();
             }
         }
 
-        public readonly void Perform(Span<Command> commands)
+        public readonly void Perform(UnmanagedList<Instruction> commands)
         {
-            ReadOnlySpan<Command> commandsReadOnly = commands;
-            Perform(commandsReadOnly);
+            Perform(commands.AsSpan());
         }
 
-        public readonly void Perform(IEnumerable<Command> commands)
+        public readonly void Perform(UnmanagedArray<Instruction> commands)
         {
-            using UnmanagedList<Command> list = UnmanagedList<Command>.Create();
-            foreach (Command command in commands)
-            {
-                list.Add(command);
-            }
-
-            Perform(list.AsSpan());
+            Perform(commands.AsSpan());
         }
 
         /// <summary>
@@ -1002,18 +1034,13 @@ namespace Simulation
             slot.references.RemoveAtBySwapping(index);
         }
 
-        public readonly UnmanagedList<T> CreateList<T>(eint entity) where T : unmanaged
+        public readonly UnsafeList* CreateList(eint entity, RuntimeType listType, uint initialCapacity = 1)
         {
-            return CreateList<T>(entity, 1);
-        }
-
-        public readonly UnsafeList* CreateList(eint entity, RuntimeType listType)
-        {
-            return UnsafeWorld.CreateList(value, entity, listType);
+            return UnsafeWorld.CreateList(value, entity, listType, initialCapacity);
         }
 
         /// <summary>
-        /// Creates a new collection of the given count and returns it as a span.
+        /// Creates a new list on this entity.
         /// </summary>
         public readonly UnmanagedList<T> CreateList<T>(eint entity, uint initialCapacity = 1) where T : unmanaged
         {
@@ -1055,6 +1082,20 @@ namespace Simulation
         public readonly UnmanagedList<T> GetList<T>(eint entity) where T : unmanaged
         {
             return new(UnsafeWorld.GetList(value, entity, RuntimeType.Get<T>()));
+        }
+
+        public readonly bool TryGetList<T>(eint entity, out UnmanagedList<T> list) where T : unmanaged
+        {
+            if (ContainsList<T>(entity))
+            {
+                list = GetList<T>(entity);
+                return true;
+            }
+            else
+            {
+                list = default;
+                return false;
+            }
         }
 
         public readonly UnsafeList* GetList(eint entity, RuntimeType listType)

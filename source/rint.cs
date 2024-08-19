@@ -44,5 +44,10 @@ namespace Simulation
         {
             return value.value;
         }
+
+        public static explicit operator rint(uint value)
+        {
+            return new rint(value);
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Unmanaged;
 using Unmanaged.Collections;
@@ -17,9 +18,9 @@ namespace Simulation
         public void CreateOneEntity()
         {
             using World world = new();
-            using UnmanagedList<Command> commands = new();
-            commands.Add(Command.CreateEntity());
-            commands.Add(Command.AddComponent(new TestComponent(1337)));
+            using UnmanagedList<Instruction> commands = new();
+            commands.Add(Instruction.CreateEntity());
+            commands.Add(Instruction.AddComponent(new TestComponent(1337)));
 
             world.Perform(commands);
             eint entity = world.Entities.First();
@@ -36,14 +37,14 @@ namespace Simulation
                 world.CreateEntity();
             }
 
-            using UnmanagedList<Command> commands = new();
+            using UnmanagedList<Instruction> commands = new();
             foreach (eint entity in world.Entities)
             {
-                commands.Add(Command.AddToSelection(entity));
+                commands.Add(Instruction.AddToSelection(entity));
             }
 
             commands.RemoveAt(0);
-            commands.Add(Command.DestroySelection());
+            commands.Add(Instruction.DestroySelection());
 
             world.Perform(commands);
 
@@ -55,9 +56,9 @@ namespace Simulation
         public void CreateManyWithData()
         {
             using World world = new();
-            using UnmanagedList<Command> commands = new();
-            commands.Add(Command.CreateEntity(40));
-            commands.Add(Command.AddComponent(new TestComponent(2)));
+            using UnmanagedList<Instruction> commands = new();
+            commands.Add(Instruction.CreateEntity(40));
+            commands.Add(Instruction.AddComponent(new TestComponent(2)));
             world.Perform(commands);
             List<eint> createdEntities = new();
             foreach (eint entity in world.Entities)
@@ -72,20 +73,20 @@ namespace Simulation
         [Test]
         public void CreateThreeObjects()
         {
-            using UnmanagedList<Command> commands = new();
-            commands.Add(Command.CreateEntity());
-            commands.Add(Command.AddComponent(new TestComponent(4)));
+            using UnmanagedList<Instruction> commands = new();
+            commands.Add(Instruction.CreateEntity());
+            commands.Add(Instruction.AddComponent(new TestComponent(4)));
 
-            commands.Add(Command.CreateEntity());
-            commands.Add(Command.AddComponent(new TestComponent(5)));
+            commands.Add(Instruction.CreateEntity());
+            commands.Add(Instruction.AddComponent(new TestComponent(5)));
 
-            commands.Add(Command.CreateEntity());
-            commands.Add(Command.SetParent(2));
-            commands.Add(Command.AddComponent(new TestComponent(6)));
-            commands.Add(Command.CreateList<char>());
-            commands.Add(Command.AddElement<char>('a'));
-            commands.Add(Command.AddElement<char>('b'));
-            commands.Add(Command.AddElement<char>('c'));
+            commands.Add(Instruction.CreateEntity());
+            commands.Add(Instruction.SetParent(2));
+            commands.Add(Instruction.AddComponent(new TestComponent(6)));
+            commands.Add(Instruction.CreateList<char>());
+            commands.Add(Instruction.AddElement<char>('a'));
+            commands.Add(Instruction.AddElement<char>('b'));
+            commands.Add(Instruction.AddElement<char>('c'));
 
             using World world = new();
             world.Perform(commands);
@@ -111,6 +112,50 @@ namespace Simulation
             {
                 this.value = value;
             }
+        }
+
+        [Test]
+        public void SerializeInstructions()
+        {
+            Instruction a = Instruction.CreateEntity();
+            Instruction b = Instruction.AddComponent(new TestComponent(1), out Allocation allocation);
+            Instruction c = Instruction.CreateEntity();
+            Instruction d = Instruction.SetParent(1);
+
+            using BinaryWriter writer = new();
+            writer.WriteObject(a);
+            writer.WriteObject(b);
+            writer.WriteObject(c);
+            writer.WriteObject(d);
+
+            using BinaryReader reader = new(writer);
+            Instruction a2 = reader.ReadObject<Instruction>();
+            Instruction b2 = reader.ReadObject<Instruction>();
+            Instruction c2 = reader.ReadObject<Instruction>();
+            Instruction d2 = reader.ReadObject<Instruction>();
+
+            Assert.That(a2, Is.EqualTo(a));
+            Assert.That(b2, Is.EqualTo(b));
+            Assert.That(c2, Is.EqualTo(c));
+            Assert.That(d2, Is.EqualTo(d));
+
+            allocation.Dispose();
+        }
+
+        [Test]
+        public void AddSpanIntoList()
+        {
+            using UnmanagedList<Instruction> commands = new();
+            commands.Add(Instruction.CreateEntity());
+            commands.Add(Instruction.CreateList<char>());
+            commands.Add(Instruction.AddElements("this is not an abacus".AsSpan()));
+
+            using World world = new();
+            world.Perform(commands);
+
+            eint entity = world.Entities.First();
+            UnmanagedList<char> list = world.GetList<char>(entity);
+            Assert.That(list.AsSpan().ToString(), Is.EqualTo("this is not an abacus"));
         }
     }
 }
