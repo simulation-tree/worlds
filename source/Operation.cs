@@ -241,6 +241,15 @@ namespace Simulation
         }
 
         /// <summary>
+        /// Removes the given reference value from all selected entities.
+        /// </summary>
+        public void RemoveReference(rint reference)
+        {
+            ThrowIfSelectionIsEmpty();
+            AddInstruction(Instruction.RemoveReference(reference));
+        }
+
+        /// <summary>
         /// Adds a new component entry to every entity in the selection.
         /// </summary>
         public void AddComponent<T>(T component) where T : unmanaged

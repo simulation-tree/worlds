@@ -212,6 +212,28 @@ namespace Simulation
                 a.TryFormat(buffer[length..], out int written);
                 length += written;
             }
+            else if (type == Type.RemoveReference)
+            {
+                buffer[length++] = 'R';
+                buffer[length++] = 'e';
+                buffer[length++] = 'm';
+                buffer[length++] = 'o';
+                buffer[length++] = 'v';
+                buffer[length++] = 'e';
+                buffer[length++] = 'R';
+                buffer[length++] = 'e';
+                buffer[length++] = 'f';
+                buffer[length++] = 'e';
+                buffer[length++] = 'r';
+                buffer[length++] = 'e';
+                buffer[length++] = 'n';
+                buffer[length++] = 'c';
+                buffer[length++] = 'e';
+                buffer[length++] = '(';
+                a.TryFormat(buffer[length..], out int written);
+                length += written;
+                buffer[length++] = ')';
+            }
             else if (type == Type.AddComponent)
             {
                 buffer[length++] = 'A';
@@ -567,6 +589,11 @@ namespace Simulation
             return new(Type.AddReference, 1, entity.value, 0);
         }
 
+        public static Instruction RemoveReference(rint reference)
+        {
+            return new(Type.RemoveReference, reference.value, 0, 0);
+        }
+
         /// <summary>
         /// Adds the given component to all entities inside the selection.
         /// </summary>
@@ -767,6 +794,7 @@ namespace Simulation
             ModifyElement,
 
             AddReference,
+            RemoveReference
         }
     }
 }

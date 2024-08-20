@@ -124,10 +124,16 @@ namespace Simulation
             return world.GetList<T>(value);
         }
 
-        public readonly T GetListElement<T>(uint index) where T : unmanaged
+        public readonly ref T GetListElement<T>(uint index) where T : unmanaged
         {
             ThrowIfDestroyed();
-            return world.GetListElement<T>(value, index);
+            return ref world.GetListElement<T>(value, index);
+        }
+
+        public readonly uint GetListLength<T>() where T : unmanaged
+        {
+            ThrowIfDestroyed();
+            return world.GetListLength<T>(value);
         }
 
         public readonly bool ContainsList<T>() where T : unmanaged
@@ -338,12 +344,18 @@ namespace Simulation
             return new Entity(world, GetReference(reference)).As<T>();
         }
 
+        /// <summary>
+        /// Reassigns an existing reference to a different entity.
+        /// </summary>
         public readonly void SetReference(rint reference, eint otherEntity)
         {
             ThrowIfDestroyed();
             world.SetReference(value, reference, otherEntity);
         }
 
+        /// <summary>
+        /// Reassigns an existing reference to a different entity.
+        /// </summary>
         public readonly void SetReference<T>(rint reference, T otherEntity) where T : unmanaged, IEntity
         {
             ThrowIfDestroyed();

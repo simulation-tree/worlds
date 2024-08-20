@@ -537,6 +537,15 @@ namespace Simulation
                     }
                 }
             }
+            else if (instruction.type == Instruction.Type.RemoveReference)
+            {
+                rint reference = new((uint)instruction.A);
+                for (uint i = 0; i < selection.Count; i++)
+                {
+                    eint entity = selection[i];
+                    RemoveReference(entity, reference);
+                }
+            }
             else if (instruction.type == Instruction.Type.AddComponent)
             {
                 RuntimeType componentType = new((uint)instruction.A);
@@ -1043,7 +1052,19 @@ namespace Simulation
             }
 
             uint index = slot.references.IndexOf(referencedEntity);
-            slot.references.RemoveAtBySwapping(index);
+            slot.references.RemoveAt(index);
+        }
+
+        public readonly void RemoveReference(eint entity, rint reference)
+        {
+            UnsafeWorld.ThrowIfEntityMissing(value, entity);
+            ref EntityDescription slot = ref Slots.GetRef(entity.value - 1);
+            if (slot.references == default)
+            {
+                throw new IndexOutOfRangeException($"No references found on entity `{entity.value}`.");
+            }
+
+            slot.references.RemoveAt(reference.value - 1);
         }
 
         public readonly UnsafeList* CreateList(eint entity, RuntimeType listType, uint initialCapacity = 1)
@@ -1118,7 +1139,7 @@ namespace Simulation
         /// <summary>
         /// Retrieves the element at the index from an existing list on this entity.
         /// </summary>
-        public readonly T GetListElement<T>(eint entity, uint index) where T : unmanaged
+        public readonly ref T GetListElement<T>(eint entity, uint index) where T : unmanaged
         {
             EntityDescription slot = UnsafeWorld.GetEntitySlotRef(value, entity);
             if (slot.collections.IsDisposed)
@@ -1133,7 +1154,7 @@ namespace Simulation
             }
 
             UnsafeList* list = slot.collections.GetList(listType);
-            return UnsafeList.GetRef<T>(list, index);
+            return ref UnsafeList.GetRef<T>(list, index);
         }
 
         /// <summary>
