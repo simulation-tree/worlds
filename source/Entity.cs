@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Reflection;
 using Unmanaged;
 using Unmanaged.Collections;
 
@@ -276,50 +274,6 @@ namespace Simulation
             world.RemoveComponent<T>(value);
         }
 
-        /// <summary>
-        /// Adds missing components that qualify the entity to be of type <typeparamref name="T"/>.
-        /// </summary>
-        public readonly T Become<T>() where T : unmanaged, IEntity
-        {
-            using Query query = default(T).GetQuery(world);
-            foreach (RuntimeType type in query.Types)
-            {
-                if (!ContainsComponent(type))
-                {
-                    AddComponent(type);
-                }
-            }
-
-            return As<T>();
-        }
-
-        /// <summary>
-        /// Returns <c>true</c> if the entity complies with the given type.
-        /// </summary>
-        public readonly bool Is<T>() where T : unmanaged, IEntity
-        {
-            using Query query = default(T).GetQuery(world);
-            foreach (RuntimeType type in query.Types)
-            {
-                if (!ContainsComponent(type))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Interprets the entity as <typeparamref name="T"/>.
-        /// </summary>
-        public readonly unsafe T As<T>() where T : unmanaged, IEntity
-        {
-            ThrowIfTypeLayoutMismatches(typeof(T));
-            Entity e = new(world, value);
-            return *(T*)&e;
-        }
-
         public readonly rint AddReference(eint otherEntity)
         {
             ThrowIfDestroyed();
@@ -389,9 +343,36 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Interprets the entity as <typeparamref name="T"/>.
+        /// </summary>
+        public readonly unsafe T As<T>() where T : unmanaged, IEntity
+        {
+            EntityFunctions.ThrowIfTypeLayoutMismatches(typeof(T));
+            Entity self = this;
+            return *(T*)&self;
+        }
+
+        /// <summary>
+        /// Adds missing components that qualify the entity to be of type <typeparamref name="T"/>.
+        /// </summary>
+        public readonly T Become<T>() where T : unmanaged, IEntity
+        {
+            using Query query = default(T).GetQuery(world);
+            foreach (RuntimeType type in query.Types)
+            {
+                if (!ContainsComponent(type))
+                {
+                    AddComponent(type);
+                }
+            }
+
+            return As<T>();
+        }
+
         public unsafe static bool TryFindFirst<T>(World world, out T entity) where T : unmanaged, IEntity
         {
-            ThrowIfTypeLayoutMismatches(typeof(T));
+            EntityFunctions.ThrowIfTypeLayoutMismatches(typeof(T));
             using Query query = new T().GetQuery(world);
             query.Update();
 
@@ -410,7 +391,7 @@ namespace Simulation
 
         public static T GetFirst<T>(World world) where T : unmanaged, IEntity
         {
-            ThrowIfTypeLayoutMismatches(typeof(T));
+            EntityFunctions.ThrowIfTypeLayoutMismatches(typeof(T));
             using Query query = new T().GetQuery(world);
             query.Update();
 
@@ -421,51 +402,6 @@ namespace Simulation
             }
 
             throw new NullReferenceException($"Component of type {typeof(T)} not found in world.");
-        }
-
-        /// <summary>
-        /// Throws if the given type doesnt have a similar enough layout to <see cref="Entity"/>.
-        /// Because the methods that use will perform native reinterprets.
-        /// </summary>
-        [Conditional("DEBUG")]
-        private static void ThrowIfTypeLayoutMismatches(Type type)
-        {
-            BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
-            Stack<Type> checkStack = new();
-            checkStack.Push(type);
-            while (checkStack.Count > 0)
-            {
-                Type checkingType = checkStack.Pop();
-                if (checkingType == typeof(Entity))
-                {
-                    return;
-                }
-                else if (typeof(IEntity).IsAssignableFrom(checkingType))
-                {
-#pragma warning disable IL2075
-                    FieldInfo[] checkingFields = checkingType.GetFields(flags);
-#pragma warning restore IL2075
-                    if (checkingFields.Length == 1)
-                    {
-                        checkStack.Push(checkingFields[0].FieldType);
-                    }
-                    else if (checkingFields.Length == 2)
-                    {
-                        Type first = checkingFields[0].FieldType;
-                        Type second = checkingFields[1].FieldType;
-                        if (first == typeof(eint) && second == typeof(World))
-                        {
-                            return;
-                        }
-                        else
-                        {
-                            throw new Exception($"Unexpected entity layout in `{checkingType}`. Was expecting `{nameof(eint)}`, then `{nameof(World)}`");
-                        }
-                    }
-                }
-            }
-
-            throw new Exception($"The type `{type}` does not align with the `{nameof(Entity)}` type");
         }
     }
 }

@@ -19,6 +19,8 @@ namespace Simulation
         /// </summary>
         public readonly ReadOnlySpan<RuntimeType> Types => types.AsSpan();
 
+        public readonly uint TypeCount => types.Length;
+
         /// <summary>
         /// All entities found after updating the state.
         /// </summary>
@@ -88,6 +90,11 @@ namespace Simulation
             entities.Dispose();
             types.Dispose();
             state.Dispose();
+        }
+
+        public readonly RuntimeType GetType(uint index)
+        {
+            return types[index];
         }
 
         /// <summary>
