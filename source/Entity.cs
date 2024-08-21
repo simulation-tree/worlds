@@ -7,8 +7,8 @@ namespace Simulation
 {
     public struct Entity : IEntity, IDisposable
     {
-        public eint value;
-        public World world;
+        private eint value;
+        private World world;
 
         public readonly bool IsDestroyed
         {
@@ -402,6 +402,16 @@ namespace Simulation
             }
 
             throw new NullReferenceException($"Component of type {typeof(T)} not found in world.");
+        }
+
+        public static implicit operator eint(Entity entity)
+        {
+            return entity.value;
+        }
+
+        public static implicit operator World(Entity entity)
+        {
+            return entity.world;
         }
     }
 }

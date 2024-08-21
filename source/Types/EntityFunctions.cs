@@ -100,7 +100,7 @@ public static class EntityFunctions
                     }
                     else
                     {
-                        throw new Exception($"Unexpected entity layout in `{checkingType}`. Was expecting `{nameof(eint)}`, then `{nameof(World)}`");
+                        throw new Exception($"Unexpected entity type layout in `{checkingType}`. Was expecting `{nameof(eint)}`, then `{nameof(World)}`");
                     }
                 }
             }

@@ -6,7 +6,7 @@ using Unmanaged.Collections;
 namespace Simulation
 {
     /// <summary>
-    /// Series of world instructions to perform together.
+    /// Series of world instructions to perform all in one go.
     /// </summary>
     public struct Operation : IDisposable
     {

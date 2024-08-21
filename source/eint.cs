@@ -67,12 +67,32 @@ namespace Simulation
 
         public static bool operator ==(eint left, eint right)
         {
-            return left.Equals(right);
+            return left.value == right.value;
         }
 
         public static bool operator !=(eint left, eint right)
         {
-            return !(left == right);
+            return left.value != right.value;
+        }
+
+        public static bool operator ==(eint left, Entity right)
+        {
+            return left.value == ((eint)right).value;
+        }
+
+        public static bool operator !=(eint left, Entity right)
+        {
+            return left.value != ((eint)right).value;
+        }
+
+        public static bool operator ==(Entity left, eint right)
+        {
+            return ((eint)left).value == right.value;
+        }
+
+        public static bool operator !=(Entity left, eint right)
+        {
+            return ((eint)left).value != right.value;
         }
 
         public static explicit operator uint(eint value)
