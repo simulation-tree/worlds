@@ -914,7 +914,7 @@ namespace Simulation
             EntityDescription slot = Slots[entity.value - 1];
             if (!slot.children.IsDisposed)
             {
-                return new((void*)slot.children.Address, (int)slot.children.Count);
+                return slot.children.AsSpan<eint>();
             }
             else return Array.Empty<eint>();
         }
