@@ -198,7 +198,7 @@ namespace Simulation
             return world.GetComponentTypes(value);
         }
 
-        public readonly ref T GetComponentRef<T>() where T : unmanaged
+        public readonly ref T GetComponent<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
             return ref world.GetComponentRef<T>(value);
@@ -229,12 +229,6 @@ namespace Simulation
         {
             ThrowIfDestroyed();
             return world.GetComponent(value, defaultValue);
-        }
-
-        public readonly T GetComponent<T>() where T : unmanaged
-        {
-            ThrowIfDestroyed();
-            return world.GetComponent<T>(value);
         }
 
         public readonly void SetComponent<T>(T component) where T : unmanaged
