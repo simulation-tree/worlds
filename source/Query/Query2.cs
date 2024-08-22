@@ -112,7 +112,8 @@ namespace Simulation
         public readonly bool Contains(eint entity)
         {
             ThrowIfNotInitialized();
-            for (uint i = 0; i < Count; i++)
+            uint count = Count;
+            for (uint i = 0; i < count; i++)
             {
                 if (results[i].entity == entity)
                 {
@@ -120,6 +121,38 @@ namespace Simulation
                 }
             }
 
+            return false;
+        }
+
+        public readonly uint IndexOf(eint entity)
+        {
+            ThrowIfNotInitialized();
+            uint count = Count;
+            for (uint i = 0; i < count; i++)
+            {
+                if (results[i].entity == entity)
+                {
+                    return i;
+                }
+            }
+
+            throw new ArgumentOutOfRangeException(nameof(entity));
+        }
+
+        public readonly bool TryIndexOf(eint entity, out uint index)
+        {
+            ThrowIfNotInitialized();
+            uint count = Count;
+            for (uint i = 0; i < count; i++)
+            {
+                if (results[i].entity == entity)
+                {
+                    index = i;
+                    return true;
+                }
+            }
+
+            index = 0;
             return false;
         }
 

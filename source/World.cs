@@ -22,8 +22,8 @@ namespace Simulation
 
         /// <summary>
         /// The current maximum amount of referrable entities.
-        /// <para>Creating an array of this size is guaranteed to
-        /// be able to store all entity values.</para>
+        /// <para>Collections of this size are guaranteed to
+        /// be able to store all entity values/positions.</para>
         /// </summary>
         public readonly uint MaxEntityValue => Slots.Count;
 
@@ -845,6 +845,9 @@ namespace Simulation
             throw new NullReferenceException($"No entity with component of type {typeof(T)} found.");
         }
 
+        /// <summary>
+        /// Creates a new entity with an optionally assigned parent.
+        /// </summary>
         public readonly eint CreateEntity(eint parent = default)
         {
             eint entity = GetNextEntity();

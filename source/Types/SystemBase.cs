@@ -28,11 +28,10 @@ namespace Simulation
         /// <summary>
         /// Cleans up the resources of this system.
         /// <para>
-        /// When overriding, make sure to call the <c>base</c> method last.
+        /// When overriding, make sure to call the <c>base</c> implementation last.
         /// </para>
         /// <para>
-        /// Will throw <see cref="ObjectDisposedException"/> when 
-        /// invoking it more than once.
+        /// May throw <see cref="ObjectDisposedException"/> if already disposed.
         /// </para>
         /// </summary>
         public virtual void Dispose()
