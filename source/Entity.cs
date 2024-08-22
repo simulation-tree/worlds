@@ -25,12 +25,13 @@ namespace Simulation
             set => world.SetEnabled(this.value, value);
         }
 
-        public readonly eint Parent
+        public readonly Entity Parent
         {
             get
             {
                 ThrowIfDestroyed();
-                return world.GetParent(value);
+                eint parent = world.GetParent(value);
+                return parent == default ? default : new(world, parent);
             }
             set
             {
