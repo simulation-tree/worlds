@@ -1271,7 +1271,7 @@ namespace Simulation
         /// <summary>
         /// Returns <c>true</c> if any entity in the world contains this component.
         /// </summary>
-        public readonly bool ContainsComponent<T>() where T : unmanaged
+        public readonly bool ContainsAnyComponent<T>() where T : unmanaged
         {
             UnmanagedDictionary<uint, ComponentChunk> components = ComponentChunks;
             RuntimeType type = RuntimeType.Get<T>();

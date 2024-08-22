@@ -717,13 +717,13 @@ namespace Simulation
             return new(Type.RemoveElement, elementType.value, index, 0);
         }
 
-        public static Instruction ModifyElement<T>(T element, uint index) where T : unmanaged
+        public static Instruction ModifyElement<T>(uint index, T element) where T : unmanaged
         {
             Allocation allocation = Allocation.Create(element);
             return new(Type.ModifyElement, RuntimeType.Get<T>().value, (ulong)allocation.Address, index);
         }
 
-        public static Instruction ModifyElement(RuntimeType elementType, ReadOnlySpan<byte> elementData, uint index)
+        public static Instruction ModifyElement(uint index, RuntimeType elementType, ReadOnlySpan<byte> elementData)
         {
             Allocation allocation = Allocation.Create(elementData);
             return new(Type.ModifyElement, elementType.value, (ulong)allocation.Address, index);

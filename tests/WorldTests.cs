@@ -66,10 +66,10 @@ namespace Simulation
             Assert.That(world.GetComponent<SimpleComponent>(entity), Is.EqualTo(component));
             world.RemoveComponent<SimpleComponent>(entity);
             Assert.That(world.ContainsComponent<SimpleComponent>(entity), Is.False);
-            Assert.That(world.ContainsComponent<SimpleComponent>(), Is.False);
+            Assert.That(world.ContainsAnyComponent<SimpleComponent>(), Is.False);
             world.AddComponent(entity, component);
             Assert.That(world.ContainsComponent<SimpleComponent>(entity), Is.True);
-            Assert.That(world.ContainsComponent<SimpleComponent>(), Is.True);
+            Assert.That(world.ContainsAnyComponent<SimpleComponent>(), Is.True);
             world.DestroyEntity(entity);
             Assert.That(world.ContainsEntity(entity), Is.False);
         }

@@ -288,6 +288,16 @@ namespace Simulation
         }
 
         /// <summary>
+        /// Destroys the list of the given type from all entities in
+        /// the selection.
+        /// </summary>
+        public void DestroyList<T>() where T : unmanaged
+        {
+            ThrowIfSelectionIsEmpty();
+            AddInstruction(Instruction.DestroyList<T>());
+        }
+
+        /// <summary>
         /// Appends the given element to all lists of the given type on every selected entities.
         /// </summary>
         public void AppendToList<T>(T element) where T : unmanaged
@@ -325,6 +335,12 @@ namespace Simulation
             Span<T> span = new(pointer, (int)length);
             ThrowIfEmpty<T>(span);
             AddInstruction(Instruction.AppendToList<T>(span));
+        }
+
+        public void SetListElement<T>(uint index, T element) where T : unmanaged
+        {
+            ThrowIfSelectionIsEmpty();
+            AddInstruction(Instruction.ModifyElement<T>(index, element));
         }
 
         private unsafe void AddInstruction(Instruction instruction)
