@@ -1,9 +1,9 @@
 # Simulation
-Simple library for implementing logic on data.
+Simple library for implementing logic acting on data.
 
 ### Organizing data
-Data is available as _components_ and _lists_, where both are found through an _entity_. Where only
-one component of the same type is allowed:
+Data is stored as _components_ and _lists_, where both are found through an _entity_. Entities
+are then stored in _worlds_, which can be serialized, deserialized and appended to other worlds:
 ```cs
 using World world = new();
 eint entity = world.CreateEntity();
@@ -14,25 +14,35 @@ public struct MyComponent(uint value)
 {
     public uint value = value;
 }
-```
 
-Lists offer a way to store multiple of the same type.
+using BinaryWriter writer = new();
+writer.WriteObject(world);
+ReadOnlySpan<byte> worldBytes = writer.AsSpan();
+using BinaryReader reader = new(worldBytes);
+using World loadedWorld = reader.ReadObject<World>();
+world.Append(loadedWorld); //duplicates data
+```
+> Only 1 component of each type can be on an entity
+
+Lists offer a way to store multiple of the same type, unlike components:
 ```cs
 UnmanagedList<char> many = world.CreateCollection<char>(entity);
 many.AddRange("Hello world".AsSpan());
 ```
 
-Both the components and lists can then be fetched back from the entity:
+Both the components and lists can then be fetched back from the entity directly:
 ```cs
 ref MyComponent component = ref world.GetComponentRef<MyComponent>(entity);
-Assert.That(component.value, Is.EqualTo(25));
+component.value *= 2;
+Assert.That(component.value, Is.EqualTo(50));
 
 UnmanagedList<char> many = world.GetCollection<char>(entity);
 Assert.That(many.AsSpan().ToString(), Is.EqualTo("Hello world"));
 ```
 
-### Acting upon data
-Polling of components, and then modifying them can be done through multiple ways. Simplest to write:
+### Fetching data
+Polling of components, and then modifying them can be done through multiple ways.
+Simplest to write:
 ```cs
 uint sum;
 
@@ -48,16 +58,16 @@ void Do()
 }
 ```
 
-The next approach is just as simple, and more efficient due to operating in bulk. That also
-allows for references to each wanted component:
+The next approach is just as simple, but more efficient due to operating in bulk. With references
+to each wanted component:
 ```cs
 uint sum;
 
 void Do()
 {
-    //downside is the lambda itself, and its rules for what can be done inside them,
-    //for editing fields, it can be remedied by first localizing it, then modifying it
-    //inside the lambda, then finally assigning it back at the end
+    //downside is the lambda itself, and its rules for how field members are captured,
+    //it can be remedied by first localizing them, then modifying inside the lambda,
+    //then finally assigning it back at the end
     uint thisSum = sum;
     world.ForEach((in eint entity, ref MyComponent component) =>
     {
@@ -96,7 +106,7 @@ void Do()
 }
 ```
 
-Lastly is the `Query` type, which buffers found components for later iteration with
+Last is the `Query` type, which buffers found components for later iteration with
 references for each of the components. It's `Update` method is used to fill its internals with the
 latest view of the world:
 ```cs
@@ -118,13 +128,42 @@ void Do()
 }
 ```
 
+### Relationship references
+Components with `eint` values that are _meant_ to reference other entities will be
+susceptible to pointing to the wrong entity when the world is being appended to another.
+Because the old original position may already be occupied by another entity.
+
+Referencing is then solved by storing an `rint` that points to a local reference on
+the referencing entity itself. Then when appending is performed, old relationships are
+preserved (though the original `eint` may not be, so don't depend on them too hard):
+
+```cs
+public struct MyComponent(rint entityReference)
+{
+    public rint entityReference = entityReference;
+}
+
+using World dummyWorld = new();
+eint firstEntity = dummyWorld.CreateEntity();
+eint secondEntity = dummyWorld.CreateEntity();
+rint entityReference = dummyWorld.AddReference(firstEntity, secondEntity);
+dummyWorld.AddComponent(firstEntity, new MyComponent(entityReference));
+
+//after appending, find the original first entity and its referenced second entity
+world.Append(dummyWorld);
+world.TryGetFirst(out eint oldFirstEntity, out MyComponent component);
+eint oldSecondEntity = world.GetReference(oldFirstEntity, component.entityReference);
+```
+
 ### Events and listeners
-Events are first submitted to `World`s, then when `Poll` is called which will iterate through
-each event and call any listeners in the submitted order.
+These allow for communicating between systems across assemblies. Events are first submitted,
+then when `Poll` is called, it will will iterate through every event and call all listeners
+in the order that they were submitted:
 ```cs
 using Listener listener = world.Listen<MyEvent>(&ReceivedEvent);
 
 world.Submit(new MyEvent(25));
+world.Submit(new MyEvent(50));
 world.Poll();
 
 [UnmanagedCallersOnly]
@@ -140,46 +179,10 @@ public struct MyEvent(uint data)
 }
 ```
 
-<details>
-  <summary>Barebones simulation machine example</summary>
-    
-The following is an example of a continous program that constantly dispatches an `Update`
-until a `ShutdownSignal` event is submitted:
-```cs
-static bool stopped;
-
-void Run()
-{
-    using (World world = new())
-    {
-        using Listener listener = world.Listen<ShutdownSignal>(&AskedToShutdown);
-
-        //machine started, systems created here
-        while (!stopped)
-        {
-            world.Submit(new Update());
-            world.Poll();
-        }
-
-        //machine stopped, systems disposed here
-    }
-
-    [UnmanagedCallersOnly]
-    static void AskedToShutdown(World world, Allocation message)
-    {
-        stopped = true;
-    }
-}
-
-public struct ShutdownSignal { }
-```
-
-</details>
-
-### Included SystemBase type
-With unmanaged listeners it can be difficult to integrate with a codebase design that isn't static first.
-It asks for the callbacks to be such, and unmanaged too. The included `SystemBase` type implements event
-redirecting to action delegates, allowing for a more traditional approach to event handling:
+### Extending from `SystemBase`
+Unmanaged listeners above require callbacks to be static. The included `SystemBase` type
+implements event redirecting to instanced callbacks, allowing for a more traditional approach to
+designing systems:
 ```cs
 public class MySystem : SystemBase
 {
@@ -195,9 +198,8 @@ public class MySystem : SystemBase
 }
 ```
 
-### Contributing and Direction
-This library is created to provide early definitions for building programs that _do_ upon data, lightly and efficiently.
-
-Commonly referred to as the "[entity-component-system](https://en.wikipedia.org/wiki/Entity_component_system)" pattern.
+### Contributing and Design
+This library implements the "[entity-component-system](https://en.wikipedia.org/wiki/Entity_component_system)" pattern of the archetype variety. It's created to provide an open door
+to authors for building programs of whatever kind, lightly, and efficiently.
 
 Contributions to this are welcome.
