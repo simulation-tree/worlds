@@ -368,7 +368,7 @@ namespace Simulation
         public unsafe static bool TryGetFirst<T>(World world, out T entity) where T : unmanaged, IEntity
         {
             EntityFunctions.ThrowIfTypeLayoutMismatches(typeof(T));
-            using Query query = new T().GetQuery(world);
+            using Query query = default(T).GetQuery(world);
             query.Update();
 
             if (query.Count > 0)
@@ -387,7 +387,7 @@ namespace Simulation
         public static T GetFirst<T>(World world) where T : unmanaged, IEntity
         {
             EntityFunctions.ThrowIfTypeLayoutMismatches(typeof(T));
-            using Query query = new T().GetQuery(world);
+            using Query query = default(T).GetQuery(world);
             query.Update();
 
             if (query.Count > 0)
