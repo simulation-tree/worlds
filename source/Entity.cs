@@ -365,7 +365,7 @@ namespace Simulation
             return As<T>();
         }
 
-        public unsafe static bool TryFindFirst<T>(World world, out T entity) where T : unmanaged, IEntity
+        public unsafe static bool TryGetFirst<T>(World world, out T entity) where T : unmanaged, IEntity
         {
             EntityFunctions.ThrowIfTypeLayoutMismatches(typeof(T));
             using Query query = new T().GetQuery(world);
