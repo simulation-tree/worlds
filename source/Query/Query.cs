@@ -107,10 +107,10 @@ namespace Simulation
             bool exact = (options & Option.ExactComponentTypes) == Option.ExactComponentTypes;
             bool includeDisabled = (options & Option.IncludeDisabledEntities) == Option.IncludeDisabledEntities;
             Span<RuntimeType> typesSpan = types.AsSpan();
-            UnmanagedDictionary<uint, ComponentChunk> componentChunks = world.ComponentChunks;
-            for (int i = 0; i < componentChunks.Count; i++)
+            UnmanagedDictionary<uint, ComponentChunk> chunks = world.ComponentChunks;
+            foreach (uint hash in chunks.Keys)
             {
-                ComponentChunk chunk = componentChunks.Values[i];
+                ComponentChunk chunk = chunks[hash];
                 if (chunk.ContainsTypes(typesSpan, exact))
                 {
                     UnmanagedList<eint> entities = chunk.Entities;

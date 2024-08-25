@@ -72,9 +72,9 @@ namespace Simulation
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
             if (includeDisabled)
             {
-                for (int i = 0; i < chunks.Count; i++)
+                foreach (uint hash in chunks.Keys)
                 {
-                    ComponentChunk chunk = chunks.Values[i];
+                    ComponentChunk chunk = chunks[hash];
                     if (chunk.ContainsTypes(types, exact))
                     {
                         UnmanagedList<eint> entities = chunk.Entities;
@@ -92,9 +92,9 @@ namespace Simulation
             }
             else
             {
-                for (int i = 0; i < chunks.Count; i++)
+                foreach (uint hash in chunks.Keys)
                 {
-                    ComponentChunk chunk = chunks.Values[i];
+                    ComponentChunk chunk = chunks[hash];
                     if (chunk.ContainsTypes(types, exact))
                     {
                         UnmanagedList<eint> entities = chunk.Entities;

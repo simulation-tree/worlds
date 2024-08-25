@@ -155,7 +155,7 @@ namespace Simulation.Unsafe
             UnsafeList* slots = UnsafeList.Allocate<EntityDescription>();
             UnsafeList* freeEntities = UnsafeList.Allocate<eint>();
             UnsafeList* submittedEvents = UnsafeList.Allocate<Container>();
-            UnsafeDictionary* listeners = UnsafeDictionary.Allocate<RuntimeType, nint>();
+            UnsafeDictionary* listeners = UnsafeDictionary.Allocate<RuntimeType, UnmanagedList<Listener>>();
             UnsafeDictionary* components = UnsafeDictionary.Allocate<uint, ComponentChunk>();
 
             ComponentChunk defaultComponentChunk = new(Array.Empty<RuntimeType>());
@@ -184,20 +184,20 @@ namespace Simulation.Unsafe
         public static void ClearEntities(UnsafeWorld* world)
         {
             //clear chunks
-            UnmanagedDictionary<uint, ComponentChunk> components = GetComponentChunks(world);
-            for (uint i = 0; i < components.Count; i++)
+            UnmanagedDictionary<uint, ComponentChunk> chunks = GetComponentChunks(world);
+            foreach (uint hash in chunks.Keys)
             {
-                uint key = components.Keys[(int)i];
-                ComponentChunk chunk = components.Values[(int)i];
+                ComponentChunk chunk = chunks[hash];
                 chunk.Dispose();
             }
 
-            UnsafeDictionary.Clear(world->components);
+            chunks.Clear();
 
-            uint slotCount = UnsafeList.GetCountRef(world->slots);
+            UnmanagedList<EntityDescription> slots = GetEntitySlots(world);
+            uint slotCount = slots.Count;
             for (uint i = 0; i < slotCount; i++)
             {
-                ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, i);
+                ref EntityDescription slot = ref slots[i];
                 if (!slot.collections.IsDisposed)
                 {
                     slot.collections.Dispose();
@@ -214,7 +214,7 @@ namespace Simulation.Unsafe
                 }
             }
 
-            UnsafeList.Clear(world->slots);
+            slots.Clear();
 
             //clear free entities
             UnsafeList.Clear(world->freeEntities);
@@ -222,23 +222,22 @@ namespace Simulation.Unsafe
 
         public static void ClearListeners(UnsafeWorld* world)
         {
-            uint listenerTypesCount = UnsafeDictionary.GetCount(world->listeners);
-            for (uint i = 0; i < listenerTypesCount; i++)
+            UnmanagedDictionary<RuntimeType, UnmanagedList<Listener>> listeners = new(world->listeners);
+            foreach (RuntimeType eventType in listeners.Keys)
             {
-                RuntimeType eventType = UnsafeDictionary.GetKeyRef<RuntimeType, nint>(world->listeners, i);
-                UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, eventType);
-                uint listenerCount = UnsafeList.GetCountRef(listenerList);
+                UnmanagedList<Listener> listenerList = listeners[eventType];
+                uint listenerCount = listenerList.Count;
                 for (uint j = 0; j < listenerCount; j++)
                 {
-                    Listener listener = UnsafeList.Get<Listener>(listenerList, j);
-                    UnsafeListener* unsafeValue = listener.value;
-                    UnsafeListener.Free(ref unsafeValue);
+                    ref Listener listener = ref listenerList[j];
+                    UnsafeListener* unsafeListener = listener.value;
+                    UnsafeListener.Free(ref unsafeListener);
                 }
 
-                UnsafeList.Free(ref listenerList);
+                listenerList.Dispose();
             }
 
-            UnsafeDictionary.Clear(world->listeners);
+            listeners.Clear();
         }
 
         public static void ClearEvents(UnsafeWorld* world)
@@ -277,19 +276,19 @@ namespace Simulation.Unsafe
 
             Exception? caughtException = null;
             uint dispatchIndex = 0;
+            UnmanagedDictionary<RuntimeType, UnmanagedList<Listener>> listeners = new(world->listeners);
             while (dispatchIndex < submissionCount)
             {
                 Container message = events[(int)dispatchIndex];
                 RuntimeType eventType = message.type;
-                if (UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listeners, eventType))
+                if (listeners.TryGetValue(eventType, out UnmanagedList<Listener> listenerList))
                 {
-                    UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, eventType);
                     uint j = 0;
-                    while (j < UnsafeList.GetCountRef(listenerList))
+                    while (j < listenerList.Count)
                     {
-                        Listener listener = UnsafeList.Get<Listener>(listenerList, j);
                         try
                         {
+                            Listener listener = listenerList[j];
                             listener.Invoke(worldValue, message);
                         }
                         catch (Exception ex)
@@ -320,49 +319,40 @@ namespace Simulation.Unsafe
         public static Listener CreateListener(UnsafeWorld* world, RuntimeType eventType, delegate* unmanaged<World, Container, void> callback)
         {
             Listener listener = new(new(world), eventType, callback);
-            if (!UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listeners, eventType))
+            UnmanagedDictionary<RuntimeType, UnmanagedList<Listener>> listeners = new(world->listeners);
+            if (!listeners.TryGetValue(eventType, out UnmanagedList<Listener> listenerList))
             {
-                UnsafeList* listenerList = UnsafeList.Allocate<Listener>();
-                UnsafeList.Add(listenerList, listener);
-                UnsafeDictionary.Add(world->listeners, eventType, (nint)listenerList);
-            }
-            else
-            {
-                UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, eventType);
-                UnsafeList.Add(listenerList, listener);
+                listenerList = UnmanagedList<Listener>.Create();
+                listeners.Add(eventType, listenerList);
             }
 
+            listenerList.Add(listener);
             return listener;
         }
 #else
         public static Listener CreateListener(UnsafeWorld* world, RuntimeType eventType, delegate*<World, Container, void> callback)
         {
             Listener listener = new(new(world), eventType, callback);
-            if (!UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listeners, eventType))
+            UnmanagedDictionary<RuntimeType, UnmanagedList<Listener>> listeners = new(world->listeners);
+            if (!listeners.TryGetValue(eventType, out UnmanagedList<Listener> listenerList))
             {
-                UnsafeList* listenerList = UnsafeList.Allocate<Listener>();
-                UnsafeList.Add(listenerList, listener);
-                UnsafeDictionary.Add(world->listeners, eventType, (nint)listenerList);
-            }
-            else
-            {
-                UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, eventType);
-                UnsafeList.Add(listenerList, listener);
+                listenerList = UnmanagedList<Listener>.Create();
+                listeners.Add(eventType, listenerList);
             }
 
+            listenerList.Add(listener);
             return listener;
         }
 #endif
 
         internal static void RemoveListener(UnsafeWorld* world, Listener listener)
         {
-            if (UnsafeDictionary.ContainsKey<RuntimeType, nint>(world->listeners, listener.eventType))
+            UnmanagedDictionary<RuntimeType, UnmanagedList<Listener>> listeners = new(world->listeners);
+            if (listeners.TryGetValue(listener.eventType, out UnmanagedList<Listener> listenerList))
             {
-                UnsafeList* listenerList = (UnsafeList*)UnsafeDictionary.GetValueRef<RuntimeType, nint>(world->listeners, listener.eventType);
+                listenerList.TryRemove(listener);
                 UnsafeListener* unsafeListener = listener.value;
                 UnsafeListener.Free(ref unsafeListener);
-                uint index = UnsafeList.IndexOf(listenerList, listener);
-                UnsafeList.RemoveAtBySwapping(listenerList, index);
             }
             else
             {

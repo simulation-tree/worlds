@@ -159,9 +159,9 @@ namespace Simulation
         {
             //collect info about all types referenced
             using UnmanagedList<RuntimeType> uniqueTypes = UnmanagedList<RuntimeType>.Create();
-            for (int i = 0; i < ComponentChunks.Count; i++)
+            foreach (uint hash in ComponentChunks.Keys)
             {
-                ComponentChunk chunk = ComponentChunks.Values[i];
+                ComponentChunk chunk = ComponentChunks[hash];
                 foreach (RuntimeType type in chunk.Types)
                 {
                     if (!uniqueTypes.Contains(type))
@@ -1276,11 +1276,11 @@ namespace Simulation
         /// </summary>
         public readonly bool ContainsAnyComponent<T>() where T : unmanaged
         {
-            UnmanagedDictionary<uint, ComponentChunk> components = ComponentChunks;
+            UnmanagedDictionary<uint, ComponentChunk> chunks = ComponentChunks;
             RuntimeType type = RuntimeType.Get<T>();
-            for (int i = 0; i < components.Count; i++)
+            foreach (uint hash in chunks.Keys)
             {
-                ComponentChunk chunk = components.Values[i];
+                ComponentChunk chunk = chunks[hash];
                 if (chunk.Types.Contains(type))
                 {
                     if (chunk.Entities.Count > 0)
@@ -1454,9 +1454,9 @@ namespace Simulation
         {
             uint count = 0;
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
-            for (int i = 0; i < ComponentChunks.Count; i++)
+            foreach (uint hash in ComponentChunks.Keys)
             {
-                ComponentChunk chunk = ComponentChunks.Values[i];
+                ComponentChunk chunk = ComponentChunks[hash];
                 if (chunk.Types.Contains(type))
                 {
                     if (includeDisabled)
@@ -1541,9 +1541,9 @@ namespace Simulation
         {
             bool exact = (options & Query.Option.ExactComponentTypes) == Query.Option.ExactComponentTypes;
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
-            for (int i = 0; i < ComponentChunks.Count; i++)
+            foreach (uint hash in ComponentChunks.Keys)
             {
-                ComponentChunk chunk = ComponentChunks.Values[i];
+                ComponentChunk chunk = ComponentChunks[hash];
                 if (chunk.ContainsTypes(componentTypes, exact))
                 {
                     if (includeDisabled)
@@ -1569,9 +1569,9 @@ namespace Simulation
         {
             RuntimeType type = RuntimeType.Get<T>();
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
-            for (int i = 0; i < ComponentChunks.Count; i++)
+            foreach (uint hash in ComponentChunks.Keys)
             {
-                ComponentChunk chunk = ComponentChunks.Values[i];
+                ComponentChunk chunk = ComponentChunks[hash];
                 if (chunk.Types.Contains(type))
                 {
                     if (includeDisabled)
@@ -1597,9 +1597,9 @@ namespace Simulation
         {
             RuntimeType type = RuntimeType.Get<T>();
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
-            for (int i = 0; i < ComponentChunks.Count; i++)
+            foreach (uint hash in ComponentChunks.Keys)
             {
-                ComponentChunk chunk = ComponentChunks.Values[i];
+                ComponentChunk chunk = ComponentChunks[hash];
                 if (chunk.Types.Contains(type))
                 {
                     if (includeDisabled)
@@ -1625,9 +1625,9 @@ namespace Simulation
         {
             RuntimeType type = RuntimeType.Get<T>();
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
-            for (int i = 0; i < ComponentChunks.Count; i++)
+            foreach (uint hash in ComponentChunks.Keys)
             {
-                ComponentChunk chunk = ComponentChunks.Values[i];
+                ComponentChunk chunk = ComponentChunks[hash];
                 if (chunk.Types.Contains(type))
                 {
                     if (includeDisabled)
@@ -1654,9 +1654,9 @@ namespace Simulation
         public readonly void Fill(RuntimeType componentType, UnmanagedList<eint> entities, Query.Option options = Query.Option.IncludeDisabledEntities)
         {
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
-            for (int i = 0; i < ComponentChunks.Count; i++)
+            foreach (uint hash in ComponentChunks.Keys)
             {
-                ComponentChunk chunk = ComponentChunks.Values[i];
+                ComponentChunk chunk = ComponentChunks[hash];
                 if (chunk.Types.Contains(componentType))
                 {
                     if (includeDisabled)
@@ -1684,9 +1684,11 @@ namespace Simulation
         public readonly IEnumerable<eint> GetAll(RuntimeType componentType, Query.Option options = Query.Option.IncludeDisabledEntities)
         {
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
-            for (int i = 0; i < ComponentChunks.Count; i++)
+            uint chunkCount = ComponentChunks.Count;
+            for (uint i = 0; i < chunkCount; i++)
             {
-                ComponentChunk chunk = ComponentChunks.Values[i];
+                uint hash = ComponentChunks.GetKeyAtIndex(i);
+                ComponentChunk chunk = ComponentChunks[hash];
                 if (chunk.Types.Contains(componentType))
                 {
                     for (uint e = 0; e < chunk.Entities.Count; e++)
@@ -1717,9 +1719,9 @@ namespace Simulation
         {
             RuntimeType componentType = RuntimeType.Get<T>();
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
-            for (int i = 0; i < ComponentChunks.Count; i++)
+            foreach (uint hash in ComponentChunks.Keys)
             {
-                ComponentChunk chunk = ComponentChunks.Values[i];
+                ComponentChunk chunk = ComponentChunks[hash];
                 if (chunk.Types.Contains(componentType))
                 {
                     for (uint e = 0; e < chunk.Entities.Count; e++)
@@ -1752,9 +1754,9 @@ namespace Simulation
         {
             bool exact = (options & Query.Option.ExactComponentTypes) == Query.Option.ExactComponentTypes;
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
-            for (int i = 0; i < ComponentChunks.Count; i++)
+            foreach (uint hash in ComponentChunks.Keys)
             {
-                ComponentChunk chunk = ComponentChunks.Values[i];
+                ComponentChunk chunk = ComponentChunks[hash];
                 if (chunk.ContainsTypes(componentTypes, exact))
                 {
                     for (uint e = 0; e < chunk.Entities.Count; e++)
@@ -1781,9 +1783,9 @@ namespace Simulation
             Span<RuntimeType> types = stackalloc RuntimeType[1];
             types[0] = RuntimeType.Get<T>();
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
-            for (int i = 0; i < ComponentChunks.Count; i++)
+            foreach (uint hash in ComponentChunks.Keys)
             {
-                ComponentChunk chunk = ComponentChunks.Values[i];
+                ComponentChunk chunk = ComponentChunks[hash];
                 if (chunk.ContainsTypes(types))
                 {
                     UnmanagedList<eint> entities = chunk.Entities;
@@ -1814,9 +1816,9 @@ namespace Simulation
             types[0] = RuntimeType.Get<T1>();
             types[1] = RuntimeType.Get<T2>();
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
-            for (int i = 0; i < ComponentChunks.Count; i++)
+            foreach (uint hash in ComponentChunks.Keys)
             {
-                ComponentChunk chunk = ComponentChunks.Values[i];
+                ComponentChunk chunk = ComponentChunks[hash];
                 if (chunk.ContainsTypes(types))
                 {
                     UnmanagedList<eint> entities = chunk.Entities;
@@ -1850,9 +1852,9 @@ namespace Simulation
             types[1] = RuntimeType.Get<T2>();
             types[2] = RuntimeType.Get<T3>();
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
-            for (int i = 0; i < ComponentChunks.Count; i++)
+            foreach (uint hash in ComponentChunks.Keys)
             {
-                ComponentChunk chunk = ComponentChunks.Values[i];
+                ComponentChunk chunk = ComponentChunks[hash];
                 if (chunk.ContainsTypes(types))
                 {
                     UnmanagedList<eint> entities = chunk.Entities;
@@ -1889,9 +1891,9 @@ namespace Simulation
             types[2] = RuntimeType.Get<T3>();
             types[3] = RuntimeType.Get<T4>();
             bool includeDisabled = (options & Query.Option.IncludeDisabledEntities) == Query.Option.IncludeDisabledEntities;
-            for (int i = 0; i < ComponentChunks.Count; i++)
+            foreach (uint hash in ComponentChunks.Keys)
             {
-                ComponentChunk chunk = ComponentChunks.Values[i];
+                ComponentChunk chunk = ComponentChunks[hash];
                 if (chunk.ContainsTypes(types))
                 {
                     UnmanagedList<eint> entities = chunk.Entities;
