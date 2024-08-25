@@ -25,6 +25,19 @@ namespace Simulation
             return value == other.value;
         }
 
+        public readonly override string ToString()
+        {
+            Span<char> buffer = stackalloc char[8];
+            int charsWritten = ToString(buffer);
+            return new string(buffer.Slice(0, charsWritten));
+        }
+
+        public readonly int ToString(Span<char> buffer)
+        {
+            value.TryFormat(buffer, out int charsWritten);
+            return charsWritten;
+        }
+
         public readonly override int GetHashCode()
         {
             return HashCode.Combine(value);

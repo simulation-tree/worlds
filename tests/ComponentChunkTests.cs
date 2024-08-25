@@ -2,7 +2,7 @@
 using Unmanaged;
 using Unmanaged.Collections;
 
-namespace Simulation
+namespace Simulation.Tests
 {
     public unsafe class ComponentChunkTests
     {

@@ -117,59 +117,65 @@ namespace Simulation
             world.DestroyEntity(value);
         }
 
-        public readonly UnmanagedList<T> GetList<T>() where T : unmanaged
+        public readonly Span<T> GetArray<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
-            return world.GetList<T>(value);
+            return world.GetArray<T>(value);
         }
 
-        public readonly ref T GetListElement<T>(uint index) where T : unmanaged
+        public readonly ref T GetArrayElement<T>(uint index) where T : unmanaged
         {
             ThrowIfDestroyed();
-            return ref world.GetListElement<T>(value, index);
+            return ref world.GetArrayElement<T>(value, index);
         }
 
-        public readonly uint GetListLength<T>() where T : unmanaged
+        public readonly uint GetArrayLength<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
-            return world.GetListLength<T>(value);
+            return world.GetArrayLength<T>(value);
         }
 
-        public readonly bool ContainsList<T>() where T : unmanaged
+        public readonly bool ContainsArray<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
-            return world.ContainsList<T>(value);
+            return world.ContainsArray<T>(value);
         }
 
-        public readonly void DestroyList<T>() where T : unmanaged
+        public readonly void DestroyArray<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
-            world.DestroyList<T>(value);
+            world.DestroyArray<T>(value);
         }
 
-        public readonly UnmanagedList<T> CreateList<T>() where T : unmanaged
+        public readonly Span<T> CreateArray<T>(uint length) where T : unmanaged
         {
             ThrowIfDestroyed();
-            return world.CreateList<T>(value);
+            return world.CreateArray<T>(value, length);
         }
 
-        public readonly UnmanagedList<T> CreateList<T>(uint initialCapacity) where T : unmanaged
+        public readonly void CreateArray<T>(ReadOnlySpan<T> values) where T : unmanaged
         {
             ThrowIfDestroyed();
-            return world.CreateList<T>(value, initialCapacity);
+            world.CreateArray(value, values);
         }
 
-        public readonly bool TryGetList<T>(out UnmanagedList<T> list) where T : unmanaged
+        public readonly Span<T> ResizeArray<T>(uint newLength) where T : unmanaged
         {
             ThrowIfDestroyed();
-            if (ContainsList<T>())
+            return world.ResizeArray<T>(value, newLength);
+        }
+
+        public readonly bool TryGetArray<T>(out Span<T> values) where T : unmanaged
+        {
+            ThrowIfDestroyed();
+            if (ContainsArray<T>())
             {
-                list = GetList<T>();
+                values = GetArray<T>();
                 return true;
             }
             else
             {
-                list = default;
+                values = default;
                 return false;
             }
         }

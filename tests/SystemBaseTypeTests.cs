@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Unmanaged;
 
-namespace Simulation
+namespace Simulation.Tests
 {
     public class SystemBaseTypeTests
     {

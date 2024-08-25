@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Unmanaged;
-using Unmanaged.Collections;
 
 namespace Simulation.Tests
 {
@@ -84,10 +83,10 @@ namespace Simulation.Tests
             operation.CreateEntity();
             operation.SetParent(2);
             operation.AddComponent(new TestComponent(6));
-            operation.CreateList<char>();
-            operation.AppendToList('a');
-            operation.AppendToList('b');
-            operation.AppendToList('c');
+            operation.CreateArray<char>(3);
+            operation.SetArrayElement(0, 'a');
+            operation.SetArrayElement(1, 'b');
+            operation.SetArrayElement(2, 'c');
 
             using World world = new();
             world.Perform(operation);
@@ -99,7 +98,7 @@ namespace Simulation.Tests
             Assert.That(world.GetComponent<TestComponent>(firstEntity).value, Is.EqualTo(4));
             Assert.That(world.GetComponent<TestComponent>(secondEntity).value, Is.EqualTo(5));
             Assert.That(world.GetComponent<TestComponent>(thirdEntity).value, Is.EqualTo(6));
-            Assert.That(world.GetList<char>(thirdEntity).AsSpan().ToString(), Is.EqualTo("abc"));
+            Assert.That(world.GetArray<char>(thirdEntity).ToString(), Is.EqualTo("abc"));
             Assert.That(world.GetParent(firstEntity), Is.EqualTo(default(eint)));
             Assert.That(world.GetParent(secondEntity), Is.EqualTo(default(eint)));
             Assert.That(world.GetParent(thirdEntity), Is.EqualTo(firstEntity));
@@ -144,19 +143,75 @@ namespace Simulation.Tests
         }
 
         [Test]
-        public void AddSpanIntoList()
+        public void WriteSpanIntoArray()
         {
+            string testString = "this is not an abacus";
             using Operation operation = new();
             operation.CreateEntity();
-            operation.CreateList<char>();
-            operation.AppendToList("this is not an abacus".AsSpan());
+            operation.CreateArray<char>((uint)testString.Length);
+            operation.SetArrayElement(0, testString.AsSpan());
 
             using World world = new();
             world.Perform(operation);
 
             eint entity = world.Entities.First();
-            UnmanagedList<char> list = world.GetList<char>(entity);
-            Assert.That(list.AsSpan().ToString(), Is.EqualTo("this is not an abacus"));
+            Span<char> list = world.GetArray<char>(entity);
+            Assert.That(list.ToString(), Is.EqualTo(testString));
+        }
+
+        [Test]
+        public void ModifyArrayMultipleTimes()
+        {
+            Operation operation = new();
+            operation.CreateEntity();
+            operation.CreateArray<char>(4);
+            operation.SetArrayElement(0, 'a');
+
+            using World world = new();
+            world.Perform(operation);
+
+            eint entity = world.Entities.First();
+            Assert.That(world.ContainsArray<char>(entity), Is.True);
+
+            Span<char> list = world.GetArray<char>(entity);
+            Assert.That(list[0], Is.EqualTo('a'));
+            Assert.That(world.GetArrayLength<char>(entity), Is.EqualTo(4));
+
+            operation.ClearInstructions();
+            operation.SelectEntity(entity);
+            operation.SetArrayElement(1, 'b');
+            operation.SetArrayElement(2, 'c');
+
+            world.Perform(operation);
+            list = world.GetArray<char>(entity);
+            Assert.That(list[0], Is.EqualTo('a'));
+            Assert.That(list[1], Is.EqualTo('b'));
+            Assert.That(list[2], Is.EqualTo('c'));
+
+            operation.Dispose();
+        }
+
+        [Test]
+        public void ResizeExistingArray()
+        {
+            using Operation operation = new();
+            operation.CreateEntity();
+            operation.CreateArray<char>("abcd".AsSpan());
+
+            using World world = new();
+            world.Perform(operation);
+
+            eint entity = world.Entities.First();
+            Assert.That(world.ContainsArray<char>(entity), Is.True);
+            Assert.That(world.GetArrayLength<char>(entity), Is.EqualTo(4));
+
+            operation.ClearInstructions();
+            operation.SelectEntity(entity);
+            operation.ResizeArray<char>(8);
+
+            world.Perform(operation);
+
+            Assert.That(world.GetArrayLength<char>(entity), Is.EqualTo(8));
         }
     }
 }

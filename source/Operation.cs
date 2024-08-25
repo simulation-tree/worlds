@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using Unmanaged;
-using Unmanaged.Collections;
 
 namespace Simulation
 {
@@ -58,12 +57,7 @@ namespace Simulation
         public readonly void Dispose()
         {
             ThrowIfDisposed();
-            uint length = Length;
-            for (uint i = 0; i < length; i++)
-            {
-                this[i].Dispose();
-            }
-
+            ClearInstructions();
             list.Dispose();
         }
 
@@ -82,15 +76,6 @@ namespace Simulation
             if (index >= Length)
             {
                 throw new ArgumentOutOfRangeException(nameof(index));
-            }
-        }
-
-        [Conditional("DEBUG")]
-        private readonly void ThrowIfEmpty<T>(ReadOnlySpan<T> span)
-        {
-            if (span.IsEmpty)
-            {
-                throw new ArgumentException("Span is empty.", nameof(span));
             }
         }
 
@@ -134,6 +119,18 @@ namespace Simulation
             }
 
             throw new InvalidOperationException("Entity selection is empty, unable to proceed.");
+        }
+
+        public readonly void ClearInstructions()
+        {
+            ThrowIfDisposed();
+            uint length = Length;
+            for (uint i = 0; i < length; i++)
+            {
+                this[i].Dispose();
+            }
+
+            list.Write(sizeof(uint) * 0, 0);
         }
 
         /// <summary>
@@ -269,78 +266,60 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Creates a new list on every selected entities, with an optional
-        /// set initial length (not capacity) for later assignment.
+        /// Creates a new array for every selected entities.
         /// </summary>
-        public void CreateList<T>(uint initialLength = 0) where T : unmanaged
+        public void CreateArray<T>(uint length) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
-            AddInstruction(Instruction.CreateList<T>(initialLength));
+            AddInstruction(Instruction.CreateArray<T>(length));
+        }
+
+        public void CreateArray<T>(ReadOnlySpan<T> values) where T : unmanaged
+        {
+            ThrowIfSelectionIsEmpty();
+            AddInstruction(Instruction.CreateArray<T>(values));
         }
 
         /// <summary>
-        /// Clears all lists of the given type from every selected entities.
+        /// Destroys an existing array on selected entities.
         /// </summary>
-        public void ClearList<T>() where T : unmanaged
+        public void DestroyArray<T>() where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
-            AddInstruction(Instruction.ClearList<T>());
+            AddInstruction(Instruction.DestroyArray<T>());
         }
 
         /// <summary>
-        /// Destroys the list of the given type from all entities in
-        /// the selection.
+        /// Writes the given value into the array at the given index.
         /// </summary>
-        public void DestroyList<T>() where T : unmanaged
+        public void SetArrayElement<T>(uint index, T element) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
-            AddInstruction(Instruction.DestroyList<T>());
+            AddInstruction(Instruction.SetArrayElement(index, element));
         }
 
         /// <summary>
-        /// Appends the given element to all lists of the given type on every selected entities.
+        /// Writes the given span into the array starting from the given index.
         /// </summary>
-        public void AppendToList<T>(T element) where T : unmanaged
+        public void SetArrayElement<T>(uint index, Span<T> elements) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
-            AddInstruction(Instruction.AppendToList(element));
+            AddInstruction(Instruction.SetArrayElement(index, elements));
         }
 
         /// <summary>
-        /// Appends the given span of elements to all lists of the given type on every selected entities.
+        /// Writes the given span into the array starting from the given index.
         /// </summary>
-        public void AppendToList<T>(ReadOnlySpan<T> elements) where T : unmanaged
+        public void SetArrayElement<T>(uint index, ReadOnlySpan<T> elements) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
-            ThrowIfEmpty(elements);
-            AddInstruction(Instruction.AppendToList(elements));
+            AddInstruction(Instruction.SetArrayElement(index, elements));
         }
 
-        public void AppendToList<T>(UnmanagedArray<T> array) where T : unmanaged
-        {
-            AppendToList<T>(array.AsSpan());
-        }
-
-        public void AppendToList<T>(UnmanagedList<T> list) where T : unmanaged
-        {
-            AppendToList<T>(list.AsSpan());
-        }
-
-        /// <summary>
-        /// Appends the given span of elements to all lists of the given type on all selected entities.
-        /// </summary>
-        public unsafe void AppendToList<T>(void* pointer, uint length) where T : unmanaged
+        public void ResizeArray<T>(uint newLength) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
-            Span<T> span = new(pointer, (int)length);
-            ThrowIfEmpty<T>(span);
-            AddInstruction(Instruction.AppendToList<T>(span));
-        }
-
-        public void SetListElement<T>(uint index, T element) where T : unmanaged
-        {
-            ThrowIfSelectionIsEmpty();
-            AddInstruction(Instruction.ModifyElement<T>(index, element));
+            AddInstruction(Instruction.ResizeArray<T>(newLength));
         }
 
         private unsafe void AddInstruction(Instruction instruction)

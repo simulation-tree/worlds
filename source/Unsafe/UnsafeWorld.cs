@@ -108,22 +108,22 @@ namespace Simulation.Unsafe
         }
 
         [Conditional("DEBUG")]
-        public static void ThrowIfCollectionMissing(UnsafeWorld* world, eint entity, RuntimeType type)
+        public static void ThrowIfArrayIsMissing(UnsafeWorld* world, eint entity, RuntimeType type)
         {
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
-            if (slot.collections.IsDisposed || !slot.collections.Types.Contains(type))
+            if (slot.arrayTypes.IsDisposed || !slot.arrayTypes.Contains(type))
             {
-                throw new NullReferenceException($"Collection of type {type} not found on entity `{entity.value}`.");
+                throw new NullReferenceException($"Array of type {type} not found on entity `{entity.value}`.");
             }
         }
 
         [Conditional("DEBUG")]
-        public static void ThrowIfCollectionAlreadyPresent(UnsafeWorld* world, eint entity, RuntimeType type)
+        public static void ThrowIfArrayIsAlreadyPresent(UnsafeWorld* world, eint entity, RuntimeType type)
         {
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
-            if (!slot.collections.IsDisposed && slot.collections.Types.Contains(type))
+            if (!slot.arrayTypes.IsDisposed && slot.arrayTypes.Contains(type))
             {
-                throw new InvalidOperationException($"Collection of type {type} already present on {entity.value}.");
+                throw new InvalidOperationException($"Array of type {type} already present on {entity.value}.");
             }
         }
 
@@ -193,14 +193,23 @@ namespace Simulation.Unsafe
 
             chunks.Clear();
 
+            //clear slots
             UnmanagedList<EntityDescription> slots = GetEntitySlots(world);
             uint slotCount = slots.Count;
-            for (uint i = 0; i < slotCount; i++)
+            for (uint s = 0; s < slotCount; s++)
             {
-                ref EntityDescription slot = ref slots[i];
-                if (!slot.collections.IsDisposed)
+                ref EntityDescription slot = ref slots[s];
+                if (!slot.arrayTypes.IsDisposed)
                 {
-                    slot.collections.Dispose();
+                    uint arrayCount = slot.arrayTypes.Count;
+                    for (uint a = 0; a < arrayCount; a++)
+                    {
+                        slot.arrays[a].Dispose();
+                    }
+
+                    slot.arrayTypes.Dispose();
+                    slot.arrays.Dispose();
+                    slot.arrayLengths.Dispose();
                 }
 
                 if (!slot.children.IsDisposed)
@@ -400,15 +409,25 @@ namespace Simulation.Unsafe
             ComponentChunk chunk = components[slot.componentsKey];
             chunk.Remove(entity);
 
-            if (!slot.collections.IsDisposed)
+            if (!slot.arrayTypes.IsDisposed)
             {
-                slot.collections.Dispose();
+                uint arrayCount = slot.arrayTypes.Count;
+                for (uint i = 0; i < arrayCount; i++)
+                {
+                    slot.arrays[i].Dispose();
+                }
+
+                slot.arrayTypes.Dispose();
+                slot.arrays.Dispose();
+                slot.arrayLengths.Dispose();
+                slot.arrayTypes = default;
+                slot.arrays = default;
+                slot.arrayLengths = default;
             }
 
             slot.entity = default;
             slot.parent = default;
             slot.componentsKey = default;
-            slot.collections = default;
             slot.state = EntityDescription.State.Destroyed;
             UnsafeList.Add(world->freeEntities, entity);
             NotifyDestruction(new(world), entity);
@@ -432,18 +451,18 @@ namespace Simulation.Unsafe
             return chunk.Types;
         }
 
-        public static ReadOnlySpan<RuntimeType> GetListTypes(UnsafeWorld* world, eint entity)
+        public static ReadOnlySpan<RuntimeType> GetArrayTypes(UnsafeWorld* world, eint entity)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
 
             EntityDescription slot = GetEntitySlotRef(world, entity);
-            if (slot.collections.IsDisposed)
+            if (slot.arrayTypes.IsDisposed)
             {
                 return ReadOnlySpan<RuntimeType>.Empty;
             }
 
-            return slot.collections.Types;
+            return slot.arrayTypes.AsSpan();
         }
 
         public static eint GetParent(UnsafeWorld* world, eint entity)
@@ -628,30 +647,36 @@ namespace Simulation.Unsafe
             return slot.entity == entity;
         }
 
-        public static UnsafeList* CreateList(UnsafeWorld* world, eint entity, RuntimeType type, uint initialCapacity = 1)
+        public static void* CreateArray(UnsafeWorld* world, eint entity, RuntimeType arrayType, uint length)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
-            ThrowIfCollectionAlreadyPresent(world, entity, type);
+            ThrowIfArrayIsAlreadyPresent(world, entity, arrayType);
 
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
-            if (slot.collections.IsDisposed)
+            if (slot.arrayTypes.IsDisposed)
             {
-                slot.collections = EntityCollections.Create();
+                slot.arrayTypes = UnmanagedList<RuntimeType>.Create();
+                slot.arrays = UnmanagedList<Allocation>.Create();
+                slot.arrayLengths = UnmanagedList<uint>.Create();
             }
 
-            return slot.collections.CreateCollection(type, initialCapacity);
+            Allocation newArray = new(arrayType.Size * length);
+            slot.arrayTypes.Add(arrayType);
+            slot.arrays.Add(newArray);
+            slot.arrayLengths.Add(length);
+            return slot.arrays[slot.arrays.Count - 1];
         }
 
-        public static bool ContainsList(UnsafeWorld* world, eint entity, RuntimeType listType)
+        public static bool ContainsArray(UnsafeWorld* world, eint entity, RuntimeType arrayType)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
 
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
-            if (!slot.collections.IsDisposed)
+            if (!slot.arrayTypes.IsDisposed)
             {
-                return slot.collections.Types.Contains(listType);
+                return slot.arrayTypes.Contains(arrayType);
             }
             else
             {
@@ -659,29 +684,52 @@ namespace Simulation.Unsafe
             }
         }
 
-        public static UnsafeList* GetList(UnsafeWorld* world, eint entity, RuntimeType type)
+        public static void* GetArray(UnsafeWorld* world, eint entity, RuntimeType arrayType, out uint length)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
-            ThrowIfCollectionMissing(world, entity, type);
-
+            ThrowIfArrayIsMissing(world, entity, arrayType);
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
-            return slot.collections.GetList(type);
+            uint index = slot.arrayTypes.IndexOf(arrayType);
+            length = slot.arrayLengths[index];
+            return slot.arrays[index];
         }
 
-        public static void DestroyList<T>(UnsafeWorld* world, eint entity) where T : unmanaged
-        {
-            DestroyList(world, entity, RuntimeType.Get<T>());
-        }
-
-        public static void DestroyList(UnsafeWorld* world, eint entity, RuntimeType type)
+        public static uint GetArrayLength(UnsafeWorld* world, eint entity, RuntimeType arrayType)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityMissing(world, entity);
-            ThrowIfCollectionMissing(world, entity, type);
+            ThrowIfArrayIsMissing(world, entity, arrayType);
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            uint index = slot.arrayTypes.IndexOf(arrayType);
+            return slot.arrayLengths[index];
+        }
+
+        public static void* ResizeArray(UnsafeWorld* world, eint entity, RuntimeType arrayType, uint newLength)
+        {
+            Allocations.ThrowIfNull(world);
+            ThrowIfEntityMissing(world, entity);
+            ThrowIfArrayIsMissing(world, entity, arrayType);
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
+            uint index = slot.arrayTypes.IndexOf(arrayType);
+            ref Allocation array = ref slot.arrays[index];
+            Allocation.Resize(ref array, arrayType.Size * newLength);
+            slot.arrayLengths[index] = newLength;
+            return array;
+        }
+
+        public static void DestroyArray(UnsafeWorld* world, eint entity, RuntimeType arrayType)
+        {
+            Allocations.ThrowIfNull(world);
+            ThrowIfEntityMissing(world, entity);
+            ThrowIfArrayIsMissing(world, entity, arrayType);
 
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity.value - 1);
-            slot.collections.RemoveCollection(type);
+            uint index = slot.arrayTypes.IndexOf(arrayType);
+            slot.arrays[index].Dispose();
+            slot.arrayTypes.RemoveAtBySwapping(index);
+            slot.arrays.RemoveAtBySwapping(index);
+            slot.arrayLengths.RemoveAtBySwapping(index);
         }
 
         public static Span<byte> AddComponent(UnsafeWorld* world, eint entity, RuntimeType type)

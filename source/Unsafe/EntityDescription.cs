@@ -1,4 +1,5 @@
-﻿using Unmanaged.Collections;
+﻿using Unmanaged;
+using Unmanaged.Collections;
 
 namespace Simulation.Unsafe
 {
@@ -7,7 +8,9 @@ namespace Simulation.Unsafe
         public uint entity;
         public uint parent;
         public uint componentsKey;
-        public EntityCollections collections;
+        public UnmanagedList<Allocation> arrays;
+        public UnmanagedList<RuntimeType> arrayTypes;
+        public UnmanagedList<uint> arrayLengths;
         public UnmanagedList<uint> children;
         public UnmanagedList<uint> references;
         public State state;
@@ -21,7 +24,6 @@ namespace Simulation.Unsafe
             this.entity = entity;
             this.parent = default;
             this.componentsKey = componentsKey;
-            collections = EntityCollections.Create();
             state = State.Enabled;
         }
 

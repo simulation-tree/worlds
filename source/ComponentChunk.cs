@@ -134,7 +134,7 @@ namespace Simulation
         public readonly void* GetComponentPointer(uint index, RuntimeType type)
         {
             UnsafeList* components = GetComponents(type);
-            nint address = UnsafeList.GetAddress(components);
+            nint address = UnsafeList.GetStartAddress(components);
             return (void*)(address + (int)index * type.Size);
         }
 

@@ -2,14 +2,14 @@
 Simple library for implementing logic acting on data.
 
 ### Organizing data
-Data is stored as _components_ and _lists_, where both are found through an _entity_. Entities
+Data is stored as _components_ and _arrays_, where both are found through an _entity_. Entities
 are then stored in _worlds_, which can be serialized, deserialized and appended to other worlds:
 ```cs
 using World world = new();
 eint entity = world.CreateEntity();
 world.AddComponent(entity, new MyComponent(25));
 
-//component and list types are required to be value types all the way down
+//component and arrays types are required to be true value types all the way down
 public struct MyComponent(uint value)
 {
     public uint value = value;
@@ -24,20 +24,19 @@ world.Append(loadedWorld); //duplicates data
 ```
 > Only 1 component of each type can be on an entity
 
-Lists offer a way to store multiple of the same type, unlike components:
+Arrays offer a way to store multiple of the same type, unlike components:
 ```cs
-UnmanagedList<char> many = world.CreateCollection<char>(entity);
-many.AddRange("Hello world".AsSpan());
+Span<char> many = world.CreateArray<char>(entity, "Hello world");
 ```
 
-Both the components and lists can then be fetched back from the entity directly:
+Both components and arrays can be fetched back from the entity directly:
 ```cs
 ref MyComponent component = ref world.GetComponentRef<MyComponent>(entity);
 component.value *= 2;
 Assert.That(component.value, Is.EqualTo(50));
 
-UnmanagedList<char> many = world.GetCollection<char>(entity);
-Assert.That(many.AsSpan().ToString(), Is.EqualTo("Hello world"));
+Span<char> many = world.GetArray<char>(entity);
+Assert.That(many.ToString(), Is.EqualTo("Hello world"));
 ```
 
 ### Fetching data

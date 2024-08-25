@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Unmanaged;
+using static Simulation.Tests.WorldTests;
 using Unmanaged.Collections;
 
-namespace Simulation
+namespace Simulation.Tests
 {
     public class QueryTests
     {
@@ -114,6 +114,42 @@ namespace Simulation
             }
 
             Assert.That(found.Count, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void ComponentBuffer()
+        {
+            using World world = new();
+            eint entity1 = world.CreateEntity();
+            eint entity2 = world.CreateEntity();
+            SimpleComponent component1 = new("apple");
+            SimpleComponent component2 = new("banana");
+            world.AddComponent(entity1, component1);
+            world.AddComponent(entity2, component2);
+            eint entity3 = world.CreateEntity();
+            eint entity4 = world.CreateEntity();
+            Another another1 = new(5);
+            Another another2 = new(10);
+            world.AddComponent(entity3, another1);
+            world.AddComponent(entity4, another2);
+            eint entity5 = world.CreateEntity();
+            world.AddComponent(entity5, component1);
+            world.AddComponent(entity5, another2);
+            using UnmanagedList<SimpleComponent> buffer = UnmanagedList<SimpleComponent>.Create();
+            using UnmanagedList<eint> entities = UnmanagedList<eint>.Create();
+            world.Fill(buffer, entities);
+            Assert.That(buffer.Count, Is.EqualTo(3));
+            var entitiesSpan = entities.AsSpan();
+            Assert.That(entities.Contains(entity1), Is.True);
+            Assert.That(entities.Contains(entity2), Is.True);
+            Assert.That(entities.Contains(entity5), Is.True);
+            entities.Clear();
+            using UnmanagedList<Another> anotherBuffer = UnmanagedList<Another>.Create();
+            world.Fill(anotherBuffer, entities);
+            Assert.That(anotherBuffer.Count, Is.EqualTo(3));
+            Assert.That(entities.Contains(entity3), Is.True);
+            Assert.That(entities.Contains(entity4), Is.True);
+            Assert.That(entities.Contains(entity5), Is.True);
         }
 
         [Test]

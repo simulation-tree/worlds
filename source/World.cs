@@ -174,9 +174,9 @@ namespace Simulation
             for (uint i = 0; i < Slots.Count; i++)
             {
                 EntityDescription slot = Slots[i];
-                if (!slot.collections.IsDisposed)
+                if (!slot.arrayTypes.IsDisposed)
                 {
-                    foreach (RuntimeType type in slot.collections.Types)
+                    foreach (RuntimeType type in slot.arrayTypes)
                     {
                         if (!uniqueTypes.Contains(type))
                         {
@@ -215,25 +215,24 @@ namespace Simulation
                         writer.WriteSpan<byte>(componentBytes);
                     }
 
-                    //write lists
-                    if (slot.collections.IsDisposed)
+                    //write arrays
+                    if (slot.arrayTypes.IsDisposed)
                     {
                         writer.WriteValue(0u);
                     }
                     else
                     {
-                        writer.WriteValue((uint)slot.collections.Types.Length);
-                        foreach (RuntimeType type in slot.collections.Types)
+                        writer.WriteValue(slot.arrayTypes.Count);
+                        for (uint t = 0; t < slot.arrayTypes.Count; t++)
                         {
+                            RuntimeType type = slot.arrayTypes[t];
+                            void* array = slot.arrays[t];
+                            uint arrayLength = slot.arrayLengths[t];
                             writer.WriteValue(uniqueTypes.IndexOf(type));
-                            UnsafeList* list = slot.collections.GetList(type);
-                            uint listCount = UnsafeList.GetCountRef(list);
-                            writer.WriteValue(listCount);
-                            if (listCount > 0)
+                            writer.WriteValue(arrayLength);
+                            if (arrayLength > 0)
                             {
-                                nint address = UnsafeList.GetAddress(list);
-                                Span<byte> bytes = new((void*)address, (int)(listCount * type.Size));
-                                writer.WriteSpan<byte>(bytes);
+                                writer.WriteSpan<byte>(new Span<byte>(array, (int)(arrayLength * type.Size)));
                             }
                         }
                     }
@@ -267,7 +266,7 @@ namespace Simulation
                 uniqueTypes.Add(type);
             }
 
-            //create entities and fill them with components and lists
+            //create entities and fill them with components and arrays
             uint entityCount = reader.ReadValue<uint>();
             uint currentEntityId = 1;
             using UnmanagedList<eint> temporaryEntities = UnmanagedList<eint>.Create();
@@ -303,22 +302,18 @@ namespace Simulation
                     UnsafeWorld.NotifyComponentAdded(this, entity, type);
                 }
 
-                //read lists
-                uint listCount = reader.ReadValue<uint>();
-                for (uint j = 0; j < listCount; j++)
+                //read arrays
+                uint arrayCount = reader.ReadValue<uint>();
+                for (uint a = 0; a < arrayCount; a++)
                 {
                     uint typeIndex = reader.ReadValue<uint>();
-                    RuntimeType type = uniqueTypes[typeIndex];
-                    uint listLength = reader.ReadValue<uint>();
-                    uint byteCount = listLength * type.Size;
-                    UnsafeList* list = UnsafeWorld.CreateList(value, entity, type, listLength == 0 ? 1 : listLength);
-                    if (listLength > 0)
+                    uint arrayLength = reader.ReadValue<uint>();
+                    RuntimeType arrayType = uniqueTypes[typeIndex];
+                    uint byteCount = arrayLength * arrayType.Size;
+                    void* array = UnsafeWorld.CreateArray(value, entity, arrayType, arrayLength);
+                    if (arrayLength > 0)
                     {
-                        UnsafeList.AddDefault(list, listLength);
-                        nint address = UnsafeList.GetAddress(list);
-                        Span<byte> destinationBytes = new((void*)address, (int)byteCount);
-                        ReadOnlySpan<byte> sourceBytes = reader.ReadSpan<byte>(byteCount);
-                        sourceBytes.CopyTo(destinationBytes);
+                        reader.ReadSpan<byte>(byteCount).CopyTo(new Span<byte>(array, (int)byteCount));
                     }
                 }
 
@@ -381,18 +376,19 @@ namespace Simulation
                         UnsafeWorld.NotifyComponentAdded(this, destinationEntity, componentType);
                     }
 
-                    //add lists
-                    if (!sourceSlot.collections.IsDisposed)
+                    //add arrays
+                    if (!sourceSlot.arrayTypes.IsDisposed)
                     {
-                        foreach (RuntimeType listType in sourceSlot.collections.Types)
+                        for (uint t = 0; t < sourceSlot.arrayTypes.Count; t++)
                         {
-                            UnsafeList* sourceList = sourceSlot.collections.GetList(listType);
-                            uint count = UnsafeList.GetCountRef(sourceList);
-                            UnsafeList* destinationList = UnsafeWorld.CreateList(value, destinationEntity, listType, count + 1);
-                            UnsafeList.AddDefault(destinationList, count);
-                            for (uint e = 0; e < count; e++)
+                            RuntimeType sourceArrayType = sourceSlot.arrayTypes[t];
+                            uint sourceArrayLength = sourceSlot.arrayLengths[t];
+                            void* sourceArray = sourceSlot.arrays[t];
+                            void* destinationArray = UnsafeWorld.CreateArray(value, destinationEntity, sourceArrayType, sourceArrayLength);
+                            if (sourceArrayLength > 0)
                             {
-                                UnsafeList.CopyElementTo(sourceList, e, destinationList, e);
+                                Span<byte> sourceBytes = new(sourceArray, (int)(sourceArrayLength * sourceArrayType.Size));
+                                sourceBytes.CopyTo(new Span<byte>(destinationArray, (int)(sourceArrayLength * sourceArrayType.Size)));
                             }
                         }
                     }
@@ -577,94 +573,52 @@ namespace Simulation
                     SetComponent(entity, componentType, componentBytes);
                 }
             }
-            else if (instruction.type == Instruction.Type.CreateList)
+            else if (instruction.type == Instruction.Type.CreateArray)
             {
-                RuntimeType listType = new((uint)instruction.A);
-                uint count = (uint)instruction.B;
-                uint initialCapacity = count == 0 ? 1 : count;
-                for (uint i = 0; i < selection.Count; i++)
-                {
-                    eint entity = selection[i];
-                    UnsafeList* list = CreateList(entity, listType, initialCapacity);
-                    UnsafeList.AddDefault(list, count);
-                }
-            }
-            else if (instruction.type == Instruction.Type.DestroyList)
-            {
-                RuntimeType listType = new((uint)instruction.A);
-                for (uint i = 0; i < selection.Count; i++)
-                {
-                    eint entity = selection[i];
-                    DestroyList(entity, listType);
-                }
-            }
-            else if (instruction.type == Instruction.Type.ClearList)
-            {
-                RuntimeType listType = new((uint)instruction.A);
-                for (uint i = 0; i < selection.Count; i++)
-                {
-                    eint entity = selection[i];
-                    ClearList(entity, listType);
-                }
-            }
-            else if (instruction.type == Instruction.Type.InsertElement)
-            {
-                RuntimeType listType = new((uint)instruction.A);
-                uint elementSize = listType.Size;
-                UnsafeArray* array = (UnsafeArray*)(nint)instruction.B;
-                uint index = (uint)instruction.C;
-                uint arrayLength = UnsafeArray.GetLength(array);
-                int length = (int)(arrayLength * elementSize);
-                Span<byte> elementBytes = new((void*)UnsafeArray.GetAddress(array), length);
-                if (index == uint.MaxValue)
-                {
-                    for (uint i = 0; i < selection.Count; i++)
-                    {
-                        eint entity = selection[i];
-                        UnsafeList* list = GetList(entity, listType);
-                        for (uint e = 0; e < elementBytes.Length; e += elementSize)
-                        {
-                            UnsafeList.Add(list, elementBytes.Slice((int)e, (int)elementSize));
-                        }
-                    }
-                }
-                else
-                {
-                    for (uint i = 0; i < selection.Count; i++)
-                    {
-                        eint entity = selection[i];
-                        UnsafeList* list = GetList(entity, listType);
-                        for (uint e = 0; e < elementBytes.Length; e += elementSize)
-                        {
-                            UnsafeList.Insert(list, index, elementBytes.Slice((int)e, (int)elementSize));
-                            index++;
-                        }
-                    }
-                }
-            }
-            else if (instruction.type == Instruction.Type.RemoveElement)
-            {
-                RuntimeType listType = new((uint)instruction.A);
-                uint index = (uint)instruction.B;
-                for (uint i = 0; i < selection.Count; i++)
-                {
-                    eint entity = selection[i];
-                    UnsafeList* list = GetList(entity, listType);
-                    UnsafeList.RemoveAt(list, index);
-                }
-            }
-            else if (instruction.type == Instruction.Type.ModifyElement)
-            {
-                RuntimeType listType = new((uint)instruction.A);
+                RuntimeType arrayType = new((uint)instruction.A);
+                uint arrayTypeSize = arrayType.Size;
                 Allocation allocation = new((void*)(nint)instruction.B);
-                uint index = (uint)instruction.C;
-                Span<byte> elementBytes = allocation.AsSpan<byte>(0, listType.Size);
+                uint count = (uint)instruction.C;
                 for (uint i = 0; i < selection.Count; i++)
                 {
                     eint entity = selection[i];
-                    UnsafeList* list = GetList(entity, listType);
-                    Span<byte> slotBytes = UnsafeList.GetElementBytes(list, index);
-                    elementBytes.CopyTo(slotBytes);
+                    Allocation newArray = CreateArray(entity, arrayType, count);
+                    allocation.CopyTo(newArray, 0, 0, count * arrayTypeSize);
+                }
+            }
+            else if (instruction.type == Instruction.Type.DestroyArray)
+            {
+                RuntimeType arrayType = new((uint)instruction.A);
+                for (uint i = 0; i < selection.Count; i++)
+                {
+                    eint entity = selection[i];
+                    DestroyArray(entity, arrayType);
+                }
+            }
+            else if (instruction.type == Instruction.Type.SetArrayElement)
+            {
+                RuntimeType arrayType = new((uint)instruction.A);
+                uint arrayTypeSize = arrayType.Size;
+                Allocation allocation = new((void*)(nint)instruction.B);
+                uint elementCount = allocation.Read<uint>();
+                uint start = (uint)instruction.C;
+                Span<byte> elementBytes = allocation.AsSpan(sizeof(uint), elementCount * arrayTypeSize);
+                for (uint i = 0; i < selection.Count; i++)
+                {
+                    eint entity = selection[i];
+                    void* array = UnsafeWorld.GetArray(value, entity, arrayType, out uint entityArrayLength);
+                    Span<byte> entityArray = new(array, (int)(entityArrayLength * arrayTypeSize));
+                    elementBytes.CopyTo(entityArray.Slice((int)(start * arrayTypeSize), (int)(elementCount * arrayTypeSize)));
+                }
+            }
+            else if (instruction.type == Instruction.Type.ResizeArray)
+            {
+                RuntimeType arrayType = new((uint)instruction.A);
+                uint newLength = (uint)instruction.B;
+                for (uint i = 0; i < selection.Count; i++)
+                {
+                    eint entity = selection[i];
+                    UnsafeWorld.ResizeArray(value, entity, arrayType, newLength);
                 }
             }
             else
@@ -764,16 +718,6 @@ namespace Simulation
             EntityDescription slot = Slots[entity.value - 1];
             ComponentChunk chunk = ComponentChunks[slot.componentsKey];
             return chunk.Types;
-        }
-
-        /// <summary>
-        /// Retrieves the types for all lists on this entity.
-        /// </summary>
-        public readonly ReadOnlySpan<RuntimeType> GetListTypes(eint entity)
-        {
-            UnsafeWorld.ThrowIfEntityMissing(value, entity);
-            EntityDescription slot = Slots[entity.value - 1];
-            return slot.collections.Types;
         }
 
         public readonly bool IsEnabled(eint entity)
@@ -1070,61 +1014,73 @@ namespace Simulation
             slot.references.RemoveAt(reference.value - 1);
         }
 
-        public readonly UnsafeList* CreateList(eint entity, RuntimeType listType, uint initialCapacity = 1)
+        /// <summary>
+        /// Retrieves the types of all arrays on this entity.
+        /// </summary>
+        public readonly ReadOnlySpan<RuntimeType> GetArrayTypes(eint entity)
         {
-            return UnsafeWorld.CreateList(value, entity, listType, initialCapacity);
+            UnsafeWorld.ThrowIfEntityMissing(value, entity);
+            EntityDescription slot = Slots[entity.value - 1];
+            return slot.arrayTypes.AsSpan();
         }
 
         /// <summary>
-        /// Creates a new list on this entity.
+        /// Creates a new uninitialized array with the given length and type.
         /// </summary>
-        public readonly UnmanagedList<T> CreateList<T>(eint entity, uint initialCapacity = 1) where T : unmanaged
+        public readonly Allocation CreateArray(eint entity, RuntimeType arrayLength, uint length)
         {
-            UnmanagedList<T> list = new(UnsafeWorld.CreateList(value, entity, RuntimeType.Get<T>(), initialCapacity));
-            return list;
-        }
-
-        public readonly void CreateList<T>(eint entity, ReadOnlySpan<T> values) where T : unmanaged
-        {
-            UnmanagedList<T> list = new(UnsafeWorld.CreateList(value, entity, RuntimeType.Get<T>()));
-            list.AddRange(values);
-        }
-
-        public readonly void AddToList<T>(eint entity, T value) where T : unmanaged
-        {
-            UnmanagedList<T> list = new(UnsafeWorld.GetList(this.value, entity, RuntimeType.Get<T>()));
-            list.Add(value);
-        }
-
-        public readonly bool ContainsList<T>(eint entity) where T : unmanaged
-        {
-            return ContainsList(entity, RuntimeType.Get<T>());
-        }
-
-        public readonly bool ContainsList(eint entity, RuntimeType listType)
-        {
-            return UnsafeWorld.ContainsList(value, entity, listType);
-        }
-
-        public readonly void AddRangeToList<T>(eint entity, ReadOnlySpan<T> values) where T : unmanaged
-        {
-            UnmanagedList<T> list = new(UnsafeWorld.GetList(value, entity, RuntimeType.Get<T>()));
-            list.AddRange(values);
+            void* array = UnsafeWorld.CreateArray(value, entity, arrayLength, length);
+            return new(array);
         }
 
         /// <summary>
-        /// Retrieves a list of type <typeparamref name="T"/> on the given entity.
+        /// Creates a new array on this entity.
         /// </summary>
-        public readonly UnmanagedList<T> GetList<T>(eint entity) where T : unmanaged
+        public readonly Span<T> CreateArray<T>(eint entity, uint length) where T : unmanaged
         {
-            return new(UnsafeWorld.GetList(value, entity, RuntimeType.Get<T>()));
+            Allocation array = CreateArray(entity, RuntimeType.Get<T>(), length);
+            return array.AsSpan<T>(0, length);
         }
 
-        public readonly bool TryGetList<T>(eint entity, out UnmanagedList<T> list) where T : unmanaged
+        /// <summary>
+        /// Creates a new array containing the given span.
+        /// </summary>
+        public readonly void CreateArray<T>(eint entity, ReadOnlySpan<T> values) where T : unmanaged
         {
-            if (ContainsList<T>(entity))
+            Span<T> array = CreateArray<T>(entity, (uint)values.Length);
+            values.CopyTo(array);
+        }
+
+        public readonly bool ContainsArray<T>(eint entity) where T : unmanaged
+        {
+            return ContainsArray(entity, RuntimeType.Get<T>());
+        }
+
+        public readonly bool ContainsArray(eint entity, RuntimeType arrayType)
+        {
+            return UnsafeWorld.ContainsArray(value, entity, arrayType);
+        }
+
+        /// <summary>
+        /// Retrieves the array of type <typeparamref name="T"/> on the given entity.
+        /// </summary>
+        public readonly Span<T> GetArray<T>(eint entity) where T : unmanaged
+        {
+            void* array = UnsafeWorld.GetArray(value, entity, RuntimeType.Get<T>(), out uint length);
+            return new Span<T>(array, (int)length);
+        }
+
+        public readonly Span<T> ResizeArray<T>(eint entity, uint newLength) where T : unmanaged
+        {
+            void* array = UnsafeWorld.ResizeArray(value, entity, RuntimeType.Get<T>(), newLength);
+            return new Span<T>(array, (int)newLength);
+        }
+
+        public readonly bool TryGetArray<T>(eint entity, out Span<T> list) where T : unmanaged
+        {
+            if (ContainsArray<T>(entity))
             {
-                list = GetList<T>(entity);
+                list = GetArray<T>(entity);
                 return true;
             }
             else
@@ -1134,86 +1090,44 @@ namespace Simulation
             }
         }
 
-        public readonly UnsafeList* GetList(eint entity, RuntimeType listType)
-        {
-            return UnsafeWorld.GetList(value, entity, listType);
-        }
-
         /// <summary>
         /// Retrieves the element at the index from an existing list on this entity.
         /// </summary>
-        public readonly ref T GetListElement<T>(eint entity, uint index) where T : unmanaged
+        public readonly ref T GetArrayElement<T>(eint entity, uint index) where T : unmanaged
         {
             EntityDescription slot = UnsafeWorld.GetEntitySlotRef(value, entity);
-            if (slot.collections.IsDisposed)
+            if (slot.arrayTypes.IsDisposed)
             {
                 throw new InvalidOperationException($"No lists found on entity `{entity.value}`.");
             }
 
             RuntimeType listType = RuntimeType.Get<T>();
-            if (!slot.collections.Types.Contains(listType))
+            if (!slot.arrayTypes.Contains(listType))
             {
                 throw new InvalidOperationException($"No list of type `{typeof(T)}` found on entity `{entity.value}`.");
             }
 
-            UnsafeList* list = slot.collections.GetList(listType);
-            return ref UnsafeList.GetRef<T>(list, index);
+            void* array = UnsafeWorld.GetArray(value, entity, listType, out uint arrayLength);
+            Span<T> span = new(array, (int)arrayLength);
+            return ref span[(int)index];
         }
 
         /// <summary>
         /// Retrieves the length of an existing list on this entity.
         /// </summary>
-        public readonly uint GetListLength<T>(eint entity, out bool contains) where T : unmanaged
+        public readonly uint GetArrayLength<T>(eint entity) where T : unmanaged
         {
-            EntityDescription slot = UnsafeWorld.GetEntitySlotRef(value, entity);
-            if (slot.collections.IsDisposed)
-            {
-                contains = false;
-                return 0;
-            }
-
-            RuntimeType listType = RuntimeType.Get<T>();
-            if (!slot.collections.Types.Contains(listType))
-            {
-                contains = false;
-                return 0;
-            }
-
-            contains = true;
-            return UnsafeList.GetCountRef(slot.collections.GetList(listType));
+            return UnsafeWorld.GetArrayLength(value, entity, RuntimeType.Get<T>());
         }
         
-        public readonly uint GetListLength<T>(eint entity) where T : unmanaged
+        public readonly void DestroyArray<T>(eint entity) where T : unmanaged
         {
-            return GetListLength<T>(entity, out _);
+            DestroyArray(entity, RuntimeType.Get<T>());
         }
 
-        public readonly void RemoveAtList<T>(eint entity, uint index) where T : unmanaged
+        public readonly void DestroyArray(eint entity, RuntimeType arrayType)
         {
-            UnsafeList* list = UnsafeWorld.GetList(value, entity, RuntimeType.Get<T>());
-            UnsafeList.RemoveAt(list, index);
-        }
-
-        public readonly void DestroyList<T>(eint entity) where T : unmanaged
-        {
-            UnsafeWorld.DestroyList<T>(value, entity);
-        }
-
-        public readonly void DestroyList(eint entity, RuntimeType type)
-        {
-            UnsafeWorld.DestroyList(value, entity, type);
-        }
-
-        public readonly void ClearList<T>(eint entity) where T : unmanaged
-        {
-            UnsafeList* list = UnsafeWorld.GetList(value, entity, RuntimeType.Get<T>());
-            UnsafeList.Clear(list);
-        }
-
-        public readonly void ClearList(eint entity, RuntimeType listType)
-        {
-            UnsafeList* list = UnsafeWorld.GetList(value, entity, listType);
-            UnsafeList.Clear(list);
+            UnsafeWorld.DestroyArray(value, entity, arrayType);
         }
 
         public readonly void AddComponent<T>(eint entity, T component) where T : unmanaged
@@ -1501,35 +1415,28 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Copies all lists from the source entity onto the destination.
-        /// <para>Lists will be added if the destination entity doesnt
-        /// contain them. Existing list data will be overwritten.</para>
+        /// Copies all arrays from the source entity onto the destination.
+        /// <para>Arrays will be created if the destination doesn't already
+        /// contain them. Data will be overwritten, and lengths will be changed.</para>
         /// </summary>
-        public readonly void CopyListsTo(eint sourceEntity, World destinationWorld, eint destinationEntity)
+        public readonly void CopyArraysTo(eint sourceEntity, World destinationWorld, eint destinationEntity)
         {
-            foreach (RuntimeType sourceListType in GetListTypes(sourceEntity))
+            foreach (RuntimeType sourceListType in GetArrayTypes(sourceEntity))
             {
-                UnsafeList* sourceList = GetList(sourceEntity, sourceListType);
-                uint sourceLength = UnsafeList.GetCountRef(sourceList);
-                if (!destinationWorld.ContainsList(destinationEntity, sourceListType))
+                void* sourceArray = UnsafeWorld.GetArray(value, sourceEntity, sourceListType, out uint sourceLength);
+                void* destinationArray;
+                if (!destinationWorld.ContainsArray(destinationEntity, sourceListType))
                 {
-                    UnsafeList* destinationList = destinationWorld.CreateList(destinationEntity, sourceListType);
-                    UnsafeList.AddDefault(destinationList, UnsafeList.GetCountRef(sourceList));
-                    for (uint i = 0; i < sourceLength; i++)
-                    {
-                        UnsafeList.CopyElementTo(sourceList, i, destinationList, i);
-                    }
+                    destinationArray = UnsafeWorld.CreateArray(destinationWorld.value, destinationEntity, sourceListType, sourceLength);
                 }
                 else
                 {
-                    UnsafeList* destinationList = destinationWorld.GetList(destinationEntity, sourceListType);
-                    uint destinationIndex = UnsafeList.GetCountRef(destinationList);
-                    UnsafeList.AddDefault(destinationList, sourceLength);
-                    for (uint i = 0; i < sourceLength; i++)
-                    {
-                        UnsafeList.CopyElementTo(sourceList, i, destinationList, destinationIndex + i);
-                    }
+                    destinationArray = UnsafeWorld.ResizeArray(destinationWorld.value, destinationEntity, sourceListType, sourceLength);
                 }
+
+                Span<byte> sourceBytes = new(sourceArray, (int)sourceLength);
+                Span<byte> destinationBytes = new(destinationArray, (int)sourceLength);
+                sourceBytes.CopyTo(destinationBytes);
             }
         }
 

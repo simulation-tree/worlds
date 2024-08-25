@@ -4,7 +4,7 @@ using System.Linq;
 using Unmanaged;
 using Unmanaged.Collections;
 
-namespace Simulation
+namespace Simulation.Tests
 {
     public class SerializationTests
     {
@@ -17,7 +17,7 @@ namespace Simulation
         [Test]
         public void SaveWorld()
         {
-            using World world = new();
+            World world = new();
             eint a = world.CreateEntity();
             world.AddComponent(a, new Fruit(42));
             world.AddComponent(a, new Apple("Hello, World!"));
@@ -28,7 +28,7 @@ namespace Simulation
             world.AddComponent(c, new Apple("Goodbye, World!"));
             world.DestroyEntity(temporary);
             eint list = world.CreateEntity();
-            world.CreateList<char>(list, "Well hello there list");
+            world.CreateArray<char>(list, "Well hello there list");
 
             List<eint> oldEntities = world.Entities.ToList();
             List<(eint, Apple)> apples = new();
@@ -39,6 +39,8 @@ namespace Simulation
 
             using BinaryWriter writer = BinaryWriter.Create();
             writer.WriteObject(world);
+            world.Dispose();
+
             ReadOnlySpan<byte> data = writer.AsSpan();
             using BinaryReader reader = new(data);
 
@@ -52,8 +54,8 @@ namespace Simulation
 
             Assert.That(newEntities, Is.EquivalentTo(oldEntities));
             Assert.That(newApples, Is.EquivalentTo(apples));
-            Assert.That(loadedWorld.ContainsList<char>(list), Is.True);
-            Assert.That(loadedWorld.GetList<char>(list).AsSpan().ToArray(), Is.EqualTo("Well hello there list"));
+            Assert.That(loadedWorld.ContainsArray<char>(list), Is.True);
+            Assert.That(loadedWorld.GetArray<char>(list).ToArray(), Is.EqualTo("Well hello there list"));
         }
 
         [Test]

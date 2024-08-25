@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using Unmanaged;
 
-namespace Simulation
+namespace Simulation.Tests
 {
     public class ListenerTests
     {

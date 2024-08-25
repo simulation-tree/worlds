@@ -1,6 +1,5 @@
 ﻿using System;
 using Unmanaged;
-using Unmanaged.Collections;
 
 namespace Simulation
 {
@@ -28,15 +27,10 @@ namespace Simulation
 
         public unsafe readonly void Dispose()
         {
-            if (type == Type.AddComponent || type == Type.SetComponent)
+            if (type == Type.AddComponent || type == Type.SetComponent || type == Type.CreateArray || type == Type.SetArrayElement)
             {
                 Allocation allocation = new((void*)(nint)b);
                 allocation.Dispose();
-            }
-            else if (type == Type.InsertElement || type == Type.ModifyElement)
-            {
-                UnsafeArray* array = (UnsafeArray*)(nint)b;
-                UnsafeArray.Free(ref array);
             }
         }
 
@@ -309,7 +303,7 @@ namespace Simulation
                 length += written;
                 buffer[length++] = ')';
             }
-            else if (type == Type.CreateList)
+            else if (type == Type.CreateArray)
             {
                 buffer[length++] = 'C';
                 buffer[length++] = 'r';
@@ -317,13 +311,14 @@ namespace Simulation
                 buffer[length++] = 'a';
                 buffer[length++] = 't';
                 buffer[length++] = 'e';
-                buffer[length++] = 'L';
-                buffer[length++] = 'i';
-                buffer[length++] = 's';
-                buffer[length++] = 't';
+                buffer[length++] = 'A';
+                buffer[length++] = 'r';
+                buffer[length++] = 'r';
+                buffer[length++] = 'a';
+                buffer[length++] = 'y';
                 buffer[length++] = '<';
-                RuntimeType elementType = new((uint)a);
-                int written = elementType.ToString(buffer[length..]);
+                RuntimeType arrayType = new((uint)a);
+                int written = arrayType.ToString(buffer[length..]);
                 length += written;
                 buffer[length++] = '>';
                 buffer[length++] = '(';
@@ -332,7 +327,7 @@ namespace Simulation
                 length += written;
                 buffer[length++] = ')';
             }
-            else if (type == Type.DestroyList)
+            else if (type == Type.DestroyArray)
             {
                 buffer[length++] = 'D';
                 buffer[length++] = 'e';
@@ -341,149 +336,52 @@ namespace Simulation
                 buffer[length++] = 'r';
                 buffer[length++] = 'o';
                 buffer[length++] = 'y';
-                buffer[length++] = 'L';
-                buffer[length++] = 'i';
-                buffer[length++] = 's';
-                buffer[length++] = 't';
-                buffer[length++] = '<';
-                RuntimeType elementType = new((uint)a);
-                int written = elementType.ToString(buffer[length..]);
-                length += written;
-                buffer[length++] = '>';
-                buffer[length++] = '(';
-                buffer[length++] = ')';
-            }
-            else if (type == Type.ClearList)
-            {
-                buffer[length++] = 'C';
-                buffer[length++] = 'l';
-                buffer[length++] = 'e';
-                buffer[length++] = 'a';
+                buffer[length++] = 'A';
                 buffer[length++] = 'r';
-                buffer[length++] = 'L';
-                buffer[length++] = 'i';
-                buffer[length++] = 's';
-                buffer[length++] = 't';
+                buffer[length++] = 'r';
+                buffer[length++] = 'a';
+                buffer[length++] = 'y';
                 buffer[length++] = '<';
-                RuntimeType elementType = new((uint)a);
-                int written = elementType.ToString(buffer[length..]);
+                RuntimeType arrayType = new((uint)a);
+                int written = arrayType.ToString(buffer[length..]);
                 length += written;
                 buffer[length++] = '>';
                 buffer[length++] = '(';
                 buffer[length++] = ')';
             }
-            else if (type == Type.InsertElement)
-            {
-                uint index = (uint)c;
-                UnsafeArray* array = (UnsafeArray*)(nint)b;
-                uint count = UnsafeArray.GetLength(array);
-                if (index == uint.MaxValue)
-                {
-                    buffer[length++] = 'A';
-                    buffer[length++] = 'd';
-                    buffer[length++] = 'd';
-                    if (count > 1)
-                    {
-                        count.TryFormat(buffer[length..], out int wr);
-                        length += wr;
-                    }
-
-                    buffer[length++] = 'E';
-                    buffer[length++] = 'l';
-                    buffer[length++] = 'e';
-                    buffer[length++] = 'm';
-                    buffer[length++] = 'e';
-                    buffer[length++] = 'n';
-                    buffer[length++] = 't';
-                    if (count > 1)
-                    {
-                        buffer[length++] = 's';
-                    }
-
-                    buffer[length++] = '<';
-                    RuntimeType elementType = new((uint)a);
-                    int written = elementType.ToString(buffer[length..]);
-                    length += written;
-                    buffer[length++] = '>';
-                    buffer[length++] = '(';
-                    ((nint)array).TryFormat(buffer[length..], out written);
-                    length += written;
-                    buffer[length++] = ')';
-                }
-                else
-                {
-                    buffer[length++] = 'I';
-                    buffer[length++] = 'n';
-                    buffer[length++] = 's';
-                    buffer[length++] = 'e';
-                    buffer[length++] = 'r';
-                    buffer[length++] = 't';
-                    if (count > 1)
-                    {
-                        count.TryFormat(buffer[length..], out int wr);
-                        length += wr;
-                    }
-
-                    buffer[length++] = 'E';
-                    buffer[length++] = 'l';
-                    buffer[length++] = 'e';
-                    buffer[length++] = 'm';
-                    buffer[length++] = 'e';
-                    buffer[length++] = 'n';
-                    buffer[length++] = 't';
-                    if (count > 1)
-                    {
-                        buffer[length++] = 's';
-                    }
-
-                    buffer[length++] = '<';
-                    RuntimeType elementType = new((uint)a);
-                    int written = elementType.ToString(buffer[length..]);
-                    length += written;
-                    buffer[length++] = '>';
-                    buffer[length++] = '(';
-                    ((nint)array).TryFormat(buffer[length..], out written);
-                    length += written;
-                    buffer[length++] = ',';
-                    index.TryFormat(buffer[length..], out written);
-                    length += written;
-                    buffer[length++] = ')';
-                }
-            }
-            else if (type == Type.RemoveElement)
+            else if (type == Type.ResizeArray)
             {
                 buffer[length++] = 'R';
                 buffer[length++] = 'e';
-                buffer[length++] = 'm';
-                buffer[length++] = 'o';
-                buffer[length++] = 'v';
+                buffer[length++] = 's';
+                buffer[length++] = 'i';
+                buffer[length++] = 'z';
                 buffer[length++] = 'e';
-                buffer[length++] = 'E';
-                buffer[length++] = 'l';
-                buffer[length++] = 'e';
-                buffer[length++] = 'm';
-                buffer[length++] = 'e';
-                buffer[length++] = 'n';
-                buffer[length++] = 't';
+                buffer[length++] = 'A';
+                buffer[length++] = 'r';
+                buffer[length++] = 'r';
+                buffer[length++] = 'a';
+                buffer[length++] = 'y';
                 buffer[length++] = '<';
-                RuntimeType elementType = new((uint)a);
-                int written = elementType.ToString(buffer[length..]);
+                RuntimeType arrayType = new((uint)a);
+                int written = arrayType.ToString(buffer[length..]);
                 length += written;
                 buffer[length++] = '>';
                 buffer[length++] = '(';
-                nint index = (nint)b;
-                index.TryFormat(buffer[length..], out written);
-                length += written;
                 buffer[length++] = ')';
             }
-            else if (type == Type.ModifyElement)
+            else if (type == Type.SetArrayElement)
             {
-                buffer[length++] = 'M';
-                buffer[length++] = 'o';
-                buffer[length++] = 'd';
-                buffer[length++] = 'i';
-                buffer[length++] = 'f';
-                buffer[length++] = 'y';
+                Allocation allocation = new((void*)(nint)b);
+                uint count = allocation.Read<uint>();
+                uint index = (uint)c;
+                buffer[length++] = 'S';
+                buffer[length++] = 'e';
+                buffer[length++] = 't';
+
+                count.TryFormat(buffer[length..], out int wr);
+                length += wr;
+
                 buffer[length++] = 'E';
                 buffer[length++] = 'l';
                 buffer[length++] = 'e';
@@ -491,19 +389,29 @@ namespace Simulation
                 buffer[length++] = 'e';
                 buffer[length++] = 'n';
                 buffer[length++] = 't';
+                if (count > 1)
+                {
+                    buffer[length++] = 's';
+                }
+
                 buffer[length++] = '<';
+
                 RuntimeType elementType = new((uint)a);
                 int written = elementType.ToString(buffer[length..]);
                 length += written;
+
                 buffer[length++] = '>';
                 buffer[length++] = '(';
-                nint allocationAddress = (nint)b;
-                allocationAddress.TryFormat(buffer[length..], out written);
-                length += written;
-                buffer[length++] = ',';
-                nint index = (nint)c;
+
                 index.TryFormat(buffer[length..], out written);
                 length += written;
+
+                buffer[length++] = ',';
+                buffer[length++] = ' ';
+
+                allocation.Address.TryFormat(buffer[length..], out written);
+                length += written;
+
                 buffer[length++] = ')';
             }
 
@@ -646,90 +554,70 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Creates a list of the specified type for the selected entities.
+        /// Creates an array of the specified type and length for the selected entities.
         /// </summary>
-        public static Instruction CreateList<T>(uint count = 0) where T : unmanaged
+        public static Instruction CreateArray<T>(uint length) where T : unmanaged
         {
-            return new(Type.CreateList, RuntimeType.Get<T>().value, count, 0);
+            return CreateArray(RuntimeType.Get<T>(), length);
         }
 
-        public static Instruction CreateList(RuntimeType elementType, uint count = 0)
+        public static Instruction CreateArray(RuntimeType arrayType, uint length)
         {
-            return new(Type.CreateList, elementType.value, count, 0);
+            Allocation allocaton = new(arrayType.Size * length);
+            return new(Type.CreateArray, arrayType.value, (ulong)(nint)allocaton, length);
         }
 
-        public static Instruction DestroyList<T>() where T : unmanaged
+        public unsafe static Instruction CreateArray<T>(ReadOnlySpan<T> values) where T : unmanaged
         {
-            return new(Type.DestroyList, RuntimeType.Get<T>().value, 0, 0);
+            Allocation allocation = Allocation.Create(values);
+            return new(Type.CreateArray, RuntimeType.Get<T>().value, (ulong)(nint)allocation, (uint)values.Length);
         }
 
-        public static Instruction DestroyList(RuntimeType elementType)
+        public static Instruction DestroyArray<T>() where T : unmanaged
         {
-            return new(Type.DestroyList, elementType.value, 0, 0);
+            return DestroyArray(RuntimeType.Get<T>());
         }
 
-        /// <summary>
-        /// Clears lists of the given type on the selected entities.
-        /// </summary>
-        public static Instruction ClearList<T>() where T : unmanaged
+        public static Instruction DestroyArray(RuntimeType elementType)
         {
-            return new(Type.ClearList, RuntimeType.Get<T>().value, 0, 0);
+            return new(Type.DestroyArray, elementType.value, 0, 0);
         }
 
-        public static Instruction ClearCollection(RuntimeType elementType)
+        public unsafe static Instruction SetArrayElement<T>(uint index, T element) where T : unmanaged
         {
-            return new(Type.ClearList, elementType.value, 0, 0);
+            Allocation allocation = new(sizeof(uint) + (uint)sizeof(T));
+            allocation.Write(0, 1);
+            allocation.Write(sizeof(uint), element);
+            return new(Type.SetArrayElement, RuntimeType.Get<T>().value, (ulong)(nint)allocation, index);
         }
 
-        public unsafe static Instruction AppendToList<T>(T element) where T : unmanaged
+        public unsafe static Instruction SetArrayElement<T>(uint index, Span<T> elements) where T : unmanaged
         {
-            UnsafeArray* array = UnsafeArray.Allocate<T>(1);
-            UnsafeArray.GetRef<T>(array, 0) = element;
-            return new(Type.InsertElement, RuntimeType.Get<T>().value, (ulong)(nint)array, uint.MaxValue);
+            Allocation allocation = new(sizeof(uint) + (uint)(sizeof(T) * elements.Length));
+            allocation.Write(0, (uint)elements.Length);
+            allocation.Write(sizeof(uint), elements);
+            return new(Type.SetArrayElement, RuntimeType.Get<T>().value, (ulong)(nint)allocation, index);
         }
 
-        public unsafe static Instruction AppendToList<T>(ReadOnlySpan<T> elements) where T : unmanaged
+        public unsafe static Instruction SetArrayElement<T>(uint index, ReadOnlySpan<T> elements) where T : unmanaged
         {
-            UnsafeArray* array = UnsafeArray.Allocate(elements);
-            return new(Type.InsertElement, RuntimeType.Get<T>().value, (ulong)(nint)array, uint.MaxValue);
+            Allocation allocation = new(sizeof(uint) + (uint)(sizeof(T) * elements.Length));
+            allocation.Write(0, (uint)elements.Length);
+            allocation.Write(sizeof(uint), elements);
+            return new(Type.SetArrayElement, RuntimeType.Get<T>().value, (ulong)(nint)allocation, index);
         }
 
-        public unsafe static Instruction InsertElement<T>(T element, uint index) where T : unmanaged
+        public static Instruction ResizeArray<T>(uint newLength) where T : unmanaged
         {
-            UnsafeArray* array = UnsafeArray.Allocate<T>(1);
-            UnsafeArray.GetRef<T>(array, 0) = element;
-            return new(Type.InsertElement, RuntimeType.Get<T>().value, (ulong)(nint)array, index);
+            return ResizeArray(RuntimeType.Get<T>(), newLength);
         }
 
-        public unsafe static Instruction InsertElement(RuntimeType elementType, ReadOnlySpan<byte> elementData, uint index)
+        public static Instruction ResizeArray(RuntimeType arrayType, uint newLength)
         {
-            UnsafeArray* array = UnsafeArray.Allocate(elementData);
-            return new(Type.InsertElement, elementType.value, (ulong)(nint)array, index);
+            return new(Type.ResizeArray, arrayType.value, newLength, 0);
         }
 
-        public static Instruction RemoveElement<T>(uint index) where T : unmanaged
-        {
-            return new(Type.RemoveElement, RuntimeType.Get<T>().value, index, 0);
-        }
-
-        public static Instruction RemoveElement(RuntimeType elementType, uint index)
-        {
-            return new(Type.RemoveElement, elementType.value, index, 0);
-        }
-
-        public static Instruction ModifyElement<T>(uint index, T element) where T : unmanaged
-        {
-            Allocation allocation = Allocation.Create(element);
-            return new(Type.ModifyElement, RuntimeType.Get<T>().value, (ulong)allocation.Address, index);
-        }
-
-        public static Instruction ModifyElement(uint index, RuntimeType elementType, ReadOnlySpan<byte> elementData)
-        {
-            Allocation allocation = Allocation.Create(elementData);
-            return new(Type.ModifyElement, elementType.value, (ulong)allocation.Address, index);
-        }
-
-        void ISerializable.Write(BinaryWriter writer)
+        readonly void ISerializable.Write(BinaryWriter writer)
         {
             writer.WriteValue(type);
             writer.WriteValue(a);
@@ -785,13 +673,10 @@ namespace Simulation
             RemoveComponent,
             SetComponent,
 
-            CreateList,
-            DestroyList,
-            ClearList,
-
-            InsertElement,
-            RemoveElement,
-            ModifyElement,
+            CreateArray,
+            DestroyArray,
+            ResizeArray,
+            SetArrayElement,
 
             AddReference,
             RemoveReference

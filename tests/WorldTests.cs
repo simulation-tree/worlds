@@ -2,7 +2,7 @@
 using Unmanaged;
 using Unmanaged.Collections;
 
-namespace Simulation
+namespace Simulation.Tests
 {
     public class WorldTests
     {
@@ -133,73 +133,41 @@ namespace Simulation
         }
 
         [Test]
-        public void DestroyEntityWithCollection()
+        public void DestroyEntityWithArray()
         {
             World world = new();
             eint entity = world.CreateEntity();
-            UnmanagedList<SimpleComponent> list = world.CreateList<SimpleComponent>(entity);
-            list.Add(new("Hello World 1"));
-            list.Add(new("Hello World 2"));
+            Span<SimpleComponent> list = world.CreateArray<SimpleComponent>(entity, 2);
+            list[0] = new("Hello World 1");
+            list[1] = new("Hello World 2");
             world.DestroyEntity(entity);
+
             Assert.That(world.ContainsEntity(entity), Is.False);
-            Assert.That(list.IsDisposed, Is.True);
+            Assert.Throws<NullReferenceException>(() =>
+            {
+                world.ContainsArray<SimpleComponent>(entity);
+            });
+
             world.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
-        public void DestroyCollectionTwice()
+        public void DestroyArrayTwice()
         {
             World world = new();
             eint entity = world.CreateEntity();
-            UnmanagedList<SimpleComponent> list = world.CreateList<SimpleComponent>(entity);
-            list.Add(new("apple"));
+            Span<SimpleComponent> list = world.CreateArray<SimpleComponent>(entity, 4);
+            list[0] = new("apple");
+            Assert.That(list.Length, Is.EqualTo(4));
             world.DestroyEntity(entity);
-            Assert.That(list.IsDisposed, Is.True);
-            eint another = world.CreateEntity();
-            UnmanagedList<SimpleComponent> anotherList = world.CreateList<SimpleComponent>(another);
-            anotherList.Add(new("banana"));
-            Assert.That(anotherList.Count, Is.EqualTo(1));
+            eint another = world.CreateEntity(); //same as `entity`
+            Span<SimpleComponent> anotherList = world.CreateArray<SimpleComponent>(another, 1);
+            anotherList[0] = new("banana");
+            Assert.That(anotherList.Length, Is.EqualTo(1));
             world.DestroyEntity(another);
-            Assert.That(anotherList.IsDisposed, Is.True);
             world.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));
-        }
-
-        [Test]
-        public void ComponentBuffer()
-        {
-            using World world = new();
-            eint entity1 = world.CreateEntity();
-            eint entity2 = world.CreateEntity();
-            SimpleComponent component1 = new("apple");
-            SimpleComponent component2 = new("banana");
-            world.AddComponent(entity1, component1);
-            world.AddComponent(entity2, component2);
-            eint entity3 = world.CreateEntity();
-            eint entity4 = world.CreateEntity();
-            Another another1 = new(5);
-            Another another2 = new(10);
-            world.AddComponent(entity3, another1);
-            world.AddComponent(entity4, another2);
-            eint entity5 = world.CreateEntity();
-            world.AddComponent(entity5, component1);
-            world.AddComponent(entity5, another2);
-            using UnmanagedList<SimpleComponent> buffer = UnmanagedList<SimpleComponent>.Create();
-            using UnmanagedList<eint> entities = UnmanagedList<eint>.Create();
-            world.Fill(buffer, entities);
-            Assert.That(buffer.Count, Is.EqualTo(3));
-            var entitiesSpan = entities.AsSpan();
-            Assert.That(entities.Contains(entity1), Is.True);
-            Assert.That(entities.Contains(entity2), Is.True);
-            Assert.That(entities.Contains(entity5), Is.True);
-            entities.Clear();
-            using UnmanagedList<Another> anotherBuffer = UnmanagedList<Another>.Create();
-            world.Fill(anotherBuffer, entities);
-            Assert.That(anotherBuffer.Count, Is.EqualTo(3));
-            Assert.That(entities.Contains(entity3), Is.True);
-            Assert.That(entities.Contains(entity4), Is.True);
-            Assert.That(entities.Contains(entity5), Is.True);
         }
 
         [Test]
@@ -223,11 +191,11 @@ namespace Simulation
 
                 if (rng.NextBool())
                 {
-                    world.CreateList<char>(entity);
                     uint length = rng.NextUInt(1, 10);
-                    for (uint j = 0; j < length; j++)
+                    Span<char> array = world.CreateArray<char>(entity, length);
+                    for (int j = 0; j < length; j++)
                     {
-                        world.AddToList(entity, (char)rng.NextInt('a', 'z'));
+                        array[j] = (char)rng.NextInt('a', 'z');
                     }
                 }
 
