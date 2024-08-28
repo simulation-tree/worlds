@@ -85,7 +85,7 @@ namespace Simulation
         }
 #endif
 
-        internal World(UnsafeWorld* value)
+        public World(UnsafeWorld* value)
         {
             this.value = value;
         }
