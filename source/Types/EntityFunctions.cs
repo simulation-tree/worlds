@@ -3,12 +3,20 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
-using System.Threading.Tasks;
 using System.Threading;
+using System.Threading.Tasks;
 using Unmanaged;
 
 public static class EntityFunctions
 {
+    /// <summary>
+    /// Destroys the entity from its world.
+    /// </summary>
+    public static void Destroy<T>(this T entity) where T : unmanaged, IEntity
+    {
+        entity.World.DestroyEntity(entity.Value);
+    }
+
     /// <summary>
     /// Returns <c>true</c> if the entity complies with its argued type.
     /// </summary>

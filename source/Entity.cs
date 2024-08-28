@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
 using Unmanaged;
-using Unmanaged.Collections;
 
 namespace Simulation
 {
-    public struct Entity : IEntity, IDisposable
+    public struct Entity : IEntity
     {
         private eint value;
         private World world;
@@ -104,17 +103,6 @@ namespace Simulation
 
             value.TryFormat(buffer, out int valueLength);
             return length + valueLength;
-        }
-
-        /// <summary>
-        /// Destroys the entity.
-        /// </summary>
-        public readonly void Dispose()
-        {
-            //todo: should this exist? should Dispose be removed so that its only Destroy? ditch it?
-            //^^^ if c# had a warning for undisposed values, yes, it would all fall into place like a jigsaw puzzle
-            ThrowIfDestroyed();
-            world.DestroyEntity(value);
         }
 
         public readonly Span<T> GetArray<T>() where T : unmanaged
