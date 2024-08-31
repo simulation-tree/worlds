@@ -1256,16 +1256,16 @@ namespace Simulation
             }
         }
 
-        public readonly ref T TryGetComponentRef<T>(uint entity, out bool found) where T : unmanaged
+        public readonly ref T TryGetComponentRef<T>(uint entity, out bool contains) where T : unmanaged
         {
             if (ContainsComponent<T>(entity))
             {
-                found = true;
+                contains = true;
                 return ref GetComponentRef<T>(entity);
             }
             else
             {
-                found = false;
+                contains = false;
                 return ref System.Runtime.CompilerServices.Unsafe.AsRef<T>(null);
             }
         }

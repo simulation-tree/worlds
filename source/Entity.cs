@@ -193,7 +193,13 @@ namespace Simulation
             return world.GetComponentTypes(value);
         }
 
-        public readonly ref T GetComponent<T>() where T : unmanaged
+        public readonly T GetComponent<T>() where T : unmanaged
+        {
+            ThrowIfDestroyed();
+            return world.GetComponent<T>(value);
+        }
+
+        public readonly ref T GetComponentRef<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
             return ref world.GetComponentRef<T>(value);
@@ -205,10 +211,10 @@ namespace Simulation
             return ref world.AddComponentRef<T>(value);
         }
 
-        public readonly ref T TryGetComponentRef<T>(out bool has) where T : unmanaged
+        public readonly ref T TryGetComponentRef<T>(out bool contains) where T : unmanaged
         {
             ThrowIfDestroyed();
-            return ref world.TryGetComponentRef<T>(value, out has);
+            return ref world.TryGetComponentRef<T>(value, out contains);
         }
 
         public readonly bool TryGetComponent<T>(out T component) where T : unmanaged
@@ -259,7 +265,7 @@ namespace Simulation
         public readonly void RemoveComponent<T>(out T removedComponent) where T : unmanaged
         {
             ThrowIfDestroyed();
-            removedComponent = GetComponent<T>();
+            removedComponent = GetComponentRef<T>();
             world.RemoveComponent<T>(value);
         }
 
