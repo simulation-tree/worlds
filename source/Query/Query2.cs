@@ -75,10 +75,10 @@ namespace Simulation
                     ComponentChunk chunk = chunks[hash];
                     if (chunk.ContainsTypes(types, exact))
                     {
-                        UnmanagedList<eint> entities = chunk.Entities;
+                        UnmanagedList<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
-                            eint entity = entities[e];
+                            uint entity = entities[e];
                             nint component1 = chunk.GetComponentAddress<T1>(e);
                             nint component2 = chunk.GetComponentAddress<T2>(e);
                             results.Add(new(entity, component1, component2));
@@ -93,10 +93,10 @@ namespace Simulation
                     ComponentChunk chunk = chunks[hash];
                     if (chunk.ContainsTypes(types, exact))
                     {
-                        UnmanagedList<eint> entities = chunk.Entities;
+                        UnmanagedList<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
-                            eint entity = entities[e];
+                            uint entity = entities[e];
                             if (world.IsEnabled(entity))
                             {
                                 nint component1 = chunk.GetComponentAddress<T1>(e);
@@ -109,7 +109,7 @@ namespace Simulation
             }
         }
 
-        public readonly bool Contains(eint entity)
+        public readonly bool Contains(uint entity)
         {
             ThrowIfNotInitialized();
             uint count = Count;
@@ -124,7 +124,7 @@ namespace Simulation
             return false;
         }
 
-        public readonly uint IndexOf(eint entity)
+        public readonly uint IndexOf(uint entity)
         {
             ThrowIfNotInitialized();
             uint count = Count;
@@ -139,7 +139,7 @@ namespace Simulation
             throw new ArgumentOutOfRangeException(nameof(entity));
         }
 
-        public readonly bool TryIndexOf(eint entity, out uint index)
+        public readonly bool TryIndexOf(uint entity, out uint index)
         {
             ThrowIfNotInitialized();
             uint count = Count;
@@ -164,7 +164,7 @@ namespace Simulation
 
         public readonly struct Result
         {
-            public readonly eint entity;
+            public readonly uint entity;
 
             private readonly nint component1;
             private readonly nint component2;
@@ -172,7 +172,7 @@ namespace Simulation
             public unsafe ref T1 Component1 => ref System.Runtime.CompilerServices.Unsafe.AsRef<T1>((void*)component1);
             public unsafe ref T2 Component2 => ref System.Runtime.CompilerServices.Unsafe.AsRef<T2>((void*)component2);
 
-            internal Result(eint entity, nint component1, nint component2)
+            internal Result(uint entity, nint component1, nint component2)
             {
                 this.entity = entity;
                 this.component1 = component1;

@@ -448,20 +448,29 @@ namespace Simulation
         }
 
         /// <summary>
+        /// Adds the given entity to the selection.
+        /// </summary>
+        public static Instruction SelectEntity(uint entity)
+        {
+            return new(Type.SelectEntity, 1, entity, 0);
+        }
+
+        /// <summary>
         /// Adds the entity at this relative index, where 0 represents
         /// the last created entity.
         /// </summary>
-        public static Instruction SelectEntity(uint relativeOffset)
+        public static Instruction SelectPreviouslyCreatedEntity(uint relativeOffset)
         {
             return new(Type.SelectEntity, 0, relativeOffset, 0);
         }
 
         /// <summary>
-        /// Adds the given entity to the selection.
+        /// Assigns the parent of all entities in the selection to
+        /// the given existing entity.
         /// </summary>
-        public static Instruction SelectEntity(eint entity)
+        public static Instruction SetParent(uint entity)
         {
-            return new(Type.SelectEntity, 1, entity.value, 0);
+            return new(Type.SetParent, 1, entity, 0);
         }
 
         /// <summary>
@@ -469,32 +478,23 @@ namespace Simulation
         /// the entity at the relative index. Where 0 represents the
         /// last created entity.
         /// </summary>
-        public static Instruction SetParent(uint relativeOffset)
+        public static Instruction SetParentToPreviouslyCreatedEntity(uint relativeOffset)
         {
             return new(Type.SetParent, 0, relativeOffset, 0);
         }
 
-        /// <summary>
-        /// Assigns the parent of all entities in the selection to
-        /// the given existing entity.
-        /// </summary>
-        public static Instruction SetParent(eint entity)
+        public static Instruction AddReference(uint entity)
         {
-            return new(Type.SetParent, 1, entity.value, 0);
+            return new(Type.AddReference, 1, entity, 0);
         }
 
         /// <summary>
         /// Adds a reference to the entity at the given relative offset for
         /// all selected entities. Where 0 is the last created entity.
         /// </summary>
-        public static Instruction AddReference(uint relativeOffset)
+        public static Instruction AddReferenceTowardsPreviouslyCreatedEntity(uint relativeOffset)
         {
             return new(Type.AddReference, 0, relativeOffset, 0);
-        }
-
-        public static Instruction AddReference(eint entity)
-        {
-            return new(Type.AddReference, 1, entity.value, 0);
         }
 
         public static Instruction RemoveReference(rint reference)

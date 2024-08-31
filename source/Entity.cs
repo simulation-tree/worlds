@@ -4,9 +4,9 @@ using Unmanaged;
 
 namespace Simulation
 {
-    public struct Entity : IEntity
+    public struct Entity : IEntity, IEquatable<Entity>
     {
-        private eint value;
+        private uint value;
         private World world;
 
         public readonly bool IsDestroyed
@@ -29,7 +29,7 @@ namespace Simulation
             get
             {
                 ThrowIfDestroyed();
-                eint parent = world.GetParent(value);
+                uint parent = world.GetParent(value);
                 return parent == default ? default : new(world, parent);
             }
             set
@@ -39,7 +39,7 @@ namespace Simulation
             }
         }
 
-        public readonly ReadOnlySpan<eint> Children
+        public readonly ReadOnlySpan<uint> Children
         {
             get
             {
@@ -49,9 +49,9 @@ namespace Simulation
         }
 
         readonly World IEntity.World => world;
-        readonly eint IEntity.Value => value;
+        readonly uint IEntity.Value => value;
 
-        public Entity(World world, eint existingEntity)
+        public Entity(World world, uint existingEntity)
         {
             this.value = existingEntity;
             this.world = world;
@@ -168,7 +168,7 @@ namespace Simulation
             }
         }
 
-        public readonly bool TryGetParent(out eint parent)
+        public readonly bool TryGetParent(out uint parent)
         {
             ThrowIfDestroyed();
             parent = world.GetParent(value);
@@ -263,7 +263,7 @@ namespace Simulation
             world.RemoveComponent<T>(value);
         }
 
-        public readonly rint AddReference(eint otherEntity)
+        public readonly rint AddReference(uint otherEntity)
         {
             ThrowIfDestroyed();
             return world.AddReference(value, otherEntity);
@@ -275,7 +275,7 @@ namespace Simulation
             return AddReference(otherEntity.Value);
         }
 
-        public readonly eint GetReference(rint reference)
+        public readonly uint GetReference(rint reference)
         {
             ThrowIfDestroyed();
             return world.GetReference(value, reference);
@@ -290,7 +290,7 @@ namespace Simulation
         /// <summary>
         /// Reassigns an existing reference to a different entity.
         /// </summary>
-        public readonly void SetReference(rint reference, eint otherEntity)
+        public readonly void SetReference(rint reference, uint otherEntity)
         {
             ThrowIfDestroyed();
             world.SetReference(value, reference, otherEntity);
@@ -311,7 +311,7 @@ namespace Simulation
             return world.ContainsReference(value, reference);
         }
 
-        public readonly bool TryGetReference(rint reference, out eint otherEntity)
+        public readonly bool TryGetReference(rint reference, out uint otherEntity)
         {
             ThrowIfDestroyed();
             return world.TryGetReference(value, reference, out otherEntity);
@@ -320,7 +320,7 @@ namespace Simulation
         public readonly bool TryGetReference<T>(rint reference, out T otherEntity) where T : unmanaged, IEntity
         {
             ThrowIfDestroyed();
-            if (TryGetReference(reference, out eint otherValue))
+            if (TryGetReference(reference, out uint otherValue))
             {
                 otherEntity = new Entity(world, otherValue).As<T>();
                 return true;
@@ -367,7 +367,7 @@ namespace Simulation
 
             if (query.Count > 0)
             {
-                eint firstEntity = query[0];
+                uint firstEntity = query[0];
                 entity = new Entity(world, firstEntity).As<T>();
                 return true;
             }
@@ -386,14 +386,29 @@ namespace Simulation
 
             if (query.Count > 0)
             {
-                eint firstEntity = query[0];
+                uint firstEntity = query[0];
                 return new Entity(world, firstEntity).As<T>();
             }
 
             throw new NullReferenceException($"Component of type {typeof(T)} not found in world.");
         }
 
-        public static implicit operator eint(Entity entity)
+        public readonly override bool Equals(object? obj)
+        {
+            return obj is Entity entity && Equals(entity);
+        }
+
+        public readonly bool Equals(Entity other)
+        {
+            return value == other.value && world.Equals(other.world);
+        }
+
+        public readonly override int GetHashCode()
+        {
+            return HashCode.Combine(value, world);
+        }
+
+        public static implicit operator uint(Entity entity)
         {
             return entity.value;
         }
@@ -401,6 +416,36 @@ namespace Simulation
         public static implicit operator World(Entity entity)
         {
             return entity.world;
+        }
+
+        public static bool operator ==(Entity left, Entity right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(Entity left, Entity right)
+        {
+            return !(left == right);
+        }
+
+        public static bool operator ==(Entity left, uint right)
+        {
+            return left.value == right;
+        }
+
+        public static bool operator !=(Entity left, uint right)
+        {
+            return left.value != right;
+        }
+
+        public static bool operator ==(uint left, Entity right)
+        {
+            return left == right.value;
+        }
+
+        public static bool operator !=(uint left, Entity right)
+        {
+            return left != right.value;
         }
     }
 }

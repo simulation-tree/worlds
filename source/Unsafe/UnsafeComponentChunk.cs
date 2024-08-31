@@ -6,12 +6,12 @@ namespace Simulation.Unsafe
 {
     public unsafe struct UnsafeComponentChunk
     {
-        private UnmanagedList<eint> entities;
+        private UnmanagedList<uint> entities;
         private UnmanagedArray<RuntimeType> types;
         private UnmanagedArray<nint> components;
         private readonly uint key;
 
-        private UnsafeComponentChunk(UnmanagedList<eint> entities, UnmanagedArray<RuntimeType> types, UnmanagedArray<nint> components, uint key)
+        private UnsafeComponentChunk(UnmanagedList<uint> entities, UnmanagedArray<RuntimeType> types, UnmanagedArray<nint> components, uint key)
         {
             this.entities = entities;
             this.types = types;
@@ -21,7 +21,7 @@ namespace Simulation.Unsafe
 
         public static UnsafeComponentChunk* Allocate(ReadOnlySpan<RuntimeType> types)
         {
-            UnmanagedList<eint> entities = UnmanagedList<eint>.Create();
+            UnmanagedList<uint> entities = UnmanagedList<uint>.Create();
             UnmanagedArray<RuntimeType> typeArray = new(types);
             UnmanagedArray<nint> componentArray = new((uint)types.Length);
             for (uint i = 0; i < types.Length; i++)
@@ -56,7 +56,7 @@ namespace Simulation.Unsafe
             Allocations.Free(ref chunk);
         }
 
-        public static UnmanagedList<eint> GetEntities(UnsafeComponentChunk* chunk)
+        public static UnmanagedList<uint> GetEntities(UnsafeComponentChunk* chunk)
         {
             Allocations.ThrowIfNull(chunk);
             return chunk->entities;
@@ -74,7 +74,7 @@ namespace Simulation.Unsafe
             return chunk->types.AsSpan();
         }
 
-        public static void Add(UnsafeComponentChunk* chunk, eint entity)
+        public static uint Add(UnsafeComponentChunk* chunk, uint entity)
         {
             Allocations.ThrowIfNull(chunk);
             chunk->entities.Add(entity);
@@ -83,9 +83,11 @@ namespace Simulation.Unsafe
                 UnsafeList* list = (UnsafeList*)chunk->components[i];
                 UnsafeList.AddDefault(list);
             }
+
+            return chunk->entities.Count - 1;
         }
 
-        public static void Remove(UnsafeComponentChunk* chunk, eint entity)
+        public static void Remove(UnsafeComponentChunk* chunk, uint entity)
         {
             Allocations.ThrowIfNull(chunk);
             uint index = chunk->entities.IndexOf(entity);
@@ -97,7 +99,7 @@ namespace Simulation.Unsafe
             }
         }
 
-        public static uint Move(UnsafeComponentChunk* source, eint entity, UnsafeComponentChunk* destination)
+        public static uint Move(UnsafeComponentChunk* source, uint entity, UnsafeComponentChunk* destination)
         {
             Allocations.ThrowIfNull(source);
             Allocations.ThrowIfNull(destination);

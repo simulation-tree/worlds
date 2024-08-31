@@ -22,7 +22,7 @@ namespace Simulation.Tests
             operation.AddComponent(new TestComponent(1337));
 
             world.Perform(operation);
-            eint entity = world.Entities.First();
+            uint entity = world.Entities.First();
             Assert.That(world.ContainsComponent<TestComponent>(entity), Is.True);
             Assert.That(world.GetComponent<TestComponent>(entity).value, Is.EqualTo(1337));
         }
@@ -37,7 +37,7 @@ namespace Simulation.Tests
             }
 
             using Operation operation = new();
-            foreach (eint entity in world.Entities)
+            foreach (uint entity in world.Entities)
             {
                 operation.SelectEntity(entity);
             }
@@ -58,8 +58,8 @@ namespace Simulation.Tests
             operation.CreateEntities(40);
             operation.AddComponent(new TestComponent(2));
             world.Perform(operation);
-            List<eint> createdEntities = new();
-            foreach (eint entity in world.Entities)
+            List<uint> createdEntities = new();
+            foreach (uint entity in world.Entities)
             {
                 createdEntities.Add(entity);
                 Assert.That(world.GetComponent<TestComponent>(entity).value, Is.EqualTo(2));
@@ -81,7 +81,7 @@ namespace Simulation.Tests
             operation.ClearSelection();
 
             operation.CreateEntity();
-            operation.SetParent(2);
+            operation.SetParentToPreviouslyCreatedEntity(2);
             operation.AddComponent(new TestComponent(6));
             operation.CreateArray<char>(3);
             operation.SetArrayElement(0, 'a');
@@ -91,16 +91,16 @@ namespace Simulation.Tests
             using World world = new();
             world.Perform(operation);
 
-            eint firstEntity = world[0];
-            eint secondEntity = world[1];
-            eint thirdEntity = world[2];
+            uint firstEntity = world[0];
+            uint secondEntity = world[1];
+            uint thirdEntity = world[2];
 
             Assert.That(world.GetComponent<TestComponent>(firstEntity).value, Is.EqualTo(4));
             Assert.That(world.GetComponent<TestComponent>(secondEntity).value, Is.EqualTo(5));
             Assert.That(world.GetComponent<TestComponent>(thirdEntity).value, Is.EqualTo(6));
             Assert.That(world.GetArray<char>(thirdEntity).ToString(), Is.EqualTo("abc"));
-            Assert.That(world.GetParent(firstEntity), Is.EqualTo(default(eint)));
-            Assert.That(world.GetParent(secondEntity), Is.EqualTo(default(eint)));
+            Assert.That(world.GetParent(firstEntity), Is.EqualTo(default(uint)));
+            Assert.That(world.GetParent(secondEntity), Is.EqualTo(default(uint)));
             Assert.That(world.GetParent(thirdEntity), Is.EqualTo(firstEntity));
         }
 
@@ -154,7 +154,7 @@ namespace Simulation.Tests
             using World world = new();
             world.Perform(operation);
 
-            eint entity = world.Entities.First();
+            uint entity = world.Entities.First();
             Span<char> list = world.GetArray<char>(entity);
             Assert.That(list.ToString(), Is.EqualTo(testString));
         }
@@ -170,7 +170,7 @@ namespace Simulation.Tests
             using World world = new();
             world.Perform(operation);
 
-            eint entity = world.Entities.First();
+            uint entity = world.Entities.First();
             Assert.That(world.ContainsArray<char>(entity), Is.True);
 
             Span<char> list = world.GetArray<char>(entity);
@@ -201,7 +201,7 @@ namespace Simulation.Tests
             using World world = new();
             world.Perform(operation);
 
-            eint entity = world.Entities.First();
+            uint entity = world.Entities.First();
             Assert.That(world.ContainsArray<char>(entity), Is.True);
             Assert.That(world.GetArrayLength<char>(entity), Is.EqualTo(4));
 

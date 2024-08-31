@@ -76,10 +76,10 @@ namespace Simulation
                     ComponentChunk chunk = chunks[hash];
                     if (chunk.ContainsTypes(types, exact))
                     {
-                        UnmanagedList<eint> entities = chunk.Entities;
+                        UnmanagedList<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
-                            eint entity = entities[e];
+                            uint entity = entities[e];
                             nint component1 = chunk.GetComponentAddress<T1>(e);
                             nint component2 = chunk.GetComponentAddress<T2>(e);
                             nint component3 = chunk.GetComponentAddress<T3>(e);
@@ -95,10 +95,10 @@ namespace Simulation
                     ComponentChunk chunk = chunks[hash];
                     if (chunk.ContainsTypes(types, exact))
                     {
-                        UnmanagedList<eint> entities = chunk.Entities;
+                        UnmanagedList<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
-                            eint entity = entities[e];
+                            uint entity = entities[e];
                             if (world.IsEnabled(entity))
                             {
                                 nint component1 = chunk.GetComponentAddress<T1>(e);
@@ -112,7 +112,7 @@ namespace Simulation
             }
         }
 
-        public readonly bool Contains(eint entity)
+        public readonly bool Contains(uint entity)
         {
             ThrowIfNotInitialized();
             for (uint i = 0; i < Count; i++)
@@ -134,7 +134,7 @@ namespace Simulation
 
         public readonly struct Result
         {
-            public readonly eint entity;
+            public readonly uint entity;
 
             private readonly nint component1;
             private readonly nint component2;
@@ -144,7 +144,7 @@ namespace Simulation
             public unsafe ref T2 Component2 => ref System.Runtime.CompilerServices.Unsafe.AsRef<T2>((void*)component2);
             public unsafe ref T3 Component3 => ref System.Runtime.CompilerServices.Unsafe.AsRef<T3>((void*)component3);
 
-            internal Result(eint entity, nint component1, nint component2, nint component3)
+            internal Result(uint entity, nint component1, nint component2, nint component3)
             {
                 this.entity = entity;
                 this.component1 = component1;

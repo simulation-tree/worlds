@@ -2,7 +2,7 @@
 {
     public interface IEntity
     {
-        eint Value { get; }
+        uint Value { get; }
         World World { get; }
 
         /// <summary>

@@ -23,7 +23,7 @@ public static class EntityFunctions
     public static bool Is<T>(this T entity) where T : unmanaged, IEntity
     {
         World world = entity.World;
-        eint entityValue = entity.Value;
+        uint entityValue = entity.Value;
         using Query query = entity.GetQuery(world);
         foreach (RuntimeType type in query.Types)
         {
@@ -45,7 +45,7 @@ public static class EntityFunctions
     public static async Task UntilIs<T>(this T entity, Wait action, CancellationToken cancellation = default) where T : unmanaged, IEntity
     {
         World world = entity.World;
-        eint entityValue = entity.Value;
+        uint entityValue = entity.Value;
         using Query query = entity.GetQuery(world);
         uint typeCount = query.TypeCount;
         if (typeCount == 0)
@@ -74,7 +74,7 @@ public static class EntityFunctions
 
     /// <summary>
     /// Throws if the given type doesnt have a similar enough layout to <see cref="Entity"/>.
-    /// Because the methods that use will perform native reinterprets.
+    /// Because the methods that use will perform native ruinterprets.
     /// </summary>
     [Conditional("DEBUG")]
     public static void ThrowIfTypeLayoutMismatches(Type type)
@@ -102,13 +102,13 @@ public static class EntityFunctions
                 {
                     Type first = checkingFields[0].FieldType;
                     Type second = checkingFields[1].FieldType;
-                    if (first == typeof(eint) && second == typeof(World))
+                    if (first == typeof(uint) && second == typeof(World))
                     {
                         return;
                     }
                     else
                     {
-                        throw new Exception($"Unexpected entity type layout in `{checkingType}`. Was expecting `{nameof(eint)}`, then `{nameof(World)}`");
+                        throw new Exception($"Unexpected entity type layout in `{checkingType}`. Was expecting `uint`, then `{nameof(World)}`");
                     }
                 }
             }

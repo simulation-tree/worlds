@@ -18,21 +18,21 @@ namespace Simulation.Tests
         public void SaveWorld()
         {
             World world = new();
-            eint a = world.CreateEntity();
+            uint a = world.CreateEntity();
             world.AddComponent(a, new Fruit(42));
             world.AddComponent(a, new Apple("Hello, World!"));
-            eint temporary = world.CreateEntity();
-            eint b = world.CreateEntity();
+            uint temporary = world.CreateEntity();
+            uint b = world.CreateEntity();
             world.AddComponent(b, new Fruit(43));
-            eint c = world.CreateEntity();
+            uint c = world.CreateEntity();
             world.AddComponent(c, new Apple("Goodbye, World!"));
             world.DestroyEntity(temporary);
-            eint list = world.CreateEntity();
+            uint list = world.CreateEntity();
             world.CreateArray<char>(list, "Well hello there list");
 
-            List<eint> oldEntities = world.Entities.ToList();
-            List<(eint, Apple)> apples = new();
-            world.ForEach((in eint entity, ref Apple apple) =>
+            List<uint> oldEntities = world.Entities.ToList();
+            List<(uint, Apple)> apples = new();
+            world.ForEach((in uint entity, ref Apple apple) =>
             {
                 apples.Add((entity, apple));
             });
@@ -45,9 +45,9 @@ namespace Simulation.Tests
             using BinaryReader reader = new(data);
 
             using World loadedWorld = reader.ReadObject<World>();
-            List<eint> newEntities = loadedWorld.Entities.ToList();
-            List<(eint, Apple)> newApples = new();
-            loadedWorld.ForEach((in eint entity, ref Apple apple) =>
+            List<uint> newEntities = loadedWorld.Entities.ToList();
+            List<(uint, Apple)> newApples = new();
+            loadedWorld.ForEach((in uint entity, ref Apple apple) =>
             {
                 newApples.Add((entity, apple));
             });
@@ -62,7 +62,7 @@ namespace Simulation.Tests
         public void AppendSavedWorld()
         {
             using World prefabWorld = new();
-            eint a = prefabWorld.CreateEntity();
+            uint a = prefabWorld.CreateEntity();
             prefabWorld.AddComponent(a, new Fruit(42));
             prefabWorld.AddComponent(a, new Apple("Hello, World!"));
             prefabWorld.AddComponent(a, new Prefab());
@@ -71,17 +71,17 @@ namespace Simulation.Tests
             writer.WriteObject(prefabWorld);
 
             using World world = new();
-            eint b = world.CreateEntity();
+            uint b = world.CreateEntity();
             world.AddComponent(b, new Fruit(43));
 
-            eint c = world.CreateEntity();
+            uint c = world.CreateEntity();
             world.AddComponent(c, new Apple("Goodbye, World!"));
 
             using BinaryReader reader = new(writer);
             using World loadedWorld = reader.ReadObject<World>();
             world.Append(loadedWorld);
 
-            world.TryGetFirst<Prefab>(out eint prefabEntity, out _);
+            world.TryGetFirst<Prefab>(out uint prefabEntity, out _);
             Assert.That(world.ContainsEntity(prefabEntity), Is.True);
             Assert.That(world.GetComponent<Fruit>(prefabEntity).data, Is.EqualTo(42));
             Assert.That(world.GetComponent<Apple>(prefabEntity).data, Is.EqualTo("Hello, World!"));

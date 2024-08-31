@@ -14,7 +14,7 @@ namespace Simulation
     /// </summary>
     public readonly unsafe struct Listener : IDisposable, IEquatable<Listener>
     {
-        public readonly RuntimeType eventType;
+        public readonly RuntimeType messageType;
 
         internal readonly UnsafeListener* value;
         private readonly World world;
@@ -27,14 +27,14 @@ namespace Simulation
             throw new NotImplementedException();
         }
 
-        internal Listener(World world, RuntimeType eventType, delegate* unmanaged<World, Container, void> callback)
+        internal Listener(World world, RuntimeType eventType, delegate* unmanaged<World, Allocation, RuntimeType, void> callback)
         {
-            this.eventType = eventType;
+            this.messageType = eventType;
             value = UnsafeListener.Allocate(callback);
             this.world = world;
         }
 #else
-        internal Listener(World world, RuntimeType eventType, delegate*<World, Container, void> callback)
+        internal Listener(World world, RuntimeType eventType, delegate*<World, Allocation, RuntimeType, void> callback)
         {
             this.eventType = eventType;
             value = UnsafeListener.Allocate(callback);
@@ -60,9 +60,9 @@ namespace Simulation
             }
         }
 
-        public readonly void Invoke(World world, Container message)
+        public readonly void Invoke(World world, Allocation message, RuntimeType messageType)
         {
-            UnsafeListener.Invoke(value, world, message);
+            UnsafeListener.Invoke(value, world, message, messageType);
         }
 
         public readonly override bool Equals(object? obj)

@@ -4,63 +4,63 @@ namespace Simulation.Unsafe
 {
     public unsafe struct UnsafeListener
     {
-#if NET5_0_OR_GREATER
+#if NET
         private delegate* unmanaged<void> callback;
 
-        public static UnsafeListener* Allocate(delegate* unmanaged<World, Container, void> callback)
+        public static UnsafeListener* Allocate(delegate* unmanaged<World, Allocation, RuntimeType, void> callback)
         {
             UnsafeListener* listener = Allocations.Allocate<UnsafeListener>();
             listener->callback = (delegate* unmanaged<void>)callback;
             return listener;
         }
 
-        public static UnsafeListener* Allocate(delegate* unmanaged<nint, World, Container, void> callback)
+        public static UnsafeListener* Allocate(delegate* unmanaged<nint, World, Allocation, RuntimeType, void> callback)
         {
             UnsafeListener* listener = Allocations.Allocate<UnsafeListener>();
             listener->callback = (delegate* unmanaged<void>)callback;
             return listener;
         }
 
-        public static void Invoke(UnsafeListener* listener, World world, Container message)
+        public static void Invoke(UnsafeListener* listener, World world, Allocation message, RuntimeType messageType)
         {
             Allocations.ThrowIfNull(listener);
-            delegate* unmanaged<World, Container, void> callback = (delegate* unmanaged<World, Container, void>)listener->callback;
-            callback(world, message);
+            delegate* unmanaged<World, Allocation, RuntimeType, void> callback = (delegate* unmanaged<World, Allocation, RuntimeType, void>)listener->callback;
+            callback(world, message, messageType);
         }
 
-        public static void Invoke(UnsafeListener* listener, nint context, World world, Container message)
+        public static void Invoke(UnsafeListener* listener, nint context, World world, Allocation message, RuntimeType messageType)
         {
             Allocations.ThrowIfNull(listener);
-            delegate* unmanaged<nint, World, Container, void> callback = (delegate* unmanaged<nint, World, Container, void>)listener->callback;
-            callback(context, world, message);
+            delegate* unmanaged<nint, World, Allocation, RuntimeType, void> callback = (delegate* unmanaged<nint, World, Allocation, RuntimeType, void>)listener->callback;
+            callback(context, world, message, messageType);
         }
 #else
-        private delegate*<World, Container, void> callback;
+        private delegate*<World, Allocation, RuntimeType, void> callback;
 
-        public static UnsafeListener* Allocate(delegate*<World, Container, void> callback)
+        public static UnsafeListener* Allocate(delegate*<World, Allocation, RuntimeType, void> callback)
         {
             UnsafeListener* listener = Allocations.Allocate<UnsafeListener>();
             listener->callback = callback;
             return listener;
         }
 
-        public static UnsafeListener* Allocate(delegate*<nint, World, Container, void> callback)
+        public static UnsafeListener* Allocate(delegate*<nint, World, Allocation, RuntimeType, void> callback)
         {
             UnsafeListener* listener = Allocations.Allocate<UnsafeListener>();
-            listener->callback = (delegate*<World, Container, void>)callback;
+            listener->callback = (delegate*<World, Allocation, RuntimeType, void>)callback;
             return listener;
         }
 
-        public static void Invoke(UnsafeListener* listener, World world, Container message)
+        public static void Invoke(UnsafeListener* listener, World world, Allocation message, RuntimeType messageType)
         {
             Allocations.ThrowIfNull(listener);
-            listener->callback(world, message);
+            listener->callback(world, message, messageType);
         }
 
-        public static void Invoke(UnsafeListener* listener, nint context, World world, Container message)
+        public static void Invoke(UnsafeListener* listener, nint context, World world, Allocation message, RuntimeType messageType)
         {
             Allocations.ThrowIfNull(listener);
-            ((delegate*<nint, World, Container, void>)listener->callback)(context, world, message);
+            ((delegate*<nint, World, Allocation, RuntimeType, void>)listener->callback)(context, world, message, messageType);
         }
 #endif
 

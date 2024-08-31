@@ -9,7 +9,7 @@ namespace Simulation
     {
         private readonly QueryState state;
         private readonly World world;
-        private readonly UnmanagedList<eint> entities;
+        private readonly UnmanagedList<uint> entities;
         private readonly UnmanagedArray<RuntimeType> types;
 
         public readonly bool IsDisposed => state.IsDisposed;
@@ -57,7 +57,7 @@ namespace Simulation
         {
             this.world = world;
             this.types = UnmanagedArray<RuntimeType>.Create();
-            entities = UnmanagedList<eint>.Create();
+            entities = UnmanagedList<uint>.Create();
             state = QueryState.Create();
         }
 
@@ -65,7 +65,7 @@ namespace Simulation
         {
             this.world = world;
             this.types = new(types);
-            entities = UnmanagedList<eint>.Create();
+            entities = UnmanagedList<uint>.Create();
             state = QueryState.Create();
         }
 
@@ -75,7 +75,7 @@ namespace Simulation
             this.types = UnmanagedArray<RuntimeType>.Create(1);
             this.types.Set(0, type);
 
-            entities = UnmanagedList<eint>.Create();
+            entities = UnmanagedList<uint>.Create();
             state = QueryState.Create();
         }
 
@@ -113,7 +113,7 @@ namespace Simulation
                 ComponentChunk chunk = chunks[hash];
                 if (chunk.ContainsTypes(typesSpan, exact))
                 {
-                    UnmanagedList<eint> entities = chunk.Entities;
+                    UnmanagedList<uint> entities = chunk.Entities;
                     if (includeDisabled)
                     {
                         this.entities.AddRange(entities);
@@ -122,7 +122,7 @@ namespace Simulation
                     {
                         for (uint e = 0; e < entities.Count; e++)
                         {
-                            eint entity = entities[e];
+                            uint entity = entities[e];
                             if (world.IsEnabled(entity))
                             {
                                 this.entities.Add(entity);
@@ -133,7 +133,7 @@ namespace Simulation
             }
         }
 
-        public readonly bool Contains(eint entity)
+        public readonly bool Contains(uint entity)
         {
             ThrowIfNotUpdated();
             return entities.Contains(entity);
@@ -170,10 +170,10 @@ namespace Simulation
 
         public readonly struct Result
         {
-            private readonly eint entity;
+            private readonly uint entity;
             private readonly World world;
 
-            internal Result(eint entity, World world)
+            internal Result(uint entity, World world)
             {
                 this.entity = entity;
                 this.world = world;
@@ -189,7 +189,7 @@ namespace Simulation
                 return ref world.GetComponentRef<T>(entity);
             }
 
-            public static implicit operator eint(Result entity)
+            public static implicit operator uint(Result entity)
             {
                 return entity.entity;
             }

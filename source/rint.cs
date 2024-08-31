@@ -1,10 +1,13 @@
 ﻿#pragma warning disable CS8981 //too bad
+#pragma warning disable IDE1006 //so sad
 using System;
 
 namespace Simulation
 {
     /// <summary>
     /// A <see cref="uint"/> type that refers to a reference local to its entity.
+    /// <para>Can be implicitly cast from, and explicitly cast into a <see cref="uint"/> value.
+    /// </para>
     /// </summary>
     public readonly struct rint : IEquatable<rint>
     {
@@ -29,7 +32,7 @@ namespace Simulation
         {
             Span<char> buffer = stackalloc char[8];
             int charsWritten = ToString(buffer);
-            return new string(buffer.Slice(0, charsWritten));
+            return new string(buffer[..charsWritten]);
         }
 
         public readonly int ToString(Span<char> buffer)

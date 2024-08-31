@@ -10,7 +10,7 @@ namespace Simulation
         private UnsafeComponentChunk* value;
 
         public readonly bool IsDisposed => UnsafeComponentChunk.IsDisposed(value);
-        public readonly UnmanagedList<eint> Entities => UnsafeComponentChunk.GetEntities(value);
+        public readonly UnmanagedList<uint> Entities => UnsafeComponentChunk.GetEntities(value);
         public readonly ReadOnlySpan<RuntimeType> Types => UnsafeComponentChunk.GetTypes(value);
         public readonly uint Key => UnsafeComponentChunk.GetKey(value);
 
@@ -76,17 +76,23 @@ namespace Simulation
             return true;
         }
 
-        public readonly void Add(eint entity)
+        /// <summary>
+        /// Adds an entity into this chunk and returns its referrable index.
+        /// </summary>
+        public readonly uint AddEntity(uint entity)
         {
-            UnsafeComponentChunk.Add(value, entity);
+            return UnsafeComponentChunk.Add(value, entity);
         }
 
-        public readonly void Remove(eint entity)
+        public readonly void RemoveEntity(uint entity)
         {
             UnsafeComponentChunk.Remove(value, entity);
         }
 
-        public readonly uint Move(eint entity, ComponentChunk destination)
+        /// <summary>
+        /// Moves the entity and all of its components to another chunk.
+        /// </summary>
+        public readonly uint MoveEntity(uint entity, ComponentChunk destination)
         {
             return UnsafeComponentChunk.Move(value, entity, destination.value);
         }
@@ -101,34 +107,16 @@ namespace Simulation
             return new(GetComponents(RuntimeType.Get<T>()));
         }
 
-        public readonly ref T GetComponentRef<T>(eint entity) where T : unmanaged
-        {
-            uint index = Entities.IndexOf(entity);
-            return ref GetComponentRef<T>(index);
-        }
-
         public readonly ref T GetComponentRef<T>(uint index) where T : unmanaged
         {
             UnmanagedList<T> components = GetComponents<T>();
             return ref components.GetRef(index);
         }
 
-        public readonly Span<byte> GetComponentBytes(eint entity, RuntimeType type)
-        {
-            void* component = GetComponentPointer(entity, type);
-            return new Span<byte>(component, type.Size);
-        }
-
         public readonly Span<byte> GetComponentBytes(uint index, RuntimeType type)
         {
             void* component = GetComponentPointer(index, type);
             return new Span<byte>(component, type.Size);
-        }
-
-        public readonly void* GetComponentPointer(eint entity, RuntimeType type)
-        {
-            uint index = Entities.IndexOf(entity);
-            return GetComponentPointer(index, type);
         }
 
         public readonly void* GetComponentPointer(uint index, RuntimeType type)
@@ -143,15 +131,9 @@ namespace Simulation
             return (nint)GetComponentPointer(index, RuntimeType.Get<T>());
         }
 
-        public readonly nint GetComponentAddress<T>(eint entity) where T : unmanaged
+        public readonly void SetComponentBytes(uint index, RuntimeType type, ReadOnlySpan<byte> bytes)
         {
-            uint index = Entities.IndexOf(entity);
-            return GetComponentAddress<T>(index);
-        }
-
-        public readonly void SetComponentBytes(eint entity, RuntimeType type, ReadOnlySpan<byte> bytes)
-        {
-            void* component = GetComponentPointer(entity, type);
+            void* component = GetComponentPointer(index, type);
             bytes.CopyTo(new Span<byte>(component, bytes.Length));
         }
     }

@@ -39,9 +39,9 @@ namespace Simulation.Tests
         public void DestroyParentEntity()
         {
             using World world = new();
-            eint a = world.CreateEntity();
-            eint b = world.CreateEntity(a);
-            eint c = world.CreateEntity(a);
+            uint a = world.CreateEntity();
+            uint b = world.CreateEntity(a);
+            uint c = world.CreateEntity(a);
             Assert.That(world.ContainsEntity(a), Is.True);
             Assert.That(world.ContainsEntity(b), Is.True);
             Assert.That(world.ContainsEntity(c), Is.True);
@@ -59,7 +59,7 @@ namespace Simulation.Tests
         public void GetAddedComponent()
         {
             using World world = new();
-            eint entity = world.CreateEntity();
+            uint entity = world.CreateEntity();
             SimpleComponent component = new("Hello World");
             world.AddComponent(entity, component);
 
@@ -78,7 +78,7 @@ namespace Simulation.Tests
         public void CreateAndDestroyEntity()
         {
             using World world = new();
-            eint entity = world.CreateEntity();
+            uint entity = world.CreateEntity();
             world.DestroyEntity(entity);
             Assert.That(world.ContainsEntity(entity), Is.False);
             Assert.That(world.Count, Is.EqualTo(0));
@@ -89,7 +89,7 @@ namespace Simulation.Tests
         public void TwoComponents()
         {
             using World world = new();
-            eint entity = world.CreateEntity();
+            uint entity = world.CreateEntity();
             SimpleComponent component1 = new("Hello World");
             Another component2 = new(42);
             world.AddComponent(entity, component1);
@@ -105,12 +105,12 @@ namespace Simulation.Tests
         public void DestroyEntityTwice()
         {
             using World world = new();
-            eint entity = world.CreateEntity();
+            uint entity = world.CreateEntity();
             Assert.That(world.ContainsEntity(entity), Is.True);
             world.DestroyEntity(entity);
             Assert.That(world.ContainsEntity(entity), Is.False);
 
-            eint another = world.CreateEntity();
+            uint another = world.CreateEntity();
             Assert.That(world.ContainsEntity(another), Is.True);
             world.DestroyEntity(another);
             Assert.That(world.ContainsEntity(another), Is.False);
@@ -120,8 +120,8 @@ namespace Simulation.Tests
         public void EnablingAndDisabling()
         {
             using World world = new();
-            eint a = world.CreateEntity();
-            eint b = world.CreateEntity();
+            uint a = world.CreateEntity();
+            uint b = world.CreateEntity();
             world.AddComponent(a, new SimpleComponent("Hello World"));
             Assert.That(world.IsEnabled(a), Is.True);
             Assert.That(world.IsEnabled(b), Is.True);
@@ -136,7 +136,7 @@ namespace Simulation.Tests
         public void DestroyEntityWithArray()
         {
             World world = new();
-            eint entity = world.CreateEntity();
+            uint entity = world.CreateEntity();
             Span<SimpleComponent> list = world.CreateArray<SimpleComponent>(entity, 2);
             list[0] = new("Hello World 1");
             list[1] = new("Hello World 2");
@@ -156,12 +156,12 @@ namespace Simulation.Tests
         public void DestroyArrayTwice()
         {
             World world = new();
-            eint entity = world.CreateEntity();
+            uint entity = world.CreateEntity();
             Span<SimpleComponent> list = world.CreateArray<SimpleComponent>(entity, 4);
             list[0] = new("apple");
             Assert.That(list.Length, Is.EqualTo(4));
             world.DestroyEntity(entity);
-            eint another = world.CreateEntity(); //same as `entity`
+            uint another = world.CreateEntity(); //same as `entity`
             Span<SimpleComponent> anotherList = world.CreateArray<SimpleComponent>(another, 1);
             anotherList[0] = new("banana");
             Assert.That(anotherList.Length, Is.EqualTo(1));
@@ -178,7 +178,7 @@ namespace Simulation.Tests
             uint realEntities = 0;
             for (int i = 0; i < 100; i++)
             {
-                eint entity = world.CreateEntity();
+                uint entity = world.CreateEntity();
                 if (rng.NextBool())
                 {
                     world.AddComponent(entity, new SimpleComponent("apple"));
@@ -216,101 +216,6 @@ namespace Simulation.Tests
             {
                 uint entity = i + 1;
                 Assert.That(world.ContainsEntity(entity), Is.False);
-            }
-        }
-
-        public struct SimpleComponent
-        {
-            public FixedString data;
-
-            public SimpleComponent(ReadOnlySpan<char> data)
-            {
-                this.data = new(data);
-            }
-        }
-
-        public struct Another
-        {
-            public uint data;
-
-            public Another(uint data)
-            {
-                this.data = data;
-            }
-        }
-    }
-
-    public class EntityReferenceTests
-    {
-        [TearDown]
-        public void CleanUp()
-        {
-            Allocations.ThrowIfAny();
-        }
-
-        [Test]
-        public void ReferenceAnotherEntity()
-        {
-            using World world = new();
-            eint entity1 = world.CreateEntity();
-            eint entity2 = world.CreateEntity();
-            ComponentThatReferences component = new(world.AddReference(entity1, entity2));
-            Assert.That(world.GetReference(entity1, component.reference), Is.EqualTo(entity2));
-        }
-
-        [Test]
-        public void AppendWorldWithReferencedEntities()
-        {
-            using World firstWorld = new();
-            eint entity1 = firstWorld.CreateEntity(); //1
-            eint entity2 = firstWorld.CreateEntity(); //2
-            ComponentThatReferences component = new(firstWorld.AddReference(entity1, entity2)); //1->2
-            firstWorld.AddComponent(entity1, component);
-            firstWorld.AddComponent(entity2, new ReferencedEntity());
-
-            using World secondWorld = new();
-            eint entity3 = secondWorld.CreateEntity(); //1
-            eint entity4 = secondWorld.CreateEntity(); //2
-            secondWorld.Append(firstWorld); //1->2 becomes 3->4
-
-            secondWorld.GetFirst<ComponentThatReferences>(out entity1);
-            secondWorld.GetFirst<ReferencedEntity>(out entity2);
-            Assert.That(secondWorld.GetReference(entity1, component.reference), Is.EqualTo(entity2));
-        }
-
-        [Test]
-        public void AppendWorldWithParents()
-        {
-            using World firstWorld = new();
-            eint parent = firstWorld.CreateEntity();
-            eint child = firstWorld.CreateEntity(parent);
-            firstWorld.AddComponent(parent, (short)0);
-            firstWorld.AddComponent(child, (ushort)0);
-
-            using World secondWorld = new();
-            for (int i = 0; i < 4; i++)
-            {
-                secondWorld.CreateEntity();
-            }
-
-            secondWorld.Append(firstWorld);
-            secondWorld.GetFirst<short>(out parent);
-            secondWorld.GetFirst<ushort>(out child);
-            Assert.That(secondWorld.GetParent(child), Is.EqualTo(parent));
-        }
-
-        public struct ReferencedEntity
-        {
-
-        }
-
-        public struct ComponentThatReferences
-        {
-            public rint reference;
-
-            public ComponentThatReferences(rint reference)
-            {
-                this.reference = reference;
             }
         }
     }

@@ -11,12 +11,12 @@ namespace Simulation
     /// </summary>
     public abstract class SystemBase : IDisposable
     {
-        private static readonly Dictionary<RuntimeType, List<Action<Container>>> staticCallbacks = new();
+        private static readonly Dictionary<RuntimeType, List<Action<Allocation>>> staticCallbacks = new();
 
         public readonly World world;
 
         private readonly UnmanagedList<Listener> listeners;
-        private readonly Dictionary<RuntimeType, Action<Container>> callbacks;
+        private readonly Dictionary<RuntimeType, Action<Allocation>> callbacks;
 
         public SystemBase(World world)
         {
@@ -43,8 +43,8 @@ namespace Simulation
 
             foreach (RuntimeType type in callbacks.Keys)
             {
-                Action<Container> callback = this.callbacks[type];
-                if (staticCallbacks.TryGetValue(type, out List<Action<Container>>? callbacks))
+                Action<Allocation> callback = this.callbacks[type];
+                if (staticCallbacks.TryGetValue(type, out List<Action<Allocation>>? callbacks))
                 {
                     callbacks.Remove(callback);
                     if (callbacks.Count == 0)
@@ -52,7 +52,7 @@ namespace Simulation
                         for (uint i = 0; i < listeners.Count; i++)
                         {
                             Listener listener = listeners[i];
-                            if (listener.eventType == type)
+                            if (listener.messageType == type)
                             {
                                 listener.Dispose();
                                 listeners.RemoveAt(i);
@@ -79,32 +79,31 @@ namespace Simulation
         /// </summary>
         public unsafe void Subscribe<T>(Action<T> callback) where T : unmanaged
         {
-            RuntimeType eventType = RuntimeType.Get<T>();
-            if (this.callbacks.ContainsKey(eventType))
+            RuntimeType messageType = RuntimeType.Get<T>();
+            if (this.callbacks.ContainsKey(messageType))
             {
-                throw new InvalidOperationException($"Already subscribed to event type `{eventType}`.");
+                throw new InvalidOperationException($"This instance of {GetType()} is already subscribed to `{messageType}`.");
             }
 
-            if (!staticCallbacks.TryGetValue(eventType, out List<Action<Container>>? callbacks))
+            if (!staticCallbacks.TryGetValue(messageType, out List<Action<Allocation>>? callbacks))
             {
                 callbacks = new();
-                staticCallbacks.Add(eventType, callbacks);
-
-                Listener listener = world.CreateListener(eventType, &StaticEvent);
+                staticCallbacks.Add(messageType, callbacks);
+                Listener listener = world.CreateListener(messageType, &StaticEvent);
                 listeners.Add(listener);
             }
 
-            void StaticCallback(Container message) => callback(message.Read<T>());
+            void StaticCallback(Allocation message) => callback(message.Read<T>());
             callbacks.Add(StaticCallback);
-            this.callbacks.Add(eventType, StaticCallback);
+            this.callbacks.Add(messageType, StaticCallback);
         }
 
 #if NET5_0_OR_GREATER
         [UnmanagedCallersOnly]
 #endif
-        private static void StaticEvent(World world, Container message)
+        private static void StaticEvent(World world, Allocation message, RuntimeType messageType)
         {
-            foreach (Action<Container> callback in staticCallbacks[message.type])
+            foreach (Action<Allocation> callback in staticCallbacks[messageType])
             {
                 callback(message);
             }

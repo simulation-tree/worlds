@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Unmanaged;
-using static Simulation.Tests.WorldTests;
 using Unmanaged.Collections;
 
 namespace Simulation.Tests
@@ -19,9 +18,9 @@ namespace Simulation.Tests
         public void FindComponents()
         {
             using World world = new();
-            eint a = world.CreateEntity();
-            eint b = world.CreateEntity();
-            eint c = world.CreateEntity();
+            uint a = world.CreateEntity();
+            uint b = world.CreateEntity();
+            uint c = world.CreateEntity();
             world.AddComponent(a, new Apple());
             world.AddComponent(b, new Berry());
             world.AddComponent(c, new Apple());
@@ -68,15 +67,15 @@ namespace Simulation.Tests
         public void FindOnlyEnabledEntities()
         {
             using World world = new();
-            eint a = world.CreateEntity();
-            eint b = world.CreateEntity();
-            eint c = world.CreateEntity();
+            uint a = world.CreateEntity();
+            uint b = world.CreateEntity();
+            uint c = world.CreateEntity();
             world.AddComponent(a, new Cherry("apple"));
             world.AddComponent(b, new Cherry("pie"));
             world.AddComponent(c, new Cherry("fortune"));
             world.SetEnabled(a, false);
             List<Cherry> values = [];
-            foreach (eint entity in world.GetAll<Cherry>(Query.Option.OnlyEnabledEntities))
+            foreach (uint entity in world.GetAll<Cherry>(Query.Option.OnlyEnabledEntities))
             {
                 values.Add(world.GetComponent<Cherry>(entity));
             }
@@ -85,7 +84,7 @@ namespace Simulation.Tests
             Assert.That(values.Contains(new Cherry("pie")), Is.True);
             Assert.That(values.Contains(new Cherry("fortune")), Is.True);
             values.Clear();
-            foreach (eint entity in world.GetAll<Cherry>(Query.Option.IncludeDisabledEntities))
+            foreach (uint entity in world.GetAll<Cherry>(Query.Option.IncludeDisabledEntities))
             {
                 values.Add(world.GetComponent<Cherry>(entity));
             }
@@ -98,8 +97,8 @@ namespace Simulation.Tests
         public void QueryComponentsAfterDestroyingEntities()
         {
             using World world = new();
-            eint entity1 = world.CreateEntity();
-            eint entity2 = world.CreateEntity();
+            uint entity1 = world.CreateEntity();
+            uint entity2 = world.CreateEntity();
             Cherry component1 = new("apple");
             Cherry component2 = new("banana");
             world.AddComponent(entity1, component1);
@@ -107,8 +106,8 @@ namespace Simulation.Tests
             world.DestroyEntity(entity1);
             world.AddComponent(entity2, new Berry(5));
             world.DestroyEntity(entity2);
-            List<(eint, Cherry)> found = new();
-            foreach (eint entity in world.GetAll<Cherry>())
+            List<(uint, Cherry)> found = new();
+            foreach (uint entity in world.GetAll<Cherry>())
             {
                 found.Add((entity, world.GetComponent<Cherry>(entity)));
             }
@@ -120,23 +119,23 @@ namespace Simulation.Tests
         public void ComponentBuffer()
         {
             using World world = new();
-            eint entity1 = world.CreateEntity();
-            eint entity2 = world.CreateEntity();
+            uint entity1 = world.CreateEntity();
+            uint entity2 = world.CreateEntity();
             SimpleComponent component1 = new("apple");
             SimpleComponent component2 = new("banana");
             world.AddComponent(entity1, component1);
             world.AddComponent(entity2, component2);
-            eint entity3 = world.CreateEntity();
-            eint entity4 = world.CreateEntity();
+            uint entity3 = world.CreateEntity();
+            uint entity4 = world.CreateEntity();
             Another another1 = new(5);
             Another another2 = new(10);
             world.AddComponent(entity3, another1);
             world.AddComponent(entity4, another2);
-            eint entity5 = world.CreateEntity();
+            uint entity5 = world.CreateEntity();
             world.AddComponent(entity5, component1);
             world.AddComponent(entity5, another2);
             using UnmanagedList<SimpleComponent> buffer = UnmanagedList<SimpleComponent>.Create();
-            using UnmanagedList<eint> entities = UnmanagedList<eint>.Create();
+            using UnmanagedList<uint> entities = UnmanagedList<uint>.Create();
             world.Fill(buffer, entities);
             Assert.That(buffer.Count, Is.EqualTo(3));
             var entitiesSpan = entities.AsSpan();
@@ -156,9 +155,9 @@ namespace Simulation.Tests
         public void EnumerateQuery()
         {
             using World world = new();
-            eint a = world.CreateEntity();
-            eint b = world.CreateEntity();
-            eint c = world.CreateEntity();
+            uint a = world.CreateEntity();
+            uint b = world.CreateEntity();
+            uint c = world.CreateEntity();
             world.AddComponent(a, new Cherry("apple"));
             world.AddComponent(b, new Cherry("pie"));
             world.AddComponent(c, new Cherry("fortune"));
@@ -183,23 +182,23 @@ namespace Simulation.Tests
         public void QueryMultipleComponents()
         {
             using World world = new();
-            eint entity1 = world.CreateEntity();
-            eint entity2 = world.CreateEntity();
+            uint entity1 = world.CreateEntity();
+            uint entity2 = world.CreateEntity();
             Cherry component1 = new("apple");
             Cherry component2 = new("banana");
             world.AddComponent(entity1, component1);
             world.AddComponent(entity2, component2);
-            eint entity3 = world.CreateEntity();
-            eint entity4 = world.CreateEntity();
+            uint entity3 = world.CreateEntity();
+            uint entity4 = world.CreateEntity();
             Berry another1 = new(5);
             Berry another2 = new(10);
             world.AddComponent(entity3, another1);
             world.AddComponent(entity4, another2);
-            eint entity5 = world.CreateEntity();
+            uint entity5 = world.CreateEntity();
             world.AddComponent(entity5, component1);
             world.AddComponent(entity5, another2);
-            List<eint> simpleComponents = world.GetAll<Cherry>().ToList();
-            List<eint> anotherComponents = world.GetAll<Berry>().ToList();
+            List<uint> simpleComponents = world.GetAll<Cherry>().ToList();
+            List<uint> anotherComponents = world.GetAll<Berry>().ToList();
             Assert.That(simpleComponents.Count, Is.EqualTo(3));
             Assert.That(anotherComponents.Count, Is.EqualTo(3));
             Assert.That(simpleComponents.Contains(entity1), Is.True);
@@ -222,7 +221,7 @@ namespace Simulation.Tests
             Stopwatch stopwatch = Stopwatch.StartNew();
             for (uint i = 0; i < sampleCount; i++)
             {
-                eint entity = world.CreateEntity();
+                uint entity = world.CreateEntity();
                 if ((i % 9 == 0) || (i % 2 == 0))
                 {
                     world.AddComponent(entity, new Apple());
@@ -242,7 +241,7 @@ namespace Simulation.Tests
 
             //benchmark query
             using Query<Apple, Berry, Cherry> query = new(world);
-            List<(eint, Apple, Berry, Cherry)> results = [];
+            List<(uint, Apple, Berry, Cherry)> results = [];
             stopwatch.Restart();
             query.Fill();
             foreach (Query<Apple, Berry, Cherry>.Result r in query)
@@ -255,7 +254,7 @@ namespace Simulation.Tests
             //benchmark ForEach
             results.Clear();
             stopwatch.Restart();
-            world.ForEach((in eint entity, ref Apple apple, ref Berry berry, ref Cherry cherry) =>
+            world.ForEach((in uint entity, ref Apple apple, ref Berry berry, ref Cherry cherry) =>
             {
                 results.Add((entity, apple, berry, cherry));
             });
@@ -274,10 +273,10 @@ namespace Simulation.Tests
                 ComponentChunk chunk = chunks[key];
                 if (chunk.ContainsTypes(typesSpan))
                 {
-                    UnmanagedList<eint> entities = chunk.Entities;
+                    UnmanagedList<uint> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
-                        eint entity = entities[e];
+                        uint entity = entities[e];
                         if (world.IsEnabled(entity))
                         {
                             ref Apple apple = ref chunk.GetComponentRef<Apple>(e);

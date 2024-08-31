@@ -33,7 +33,7 @@ namespace Simulation.Tests
         }
 
         [UnmanagedCallersOnly]
-        private static void OnSimpleEvent(World world, Container message)
+        private static void OnSimpleEvent(World world, Allocation message, RuntimeType messageType)
         {
             ref SimpleEvent simpleEvent = ref message.Read<SimpleEvent>();
             received.Add(simpleEvent.x);
@@ -62,7 +62,7 @@ namespace Simulation.Tests
         }
 
         [UnmanagedCallersOnly]
-        private static void OneEventOnly(World world, Container message)
+        private static void OneEventOnly(World world, Allocation message, RuntimeType messageType)
         {
             ref SimpleEvent simpleEvent = ref message.Read<SimpleEvent>();
             received.Add(simpleEvent.x);

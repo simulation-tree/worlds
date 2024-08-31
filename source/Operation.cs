@@ -172,7 +172,7 @@ namespace Simulation
         /// <summary>
         /// Appends the given entity to the selection.
         /// </summary>
-        public void SelectEntity(eint entity)
+        public void SelectEntity(uint entity)
         {
             AddInstruction(Instruction.SelectEntity(entity));
         }
@@ -182,9 +182,9 @@ namespace Simulation
         /// to the selections.
         /// <para>Where 0 is the last created entity.</para>
         /// </summary>
-        public void SelectEntity(uint offset)
+        public void SelectPreviouslyCreatedEntity(uint offset)
         {
-            AddInstruction(Instruction.SelectEntity(offset));
+            AddInstruction(Instruction.SelectPreviouslyCreatedEntity(offset));
         }
 
         /// <summary>
@@ -199,7 +199,7 @@ namespace Simulation
         /// Assigns the given parent of all selected entities to the
         /// given existing entity.
         /// </summary>
-        public void SetParent(eint parent)
+        public void SetParent(uint parent)
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.SetParent(parent));
@@ -210,17 +210,17 @@ namespace Simulation
         /// created <paramref name="offset"/> instructions ago.
         /// <para>Where 0 is the last created entity.</para>
         /// </summary>
-        public void SetParent(uint offset)
+        public void SetParentToPreviouslyCreatedEntity(uint offset)
         {
             ThrowIfSelectionIsEmpty();
-            AddInstruction(Instruction.SetParent(offset));
+            AddInstruction(Instruction.SetParentToPreviouslyCreatedEntity(offset));
         }
 
         /// <summary>
         /// Adds a reference for every entity in the selection, to
         /// this specific given entity.
         /// </summary>
-        public void AddReference(eint entity)
+        public void AddReference(uint entity)
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.AddReference(entity));
@@ -231,10 +231,10 @@ namespace Simulation
         /// entity that was created <paramref name="offset"/> instructions ago.
         /// <para>Where 0 is the last created entity.</para>
         /// </summary>
-        public void AddReference(uint offset)
+        public void AddReferenceTowardsPreviouslyCreatedEntity(uint offset)
         {
             ThrowIfSelectionIsEmpty();
-            AddInstruction(Instruction.AddReference(offset));
+            AddInstruction(Instruction.AddReferenceTowardsPreviouslyCreatedEntity(offset));
         }
 
         /// <summary>

@@ -74,10 +74,10 @@ namespace Simulation
                     ComponentChunk chunk = chunks[hash];
                     if (chunk.ContainsTypes(types, exact))
                     {
-                        UnmanagedList<eint> entities = chunk.Entities;
+                        UnmanagedList<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
-                            eint entity = entities[e];
+                            uint entity = entities[e];
                             nint component1 = chunk.GetComponentAddress<T1>(e);
                             results.Add(new(entity, component1));
                         }
@@ -91,10 +91,10 @@ namespace Simulation
                     ComponentChunk chunk = chunks[hash];
                     if (chunk.ContainsTypes(types, exact))
                     {
-                        UnmanagedList<eint> entities = chunk.Entities;
+                        UnmanagedList<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
-                            eint entity = entities[e];
+                            uint entity = entities[e];
                             if (world.IsEnabled(entity))
                             {
                                 nint component1 = chunk.GetComponentAddress<T1>(e);
@@ -106,7 +106,7 @@ namespace Simulation
             }
         }
 
-        public readonly bool Contains(eint entity)
+        public readonly bool Contains(uint entity)
         {
             ThrowIfNotInitialized();
             for (uint i = 0; i < Count; i++)
@@ -128,13 +128,13 @@ namespace Simulation
 
         public readonly struct Result
         {
-            public readonly eint entity;
+            public readonly uint entity;
 
             private readonly nint component1;
 
             public unsafe ref T1 Component1 => ref System.Runtime.CompilerServices.Unsafe.AsRef<T1>((void*)component1);
 
-            internal Result(eint entity, nint component1)
+            internal Result(uint entity, nint component1)
             {
                 this.entity = entity;
                 this.component1 = component1;
