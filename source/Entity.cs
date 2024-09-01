@@ -111,10 +111,10 @@ namespace Simulation
             return world.GetArray<T>(value);
         }
 
-        public readonly ref T GetArrayElement<T>(uint index) where T : unmanaged
+        public readonly ref T GetArrayElementRef<T>(uint index) where T : unmanaged
         {
             ThrowIfDestroyed();
-            return ref world.GetArrayElement<T>(value, index);
+            return ref world.GetArrayElementRef<T>(value, index);
         }
 
         public readonly uint GetArrayLength<T>() where T : unmanaged

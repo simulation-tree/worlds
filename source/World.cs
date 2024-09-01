@@ -1066,6 +1066,11 @@ namespace Simulation
             return new Span<T>(array, (int)length);
         }
 
+        public readonly void* GetArray(uint entity, RuntimeType arrayType, out uint length)
+        {
+            return UnsafeWorld.GetArray(value, entity, arrayType, out length);
+        }
+
         public readonly Span<T> ResizeArray<T>(uint entity, uint newLength) where T : unmanaged
         {
             void* array = UnsafeWorld.ResizeArray(value, entity, RuntimeType.Get<T>(), newLength);
@@ -1094,7 +1099,7 @@ namespace Simulation
         /// <summary>
         /// Retrieves the element at the index from an existing list on this entity.
         /// </summary>
-        public readonly ref T GetArrayElement<T>(uint entity, uint index) where T : unmanaged
+        public readonly ref T GetArrayElementRef<T>(uint entity, uint index) where T : unmanaged
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
             RuntimeType arrayType = RuntimeType.Get<T>();
