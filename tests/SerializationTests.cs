@@ -28,7 +28,7 @@ namespace Simulation.Tests
             world.AddComponent(c, new Apple("Goodbye, World!"));
             world.DestroyEntity(temporary);
             uint list = world.CreateEntity();
-            world.CreateArray<char>(list, "Well hello there list");
+            world.CreateArray<char>(list, "Well hello there list".AsSpan());
 
             List<uint> oldEntities = world.Entities.ToList();
             List<(uint, Apple)> apples = new();
@@ -41,7 +41,7 @@ namespace Simulation.Tests
             writer.WriteObject(world);
             world.Dispose();
 
-            ReadOnlySpan<byte> data = writer.AsSpan();
+            USpan<byte> data = writer.GetBytes();
             using BinaryReader reader = new(data);
 
             using World loadedWorld = reader.ReadObject<World>();
@@ -81,10 +81,10 @@ namespace Simulation.Tests
             using World loadedWorld = reader.ReadObject<World>();
             world.Append(loadedWorld);
 
-            world.TryGetFirst<Prefab>(out uint prefabEntity, out _);
+            world.TryGetFirstComponent<Prefab>(out uint prefabEntity, out _);
             Assert.That(world.ContainsEntity(prefabEntity), Is.True);
             Assert.That(world.GetComponent<Fruit>(prefabEntity).data, Is.EqualTo(42));
-            Assert.That(world.GetComponent<Apple>(prefabEntity).data, Is.EqualTo("Hello, World!"));
+            Assert.That(world.GetComponent<Apple>(prefabEntity).data.ToString(), Is.EqualTo("Hello, World!"));
         }
 
         public struct Prefab
@@ -95,7 +95,7 @@ namespace Simulation.Tests
         [Test]
         public void BinaryReadAndWrite()
         {
-            Span<Fruit> fruits =
+            USpan<Fruit> fruits =
             [
                 new(1),
                 new(3),
@@ -106,7 +106,7 @@ namespace Simulation.Tests
             Big big = new(32, new Apple("apple"), fruits);
             using BinaryWriter writer = BinaryWriter.Create();
             writer.WriteValue(big);
-            using BinaryReader reader = new(writer.AsSpan());
+            using BinaryReader reader = new(writer.GetBytes());
             using Big loadedBig = reader.ReadValue<Big>();
             Assert.That(loadedBig, Is.EqualTo(big));
         }
@@ -117,24 +117,24 @@ namespace Simulation.Tests
             using BinaryWriter writer = BinaryWriter.Create();
             writer.WriteSpan<byte>([1, 2, 3, 4, 5]);
             writer.WriteSpan<int>([1, 2, 3, 4, 5]);
-            writer.WriteSpan<FixedString>([new("Hello"), new("World"), new("Goodbye")]);
+            writer.WriteSpan<FixedString>(["Hello", "World", "Goodbye"]);
 
-            using BinaryReader reader = new(writer.AsSpan());
-            ReadOnlySpan<byte> bytes = reader.ReadSpan<byte>(5);
-            ReadOnlySpan<int> ints = reader.ReadSpan<int>(5);
-            ReadOnlySpan<FixedString> strings = reader.ReadSpan<FixedString>(3);
+            using BinaryReader reader = new(writer.GetBytes());
+            USpan<byte> bytes = reader.ReadSpan<byte>(5);
+            USpan<int> ints = reader.ReadSpan<int>(5);
+            USpan<FixedString> strings = reader.ReadSpan<FixedString>(3);
 
             Assert.That(bytes.ToArray(), Is.EquivalentTo(new byte[] { 1, 2, 3, 4, 5 }));
             Assert.That(ints.ToArray(), Is.EquivalentTo(new int[] { 1, 2, 3, 4, 5 }));
-            Assert.That(strings.ToArray(), Is.EquivalentTo(new FixedString[] { new("Hello"), new("World"), new("Goodbye") }));
+            Assert.That(strings.ToArray(), Is.EquivalentTo(new FixedString[] { "Hello", "World", "Goodbye" }));
         }
 
         [Test]
         public void ReadTooMuch()
         {
             using BinaryWriter writer = BinaryWriter.Create();
-            writer.WriteSpan<char>("The snake that eats its own tail");
-            using BinaryReader reader = new(writer.AsSpan());
+            writer.WriteSpan<char>("The snake that eats its own tail".AsSpan());
+            using BinaryReader reader = new(writer.GetBytes());
             Assert.Throws<InvalidOperationException>(() => reader.ReadSpan<char>(100));
         }
 
@@ -155,13 +155,23 @@ namespace Simulation.Tests
 
             using BinaryWriter writer = BinaryWriter.Create();
             writer.WriteObject(complicated);
-            using BinaryReader reader = new(writer.AsSpan());
+            using BinaryReader reader = new(writer.GetBytes());
             using Complicated loadedComplicated = reader.ReadObject<Complicated>();
 
-            Assert.That(loadedComplicated.List.Length, Is.EqualTo(complicated.List.Length));
-            for (int i = 0; i < complicated.List.Length; i++)
+            Assert.That(loadedComplicated.List.length, Is.EqualTo(complicated.List.length));
+            for (uint i = 0; i < complicated.List.length; i++)
             {
-                Assert.That(loadedComplicated.List[i], Is.EqualTo(complicated.List[i]));
+                Player actual = loadedComplicated.List[i];
+                Player expected = complicated.List[i];
+                Assert.That(actual.Inventory.length, Is.EqualTo(expected.Inventory.length));
+                for (uint j = 0; j < actual.Inventory.length; j++)
+                {
+                    Fruit actualFruit = actual.Inventory[j];
+                    Fruit expectedFruit = expected.Inventory[j];
+                    Assert.That(actualFruit, Is.EqualTo(expectedFruit));
+                }
+
+                Assert.That(actual, Is.EqualTo(expected));
             }
         }
 
@@ -181,7 +191,7 @@ namespace Simulation.Tests
         {
             private UnmanagedList<RuntimeType> types;
 
-            public readonly ReadOnlySpan<RuntimeType> List => types.AsSpan();
+            public readonly USpan<RuntimeType> List => types.AsSpan();
 
             public Types()
             {
@@ -202,7 +212,7 @@ namespace Simulation.Tests
             {
                 byte count = reader.ReadValue<byte>();
                 types = UnmanagedList<RuntimeType>.Create();
-                for (int i = 0; i < count; i++)
+                for (uint i = 0; i < count; i++)
                 {
                     RuntimeType type = reader.ReadValue<RuntimeType>();
                     types.Add(type);
@@ -222,7 +232,7 @@ namespace Simulation.Tests
         {
             private UnmanagedList<Player> players;
 
-            public readonly ReadOnlySpan<Player> List => players.AsSpan();
+            public readonly USpan<Player> List => players.AsSpan();
 
             public Complicated()
             {
@@ -248,7 +258,7 @@ namespace Simulation.Tests
             {
                 byte count = reader.ReadValue<byte>();
                 players = UnmanagedList<Player>.Create();
-                for (int i = 0; i < count; i++)
+                for (uint i = 0; i < count; i++)
                 {
                     Player player = reader.ReadObject<Player>();
                     players.Add(player);
@@ -271,7 +281,7 @@ namespace Simulation.Tests
             public uint damage;
             private UnmanagedList<Fruit> inventory;
 
-            public ReadOnlySpan<Fruit> Inventory => inventory.AsSpan();
+            public readonly USpan<Fruit> Inventory => inventory.AsSpan();
 
             public Player(uint hp, uint damage)
             {
@@ -280,7 +290,7 @@ namespace Simulation.Tests
                 this.inventory = UnmanagedList<Fruit>.Create();
             }
 
-            public override string ToString()
+            public readonly override string ToString()
             {
                 return $"Player: HP={hp}, Damage={damage}";
             }
@@ -301,7 +311,7 @@ namespace Simulation.Tests
                 damage = reader.ReadValue<uint>();
                 inventory = UnmanagedList<Fruit>.Create();
                 uint count = reader.ReadValue<uint>();
-                for (int i = 0; i < count; i++)
+                for (uint i = 0; i < count; i++)
                 {
                     inventory.Add(reader.ReadValue<Fruit>());
                 }
@@ -344,7 +354,7 @@ namespace Simulation.Tests
             }
         }
 
-        public readonly struct Big(int a, Apple apple, ReadOnlySpan<Fruit> fruits) : IDisposable, IEquatable<Big>
+        public readonly struct Big(int a, Apple apple, USpan<Fruit> fruits) : IDisposable, IEquatable<Big>
         {
             public readonly int a = a;
             public readonly Apple apple = apple;
@@ -420,9 +430,9 @@ namespace Simulation.Tests
         {
             public readonly FixedString data;
 
-            public Apple(ReadOnlySpan<char> data)
+            public Apple(FixedString data)
             {
-                this.data = new(data);
+                this.data = data;
             }
 
             public override bool Equals(object? obj)

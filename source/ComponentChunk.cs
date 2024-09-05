@@ -11,10 +11,10 @@ namespace Simulation
 
         public readonly bool IsDisposed => UnsafeComponentChunk.IsDisposed(value);
         public readonly UnmanagedList<uint> Entities => UnsafeComponentChunk.GetEntities(value);
-        public readonly ReadOnlySpan<RuntimeType> Types => UnsafeComponentChunk.GetTypes(value);
-        public readonly uint Key => UnsafeComponentChunk.GetKey(value);
+        public readonly USpan<RuntimeType> Types => UnsafeComponentChunk.GetTypes(value);
+        public readonly int Key => UnsafeComponentChunk.GetKey(value);
 
-        public ComponentChunk(ReadOnlySpan<RuntimeType> types)
+        public ComponentChunk(USpan<RuntimeType> types)
         {
             value = UnsafeComponentChunk.Allocate(types);
         }
@@ -26,11 +26,11 @@ namespace Simulation
 
         public readonly override string ToString()
         {
-            Span<char> buffer = stackalloc char[512];
-            int bufferCount = 0;
+            USpan<char> buffer = stackalloc char[512];
+            uint bufferCount = 0;
             foreach (RuntimeType type in Types)
             {
-                bufferCount += type.ToString(buffer[bufferCount..]);
+                bufferCount += type.ToString(buffer.Slice(bufferCount));
                 buffer[bufferCount++] = ',';
                 buffer[bufferCount++] = ' ';
             }
@@ -38,7 +38,7 @@ namespace Simulation
             if (bufferCount > 0)
             {
                 bufferCount -= 2;
-                return new string(buffer[..bufferCount]);
+                return new string(buffer.pointer, 0, (int)bufferCount);
             }
             else
             {
@@ -47,27 +47,19 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Checks if the chunk contains all of the given types.
+        /// Checks if the chunk contains all of the given component types.
         /// </summary>
-        public readonly bool ContainsTypes(ReadOnlySpan<RuntimeType> types, bool exact = false)
+        public readonly bool ContainsTypes(USpan<RuntimeType> componentTypes)
         {
-            ReadOnlySpan<RuntimeType> myTypes = Types;
-            if (types.Length > myTypes.Length)
+            USpan<RuntimeType> myTypes = Types;
+            if (componentTypes.length > myTypes.length)
             {
                 return false;
             }
 
-            if (exact)
+            for (uint i = 0; i < componentTypes.length; i++)
             {
-                if (types.Length != myTypes.Length)
-                {
-                    return false;
-                }
-            }
-
-            for (int i = 0; i < types.Length; i++)
-            {
-                if (!myTypes.Contains(types[i]))
+                if (!myTypes.Contains(componentTypes[i]))
                 {
                     return false;
                 }
@@ -110,20 +102,20 @@ namespace Simulation
         public readonly ref T GetComponentRef<T>(uint index) where T : unmanaged
         {
             UnmanagedList<T> components = GetComponents<T>();
-            return ref components.GetRef(index);
+            return ref components[index];
         }
 
-        public readonly Span<byte> GetComponentBytes(uint index, RuntimeType type)
+        public readonly USpan<byte> GetComponentBytes(uint index, RuntimeType type)
         {
             void* component = GetComponentPointer(index, type);
-            return new Span<byte>(component, type.Size);
+            return new USpan<byte>(component, type.Size);
         }
 
         public readonly void* GetComponentPointer(uint index, RuntimeType type)
         {
             UnsafeList* components = GetComponents(type);
             nint address = UnsafeList.GetStartAddress(components);
-            return (void*)(address + (int)index * type.Size);
+            return (void*)(address + index * type.Size);
         }
 
         public readonly nint GetComponentAddress<T>(uint index) where T : unmanaged
@@ -131,10 +123,10 @@ namespace Simulation
             return (nint)GetComponentPointer(index, RuntimeType.Get<T>());
         }
 
-        public readonly void SetComponentBytes(uint index, RuntimeType type, ReadOnlySpan<byte> bytes)
+        public readonly void SetComponentBytes(uint index, RuntimeType type, USpan<byte> bytes)
         {
             void* component = GetComponentPointer(index, type);
-            bytes.CopyTo(new Span<byte>(component, bytes.Length));
+            bytes.CopyTo(new USpan<byte>(component, bytes.length));
         }
     }
 }

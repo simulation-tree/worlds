@@ -17,17 +17,99 @@ public static class EntityFunctions
         entity.World.DestroyEntity(entity.Value);
     }
 
+    public static bool IsDestroyed<T>(this T entity) where T : unmanaged, IEntity
+    {
+        return !entity.World.ContainsEntity(entity.Value);
+    }
+
     /// <summary>
-    /// Returns <c>true</c> if the entity complies with its argued type.
+    /// Makes the entity become the definition by having
+    /// the missing components and arrays added with a default state.
     /// </summary>
-    public static bool Is<T>(this T entity) where T : unmanaged, IEntity
+    public static void Become<T>(this T entity, Definition definition) where T : unmanaged, IEntity
+    {
+        //todo: efficiency: kinda expensive to perform these ops one by one, should instead add all missing at once
+        USpan<RuntimeType> componentTypes = stackalloc RuntimeType[definition.ComponentTypeCount];
+        definition.CopyComponentTypes(componentTypes);
+        for (uint i = 0; i < componentTypes.length; i++)
+        {
+            RuntimeType componentType = componentTypes[i];
+            if (!entity.World.ContainsComponent(entity.Value, componentType))
+            {
+                entity.World.AddComponent(entity.Value, componentType);
+            }
+        }
+
+        USpan<RuntimeType> arrayTypes = stackalloc RuntimeType[definition.ArrayTypeCount];
+        definition.CopyArrayTypes(arrayTypes);
+        for (uint i = 0; i < arrayTypes.length; i++)
+        {
+            RuntimeType arrayType = arrayTypes[i];
+            if (!entity.World.ContainsArray(entity.Value, arrayType))
+            {
+                entity.World.CreateArray(entity.Value, arrayType);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Checks if the entity is what the definition argues.
+    /// </summary>
+    public static bool Is<T>(this T entity, Definition definition) where T : unmanaged, IEntity
     {
         World world = entity.World;
-        uint entityValue = entity.Value;
-        using Query query = entity.GetQuery(world);
-        foreach (RuntimeType type in query.Types)
+        uint value = entity.Value;
+        USpan<RuntimeType> componentTypes = stackalloc RuntimeType[definition.ComponentTypeCount];
+        definition.CopyComponentTypes(componentTypes);
+        for (uint i = 0; i < componentTypes.length; i++)
         {
-            if (!world.ContainsComponent(entityValue, type))
+            if (!world.ContainsComponent(value, componentTypes[i]))
+            {
+                return false;
+            }
+        }
+
+        USpan<RuntimeType> arrayTypes = stackalloc RuntimeType[definition.ArrayTypeCount];
+        definition.CopyArrayTypes(arrayTypes);
+        for (uint i = 0; i < arrayTypes.length; i++)
+        {
+            if (!world.ContainsArray(value, arrayTypes[i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static Definition GetDefinition<T>(this T entity) where T : unmanaged, IEntity
+    {
+        return entity.GetDefinition();
+    }
+
+    /// <summary>
+    /// Checks if the entity complies with the definition it argues.
+    /// </summary>
+    public static bool IsCompliant<T>(this T entity) where T : unmanaged, IEntity
+    {
+        World world = entity.World;
+        uint value = entity.Value;
+        Definition definition = entity.Definition;
+        USpan<RuntimeType> componentTypes = stackalloc RuntimeType[definition.ComponentTypeCount];
+        definition.CopyComponentTypes(componentTypes);
+        for (uint i = 0; i < componentTypes.length; i++)
+        {
+            if (!world.ContainsComponent(value, componentTypes[i]))
+            {
+                return false;
+            }
+        }
+
+        USpan<RuntimeType> arrayTypes = stackalloc RuntimeType[definition.ArrayTypeCount];
+        definition.CopyArrayTypes(arrayTypes);
+        for (uint i = 0; i < arrayTypes.length; i++)
+        {
+            if (!world.ContainsArray(value, arrayTypes[i]))
             {
                 return false;
             }
@@ -37,39 +119,24 @@ public static class EntityFunctions
     }
 
     /// <summary>
-    /// Awaits until the entity becomes the type that it argues.
-    /// <para>The given action is only invoked when
-    /// the entity isn't its type, and is expected to returns the 
-    /// milliseconds to await at every step (can be 0).</para>
+    /// Awaits until the entity becomes compliant with the
+    /// definition it argues.
+    /// <para>Callback is expected to return time to await
+    /// in milliseconds.</para>
     /// </summary>
-    public static async Task UntilIs<T>(this T entity, Wait action, CancellationToken cancellation = default) where T : unmanaged, IEntity
+    public static async Task UntilCompliant<T>(this T entity, Wait action, CancellationToken cancellation = default) where T : unmanaged, IEntity
     {
-        World world = entity.World;
-        uint entityValue = entity.Value;
-        using Query query = entity.GetQuery(world);
-        uint typeCount = query.TypeCount;
-        if (typeCount == 0)
+        while (true)
         {
-            return;
-        }
-
-        bool containsAll;
-        do
-        {
-            containsAll = true;
-            for (uint i = 0; i < typeCount; i++)
+            if (!entity.IsCompliant())
             {
-                RuntimeType type = query.GetType(i);
-                bool containsComponent = world.ContainsComponent(entityValue, type);
-                if (!containsComponent)
-                {
-                    containsAll = false;
-                    await action(world, cancellation);
-                    break;
-                }
+                await action(entity.World, cancellation);
+            }
+            else
+            {
+                return;
             }
         }
-        while (!containsAll);
     }
 
     /// <summary>
@@ -77,10 +144,11 @@ public static class EntityFunctions
     /// Because the methods that use will perform native ruinterprets.
     /// </summary>
     [Conditional("DEBUG")]
-    public static void ThrowIfTypeLayoutMismatches(Type type)
+    public static void ThrowIfTypeLayoutMismatches<T>()
     {
         BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
         Stack<Type> checkStack = new();
+        Type type = typeof(T);
         checkStack.Push(type);
         while (checkStack.Count > 0)
         {

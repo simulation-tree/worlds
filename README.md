@@ -71,7 +71,7 @@ void Do()
     UnmanagedDictionary<uint, ComponentChunk> chunks = world.ComponentChunks;
     for (int i = 0; i < chunks.Count; i++)
     {
-        uint key = chunks.Keys[i];
+        int key = chunks.Keys[i];
         ComponentChunk chunk = chunks[key];
         if (chunk.ContainsTypes(typesSpan))
         {
@@ -88,17 +88,17 @@ void Do()
 }
 ```
 
-Last is the `Query` approach, which buffers found components for later iteration with
+Last is the `ComponentQuery` approach, which buffers found components for later iteration with
 available references to each components. It's `Update` method is used to fill its internals with the
 latest view of the world:
 ```cs
 uint sum = 0;
-Query<MyComponent> query;
+ComponentQuery<MyComponent> query;
 
 void Do()
 {
     //compared to most efficient approach, it only suffers from having to create an object
-    query.Update();
+    query.Update(world);
     foreach (var x in query)
     {
         uint entity = x.entity;
@@ -109,6 +109,53 @@ void Do()
 }
 ```
 
+### Forming entity types
+A commonly reused pattern with components is to formalize them into types, where the
+type is qualified by components present on the entity. For example: if an entity
+contains an `IsPlayer` then its a player entity. This design is supported through the
+`IEntity` interface and its required `Definition` property:
+```cs
+public struct IsPlayer(FixedString name)
+{
+    public FixedString name = name;
+}
+
+public readonly struct Player : IEntity
+{
+    public readonly Entity entity;
+
+    public readonly ref FixedString Name => ref entity.GetComponentRef<IsPlayer>().name;
+
+    readonly uint IEntity.Value => entity.value;
+    readonly World IEntity.World => entity.world;
+    readonly Definition IEntity.Definition => new([RuntimeType.Get<IsPlayer>()], []);
+
+    public Player(World world, FixedString name)
+    {
+        this.entity = new(world);
+        entity.AddComponent(new IsPlayer(name));
+    }
+}
+
+//creating a player using its type's constructor
+Player player = new(world, "unnamed");
+```
+> `IEntity` types are expected to be only big enough to store an `Entity` field,
+or `uint`+`World` fields.
+
+These types are then available for transforming or interpreting other entities
+into them. This is done by having the missing components and arrays added with
+uninitialized values:
+```cs
+//creating a player by transform a newly created one
+Player player = new Entity(world).Become<Player>();
+player.Name = "unnamed";
+
+//creating a player from scratch
+uint anotherEntity = world.CreateEntity();
+world.AddComponent(anotherEntity, new IsPlayer("unnamed"));
+Player anotherPlayer = new Entity(world, anotherEntity).As<Player>();
+```
 ### Relationship references
 Components with `uint` values that are _meant_ to reference other entities will be
 susceptible to pointing to the wrong entity when worlds are appended. Because the value

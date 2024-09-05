@@ -31,7 +31,7 @@ namespace Simulation.Tests
         public void DestroyExistingEntities()
         {
             using World world = new();
-            for (int i = 0; i < 30; i++)
+            for (uint i = 0; i < 30; i++)
             {
                 world.CreateEntity();
             }
@@ -155,7 +155,7 @@ namespace Simulation.Tests
             world.Perform(operation);
 
             uint entity = world.Entities.First();
-            Span<char> list = world.GetArray<char>(entity);
+            USpan<char> list = world.GetArray<char>(entity);
             Assert.That(list.ToString(), Is.EqualTo(testString));
         }
 
@@ -173,7 +173,7 @@ namespace Simulation.Tests
             uint entity = world.Entities.First();
             Assert.That(world.ContainsArray<char>(entity), Is.True);
 
-            Span<char> list = world.GetArray<char>(entity);
+            USpan<char> list = world.GetArray<char>(entity);
             Assert.That(list[0], Is.EqualTo('a'));
             Assert.That(world.GetArrayLength<char>(entity), Is.EqualTo(4));
 
@@ -196,7 +196,7 @@ namespace Simulation.Tests
         {
             using Operation operation = new();
             operation.CreateEntity();
-            operation.CreateArray<char>("abcd".AsSpan());
+            operation.CreateArray<char>(MemoryExtensions.AsSpan("abcd"));
 
             using World world = new();
             world.Perform(operation);

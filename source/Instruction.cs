@@ -34,16 +34,16 @@ namespace Simulation
             }
         }
 
-        public readonly override string ToString()
+        public unsafe readonly override string ToString()
         {
-            Span<char> buffer = stackalloc char[256];
-            int length = ToString(buffer);
-            return buffer[..length].ToString();
+            USpan<char> buffer = stackalloc char[256];
+            uint length = ToString(buffer);
+            return new string(buffer.pointer, 0, (int)length);
         }
 
-        public unsafe readonly int ToString(Span<char> buffer)
+        public unsafe readonly uint ToString(USpan<char> buffer)
         {
-            int length = 0;
+            uint length = 0;
             if (type == Type.CreateEntity)
             {
                 buffer[length++] = 'C';
@@ -59,8 +59,7 @@ namespace Simulation
                 buffer[length++] = 't';
                 buffer[length++] = 'y';
                 buffer[length++] = '(';
-                a.TryFormat(buffer[length..], out int written);
-                length += written;
+                length += a.ToString(buffer.Slice(length));
                 buffer[length++] = ')';
             }
             else if (type == Type.DestroyEntities)
@@ -81,13 +80,9 @@ namespace Simulation
                 buffer[length++] = 'e';
                 buffer[length++] = 's';
                 buffer[length++] = '(';
-                uint start = (uint)a;
-                start.TryFormat(buffer[length..], out int written);
-                length += written;
+                length += a.ToString(buffer.Slice(length));
                 buffer[length++] = ',';
-                uint count = (uint)b;
-                count.TryFormat(buffer[length..], out written);
-                length += written;
+                length += b.ToString(buffer.Slice(length));
                 buffer[length++] = ')';
             }
             else if (type == Type.ClearSelection)
@@ -124,8 +119,7 @@ namespace Simulation
                 buffer[length++] = 't';
                 buffer[length++] = 'y';
                 buffer[length++] = '(';
-                a.TryFormat(buffer[length..], out int written);
-                length += written;
+                length += a.ToString(buffer.Slice(length));
                 buffer[length++] = ')';
             }
             else if (type == Type.SetParent)
@@ -162,8 +156,7 @@ namespace Simulation
                     buffer[length++] = ':';
                 }
 
-                a.TryFormat(buffer[length..], out int written);
-                length += written;
+                length += a.ToString(buffer.Slice(length));
                 buffer[length++] = ')';
             }
             else if (type == Type.AddReference)
@@ -203,8 +196,7 @@ namespace Simulation
                     buffer[length++] = ':';
                 }
 
-                a.TryFormat(buffer[length..], out int written);
-                length += written;
+                length += a.ToString(buffer.Slice(length));
             }
             else if (type == Type.RemoveReference)
             {
@@ -224,8 +216,7 @@ namespace Simulation
                 buffer[length++] = 'c';
                 buffer[length++] = 'e';
                 buffer[length++] = '(';
-                a.TryFormat(buffer[length..], out int written);
-                length += written;
+                length += a.ToString(buffer.Slice(length));
                 buffer[length++] = ')';
             }
             else if (type == Type.AddComponent)
@@ -244,13 +235,11 @@ namespace Simulation
                 buffer[length++] = 't';
                 buffer[length++] = '<';
                 RuntimeType componentType = new((uint)a);
-                int written = componentType.ToString(buffer[length..]);
-                length += written;
+                length += componentType.ToString(buffer.Slice(length));
                 buffer[length++] = '>';
                 buffer[length++] = '(';
                 nint allocationAddress = (nint)b;
-                allocationAddress.TryFormat(buffer[length..], out written);
-                length += written;
+                length += allocationAddress.ToString(buffer.Slice(length));
                 buffer[length++] = ')';
             }
             else if (type == Type.RemoveComponent)
@@ -272,8 +261,7 @@ namespace Simulation
                 buffer[length++] = 't';
                 buffer[length++] = '<';
                 RuntimeType componentType = new((uint)a);
-                int written = componentType.ToString(buffer[length..]);
-                length += written;
+                length += componentType.ToString(buffer.Slice(length));
                 buffer[length++] = '>';
                 buffer[length++] = '(';
                 buffer[length++] = ')';
@@ -294,13 +282,11 @@ namespace Simulation
                 buffer[length++] = 't';
                 buffer[length++] = '<';
                 RuntimeType componentType = new((uint)a);
-                int written = componentType.ToString(buffer[length..]);
-                length += written;
+                length += componentType.ToString(buffer.Slice(length)); 
                 buffer[length++] = '>';
                 buffer[length++] = '(';
                 nint allocationAddress = (nint)b;
-                allocationAddress.TryFormat(buffer[length..], out written);
-                length += written;
+                length += allocationAddress.ToString(buffer.Slice(length));
                 buffer[length++] = ')';
             }
             else if (type == Type.CreateArray)
@@ -318,13 +304,10 @@ namespace Simulation
                 buffer[length++] = 'y';
                 buffer[length++] = '<';
                 RuntimeType arrayType = new((uint)a);
-                int written = arrayType.ToString(buffer[length..]);
-                length += written;
+                length += arrayType.ToString(buffer.Slice(length));
                 buffer[length++] = '>';
                 buffer[length++] = '(';
-                uint count = (uint)b;
-                count.TryFormat(buffer[length..], out written);
-                length += written;
+                length += b.ToString(buffer.Slice(length));
                 buffer[length++] = ')';
             }
             else if (type == Type.DestroyArray)
@@ -343,8 +326,7 @@ namespace Simulation
                 buffer[length++] = 'y';
                 buffer[length++] = '<';
                 RuntimeType arrayType = new((uint)a);
-                int written = arrayType.ToString(buffer[length..]);
-                length += written;
+                length += arrayType.ToString(buffer.Slice(length));
                 buffer[length++] = '>';
                 buffer[length++] = '(';
                 buffer[length++] = ')';
@@ -364,8 +346,7 @@ namespace Simulation
                 buffer[length++] = 'y';
                 buffer[length++] = '<';
                 RuntimeType arrayType = new((uint)a);
-                int written = arrayType.ToString(buffer[length..]);
-                length += written;
+                length += arrayType.ToString(buffer.Slice(length));
                 buffer[length++] = '>';
                 buffer[length++] = '(';
                 buffer[length++] = ')';
@@ -378,10 +359,7 @@ namespace Simulation
                 buffer[length++] = 'S';
                 buffer[length++] = 'e';
                 buffer[length++] = 't';
-
-                count.TryFormat(buffer[length..], out int wr);
-                length += wr;
-
+                length += count.ToString(buffer.Slice(length));
                 buffer[length++] = 'E';
                 buffer[length++] = 'l';
                 buffer[length++] = 'e';
@@ -397,21 +375,14 @@ namespace Simulation
                 buffer[length++] = '<';
 
                 RuntimeType elementType = new((uint)a);
-                int written = elementType.ToString(buffer[length..]);
-                length += written;
+                length += elementType.ToString(buffer.Slice(length));
 
                 buffer[length++] = '>';
                 buffer[length++] = '(';
-
-                index.TryFormat(buffer[length..], out written);
-                length += written;
-
+                length += index.ToString(buffer.Slice(length));
                 buffer[length++] = ',';
                 buffer[length++] = ' ';
-
-                allocation.Address.TryFormat(buffer[length..], out written);
-                length += written;
-
+                length += allocation.Address.ToString(buffer.Slice(length));
                 buffer[length++] = ')';
             }
 
@@ -522,7 +493,7 @@ namespace Simulation
             return new(Type.AddComponent, componentType.value, (ulong)allocation.Address, 0);
         }
 
-        public static Instruction AddComponent(RuntimeType componentType, ReadOnlySpan<byte> componentData)
+        public static Instruction AddComponent(RuntimeType componentType, USpan<byte> componentData)
         {
             Allocation allocation = Allocation.Create(componentData);
             return new(Type.AddComponent, componentType.value, (ulong)allocation.Address, 0);
@@ -547,7 +518,7 @@ namespace Simulation
             return new(Type.SetComponent, RuntimeType.Get<T>().value, (ulong)allocation.Address, 0);
         }
 
-        public static Instruction SetComponent(RuntimeType componentType, ReadOnlySpan<byte> componentData)
+        public static Instruction SetComponent(RuntimeType componentType, USpan<byte> componentData)
         {
             Allocation allocation = Allocation.Create(componentData);
             return new(Type.SetComponent, componentType.value, (ulong)allocation.Address, 0);
@@ -567,10 +538,10 @@ namespace Simulation
             return new(Type.CreateArray, arrayType.value, (ulong)(nint)allocaton, length);
         }
 
-        public unsafe static Instruction CreateArray<T>(ReadOnlySpan<T> values) where T : unmanaged
+        public unsafe static Instruction CreateArray<T>(USpan<T> values) where T : unmanaged
         {
             Allocation allocation = Allocation.Create(values);
-            return new(Type.CreateArray, RuntimeType.Get<T>().value, (ulong)(nint)allocation, (uint)values.Length);
+            return new(Type.CreateArray, RuntimeType.Get<T>().value, (ulong)(nint)allocation, (uint)values.length);
         }
 
         public static Instruction DestroyArray<T>() where T : unmanaged
@@ -585,24 +556,16 @@ namespace Simulation
 
         public unsafe static Instruction SetArrayElement<T>(uint index, T element) where T : unmanaged
         {
-            Allocation allocation = new(sizeof(uint) + (uint)sizeof(T));
+            Allocation allocation = new(sizeof(uint) + USpan<T>.ElementSize);
             allocation.Write(0, 1);
             allocation.Write(sizeof(uint), element);
             return new(Type.SetArrayElement, RuntimeType.Get<T>().value, (ulong)(nint)allocation, index);
         }
 
-        public unsafe static Instruction SetArrayElement<T>(uint index, Span<T> elements) where T : unmanaged
+        public unsafe static Instruction SetArrayElement<T>(uint index, USpan<T> elements) where T : unmanaged
         {
-            Allocation allocation = new(sizeof(uint) + (uint)(sizeof(T) * elements.Length));
-            allocation.Write(0, (uint)elements.Length);
-            allocation.Write(sizeof(uint), elements);
-            return new(Type.SetArrayElement, RuntimeType.Get<T>().value, (ulong)(nint)allocation, index);
-        }
-
-        public unsafe static Instruction SetArrayElement<T>(uint index, ReadOnlySpan<T> elements) where T : unmanaged
-        {
-            Allocation allocation = new(sizeof(uint) + (uint)(sizeof(T) * elements.Length));
-            allocation.Write(0, (uint)elements.Length);
+            Allocation allocation = new(sizeof(uint) + (USpan<T>.ElementSize * elements.length));
+            allocation.Write(0, elements.length);
             allocation.Write(sizeof(uint), elements);
             return new(Type.SetArrayElement, RuntimeType.Get<T>().value, (ulong)(nint)allocation, index);
         }

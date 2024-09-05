@@ -102,8 +102,8 @@ namespace Simulation.Tests
         {
             ComponentChunk chunkA = new([RuntimeType.Get<int>(), RuntimeType.Get<float>()]);
             ComponentChunk chunkB = new([RuntimeType.Get<float>(), RuntimeType.Get<int>()]);
-            uint hashA = chunkA.Key;
-            uint hashB = chunkB.Key;
+            int hashA = chunkA.Key;
+            int hashB = chunkB.Key;
             Assert.That(hashA, Is.EqualTo(hashB));
             chunkA.Dispose();
             chunkB.Dispose();

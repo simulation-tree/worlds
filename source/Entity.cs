@@ -4,19 +4,10 @@ using Unmanaged;
 
 namespace Simulation
 {
-    public struct Entity : IEntity, IEquatable<Entity>
+    public readonly struct Entity : IEntity, IEquatable<Entity>
     {
-        private uint value;
-        private World world;
-
-        public readonly bool IsDestroyed
-        {
-            get
-            {
-                if (world == default) return true;
-                return !world.ContainsEntity(value);
-            }
-        }
+        public readonly uint value;
+        public readonly World world;
 
         public readonly bool IsEnabled
         {
@@ -35,11 +26,11 @@ namespace Simulation
             set
             {
                 ThrowIfDestroyed();
-                world.SetParent(this.value, value);
+                world.SetParent(this.value, value.value);
             }
         }
 
-        public readonly ReadOnlySpan<uint> Children
+        public readonly USpan<uint> Children
         {
             get
             {
@@ -50,6 +41,15 @@ namespace Simulation
 
         readonly World IEntity.World => world;
         readonly uint IEntity.Value => value;
+        readonly Definition IEntity.Definition => new();
+
+#if NET
+        [Obsolete("Default constructor not available", true)]
+        public Entity()
+        {
+            throw new NotSupportedException();
+        }
+#endif
 
         public Entity(World world, uint existingEntity)
         {
@@ -66,28 +66,23 @@ namespace Simulation
         [Conditional("DEBUG")]
         public readonly void ThrowIfDestroyed()
         {
-            if (IsDestroyed)
+            if (this.IsDestroyed())
             {
                 throw new InvalidOperationException($"Entity `{value}` is destroyed and no longer available.");
             }
         }
 
-        readonly Query IEntity.GetQuery(World world)
+        public unsafe readonly override string ToString()
         {
-            return new Query(world);
+            USpan<char> buffer = stackalloc char[32];
+            uint length = ToString(buffer);
+            return new string(buffer.pointer, 0, (int)length);
         }
 
-        public readonly override string ToString()
+        public readonly uint ToString(USpan<char> buffer)
         {
-            Span<char> buffer = stackalloc char[32];
-            int length = ToString(buffer);
-            return new string(buffer[..length]);
-        }
-
-        public readonly int ToString(Span<char> buffer)
-        {
-            int length = 0;
-            if (IsDestroyed)
+            uint length = 0;
+            if (this.IsDestroyed())
             {
                 buffer[length++] = 'D';
                 buffer[length++] = 'e';
@@ -101,11 +96,11 @@ namespace Simulation
                 buffer[length++] = ' ';
             }
 
-            value.TryFormat(buffer, out int valueLength);
-            return length + valueLength;
+            length += value.ToString(buffer.Slice(length));
+            return length;
         }
 
-        public readonly Span<T> GetArray<T>() where T : unmanaged
+        public readonly USpan<T> GetArray<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
             return world.GetArray<T>(value);
@@ -135,25 +130,25 @@ namespace Simulation
             world.DestroyArray<T>(value);
         }
 
-        public readonly Span<T> CreateArray<T>(uint length) where T : unmanaged
+        public readonly USpan<T> CreateArray<T>(uint length = 0) where T : unmanaged
         {
             ThrowIfDestroyed();
             return world.CreateArray<T>(value, length);
         }
 
-        public readonly void CreateArray<T>(ReadOnlySpan<T> values) where T : unmanaged
+        public readonly void CreateArray<T>(USpan<T> values) where T : unmanaged
         {
             ThrowIfDestroyed();
             world.CreateArray(value, values);
         }
 
-        public readonly Span<T> ResizeArray<T>(uint newLength) where T : unmanaged
+        public readonly USpan<T> ResizeArray<T>(uint newLength) where T : unmanaged
         {
             ThrowIfDestroyed();
             return world.ResizeArray<T>(value, newLength);
         }
 
-        public readonly bool TryGetArray<T>(out Span<T> values) where T : unmanaged
+        public readonly bool TryGetArray<T>(out USpan<T> values) where T : unmanaged
         {
             ThrowIfDestroyed();
             if (ContainsArray<T>())
@@ -187,7 +182,7 @@ namespace Simulation
             return world.ContainsComponent(value, componentType);
         }
 
-        public readonly ReadOnlySpan<RuntimeType> GetComponentTypes()
+        public readonly USpan<RuntimeType> GetComponentTypes()
         {
             ThrowIfDestroyed();
             return world.GetComponentTypes(value);
@@ -236,6 +231,15 @@ namespace Simulation
         {
             ThrowIfDestroyed();
             world.SetComponent(value, component);
+        }
+
+        /// <summary>
+        /// Adds a new uninitialized <typeparamref name="T"/> component to the entity.
+        /// </summary>
+        public readonly void AddComponent<T>() where T : unmanaged
+        {
+            ThrowIfDestroyed();
+            world.AddComponent<T>(value);
         }
 
         /// <summary>
@@ -343,60 +347,20 @@ namespace Simulation
         /// </summary>
         public readonly unsafe T As<T>() where T : unmanaged, IEntity
         {
-            EntityFunctions.ThrowIfTypeLayoutMismatches(typeof(T));
+            EntityFunctions.ThrowIfTypeLayoutMismatches<T>();
             Entity self = this;
             return *(T*)&self;
         }
 
         /// <summary>
-        /// Adds missing components that qualify the entity to be of type <typeparamref name="T"/>.
+        /// Adds missing components and arrays that qualify the entity
+        /// to be of type <typeparamref name="T"/>.
         /// </summary>
         public readonly T Become<T>() where T : unmanaged, IEntity
         {
-            using Query query = default(T).GetQuery(world);
-            foreach (RuntimeType type in query.Types)
-            {
-                if (!ContainsComponent(type))
-                {
-                    AddComponent(type);
-                }
-            }
-
+            Definition definition = default(T).Definition;
+            this.Become(definition);
             return As<T>();
-        }
-
-        public unsafe static bool TryGetFirst<T>(World world, out T entity) where T : unmanaged, IEntity
-        {
-            EntityFunctions.ThrowIfTypeLayoutMismatches(typeof(T));
-            using Query query = default(T).GetQuery(world);
-            query.Update();
-
-            if (query.Count > 0)
-            {
-                uint firstEntity = query[0];
-                entity = new Entity(world, firstEntity).As<T>();
-                return true;
-            }
-            else
-            {
-                entity = default;
-                return false;
-            }
-        }
-
-        public static T GetFirst<T>(World world) where T : unmanaged, IEntity
-        {
-            EntityFunctions.ThrowIfTypeLayoutMismatches(typeof(T));
-            using Query query = default(T).GetQuery(world);
-            query.Update();
-
-            if (query.Count > 0)
-            {
-                uint firstEntity = query[0];
-                return new Entity(world, firstEntity).As<T>();
-            }
-
-            throw new NullReferenceException($"Component of type {typeof(T)} not found in world.");
         }
 
         public readonly override bool Equals(object? obj)
@@ -414,16 +378,6 @@ namespace Simulation
             return HashCode.Combine(value, world);
         }
 
-        public static implicit operator uint(Entity entity)
-        {
-            return entity.value;
-        }
-
-        public static implicit operator World(Entity entity)
-        {
-            return entity.world;
-        }
-
         public static bool operator ==(Entity left, Entity right)
         {
             return left.Equals(right);
@@ -432,26 +386,6 @@ namespace Simulation
         public static bool operator !=(Entity left, Entity right)
         {
             return !(left == right);
-        }
-
-        public static bool operator ==(Entity left, uint right)
-        {
-            return left.value == right;
-        }
-
-        public static bool operator !=(Entity left, uint right)
-        {
-            return left.value != right;
-        }
-
-        public static bool operator ==(uint left, Entity right)
-        {
-            return left == right.value;
-        }
-
-        public static bool operator !=(uint left, Entity right)
-        {
-            return left != right.value;
         }
     }
 }

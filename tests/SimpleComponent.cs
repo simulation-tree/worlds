@@ -1,5 +1,4 @@
-﻿using System;
-using Unmanaged;
+﻿using Unmanaged;
 
 namespace Simulation.Tests
 {
@@ -7,9 +6,9 @@ namespace Simulation.Tests
     {
         public FixedString data;
 
-        public SimpleComponent(ReadOnlySpan<char> data)
+        public SimpleComponent(FixedString data)
         {
-            this.data = new(data);
+            this.data = data;
         }
     }
 }

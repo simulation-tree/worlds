@@ -8,8 +8,6 @@
 		<IsPackable>false</IsPackable>
 		<IsTestProject>true</IsTestProject>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<BaseOutputPath>bin~\</BaseOutputPath>
-		<BaseIntermediateOutputPath>obj~\</BaseIntermediateOutputPath>
 	</PropertyGroup>
 
 	<ItemGroup>

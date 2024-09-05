@@ -35,8 +35,8 @@ namespace Simulation.Tests
             uint entity4 = secondWorld.CreateEntity(); //2
             secondWorld.Append(firstWorld); //1->2 becomes 3->4
 
-            secondWorld.GetFirst<ComponentThatReferences>(out entity1);
-            secondWorld.GetFirst<ReferencedEntity>(out entity2);
+            secondWorld.GetFirstComponent<ComponentThatReferences>(out entity1);
+            secondWorld.GetFirstComponent<ReferencedEntity>(out entity2);
             Assert.That(secondWorld.GetReference(entity1, component.reference), Is.EqualTo(entity2));
         }
 
@@ -50,14 +50,14 @@ namespace Simulation.Tests
             firstWorld.AddComponent(child, (ushort)0);
 
             using World secondWorld = new();
-            for (int i = 0; i < 4; i++)
+            for (uint i = 0; i < 4; i++)
             {
                 secondWorld.CreateEntity();
             }
 
             secondWorld.Append(firstWorld);
-            secondWorld.GetFirst<short>(out parent);
-            secondWorld.GetFirst<ushort>(out child);
+            secondWorld.GetFirstComponent<short>(out parent);
+            secondWorld.GetFirstComponent<ushort>(out child);
             Assert.That(secondWorld.GetParent(child), Is.EqualTo(parent));
         }
 

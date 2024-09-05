@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Unmanaged;
 using Unmanaged.Collections;
@@ -36,18 +37,14 @@ namespace Simulation
         /// </summary>
         public virtual void Dispose()
         {
-            if (listeners.IsDisposed)
-            {
-                throw new ObjectDisposedException(ToString());
-            }
-
+            ThrowIfAlreadyDisposed();
             foreach (RuntimeType type in callbacks.Keys)
             {
-                Action<Allocation> callback = this.callbacks[type];
-                if (staticCallbacks.TryGetValue(type, out List<Action<Allocation>>? callbacks))
+                Action<Allocation> callback = callbacks[type];
+                if (staticCallbacks.TryGetValue(type, out List<Action<Allocation>>? actionCallbacks))
                 {
-                    callbacks.Remove(callback);
-                    if (callbacks.Count == 0)
+                    actionCallbacks.Remove(callback);
+                    if (actionCallbacks.Count == 0)
                     {
                         for (uint i = 0; i < listeners.Count; i++)
                         {
@@ -80,25 +77,43 @@ namespace Simulation
         public unsafe void Subscribe<T>(Action<T> callback) where T : unmanaged
         {
             RuntimeType messageType = RuntimeType.Get<T>();
-            if (this.callbacks.ContainsKey(messageType))
-            {
-                throw new InvalidOperationException($"This instance of {GetType()} is already subscribed to `{messageType}`.");
-            }
+            Subscribe(messageType, (Allocation message) => callback(message.Read<T>()));
+        }
 
-            if (!staticCallbacks.TryGetValue(messageType, out List<Action<Allocation>>? callbacks))
+        public unsafe void Subscribe(RuntimeType messageType, Action<Allocation> callback)
+        {
+            ThrowIfAlreadySubscribed(messageType);
+            if (!staticCallbacks.TryGetValue(messageType, out List<Action<Allocation>>? actionCallbacks))
             {
-                callbacks = new();
-                staticCallbacks.Add(messageType, callbacks);
+                actionCallbacks = new();
+                staticCallbacks.Add(messageType, actionCallbacks);
                 Listener listener = world.CreateListener(messageType, &StaticEvent);
                 listeners.Add(listener);
             }
 
-            void StaticCallback(Allocation message) => callback(message.Read<T>());
-            callbacks.Add(StaticCallback);
-            this.callbacks.Add(messageType, StaticCallback);
+            actionCallbacks.Add(callback);
+            callbacks.Add(messageType, callback);
         }
 
-#if NET5_0_OR_GREATER
+        [Conditional("DEBUG")]
+        private void ThrowIfAlreadySubscribed(RuntimeType messageType)
+        {
+            if (callbacks.ContainsKey(messageType))
+            {
+                throw new InvalidOperationException($"This instance of {GetType()} is already subscribed to `{messageType}`.");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private void ThrowIfAlreadyDisposed()
+        {
+            if (listeners.IsDisposed)
+            {
+                throw new ObjectDisposedException(ToString());
+            }
+        }
+
+#if NET
         [UnmanagedCallersOnly]
 #endif
         private static void StaticEvent(World world, Allocation message, RuntimeType messageType)

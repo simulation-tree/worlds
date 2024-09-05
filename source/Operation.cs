@@ -274,7 +274,7 @@ namespace Simulation
             AddInstruction(Instruction.CreateArray<T>(length));
         }
 
-        public void CreateArray<T>(ReadOnlySpan<T> values) where T : unmanaged
+        public void CreateArray<T>(USpan<T> values) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.CreateArray<T>(values));
@@ -301,16 +301,7 @@ namespace Simulation
         /// <summary>
         /// Writes the given span into the array starting from the given index.
         /// </summary>
-        public void SetArrayElement<T>(uint index, Span<T> elements) where T : unmanaged
-        {
-            ThrowIfSelectionIsEmpty();
-            AddInstruction(Instruction.SetArrayElement(index, elements));
-        }
-
-        /// <summary>
-        /// Writes the given span into the array starting from the given index.
-        /// </summary>
-        public void SetArrayElement<T>(uint index, ReadOnlySpan<T> elements) where T : unmanaged
+        public void SetArrayElement<T>(uint index, USpan<T> elements) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.SetArrayElement(index, elements));

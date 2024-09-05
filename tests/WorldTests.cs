@@ -1,6 +1,5 @@
 ﻿using System;
 using Unmanaged;
-using Unmanaged.Collections;
 
 namespace Simulation.Tests
 {
@@ -137,7 +136,7 @@ namespace Simulation.Tests
         {
             World world = new();
             uint entity = world.CreateEntity();
-            Span<SimpleComponent> list = world.CreateArray<SimpleComponent>(entity, 2);
+            USpan<SimpleComponent> list = world.CreateArray<SimpleComponent>(entity, 2);
             list[0] = new("Hello World 1");
             list[1] = new("Hello World 2");
             world.DestroyEntity(entity);
@@ -157,14 +156,14 @@ namespace Simulation.Tests
         {
             World world = new();
             uint entity = world.CreateEntity();
-            Span<SimpleComponent> list = world.CreateArray<SimpleComponent>(entity, 4);
+            USpan<SimpleComponent> list = world.CreateArray<SimpleComponent>(entity, 4);
             list[0] = new("apple");
-            Assert.That(list.Length, Is.EqualTo(4));
+            Assert.That(list.length, Is.EqualTo(4));
             world.DestroyEntity(entity);
             uint another = world.CreateEntity(); //same as `entity`
-            Span<SimpleComponent> anotherList = world.CreateArray<SimpleComponent>(another, 1);
+            USpan<SimpleComponent> anotherList = world.CreateArray<SimpleComponent>(another, 1);
             anotherList[0] = new("banana");
-            Assert.That(anotherList.Length, Is.EqualTo(1));
+            Assert.That(anotherList.length, Is.EqualTo(1));
             world.DestroyEntity(another);
             world.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));
@@ -176,7 +175,7 @@ namespace Simulation.Tests
             using World world = new();
             using RandomGenerator rng = RandomGenerator.Create();
             uint realEntities = 0;
-            for (int i = 0; i < 100; i++)
+            for (uint i = 0; i < 100; i++)
             {
                 uint entity = world.CreateEntity();
                 if (rng.NextBool())
@@ -192,8 +191,8 @@ namespace Simulation.Tests
                 if (rng.NextBool())
                 {
                     uint length = rng.NextUInt(1, 10);
-                    Span<char> array = world.CreateArray<char>(entity, length);
-                    for (int j = 0; j < length; j++)
+                    USpan<char> array = world.CreateArray<char>(entity, length);
+                    for (uint j = 0; j < length; j++)
                     {
                         array[j] = (char)rng.NextInt('a', 'z');
                     }

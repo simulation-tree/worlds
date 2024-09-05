@@ -1,12 +1,13 @@
 ﻿#pragma warning disable CS8981 //too bad
 #pragma warning disable IDE1006 //so sad
 using System;
+using Unmanaged;
 
 namespace Simulation
 {
     /// <summary>
     /// A <see cref="uint"/> type that refers to a reference local to its entity.
-    /// <para>Can be implicitly cast from, and explicitly cast into a <see cref="uint"/> value.
+    /// <para>Can be explicitly cast from and into a <see cref="uint"/> value.
     /// </para>
     /// </summary>
     public readonly struct rint : IEquatable<rint>
@@ -28,17 +29,16 @@ namespace Simulation
             return value == other.value;
         }
 
-        public readonly override string ToString()
+        public unsafe readonly override string ToString()
         {
-            Span<char> buffer = stackalloc char[8];
-            int charsWritten = ToString(buffer);
-            return new string(buffer[..charsWritten]);
+            USpan<char> buffer = stackalloc char[8];
+            uint length = ToString(buffer);
+            return new string(buffer.pointer, 0, (int)length);
         }
 
-        public readonly int ToString(Span<char> buffer)
+        public readonly uint ToString(USpan<char> buffer)
         {
-            value.TryFormat(buffer, out int charsWritten);
-            return charsWritten;
+            return value.ToString(buffer);
         }
 
         public readonly override int GetHashCode()
@@ -56,7 +56,7 @@ namespace Simulation
             return !(left == right);
         }
 
-        public static implicit operator uint(rint value)
+        public static explicit operator uint(rint value)
         {
             return value.value;
         }
