@@ -363,6 +363,12 @@ namespace Simulation
             return As<T>();
         }
 
+        public readonly bool Is<T>() where T : unmanaged, IEntity
+        {
+            Definition definition = default(T).Definition;
+            return this.Is(definition);
+        }
+
         public readonly override bool Equals(object? obj)
         {
             return obj is Entity entity && Equals(entity);

@@ -22,6 +22,26 @@ public static class EntityFunctions
         return !entity.World.ContainsEntity(entity.Value);
     }
 
+    public static World GetWorld<T>(this T entity) where T : unmanaged, IEntity
+    {
+        return entity.World;
+    }
+
+    public static uint GetEntityValue<T>(this T entity) where T : unmanaged, IEntity
+    {
+        return entity.Value;
+    }
+
+    public static Entity AsEntity<T>(this T entity) where T : unmanaged, IEntity
+    {
+        return new(entity.World, entity.Value);
+    }
+
+    public static void SetEnabled<T>(this T entity, bool enabled) where T : unmanaged, IEntity
+    {
+        entity.World.SetEnabled(entity.Value, enabled);
+    }
+
     /// <summary>
     /// Makes the entity become the definition by having
     /// the missing components and arrays added with a default state.

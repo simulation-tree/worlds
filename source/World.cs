@@ -709,43 +709,114 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Retrieves the first entity that complies with the type.
+        /// Retrieves the first entity that complies with type <typeparamref name="T"/>.
         /// </summary>
-        public readonly bool TryGetFirst<T>(out T entity) where T : unmanaged, IEntity
+        public readonly bool TryGetFirst<T>(out T entity, bool onlyEnabled = false) where T : unmanaged, IEntity
         {
             EntityFunctions.ThrowIfTypeLayoutMismatches<T>();
-            using DefinitionQuery query = new(default(T).Definition);
-            query.Update(this);
-
-            if (query.Count > 0)
+            UnmanagedDictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Definition definition = default(T).Definition;
+            USpan<RuntimeType> componentTypes = stackalloc RuntimeType[definition.ComponentTypeCount];
+            definition.CopyComponentTypes(componentTypes);
+            if (definition.ArrayTypeCount > 0)
             {
-                uint firstEntity = query[0];
-                entity = new Entity(this, firstEntity).As<T>();
-                return true;
+                USpan<RuntimeType> arrayTypes = stackalloc RuntimeType[definition.ArrayTypeCount];
+                definition.CopyArrayTypes(arrayTypes);
+                foreach (int hash in chunks.Keys)
+                {
+                    ComponentChunk chunk = chunks[hash];
+                    if (chunk.ContainsTypes(componentTypes))
+                    {
+                        for (uint e = 0; e < chunk.Entities.Count; e++)
+                        {
+                            uint entityValue = chunk.Entities[e];
+                            USpan<RuntimeType> entityArrays = GetArrayTypes(entityValue);
+                            if (ContainsArrays(arrayTypes, entityArrays))
+                            {
+                                if (onlyEnabled)
+                                {
+                                    if (IsEnabled(entityValue))
+                                    {
+                                        entity = new Entity(this, entityValue).As<T>();
+                                        return true;
+                                    }
+                                }
+                                else
+                                {
+                                    entity = new Entity(this, entityValue).As<T>();
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
             }
             else
             {
-                entity = default;
-                return false;
+                if (!onlyEnabled)
+                {
+                    foreach (int hash in chunks.Keys)
+                    {
+                        ComponentChunk chunk = chunks[hash];
+                        if (chunk.Entities.Count > 0 && chunk.ContainsTypes(componentTypes))
+                        {
+                            uint entityValue = chunk.Entities[0];
+                            entity = new Entity(this, entityValue).As<T>();
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (int hash in chunks.Keys)
+                    {
+                        ComponentChunk chunk = chunks[hash];
+                        if (chunk.ContainsTypes(componentTypes))
+                        {
+                            for (uint e = 0; e < chunk.Entities.Count; e++)
+                            {
+                                uint entityValue = chunk.Entities[e];
+                                if (IsEnabled(entityValue))
+                                {
+                                    entity = new Entity(this, entityValue).As<T>();
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
             }
+
+            static bool ContainsArrays(USpan<RuntimeType> arrayTypes, USpan<RuntimeType> entityArrays)
+            {
+                for (uint i = 0; i < arrayTypes.length; i++)
+                {
+                    if (!entityArrays.Contains(arrayTypes[i]))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            entity = default;
+            return false;
         }
 
         /// <summary>
         /// Retrieves the first entity that complies with the type.
         /// </summary>
-        public readonly T GetFirst<T>() where T : unmanaged, IEntity
+        public readonly T GetFirst<T>(bool onlyEnabled = false) where T : unmanaged, IEntity
         {
-            EntityFunctions.ThrowIfTypeLayoutMismatches<T>();
-            using DefinitionQuery query = new(default(T).Definition);
-            query.Update(this);
-
-            if (query.Count > 0)
+            if (TryGetFirst<T>(out T entity, onlyEnabled))
             {
-                uint firstEntity = query[0];
-                return new Entity(this, firstEntity).As<T>();
+                return entity;
             }
-
-            throw new NullReferenceException($"Component of type {typeof(T)} not found in world.");
+            else
+            {
+                throw new NullReferenceException($"No entity with type {typeof(T)} found.");
+            }
         }
 
         public readonly bool TryGetFirstComponent<T>(out T found) where T : unmanaged
@@ -1314,13 +1385,13 @@ namespace Simulation
         /// <summary>
         /// Counts how many entities there are with component of type <typeparamref name="T"/>.
         /// </summary>
-        public readonly uint CountEntities<T>(bool onlyEnabled = false) where T : unmanaged
+        public readonly uint CountEntitiesWithComponent<T>(bool onlyEnabled = false) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
-            return CountEntities(type, onlyEnabled);
+            return CountEntitiesWithComponent(type, onlyEnabled);
         }
 
-        public readonly uint CountEntities(RuntimeType type, bool onlyEnabled = false)
+        public readonly uint CountEntitiesWithComponent(RuntimeType type, bool onlyEnabled = false)
         {
             uint count = 0;
             foreach (int hash in ComponentChunks.Keys)
@@ -1344,6 +1415,93 @@ namespace Simulation
                         }
                     }
                 }
+            }
+
+            return count;
+        }
+
+        public readonly uint CountEntities<T>(bool onlyEnabled = false) where T : unmanaged, IEntity
+        {
+            UnmanagedDictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Definition definition = default(T).Definition;
+            USpan<RuntimeType> componentTypes = stackalloc RuntimeType[definition.ComponentTypeCount];
+            definition.CopyComponentTypes(componentTypes);
+            USpan<RuntimeType> arrayTypes = stackalloc RuntimeType[definition.ArrayTypeCount];
+            definition.CopyArrayTypes(arrayTypes);
+            uint count = 0;
+            if (arrayTypes.length > 0)
+            {
+                foreach (int hash in chunks.Keys)
+                {
+                    ComponentChunk chunk = chunks[hash];
+                    if (chunk.ContainsTypes(componentTypes))
+                    {
+                        for (uint e = 0; e < chunk.Entities.Count; e++)
+                        {
+                            uint entity = chunk.Entities[e];
+                            USpan<RuntimeType> entityArrays = GetArrayTypes(entity);
+                            if (ContainsArrays(arrayTypes, entityArrays))
+                            {
+                                if (onlyEnabled)
+                                {
+                                    if (IsEnabled(entity))
+                                    {
+                                        count++;
+                                    }
+                                }
+                                else
+                                {
+                                    count++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (!onlyEnabled)
+                {
+                    foreach (int hash in chunks.Keys)
+                    {
+                        ComponentChunk chunk = chunks[hash];
+                        if (chunk.ContainsTypes(componentTypes))
+                        {
+                            count += chunk.Entities.Count;
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (int hash in chunks.Keys)
+                    {
+                        ComponentChunk chunk = chunks[hash];
+                        if (chunk.ContainsTypes(componentTypes))
+                        {
+                            for (uint e = 0; e < chunk.Entities.Count; e++)
+                            {
+                                uint entity = chunk.Entities[e];
+                                if (IsEnabled(entity))
+                                {
+                                    count++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            static bool ContainsArrays(USpan<RuntimeType> arrayTypes, USpan<RuntimeType> entityArrays)
+            {
+                for (uint i = 0; i < arrayTypes.length; i++)
+                {
+                    if (!entityArrays.Contains(arrayTypes[i]))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
             }
 
             return count;
