@@ -705,6 +705,12 @@ namespace Simulation
         {
             UnsafeWorld.ThrowIfEntityIsMissing(this.value, entity);
             ref EntityDescription slot = ref Slots[entity - 1];
+            for (uint i = 0; i < slot.children.Count; i++)
+            {
+                uint child = slot.children[i];
+                SetEnabled(child, value);
+            }
+
             slot.SetEnabledState(value);
         }
 
