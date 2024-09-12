@@ -670,7 +670,7 @@ namespace Simulation
         /// <para>Disposing the listener will unregister the callback.
         /// Their disposal is done automatically when the world is disposed.</para>
         /// </summary>
-        public readonly Listener CreateListener<T>(delegate*<World, Container, void> callback) where T : unmanaged
+        public readonly Listener CreateListener<T>(delegate*<World, Allocation, RuntimeType, void> callback) where T : unmanaged
         {
             return CreateListener(RuntimeType.Get<T>(), callback);
         }
@@ -680,7 +680,7 @@ namespace Simulation
         /// <para>Disposing the listener will unregister the callback.
         /// Their disposal is done automatically when the world is disposed.</para>
         /// </summary>
-        public readonly Listener CreateListener(RuntimeType eventType, delegate*<World, Container, void> callback)
+        public readonly Listener CreateListener(RuntimeType eventType, delegate*<World, Allocation, RuntimeType, void> callback)
         {
             return UnsafeWorld.CreateListener(value, eventType, callback);
         }
@@ -972,7 +972,7 @@ namespace Simulation
         public readonly rint AddReference(uint entity, uint referencedEntity)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
-            UnsafeWorld.ThrowIfEntityIsMissing(value, referencedEntity);
+            //UnsafeWorld.ThrowIfEntityIsMissing(value, referencedEntity);
             ref EntityDescription slot = ref Slots[entity - 1];
             slot.references.Add(referencedEntity);
             return new(slot.references.Count);
@@ -994,7 +994,7 @@ namespace Simulation
             }
 
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
-            UnsafeWorld.ThrowIfEntityIsMissing(value, referencedEntity);
+            //UnsafeWorld.ThrowIfEntityIsMissing(value, referencedEntity);
             ref EntityDescription slot = ref Slots[entity - 1];
             slot.references[reference.value - 1] = referencedEntity;
         }
@@ -1007,7 +1007,7 @@ namespace Simulation
         public readonly bool ContainsReference(uint entity, uint referencedEntity)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
-            UnsafeWorld.ThrowIfEntityIsMissing(value, referencedEntity);
+            //UnsafeWorld.ThrowIfEntityIsMissing(value, referencedEntity);
             ref EntityDescription slot = ref Slots[entity - 1];
             return slot.references.Contains(referencedEntity);
         }
@@ -1090,8 +1090,7 @@ namespace Simulation
         /// </summary>
         public readonly Allocation CreateArray(uint entity, RuntimeType arrayLength, uint length = 0)
         {
-            void* array = UnsafeWorld.CreateArray(value, entity, arrayLength, length);
-            return new(array);
+            return new(UnsafeWorld.CreateArray(value, entity, arrayLength, length));
         }
 
         /// <summary>
@@ -1131,9 +1130,9 @@ namespace Simulation
             return new USpan<T>(array, length);
         }
 
-        public readonly void* GetArray(uint entity, RuntimeType arrayType, out uint length)
+        public readonly Allocation GetArray(uint entity, RuntimeType arrayType, out uint length)
         {
-            return UnsafeWorld.GetArray(value, entity, arrayType, out length);
+            return new(UnsafeWorld.GetArray(value, entity, arrayType, out length));
         }
 
         public readonly USpan<T> ResizeArray<T>(uint entity, uint newLength) where T : unmanaged
@@ -1142,9 +1141,9 @@ namespace Simulation
             return new USpan<T>(array, newLength);
         }
 
-        public readonly void* ResizeArray(uint entity, RuntimeType arrayType, uint newLength)
+        public readonly Allocation ResizeArray(uint entity, RuntimeType arrayType, uint newLength)
         {
-            return UnsafeWorld.ResizeArray(value, entity, arrayType, newLength);
+            return new(UnsafeWorld.ResizeArray(value, entity, arrayType, newLength));
         }
 
         public readonly bool TryGetArray<T>(uint entity, out USpan<T> array) where T : unmanaged

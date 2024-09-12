@@ -151,34 +151,78 @@ namespace Simulation
             return true;
         }
 
-        public void AddComponentType(RuntimeType type)
+        public readonly Definition AddComponentType(RuntimeType type)
         {
             ThrowIfFull();
             ThrowIfComponentTypeAlreadyExists(type);
             byte typeCount = TotalTypeCount;
-            types[typeCount] = type.value;
-            typesMask = (uint)(typesMask & ~(1UL << typeCount));
-            componentTypes++;
+            Definition newDefinition = this;
+            newDefinition.types[typeCount] = type.value;
+            newDefinition.typesMask = (uint)(typesMask & ~(1UL << typeCount));
+            newDefinition.componentTypes++;
+            return newDefinition;
         }
 
-        public void AddComponentType<T>() where T : unmanaged
+        public readonly Definition AddComponentType<T>() where T : unmanaged
         {
-            AddComponentType(RuntimeType.Get<T>());
+            return AddComponentType(RuntimeType.Get<T>());
         }
 
-        public void AddArrayType(RuntimeType type)
+        public readonly Definition AddComponentTypes<T1, T2>() where T1 : unmanaged where T2 : unmanaged
+        {
+            return AddComponentType<T1>().AddComponentType<T2>();
+        }
+
+        public readonly Definition AddComponentTypes<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+        {
+            return AddComponentType<T1>().AddComponentType<T2>().AddComponentType<T3>();
+        }
+
+        public readonly Definition AddComponentTypes<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+        {
+            return AddComponentType<T1>().AddComponentType<T2>().AddComponentType<T3>().AddComponentType<T4>();
+        }
+
+        public readonly Definition AddComponentTypes<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
+        {
+            return AddComponentType<T1>().AddComponentType<T2>().AddComponentType<T3>().AddComponentType<T4>().AddComponentType<T5>();
+        }
+
+        public readonly Definition AddArrayType(RuntimeType type)
         {
             ThrowIfFull();
             ThrowIfArrayTypeAlreadyExists(type);
             byte typeCount = TotalTypeCount;
-            types[typeCount] = type.value;
-            typesMask = (uint)(typesMask | 1UL << typeCount);
-            arrayTypes++;
+            Definition newDefinition = this;
+            newDefinition.types[typeCount] = type.value;
+            newDefinition.typesMask = (uint)(typesMask | 1UL << typeCount);
+            newDefinition.arrayTypes++;
+            return newDefinition;
         }
 
-        public void AddArrayType<T>() where T : unmanaged
+        public readonly Definition AddArrayType<T>() where T : unmanaged
         {
-            AddArrayType(RuntimeType.Get<T>());
+            return AddArrayType(RuntimeType.Get<T>());
+        }
+
+        public readonly Definition AddArrayTypes<T1, T2>() where T1 : unmanaged where T2 : unmanaged
+        {
+            return AddArrayType<T1>().AddArrayType<T2>();
+        }
+
+        public readonly Definition AddArrayTypes<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+        {
+            return AddArrayType<T1>().AddArrayType<T2>().AddArrayType<T3>();
+        }
+
+        public readonly Definition AddArrayTypes<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+        {
+            return AddArrayType<T1>().AddArrayType<T2>().AddArrayType<T3>().AddArrayType<T4>();
+        }
+
+        public readonly Definition AddArrayTypes<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
+        {
+            return AddArrayType<T1>().AddArrayType<T2>().AddArrayType<T3>().AddArrayType<T4>().AddArrayType<T5>();
         }
 
         [Conditional("DEBUG")]
@@ -191,7 +235,7 @@ namespace Simulation
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfTypeCountIsTooGreat(uint count)
+        private static void ThrowIfTypeCountIsTooGreat(uint count)
         {
             if (count > MaxTypes)
             {

@@ -28,7 +28,7 @@ namespace Simulation.Tests
             world.AddComponent(c, new Apple("Goodbye, World!"));
             world.DestroyEntity(temporary);
             uint list = world.CreateEntity();
-            world.CreateArray<char>(list, "Well hello there list".AsSpan());
+            world.CreateArray<char>(list, "Well hello there list".AsUSpan());
 
             List<uint> oldEntities = world.Entities.ToList();
             List<(uint, Apple)> apples = new();
@@ -133,7 +133,7 @@ namespace Simulation.Tests
         public void ReadTooMuch()
         {
             using BinaryWriter writer = BinaryWriter.Create();
-            writer.WriteSpan<char>("The snake that eats its own tail".AsSpan());
+            writer.WriteSpan<char>("The snake that eats its own tail".AsUSpan());
             using BinaryReader reader = new(writer.GetBytes());
             Assert.Throws<InvalidOperationException>(() => reader.ReadSpan<char>(100));
         }

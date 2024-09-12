@@ -21,7 +21,8 @@ namespace Simulation
 
         public readonly bool IsDisposed => UnsafeListener.IsDisposed(value);
 
-#if NET5_0_OR_GREATER
+#if NET
+        [Obsolete("Default constructor not available", true)]
         public Listener()
         {
             throw new NotImplementedException();
@@ -36,7 +37,7 @@ namespace Simulation
 #else
         internal Listener(World world, RuntimeType eventType, delegate*<World, Allocation, RuntimeType, void> callback)
         {
-            this.eventType = eventType;
+            this.messageType = eventType;
             value = UnsafeListener.Allocate(callback);
             this.world = world;
         }

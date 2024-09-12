@@ -149,7 +149,7 @@ namespace Simulation.Tests
             using Operation operation = new();
             operation.CreateEntity();
             operation.CreateArray<char>((uint)testString.Length);
-            operation.SetArrayElement(0, testString.AsSpan());
+            operation.SetArrayElement(0, testString.AsUSpan());
 
             using World world = new();
             world.Perform(operation);

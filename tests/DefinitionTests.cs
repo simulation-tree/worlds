@@ -99,7 +99,7 @@ namespace Simulation.Tests
             uint entityA = world.CreateEntity();
             world.AddComponent(entityA, (byte)1);
             world.AddComponent(entityA, (float)1);
-            world.CreateArray(entityA, "Hello".AsSpan());
+            world.CreateArray(entityA, "Hello".AsUSpan());
 
             uint entityB = world.CreateEntity();
             world.AddComponent(entityB, (byte)2);

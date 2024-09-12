@@ -221,6 +221,7 @@ namespace Simulation
 
         private ComponentQuery(UnmanagedList<Result> results, UnmanagedArray<RuntimeType> componentTypes)
         {
+            this.world = default;
             this.results = results;
             this.componentTypes = componentTypes;
         }
@@ -354,6 +355,7 @@ namespace Simulation
 
         private ComponentQuery(UnmanagedList<Result> results, UnmanagedArray<RuntimeType> componentTypes)
         {
+            this.world = default;
             this.results = results;
             this.componentTypes = componentTypes;
         }
@@ -492,6 +494,7 @@ namespace Simulation
 
         private ComponentQuery(UnmanagedList<Result> results, UnmanagedArray<RuntimeType> componentTypes)
         {
+            this.world = default;
             this.results = results;
             this.componentTypes = componentTypes;
         }
@@ -635,6 +638,7 @@ namespace Simulation
 
         private ComponentQuery(UnmanagedList<Result> results, UnmanagedArray<RuntimeType> componentTypes)
         {
+            this.world = default;
             this.results = results;
             this.componentTypes = componentTypes;
         }
