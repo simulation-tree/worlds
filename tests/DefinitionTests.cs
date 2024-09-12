@@ -18,15 +18,15 @@ namespace Simulation.Tests
 
             Assert.That(a, Is.EqualTo(b));
 
-            a.AddComponentType<int>();
-            a.AddComponentType<double>();
-            a.AddComponentType<char>();
+            a = a.AddComponentType<int>();
+            a = a.AddComponentType<double>();
+            a = a.AddComponentType<char>();
 
             Assert.That(a, Is.Not.EqualTo(b));
 
-            b.AddComponentType<double>();
-            b.AddComponentType<char>();
-            b.AddComponentType<int>();
+            b = b.AddComponentType<double>();
+            b = b.AddComponentType<char>();
+            b = b.AddComponentType<int>();
 
             Assert.That(a, Is.EqualTo(b));
         }
@@ -44,10 +44,10 @@ namespace Simulation.Tests
         public void AddingAndIndexing()
         {
             Definition a = new();
-            a.AddComponentType<int>();
-            a.AddArrayType<double>();
-            a.AddComponentType<char>();
-            a.AddArrayType<float>();
+            a = a.AddComponentType<int>();
+            a = a.AddArrayType<double>();
+            a = a.AddComponentType<char>();
+            a = a.AddArrayType<float>();
 
             Assert.That(a.ComponentTypeCount, Is.EqualTo(2));
             Assert.That(a.ArrayTypeCount, Is.EqualTo(2));
@@ -66,10 +66,10 @@ namespace Simulation.Tests
         public void ReadTypeValues()
         {
             Definition a = new();
-            a.AddComponentType<int>();
-            a.AddArrayType<double>();
-            a.AddComponentType<char>();
-            a.AddArrayType<float>();
+            a = a.AddComponentType<int>();
+            a = a.AddArrayType<double>();
+            a = a.AddComponentType<char>();
+            a = a.AddArrayType<float>();
 
             USpan<RuntimeType> buffer = stackalloc RuntimeType[8];
             uint count = a.CopyAllTypes(buffer);
