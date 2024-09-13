@@ -694,24 +694,54 @@ namespace Simulation
             return chunk.Types;
         }
 
+        /// <summary>
+        /// Checks if the entity is enabled with respect
+        /// to ancestor entities.
+        /// </summary>
         public readonly bool IsEnabled(uint entity)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
             EntityDescription slot = Slots[entity - 1];
-            return slot.IsEnabled;
+            return slot.state == EntityDescription.State.Enabled;
         }
 
-        public readonly void SetEnabled(uint entity, bool value)
+        /// <summary>
+        /// Checks if the given entity is enabled regardless
+        /// of the entity hierarchy.
+        /// </summary>
+        public readonly bool IsSelfEnabled(uint entity)
         {
-            UnsafeWorld.ThrowIfEntityIsMissing(this.value, entity);
+            UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
+            EntityDescription slot = Slots[entity - 1];
+            return slot.state == EntityDescription.State.Enabled || slot.state == EntityDescription.State.EnabledButDisabledDueToAncestor;
+        }
+
+        public readonly void SetEnabled(uint entity, bool state)
+        {
+            UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
             ref EntityDescription slot = ref Slots[entity - 1];
+            if (slot.parent != default)
+            {
+                EntityDescription.State parentState = Slots[slot.parent - 1].state;
+                if (parentState == EntityDescription.State.Disabled || parentState == EntityDescription.State.EnabledButDisabledDueToAncestor)
+                {
+                    slot.state = state ? EntityDescription.State.EnabledButDisabledDueToAncestor : EntityDescription.State.Disabled;
+                }
+                else
+                {
+                    slot.state = state ? EntityDescription.State.Enabled : EntityDescription.State.Disabled;
+                }
+            }
+            else
+            {
+                slot.state = state ? EntityDescription.State.Enabled : EntityDescription.State.Disabled;
+            }
+
             for (uint i = 0; i < slot.children.Count; i++)
             {
                 uint child = slot.children[i];
-                SetEnabled(child, value);
+                SetEnabled(child, state);
             }
-
-            slot.SetEnabledState(value);
         }
 
         /// <summary>

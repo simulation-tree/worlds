@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,9 +38,34 @@ public static class EntityFunctions
         return new(entity.World, entity.Value);
     }
 
-    public static void SetEnabled<T>(this T entity, bool enabled) where T : unmanaged, IEntity
+    public static void SetEnabled<T>(this T entity, bool state) where T : unmanaged, IEntity
     {
-        entity.World.SetEnabled(entity.Value, enabled);
+        entity.World.SetEnabled(entity.Value, state);
+    }
+
+    public static uint GetReference<T>(this T entity, rint reference) where T : unmanaged, IEntity
+    {
+        return entity.World.GetReference(entity.Value, reference);
+    }
+
+    public static void SetReference<T>(this T entity, rint reference, uint value) where T : unmanaged, IEntity
+    {
+        entity.World.SetReference(entity.Value, reference, value);
+    }
+
+    public static void SetReference<T, E>(this T entity, rint reference, E value) where T : unmanaged, IEntity where E : unmanaged, IEntity
+    {
+        entity.World.SetReference(entity.Value, reference, value.Value);
+    }
+
+    public static rint AddReference<T>(this T entity, uint value) where T : unmanaged, IEntity
+    {
+        return entity.World.AddReference(entity.Value, value);
+    }
+
+    public static rint AddReference<T, E>(this T entity, E value) where T : unmanaged, IEntity where E : unmanaged, IEntity
+    {
+        return entity.World.AddReference(entity.Value, value);
     }
 
     /// <summary>

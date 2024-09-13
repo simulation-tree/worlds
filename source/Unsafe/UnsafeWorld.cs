@@ -57,7 +57,7 @@ namespace Simulation.Unsafe
             }
 
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, position);
-            if (slot.IsDestroyed)
+            if (slot.state == EntityDescription.State.Destroyed)
             {
                 throw new NullReferenceException($"Entity `{entity}` not found");
             }
@@ -76,7 +76,7 @@ namespace Simulation.Unsafe
             if (position < count)
             {
                 ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, position);
-                if (!slot.IsDestroyed)
+                if (slot.state != EntityDescription.State.Destroyed)
                 {
                     throw new InvalidOperationException($"Entity `{entity}` already present");
                 }
@@ -199,7 +199,7 @@ namespace Simulation.Unsafe
             for (uint s = 0; s < slotCount; s++)
             {
                 ref EntityDescription slot = ref slots[s];
-                if (!slot.IsDestroyed)
+                if (slot.state != EntityDescription.State.Destroyed)
                 {
                     uint arrayCount = slot.arrayTypes.Count;
                     for (uint a = 0; a < arrayCount; a++)
@@ -470,9 +470,14 @@ namespace Simulation.Unsafe
             {
                 ref EntityDescription previousParentSlot = ref UnsafeList.GetRef<EntityDescription>(world->slots, slot.parent - 1);
                 previousParentSlot.children.TryRemove(entity);
+
+                if (slot.state == EntityDescription.State.EnabledButDisabledDueToAncestor)
+                {
+                    slot.state = EntityDescription.State.Enabled;
+                }
             }
 
-            if (!ContainsEntity(world, parent))
+            if (parent == default || !ContainsEntity(world, parent))
             {
                 slot.parent = default;
                 NotifyParentChange(new(world), entity, default);
@@ -483,6 +488,11 @@ namespace Simulation.Unsafe
                 slot.parent = parent;
                 ref EntityDescription newParentSlot = ref UnsafeList.GetRef<EntityDescription>(world->slots, parent - 1);
                 newParentSlot.children.Add(entity);
+                if (newParentSlot.state == EntityDescription.State.Disabled || newParentSlot.state == EntityDescription.State.EnabledButDisabledDueToAncestor)
+                {
+                    slot.state = EntityDescription.State.EnabledButDisabledDueToAncestor;
+                }
+
                 NotifyParentChange(new(world), entity, parent);
                 return true;
             }
