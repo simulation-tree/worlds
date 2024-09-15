@@ -130,6 +130,9 @@ namespace Simulation
             world.DestroyArray<T>(value);
         }
 
+        /// <summary>
+        /// Creates a new uninitialized array of type <typeparamref name="T"/>.
+        /// </summary>
         public readonly USpan<T> CreateArray<T>(uint length = 0) where T : unmanaged
         {
             ThrowIfDestroyed();

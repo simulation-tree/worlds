@@ -1124,7 +1124,7 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Creates a new array on this entity.
+        /// Creates a new uninitialized array on this entity.
         /// </summary>
         public readonly USpan<T> CreateArray<T>(uint entity, uint length = 0) where T : unmanaged
         {
