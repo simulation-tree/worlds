@@ -158,12 +158,12 @@ namespace Simulation.Tests
             uint entity = world.CreateEntity();
             USpan<SimpleComponent> list = world.CreateArray<SimpleComponent>(entity, 4);
             list[0] = new("apple");
-            Assert.That(list.length, Is.EqualTo(4));
+            Assert.That(list.Length, Is.EqualTo(4));
             world.DestroyEntity(entity);
             uint another = world.CreateEntity(); //same as `entity`
             USpan<SimpleComponent> anotherList = world.CreateArray<SimpleComponent>(another, 1);
             anotherList[0] = new("banana");
-            Assert.That(anotherList.length, Is.EqualTo(1));
+            Assert.That(anotherList.Length, Is.EqualTo(1));
             world.DestroyEntity(another);
             world.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));

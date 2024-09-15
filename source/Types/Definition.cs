@@ -37,19 +37,19 @@ namespace Simulation
 
         public Definition(USpan<RuntimeType> componentTypes, USpan<RuntimeType> arrayTypes)
         {
-            ThrowIfTypeCountIsTooGreat(componentTypes.length + arrayTypes.length);
-            this.componentTypes = (byte)componentTypes.length;
-            this.arrayTypes = (byte)arrayTypes.length;
+            ThrowIfTypeCountIsTooGreat(componentTypes.Length + arrayTypes.Length);
+            this.componentTypes = (byte)componentTypes.Length;
+            this.arrayTypes = (byte)arrayTypes.Length;
             typesMask = 0;
             byte index = 0;
-            for (uint i = 0; i < componentTypes.length; i++)
+            for (uint i = 0; i < componentTypes.Length; i++)
             {
                 types[index] = componentTypes[i].value;
                 typesMask = (uint)(typesMask & ~(1UL << index));
                 index++;
             }
 
-            for (uint i = 0; i < arrayTypes.length; i++)
+            for (uint i = 0; i < arrayTypes.Length; i++)
             {
                 types[index] = arrayTypes[i].value;
                 typesMask = (uint)(typesMask | 1UL << index);

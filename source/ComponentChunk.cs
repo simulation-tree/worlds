@@ -52,12 +52,12 @@ namespace Simulation
         public readonly bool ContainsTypes(USpan<RuntimeType> componentTypes)
         {
             USpan<RuntimeType> myTypes = Types;
-            if (componentTypes.length > myTypes.length)
+            if (componentTypes.Length > myTypes.Length)
             {
                 return false;
             }
 
-            for (uint i = 0; i < componentTypes.length; i++)
+            for (uint i = 0; i < componentTypes.Length; i++)
             {
                 if (!myTypes.Contains(componentTypes[i]))
                 {
@@ -126,7 +126,7 @@ namespace Simulation
         public readonly void SetComponentBytes(uint index, RuntimeType type, USpan<byte> bytes)
         {
             void* component = GetComponentPointer(index, type);
-            bytes.CopyTo(new USpan<byte>(component, bytes.length));
+            bytes.CopyTo(new USpan<byte>(component, bytes.Length));
         }
     }
 }

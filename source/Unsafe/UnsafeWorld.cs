@@ -573,7 +573,7 @@ namespace Simulation.Unsafe
             //add arrays
             USpan<RuntimeType> arrayTypes = stackalloc RuntimeType[definition.ArrayTypeCount];
             definition.CopyArrayTypes(arrayTypes);
-            for (uint i = 0; i < arrayTypes.length; i++)
+            for (uint i = 0; i < arrayTypes.Length; i++)
             {
                 RuntimeType arrayType = arrayTypes[i];
                 slot.arrayTypes.Add(arrayType);
@@ -720,9 +720,9 @@ namespace Simulation.Unsafe
             int previousTypesKey = slot.componentsKey;
             ComponentChunk current = components[previousTypesKey];
             USpan<RuntimeType> oldTypes = current.Types;
-            USpan<RuntimeType> newTypes = stackalloc RuntimeType[(int)(oldTypes.length + 1)];
+            USpan<RuntimeType> newTypes = stackalloc RuntimeType[(int)(oldTypes.Length + 1)];
             oldTypes.CopyTo(newTypes);
-            newTypes[newTypes.length - 1] = componentType;
+            newTypes[newTypes.Length - 1] = componentType;
             int newTypesKey = RuntimeType.CombineHash(newTypes);
             slot.componentsKey = newTypesKey;
 
@@ -748,9 +748,9 @@ namespace Simulation.Unsafe
             int previousTypesKey = slot.componentsKey;
             ComponentChunk current = components[previousTypesKey];
             USpan<RuntimeType> oldTypes = current.Types;
-            USpan<RuntimeType> newTypes = stackalloc RuntimeType[(int)(oldTypes.length + 1)];
+            USpan<RuntimeType> newTypes = stackalloc RuntimeType[(int)(oldTypes.Length + 1)];
             oldTypes.CopyTo(newTypes);
-            newTypes[newTypes.length - 1] = componentType;
+            newTypes[newTypes.Length - 1] = componentType;
             int newTypesKey = RuntimeType.CombineHash(newTypes);
             slot.componentsKey = newTypesKey;
 
@@ -792,9 +792,9 @@ namespace Simulation.Unsafe
             int previousTypesKey = slot.componentsKey;
             ComponentChunk current = components[previousTypesKey];
             USpan<RuntimeType> oldTypes = current.Types;
-            USpan<RuntimeType> newTypes = stackalloc RuntimeType[(int)(oldTypes.length - 1)];
+            USpan<RuntimeType> newTypes = stackalloc RuntimeType[(int)(oldTypes.Length - 1)];
             uint count = 0;
-            for (uint i = 0; i < oldTypes.length; i++)
+            for (uint i = 0; i < oldTypes.Length; i++)
             {
                 if (oldTypes[i] != type)
                 {

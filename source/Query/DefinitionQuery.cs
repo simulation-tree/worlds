@@ -153,10 +153,10 @@ namespace Simulation
 
         private static bool ContainsArray(USpan<RuntimeType> arrayTypes, USpan<RuntimeType> entityArrays)
         {
-            for (uint i = 0; i < arrayTypes.length; i++)
+            for (uint i = 0; i < arrayTypes.Length; i++)
             {
                 bool found = false;
-                for (uint j = 0; j < entityArrays.length; j++)
+                for (uint j = 0; j < entityArrays.Length; j++)
                 {
                     if (arrayTypes[i] == entityArrays[j])
                     {

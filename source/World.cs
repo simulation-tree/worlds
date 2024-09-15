@@ -205,7 +205,7 @@ namespace Simulation
 
                     //write component
                     ComponentChunk chunk = chunks[slot.componentsKey];
-                    writer.WriteValue(chunk.Types.length);
+                    writer.WriteValue(chunk.Types.Length);
                     foreach (RuntimeType type in chunk.Types)
                     {
                         writer.WriteValue(uniqueTypes.IndexOf(type));
@@ -825,7 +825,7 @@ namespace Simulation
 
             static bool ContainsArrays(USpan<RuntimeType> arrayTypes, USpan<RuntimeType> entityArrays)
             {
-                for (uint i = 0; i < arrayTypes.length; i++)
+                for (uint i = 0; i < arrayTypes.Length; i++)
                 {
                     if (!entityArrays.Contains(arrayTypes[i]))
                     {
@@ -1137,7 +1137,7 @@ namespace Simulation
         /// </summary>
         public readonly void CreateArray<T>(uint entity, USpan<T> values) where T : unmanaged
         {
-            USpan<T> array = CreateArray<T>(entity, values.length);
+            USpan<T> array = CreateArray<T>(entity, values.Length);
             values.CopyTo(array);
         }
 
@@ -1464,7 +1464,7 @@ namespace Simulation
             USpan<RuntimeType> arrayTypes = stackalloc RuntimeType[definition.ArrayTypeCount];
             definition.CopyArrayTypes(arrayTypes);
             uint count = 0;
-            if (arrayTypes.length > 0)
+            if (arrayTypes.Length > 0)
             {
                 foreach (int hash in chunks.Keys)
                 {
@@ -1528,7 +1528,7 @@ namespace Simulation
 
             static bool ContainsArrays(USpan<RuntimeType> arrayTypes, USpan<RuntimeType> entityArrays)
             {
-                for (uint i = 0; i < arrayTypes.length; i++)
+                for (uint i = 0; i < arrayTypes.Length; i++)
                 {
                     if (!entityArrays.Contains(arrayTypes[i]))
                     {

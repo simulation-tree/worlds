@@ -77,7 +77,7 @@ public static class EntityFunctions
         //todo: efficiency: kinda expensive to perform these ops one by one, should instead add all missing at once
         USpan<RuntimeType> componentTypes = stackalloc RuntimeType[definition.ComponentTypeCount];
         definition.CopyComponentTypes(componentTypes);
-        for (uint i = 0; i < componentTypes.length; i++)
+        for (uint i = 0; i < componentTypes.Length; i++)
         {
             RuntimeType componentType = componentTypes[i];
             if (!entity.World.ContainsComponent(entity.Value, componentType))
@@ -88,7 +88,7 @@ public static class EntityFunctions
 
         USpan<RuntimeType> arrayTypes = stackalloc RuntimeType[definition.ArrayTypeCount];
         definition.CopyArrayTypes(arrayTypes);
-        for (uint i = 0; i < arrayTypes.length; i++)
+        for (uint i = 0; i < arrayTypes.Length; i++)
         {
             RuntimeType arrayType = arrayTypes[i];
             if (!entity.World.ContainsArray(entity.Value, arrayType))
@@ -107,7 +107,7 @@ public static class EntityFunctions
         uint value = entity.Value;
         USpan<RuntimeType> componentTypes = stackalloc RuntimeType[definition.ComponentTypeCount];
         definition.CopyComponentTypes(componentTypes);
-        for (uint i = 0; i < componentTypes.length; i++)
+        for (uint i = 0; i < componentTypes.Length; i++)
         {
             if (!world.ContainsComponent(value, componentTypes[i]))
             {
@@ -117,7 +117,7 @@ public static class EntityFunctions
 
         USpan<RuntimeType> arrayTypes = stackalloc RuntimeType[definition.ArrayTypeCount];
         definition.CopyArrayTypes(arrayTypes);
-        for (uint i = 0; i < arrayTypes.length; i++)
+        for (uint i = 0; i < arrayTypes.Length; i++)
         {
             if (!world.ContainsArray(value, arrayTypes[i]))
             {
@@ -143,7 +143,7 @@ public static class EntityFunctions
         Definition definition = entity.Definition;
         USpan<RuntimeType> componentTypes = stackalloc RuntimeType[definition.ComponentTypeCount];
         definition.CopyComponentTypes(componentTypes);
-        for (uint i = 0; i < componentTypes.length; i++)
+        for (uint i = 0; i < componentTypes.Length; i++)
         {
             if (!world.ContainsComponent(value, componentTypes[i]))
             {
@@ -153,7 +153,7 @@ public static class EntityFunctions
 
         USpan<RuntimeType> arrayTypes = stackalloc RuntimeType[definition.ArrayTypeCount];
         definition.CopyArrayTypes(arrayTypes);
-        for (uint i = 0; i < arrayTypes.length; i++)
+        for (uint i = 0; i < arrayTypes.Length; i++)
         {
             if (!world.ContainsArray(value, arrayTypes[i]))
             {

@@ -158,13 +158,13 @@ namespace Simulation.Tests
             using BinaryReader reader = new(writer.GetBytes());
             using Complicated loadedComplicated = reader.ReadObject<Complicated>();
 
-            Assert.That(loadedComplicated.List.length, Is.EqualTo(complicated.List.length));
-            for (uint i = 0; i < complicated.List.length; i++)
+            Assert.That(loadedComplicated.List.Length, Is.EqualTo(complicated.List.Length));
+            for (uint i = 0; i < complicated.List.Length; i++)
             {
                 Player actual = loadedComplicated.List[i];
                 Player expected = complicated.List[i];
-                Assert.That(actual.Inventory.length, Is.EqualTo(expected.Inventory.length));
-                for (uint j = 0; j < actual.Inventory.length; j++)
+                Assert.That(actual.Inventory.Length, Is.EqualTo(expected.Inventory.Length));
+                for (uint j = 0; j < actual.Inventory.Length; j++)
                 {
                     Fruit actualFruit = actual.Inventory[j];
                     Fruit expectedFruit = expected.Inventory[j];

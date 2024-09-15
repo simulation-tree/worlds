@@ -24,8 +24,8 @@ namespace Simulation.Unsafe
         {
             UnmanagedList<uint> entities = UnmanagedList<uint>.Create();
             UnmanagedArray<RuntimeType> typeArray = new(types);
-            UnmanagedArray<nint> componentArray = new(types.length);
-            for (uint i = 0; i < types.length; i++)
+            UnmanagedArray<nint> componentArray = new(types.Length);
+            for (uint i = 0; i < types.Length; i++)
             {
                 RuntimeType type = types[i];
                 componentArray[i] = (nint)UnsafeList.Allocate(type);

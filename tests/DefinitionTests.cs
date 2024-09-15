@@ -132,7 +132,7 @@ namespace Simulation.Tests
 
             Assert.That(defaultByte, Is.EqualTo(default(byte)));
             Assert.That(defaultFloat, Is.EqualTo(default(float)));
-            Assert.That(defaultCharArray.length, Is.EqualTo(0));
+            Assert.That(defaultCharArray.Length, Is.EqualTo(0));
         }
 
         [Test]
@@ -152,7 +152,7 @@ namespace Simulation.Tests
             Assert.That(entity.ContainsComponent<char>(), Is.False);
             Assert.That(entity.GetComponent<byte>(), Is.EqualTo(default(byte)));
             Assert.That(entity.GetComponent<float>(), Is.EqualTo(default(float)));
-            Assert.That(entity.GetArray<char>().length, Is.EqualTo(0));
+            Assert.That(entity.GetArray<char>().Length, Is.EqualTo(0));
 
             Definition definitionB = new([], [RuntimeType.Get<byte>()]);
 

@@ -541,7 +541,7 @@ namespace Simulation
         public unsafe static Instruction CreateArray<T>(USpan<T> values) where T : unmanaged
         {
             Allocation allocation = Allocation.Create(values);
-            return new(Type.CreateArray, RuntimeType.Get<T>().value, (ulong)(nint)allocation, (uint)values.length);
+            return new(Type.CreateArray, RuntimeType.Get<T>().value, (ulong)(nint)allocation, (uint)values.Length);
         }
 
         public static Instruction DestroyArray<T>() where T : unmanaged
@@ -564,8 +564,8 @@ namespace Simulation
 
         public unsafe static Instruction SetArrayElement<T>(uint index, USpan<T> elements) where T : unmanaged
         {
-            Allocation allocation = new(sizeof(uint) + (USpan<T>.ElementSize * elements.length));
-            allocation.Write(0, elements.length);
+            Allocation allocation = new(sizeof(uint) + (USpan<T>.ElementSize * elements.Length));
+            allocation.Write(0, elements.Length);
             allocation.Write(sizeof(uint), elements);
             return new(Type.SetArrayElement, RuntimeType.Get<T>().value, (ulong)(nint)allocation, index);
         }
