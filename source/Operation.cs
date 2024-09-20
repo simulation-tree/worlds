@@ -301,7 +301,7 @@ namespace Simulation
         /// <summary>
         /// Writes the given span into the array starting from the given index.
         /// </summary>
-        public void SetArrayElement<T>(uint index, USpan<T> elements) where T : unmanaged
+        public void SetArrayElements<T>(uint index, USpan<T> elements) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.SetArrayElement(index, elements));
