@@ -95,12 +95,48 @@ namespace Simulation
             callbacks.Add(messageType, callback);
         }
 
+        public void Unsubscribe<T>() where T : unmanaged
+        {
+            RuntimeType messageType = RuntimeType.Get<T>();
+            Unsubscribe(messageType);
+        }
+
+        public void Unsubscribe(RuntimeType messageType)
+        {
+            if (callbacks.Remove(messageType, out Action<Allocation>? callback))
+            {
+                if (staticCallbacks.TryGetValue(messageType, out List<Action<Allocation>>? actionCallbacks))
+                {
+                    actionCallbacks.Remove(callback);
+                    if (actionCallbacks.Count == 0)
+                    {
+                        for (uint i = 0; i < listeners.Count; i++)
+                        {
+                            Listener listener = listeners[i];
+                            if (listener.messageType == messageType)
+                            {
+                                listener.Dispose();
+                                listeners.RemoveAt(i);
+                                break;
+                            }
+                        }
+
+                        staticCallbacks.Remove(messageType);
+                    }
+                }
+            }
+            else
+            {
+                throw new InvalidOperationException($"This instance of {GetType()} is not subscribed to `{messageType}`");
+            }
+        }
+
         [Conditional("DEBUG")]
         private void ThrowIfAlreadySubscribed(RuntimeType messageType)
         {
             if (callbacks.ContainsKey(messageType))
             {
-                throw new InvalidOperationException($"This instance of {GetType()} is already subscribed to `{messageType}`.");
+                throw new InvalidOperationException($"This instance of {GetType()} is already subscribed to `{messageType}`");
             }
         }
 
