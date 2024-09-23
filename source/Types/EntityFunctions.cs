@@ -68,6 +68,11 @@ public static class EntityFunctions
         return entity.World.AddReference(entity.Value, value);
     }
 
+    public static void AddComponent<T, C>(this T entity, C component) where T : unmanaged, IEntity where C : unmanaged
+    {
+        entity.World.AddComponent(entity.Value, component);
+    }
+
     /// <summary>
     /// Makes the entity become the definition by having
     /// the missing components and arrays added with a default state.
