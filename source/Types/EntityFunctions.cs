@@ -68,6 +68,11 @@ public static class EntityFunctions
         return entity.World.AddReference(entity.Value, value);
     }
 
+    public static void RemoveReference<T>(this T entity, rint reference) where T : unmanaged, IEntity
+    {
+        entity.World.RemoveReference(entity.Value, reference);
+    }
+
     public static void AddComponent<T, C>(this T entity, C component) where T : unmanaged, IEntity where C : unmanaged
     {
         entity.World.AddComponent(entity.Value, component);
