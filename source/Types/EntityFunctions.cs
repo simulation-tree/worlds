@@ -13,9 +13,9 @@ public static class EntityFunctions
     /// <summary>
     /// Destroys the entity from its world.
     /// </summary>
-    public static void Destroy<T>(this T entity) where T : unmanaged, IEntity
+    public static void Destroy<T>(this T entity, bool destroyChildren = true) where T : unmanaged, IEntity
     {
-        entity.World.DestroyEntity(entity.Value);
+        entity.World.DestroyEntity(entity.Value, destroyChildren);
     }
 
     public static bool IsDestroyed<T>(this T entity) where T : unmanaged, IEntity
