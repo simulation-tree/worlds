@@ -217,5 +217,43 @@ namespace Simulation.Tests
                 Assert.That(world.ContainsEntity(entity), Is.False);
             }
         }
+
+        [Test]
+        public void CloneEntity()
+        {
+            using World world = new();
+            uint entity = world.CreateEntity();
+            world.AddComponent(entity, new SimpleComponent("apple"));
+            world.AddComponent(entity, new Another(5));
+            USpan<char> array = world.CreateArray<char>(entity, 5);
+            array[0] = 'a';
+            array[1] = 'b';
+            array[2] = 'c';
+            array[3] = 'd';
+            array[4] = 'e';
+            USpan<uint> data = world.CreateArray<uint>(entity, 3);
+            data[0] = 1337;
+            data[1] = 666;
+            data[2] = 500513;
+
+            uint clone = world.CloneEntity(entity);
+            Assert.That(world.ContainsEntity(clone), Is.True);
+            Assert.That(world.ContainsComponent<SimpleComponent>(clone), Is.True);
+            Assert.That(world.ContainsComponent<Another>(clone), Is.True);
+            Assert.That(world.GetComponent<SimpleComponent>(clone).data, Is.EqualTo(new FixedString("apple")));
+            Assert.That(world.GetComponent<Another>(clone).data, Is.EqualTo(5));
+            USpan<char> cloneArray = world.GetArray<char>(clone);
+            Assert.That(cloneArray.Length, Is.EqualTo(5));
+            Assert.That(cloneArray[0], Is.EqualTo('a'));
+            Assert.That(cloneArray[1], Is.EqualTo('b'));
+            Assert.That(cloneArray[2], Is.EqualTo('c'));
+            Assert.That(cloneArray[3], Is.EqualTo('d'));
+            Assert.That(cloneArray[4], Is.EqualTo('e'));
+            USpan<uint> cloneData = world.GetArray<uint>(clone);
+            Assert.That(cloneData.Length, Is.EqualTo(3));
+            Assert.That(cloneData[0], Is.EqualTo(1337));
+            Assert.That(cloneData[1], Is.EqualTo(666));
+            Assert.That(cloneData[2], Is.EqualTo(500513));
+        }
     }
 }

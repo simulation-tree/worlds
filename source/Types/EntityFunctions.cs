@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -76,6 +75,17 @@ public static class EntityFunctions
     public static void AddComponent<T, C>(this T entity, C component) where T : unmanaged, IEntity where C : unmanaged
     {
         entity.World.AddComponent(entity.Value, component);
+    }
+
+    /// <summary>
+    /// Creates a perfect replica of this entity.
+    /// </summary>
+    public static T Clone<T>(this T entity) where T : unmanaged, IEntity
+    {
+        World world = entity.GetWorld();
+        uint sourceEntity = entity.GetEntityValue();
+        uint destinationEntity = world.CloneEntity(sourceEntity);
+        return new Entity(world, destinationEntity).As<T>();
     }
 
     /// <summary>

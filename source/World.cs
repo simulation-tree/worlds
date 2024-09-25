@@ -1,6 +1,7 @@
 ﻿using Simulation.Unsafe;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Unmanaged;
 using Unmanaged.Collections;
 
@@ -845,13 +846,17 @@ namespace Simulation
         /// </summary>
         public readonly T GetFirst<T>(bool onlyEnabled = false) where T : unmanaged, IEntity
         {
-            if (TryGetFirst<T>(out T entity, onlyEnabled))
+            ThrowIfEntityDoesntExist<T>(onlyEnabled);
+            TryGetFirst(out T entity, onlyEnabled);
+            return entity;
+        }
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfEntityDoesntExist<T>(bool onlyEnabled) where T : unmanaged, IEntity
+        {
+            if (!TryGetFirst(out T _, onlyEnabled))
             {
-                return entity;
-            }
-            else
-            {
-                throw new NullReferenceException($"No entity with type {typeof(T)} found.");
+                throw new NullReferenceException($"No entity of type {typeof(T)} exists");
             }
         }
 
@@ -1569,23 +1574,35 @@ namespace Simulation
         /// </summary>
         public readonly void CopyArraysTo(uint sourceEntity, World destinationWorld, uint destinationEntity)
         {
-            foreach (RuntimeType sourceListType in GetArrayTypes(sourceEntity))
+            foreach (RuntimeType sourceArrayType in GetArrayTypes(sourceEntity))
             {
-                void* sourceArray = UnsafeWorld.GetArray(value, sourceEntity, sourceListType, out uint sourceLength);
+                void* sourceArray = UnsafeWorld.GetArray(value, sourceEntity, sourceArrayType, out uint sourceLength);
                 void* destinationArray;
-                if (!destinationWorld.ContainsArray(destinationEntity, sourceListType))
+                if (!destinationWorld.ContainsArray(destinationEntity, sourceArrayType))
                 {
-                    destinationArray = UnsafeWorld.CreateArray(destinationWorld.value, destinationEntity, sourceListType, sourceLength);
+                    destinationArray = UnsafeWorld.CreateArray(destinationWorld.value, destinationEntity, sourceArrayType, sourceLength);
                 }
                 else
                 {
-                    destinationArray = UnsafeWorld.ResizeArray(destinationWorld.value, destinationEntity, sourceListType, sourceLength);
+                    destinationArray = UnsafeWorld.ResizeArray(destinationWorld.value, destinationEntity, sourceArrayType, sourceLength);
                 }
 
-                USpan<byte> sourceBytes = new(sourceArray, sourceLength);
-                USpan<byte> destinationBytes = new(destinationArray, sourceLength);
+                uint elementSize = sourceArrayType.Size;
+                USpan<byte> sourceBytes = new(sourceArray, sourceLength * elementSize);
+                USpan<byte> destinationBytes = new(destinationArray, sourceLength * elementSize);
                 sourceBytes.CopyTo(destinationBytes);
             }
+        }
+
+        /// <summary>
+        /// Creates a perfect replica of this entity.
+        /// </summary>
+        public readonly uint CloneEntity(uint entity)
+        {
+            uint clone = CreateEntity();
+            CopyComponentsTo(entity, this, clone);
+            CopyArraysTo(entity, this, clone);
+            return clone;
         }
 
         /// <summary>
