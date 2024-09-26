@@ -42,6 +42,15 @@ namespace Simulation.Unsafe
         }
 
         [Conditional("DEBUG")]
+        public static void ThrowIfNull(UnsafeWorld* world)
+        {
+            if (Allocations.IsNull(world))
+            {
+                throw new NullReferenceException("World is null or disposed");
+            }
+        }
+
+        [Conditional("DEBUG")]
         public static void ThrowIfEntityIsMissing(UnsafeWorld* world, uint entity)
         {
             if (entity == uint.MaxValue)
@@ -134,19 +143,19 @@ namespace Simulation.Unsafe
 
         public static UnmanagedList<EntityDescription> GetEntitySlots(UnsafeWorld* world)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             return new(world->slots);
         }
 
         public static UnmanagedList<uint> GetFreeEntities(UnsafeWorld* world)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             return new(world->freeEntities);
         }
 
         public static UnmanagedDictionary<int, ComponentChunk> GetComponentChunks(UnsafeWorld* world)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             return new(world->components);
         }
 
@@ -169,7 +178,7 @@ namespace Simulation.Unsafe
 
         public static void Free(ref UnsafeWorld* world)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             ClearEvents(world);
             ClearListeners(world);
             ClearEntities(world);
@@ -183,6 +192,8 @@ namespace Simulation.Unsafe
 
         public static void ClearEntities(UnsafeWorld* world)
         {
+            ThrowIfNull(world);
+
             //clear chunks
             UnmanagedDictionary<int, ComponentChunk> chunks = GetComponentChunks(world);
             foreach (int hash in chunks.Keys)
@@ -229,6 +240,8 @@ namespace Simulation.Unsafe
 
         public static void ClearListeners(UnsafeWorld* world)
         {
+            ThrowIfNull(world);
+
             UnmanagedDictionary<RuntimeType, UnmanagedList<Listener>> listeners = new(world->listeners);
             foreach (RuntimeType eventType in listeners.Keys)
             {
@@ -249,6 +262,8 @@ namespace Simulation.Unsafe
 
         public static void ClearEvents(UnsafeWorld* world)
         {
+            ThrowIfNull(world);
+
             uint eventCount = UnsafeList.GetCountRef(world->submittedEvents);
             for (uint i = 0; i < eventCount; i++)
             {
@@ -261,6 +276,7 @@ namespace Simulation.Unsafe
 
         public static void Submit(UnsafeWorld* world, Container message)
         {
+            ThrowIfNull(world);
             UnsafeList.Add(world->submittedEvents, message);
         }
 
@@ -269,6 +285,7 @@ namespace Simulation.Unsafe
         /// </summary>
         public static void Poll(UnsafeWorld* world)
         {
+            ThrowIfNull(world);
             World worldValue = new(world);
 
             uint submissionCount = UnsafeList.GetCountRef(world->submittedEvents);
@@ -320,6 +337,7 @@ namespace Simulation.Unsafe
 #if NET5_0_OR_GREATER
         public static Listener CreateListener(UnsafeWorld* world, RuntimeType eventType, delegate* unmanaged<World, Allocation, RuntimeType, void> callback)
         {
+            ThrowIfNull(world);
             Listener listener = new(new(world), eventType, callback);
             UnmanagedDictionary<RuntimeType, UnmanagedList<Listener>> listeners = new(world->listeners);
             if (!listeners.TryGetValue(eventType, out UnmanagedList<Listener> listenerList))
@@ -334,6 +352,7 @@ namespace Simulation.Unsafe
 #else
         public static Listener CreateListener(UnsafeWorld* world, RuntimeType eventType, delegate*<World, Allocation, RuntimeType, void> callback)
         {
+            ThrowIfNull(world);
             Listener listener = new(new(world), eventType, callback);
             UnmanagedDictionary<RuntimeType, UnmanagedList<Listener>> listeners = new(world->listeners);
             if (!listeners.TryGetValue(eventType, out UnmanagedList<Listener> listenerList))
@@ -349,6 +368,7 @@ namespace Simulation.Unsafe
 
         internal static void RemoveListener(UnsafeWorld* world, Listener listener)
         {
+            ThrowIfNull(world);
             UnmanagedDictionary<RuntimeType, UnmanagedList<Listener>> listeners = new(world->listeners);
             if (listeners.TryGetValue(listener.messageType, out UnmanagedList<Listener> listenerList))
             {
@@ -364,7 +384,7 @@ namespace Simulation.Unsafe
 
         public static void DestroyEntity(UnsafeWorld* world, uint entity, bool destroyChildren = true)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
 
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
@@ -423,7 +443,7 @@ namespace Simulation.Unsafe
 
         public static USpan<RuntimeType> GetComponentTypes(UnsafeWorld* world, uint entity)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
 
             EntityDescription slot = UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
@@ -434,7 +454,7 @@ namespace Simulation.Unsafe
 
         public static USpan<RuntimeType> GetArrayTypes(UnsafeWorld* world, uint entity)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
             EntityDescription slot = UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
             return slot.arrayTypes.AsSpan();
@@ -442,7 +462,7 @@ namespace Simulation.Unsafe
 
         public static uint GetParent(UnsafeWorld* world, uint entity)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
 
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
@@ -451,7 +471,7 @@ namespace Simulation.Unsafe
 
         public static bool SetParent(UnsafeWorld* world, uint entity, uint parent)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
 
             if (entity == parent)
@@ -503,7 +523,7 @@ namespace Simulation.Unsafe
         /// </summary>
         public static uint GetNextEntity(UnsafeWorld* world)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             if (UnsafeList.GetCountRef(world->freeEntities) > 0)
             {
                 return UnsafeList.Get<uint>(world->freeEntities, 0);
@@ -520,7 +540,7 @@ namespace Simulation.Unsafe
         /// </summary>
         public static void InitializeEntity(UnsafeWorld* world, Definition definition, uint entity, uint parent)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             ThrowIfEntityIsAlreadyPresent(world, entity);
 
             UnmanagedList<EntityDescription> slots = GetEntitySlots(world);
@@ -622,7 +642,7 @@ namespace Simulation.Unsafe
 
         public static bool ContainsEntity(UnsafeWorld* world, uint entity)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             if (entity == uint.MaxValue)
             {
                 return false;
@@ -640,7 +660,7 @@ namespace Simulation.Unsafe
 
         public static void* CreateArray(UnsafeWorld* world, uint entity, RuntimeType arrayType, uint length)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
             ThrowIfArrayIsAlreadyPresent(world, entity, arrayType);
 
@@ -654,7 +674,7 @@ namespace Simulation.Unsafe
 
         public static bool ContainsArray(UnsafeWorld* world, uint entity, RuntimeType arrayType)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
 
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
@@ -663,7 +683,7 @@ namespace Simulation.Unsafe
 
         public static void* GetArray(UnsafeWorld* world, uint entity, RuntimeType arrayType, out uint length)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
             ThrowIfArrayIsMissing(world, entity, arrayType);
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
@@ -674,7 +694,7 @@ namespace Simulation.Unsafe
 
         public static uint GetArrayLength(UnsafeWorld* world, uint entity, RuntimeType arrayType)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
             ThrowIfArrayIsMissing(world, entity, arrayType);
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
@@ -684,7 +704,7 @@ namespace Simulation.Unsafe
 
         public static void* ResizeArray(UnsafeWorld* world, uint entity, RuntimeType arrayType, uint newLength)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
             ThrowIfArrayIsMissing(world, entity, arrayType);
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
@@ -697,7 +717,7 @@ namespace Simulation.Unsafe
 
         public static void DestroyArray(UnsafeWorld* world, uint entity, RuntimeType arrayType)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
             ThrowIfArrayIsMissing(world, entity, arrayType);
 
@@ -711,7 +731,7 @@ namespace Simulation.Unsafe
 
         public static USpan<byte> AddComponent(UnsafeWorld* world, uint entity, RuntimeType componentType)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
             ThrowIfComponentAlreadyPresent(world, entity, componentType);
 
@@ -738,7 +758,7 @@ namespace Simulation.Unsafe
 
         public static ref T AddComponent<T>(UnsafeWorld* world, uint entity) where T : unmanaged
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
             RuntimeType componentType = RuntimeType.Get<T>();
             ThrowIfComponentAlreadyPresent(world, entity, componentType);
@@ -766,7 +786,7 @@ namespace Simulation.Unsafe
 
         public static void SetComponentBytes(UnsafeWorld* world, uint entity, RuntimeType type, USpan<byte> bytes)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
             ThrowIfComponentMissing(world, entity, type);
 
@@ -783,7 +803,7 @@ namespace Simulation.Unsafe
 
         public static void RemoveComponent(UnsafeWorld* world, uint entity, RuntimeType type)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
             ThrowIfComponentMissing(world, entity, type);
 
@@ -818,7 +838,7 @@ namespace Simulation.Unsafe
 
         public static bool ContainsComponent(UnsafeWorld* world, uint entity, RuntimeType type)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
 
             uint index = entity - 1;
@@ -830,7 +850,7 @@ namespace Simulation.Unsafe
 
         public static ref T GetComponentRef<T>(UnsafeWorld* world, uint entity) where T : unmanaged
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
 
             RuntimeType type = RuntimeType.Get<T>();
@@ -845,7 +865,7 @@ namespace Simulation.Unsafe
 
         public static USpan<byte> GetComponentBytes(UnsafeWorld* world, uint entity, RuntimeType type)
         {
-            Allocations.ThrowIfNull(world);
+            ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
             ThrowIfComponentMissing(world, entity, type);
 

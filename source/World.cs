@@ -1228,9 +1228,10 @@ namespace Simulation
 
         public readonly void AddComponent<T>(uint entity, T component) where T : unmanaged
         {
+            RuntimeType type = RuntimeType.Get<T>();
             ref T target = ref UnsafeWorld.AddComponent<T>(value, entity);
             target = component;
-            UnsafeWorld.NotifyComponentAdded(this, entity, RuntimeType.Get<T>());
+            UnsafeWorld.NotifyComponentAdded(this, entity, type);
         }
 
         /// <summary>
