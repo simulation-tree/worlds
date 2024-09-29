@@ -648,8 +648,8 @@ namespace Simulation
 #if NET5_0_OR_GREATER
         /// <summary>
         /// Creates a new listener for the given static callback.
-        /// <para>Disposing the listener will unregister the callback.
-        /// Their disposal is done automatically when the world is disposed.</para>
+        /// <para>Disposing the listener will unregister the callback.</para>
+        /// <para>Manual disposal is not required.</para>
         /// </summary>
         public readonly Listener CreateListener<T>(delegate* unmanaged<World, Allocation, RuntimeType, void> callback) where T : unmanaged
         {
@@ -658,8 +658,8 @@ namespace Simulation
 
         /// <summary>
         /// Creates a new listener for the given static callback.
-        /// <para>Disposing the listener will unregister the callback.
-        /// Their disposal is done automatically when the world is disposed.</para>
+        /// <para>Disposing the listener will unregister the callback.</para>
+        /// <para>Manual disposal is not required.</para>
         /// </summary>
         public readonly Listener CreateListener(RuntimeType eventType, delegate* unmanaged<World, Allocation, RuntimeType, void> callback)
         {
@@ -668,8 +668,8 @@ namespace Simulation
 #else
         /// <summary>
         /// Creates a new listener for the given static callback.
-        /// <para>Disposing the listener will unregister the callback.
-        /// Their disposal is done automatically when the world is disposed.</para>
+        /// <para>Disposing the listener will unregister the callback.</para>
+        /// <para>Manual disposal is not required.</para>
         /// </summary>
         public readonly Listener CreateListener<T>(delegate*<World, Allocation, RuntimeType, void> callback) where T : unmanaged
         {
@@ -678,8 +678,8 @@ namespace Simulation
 
         /// <summary>
         /// Creates a new listener for the given static callback.
-        /// <para>Disposing the listener will unregister the callback.
-        /// Their disposal is done automatically when the world is disposed.</para>
+        /// <para>Disposing the listener will unregister the callback.</para>
+        /// <para>Manual disposal is not required.</para>
         /// </summary>
         public readonly Listener CreateListener(RuntimeType eventType, delegate*<World, Allocation, RuntimeType, void> callback)
         {
@@ -1998,11 +1998,6 @@ namespace Simulation
         public static World Create()
         {
             return new(UnsafeWorld.Allocate());
-        }
-
-        public void CreateListener<T>(object update)
-        {
-            throw new NotImplementedException();
         }
 
         public static bool operator ==(World left, World right)
