@@ -230,6 +230,12 @@ namespace Simulation
             return world.GetComponent(value, defaultValue);
         }
 
+        public readonly USpan<byte> GetComponentBytes(RuntimeType componentType)
+        {
+            ThrowIfDestroyed();
+            return world.GetComponentBytes(value, componentType);
+        }
+
         public readonly void SetComponent<T>(T component) where T : unmanaged
         {
             ThrowIfDestroyed();
@@ -267,6 +273,12 @@ namespace Simulation
         {
             ThrowIfDestroyed();
             world.RemoveComponent<T>(value);
+        }
+
+        public readonly void RemoveComponent(RuntimeType componentType)
+        {
+            ThrowIfDestroyed();
+            world.RemoveComponent(value, componentType);
         }
 
         public readonly void RemoveComponent<T>(out T removedComponent) where T : unmanaged
