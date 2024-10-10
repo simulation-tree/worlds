@@ -360,6 +360,9 @@ namespace Simulation
             this.componentTypes = componentTypes;
         }
 
+        /// <summary>
+        /// Disposes the query.
+        /// </summary>
         public readonly void Dispose()
         {
             componentTypes.Dispose();

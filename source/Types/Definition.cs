@@ -262,7 +262,7 @@ namespace Simulation
                 {
                     if (!IsArrayType(i))
                     {
-                        throw new InvalidOperationException($"Component type {type} already exists in definition");
+                        throw new InvalidOperationException($"Component type `{type}` already exists in definition");
                     }
                 }
             }
@@ -278,10 +278,15 @@ namespace Simulation
                 {
                     if (IsArrayType(i))
                     {
-                        throw new InvalidOperationException($"Array type {type} already exists in definition");
+                        throw new InvalidOperationException($"Array type `{type}` already exists in definition");
                     }
                 }
             }
+        }
+
+        public static Definition Get<T>() where T : unmanaged, IEntity
+        {
+            return default(T).Definition;
         }
 
         public static bool operator ==(Definition a, Definition b)

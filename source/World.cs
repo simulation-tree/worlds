@@ -76,7 +76,7 @@ namespace Simulation
             }
         }
 
-#if NET5_0_OR_GREATER
+#if NET
         /// <summary>
         /// Creates a new disposable world.
         /// </summary>
@@ -85,6 +85,10 @@ namespace Simulation
             value = UnsafeWorld.Allocate();
         }
 #endif
+        public World(nint existingAddress)
+        {
+            value = (UnsafeWorld*)existingAddress;
+        }
 
         public World(UnsafeWorld* value)
         {
@@ -750,7 +754,7 @@ namespace Simulation
         /// </summary>
         public readonly bool TryGetFirst<T>(out T entity, bool onlyEnabled = false) where T : unmanaged, IEntity
         {
-            EntityFunctions.ThrowIfTypeLayoutMismatches<T>();
+            Entity.ThrowIfTypeLayoutMismatches<T>();
             UnmanagedDictionary<int, ComponentChunk> chunks = ComponentChunks;
             Definition definition = default(T).Definition;
             USpan<RuntimeType> componentTypes = stackalloc RuntimeType[definition.ComponentTypeCount];

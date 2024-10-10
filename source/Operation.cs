@@ -14,7 +14,7 @@ namespace Simulation
         /// <summary>
         /// Amount of contained instructions.
         /// </summary>
-        public readonly uint Length => list.Read<uint>(sizeof(uint) * 0);
+        public readonly uint Length => list.Read<uint>();
 
         public unsafe readonly Instruction this[uint index]
         {
@@ -40,7 +40,8 @@ namespace Simulation
         /// </summary>
         public unsafe Operation(uint initialCapacity = 0)
         {
-            uint size = (uint)(sizeof(uint) + sizeof(uint) + (sizeof(Instruction) * initialCapacity));
+            uint start = sizeof(uint) + sizeof(uint);
+            uint size = (uint)(start + (sizeof(Instruction) * initialCapacity));
             list = new(size);
             list.Write(sizeof(uint) * 0, 0);
             list.Write(sizeof(uint) * 1, initialCapacity);
@@ -59,6 +60,30 @@ namespace Simulation
             ThrowIfDisposed();
             ClearInstructions();
             list.Dispose();
+        }
+
+        public readonly USpan<Instruction> AsSpan()
+        {
+            ThrowIfDisposed();
+            uint start = sizeof(uint) + sizeof(uint);
+            return new USpan<Instruction>((nint)(list.Address + start), Length);
+        }
+
+        public readonly override string ToString()
+        {
+            uint length = Length;
+            if (length == 0)
+            {
+                return "Operation(Empty)";
+            }
+            else if (length == 1)
+            {
+                return $"Operation(1 instruction)";
+            }
+            else
+            {
+                return $"Operation({length} instructions)";
+            }
         }
 
         [Conditional("DEBUG")]
@@ -124,10 +149,10 @@ namespace Simulation
         public readonly void ClearInstructions()
         {
             ThrowIfDisposed();
-            uint length = Length;
-            for (uint i = 0; i < length; i++)
+            USpan<Instruction> instructions = AsSpan();
+            for (uint i = 0; i < instructions.Length; i++)
             {
-                this[i].Dispose();
+                instructions[i].Dispose();
             }
 
             list.Write(sizeof(uint) * 0, 0);
@@ -136,9 +161,10 @@ namespace Simulation
         /// <summary>
         /// Creates a new entity and automatically appends it to the selection.
         /// </summary>
-        public void CreateEntity()
+        public SelectedEntity CreateEntity()
         {
             AddInstruction(Instruction.CreateEntity());
+            return new(this);
         }
 
         /// <summary>
@@ -172,9 +198,18 @@ namespace Simulation
         /// <summary>
         /// Appends the given entity to the selection.
         /// </summary>
-        public void SelectEntity(uint entity)
+        public SelectedEntity SelectEntity(uint entity)
         {
             AddInstruction(Instruction.SelectEntity(entity));
+            return new(this);
+        }
+
+        /// <summary>
+        /// Appends the given entity to the selection.
+        /// </summary>
+        public SelectedEntity SelectEntity<T>(T entity) where T : unmanaged, IEntity
+        {
+            return SelectEntity(entity.GetEntityValue());
         }
 
         /// <summary>
@@ -352,6 +387,21 @@ namespace Simulation
             list.Write(sizeof(uint) * 0, 0);
             list.Write(sizeof(uint) * 1, initialCapacity);
             return new Operation(list);
+        }
+
+        public readonly struct SelectedEntity
+        {
+            private readonly Operation operation;
+
+            internal SelectedEntity(Operation operation)
+            {
+                this.operation = operation;
+            }
+
+            public void AddComponent<T>(T component) where T : unmanaged
+            {
+                operation.AddComponent(component);
+            }
         }
     }
 }

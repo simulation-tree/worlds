@@ -44,7 +44,7 @@ namespace Simulation
 #endif
 
         /// <summary>
-        /// Unregisters the callback.
+        /// Manually unregisters the callback.
         /// </summary>
         public readonly void Dispose()
         {

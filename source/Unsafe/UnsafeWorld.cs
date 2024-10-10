@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 using Unmanaged;
 using Unmanaged.Collections;
 
@@ -334,7 +335,7 @@ namespace Simulation.Unsafe
             }
         }
 
-#if NET5_0_OR_GREATER
+#if NET
         public static Listener CreateListener(UnsafeWorld* world, RuntimeType eventType, delegate* unmanaged<World, Allocation, RuntimeType, void> callback)
         {
             ThrowIfNull(world);

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using Unmanaged;
 
 namespace Simulation
@@ -362,7 +364,7 @@ namespace Simulation
         /// </summary>
         public readonly unsafe T As<T>() where T : unmanaged, IEntity
         {
-            EntityFunctions.ThrowIfTypeLayoutMismatches<T>();
+            ThrowIfTypeLayoutMismatches<T>();
             Entity self = this;
             return *(T*)&self;
         }
@@ -397,6 +399,53 @@ namespace Simulation
         public readonly override int GetHashCode()
         {
             return HashCode.Combine(value, world);
+        }
+
+
+        /// <summary>
+        /// Throws if the given type doesnt have a similar enough layout to <see cref="Entity"/>.
+        /// Because the methods that use will perform native ruinterprets.
+        /// </summary>
+        [Conditional("DEBUG")]
+        public static void ThrowIfTypeLayoutMismatches<T>()
+        {
+            BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+            Stack<Type> checkStack = new();
+            Type type = typeof(T);
+            checkStack.Push(type);
+            while (checkStack.Count > 0)
+            {
+                Type checkingType = checkStack.Pop();
+                if (checkingType == typeof(Entity))
+                {
+                    return;
+                }
+                else if (typeof(IEntity).IsAssignableFrom(checkingType))
+                {
+#pragma warning disable IL2075
+                    FieldInfo[] checkingFields = checkingType.GetFields(flags);
+#pragma warning restore IL2075
+                    if (checkingFields.Length == 1)
+                    {
+                        checkStack.Push(checkingFields[0].FieldType);
+                    }
+                    else if (checkingFields.Length == 2)
+                    {
+                        Type first = checkingFields[0].FieldType;
+                        Type second = checkingFields[1].FieldType;
+                        if (first == typeof(uint) && second == typeof(World))
+                        {
+                            return;
+                        }
+                        else
+                        {
+                            throw new Exception($"Unexpected entity type layout in `{checkingType}`. Was expecting `uint`, then `{nameof(World)}`");
+                        }
+                    }
+                }
+            }
+
+            throw new Exception($"The type `{type}` does not align with the `{nameof(Entity)}` type");
         }
 
         public static bool operator ==(Entity left, Entity right)
