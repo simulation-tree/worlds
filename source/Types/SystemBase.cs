@@ -13,6 +13,7 @@ namespace Simulation
     public abstract class SystemBase : IDisposable
     {
         private static readonly Dictionary<RuntimeType, List<Action<Allocation>>> staticCallbacks = new();
+        private static readonly Dictionary<(World, Type), SystemBase> allSystems = new();
 
         public readonly World world;
 
@@ -24,6 +25,7 @@ namespace Simulation
             this.world = world;
             listeners = new(1);
             callbacks = new(1);
+            allSystems.Add((world, GetType()), this);
         }
 
         /// <summary>
@@ -37,6 +39,7 @@ namespace Simulation
         /// </summary>
         public virtual void Dispose()
         {
+            allSystems.Remove((world, GetType()));
             ThrowIfAlreadyDisposed();
             foreach (RuntimeType type in callbacks.Keys)
             {
@@ -157,6 +160,21 @@ namespace Simulation
             foreach (Action<Allocation> callback in staticCallbacks[messageType])
             {
                 callback(message);
+            }
+        }
+
+        public static T Get<T>(World world) where T : SystemBase
+        {
+            ThrowIfNoSystemFound<T>(world);
+            return (T)allSystems[(world, typeof(T))];
+        }
+
+        [Conditional("DEBUG")]
+        private static void ThrowIfNoSystemFound<T>(World world) where T : SystemBase
+        {
+            if (!allSystems.ContainsKey((world, typeof(T))))
+            {
+                throw new InvalidOperationException($"No system of type `{typeof(T)}` is present for the world `{world}`");
             }
         }
     }
