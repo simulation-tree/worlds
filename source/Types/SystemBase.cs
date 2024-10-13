@@ -12,8 +12,8 @@ namespace Simulation
     /// </summary>
     public abstract class SystemBase : IDisposable
     {
-        private static readonly Dictionary<RuntimeType, List<Action<Allocation>>> staticCallbacks = new();
-        private static readonly Dictionary<(World, Type), SystemBase> allSystems = new();
+        private static readonly Dictionary<(World, RuntimeType), List<Action<Allocation>>> staticCallbacks = new();
+        private static readonly Dictionary<(World, Type), HashSet<SystemBase>> allSystems = new();
 
         public readonly World world;
 
@@ -25,7 +25,29 @@ namespace Simulation
             this.world = world;
             listeners = new(1);
             callbacks = new(1);
-            allSystems.Add((world, GetType()), this);
+            RegisterSystem();
+        }
+
+        private void RegisterSystem()
+        {
+            HashSet<SystemBase>? systems;
+            if (!allSystems.TryGetValue((world, GetType()), out systems))
+            {
+                systems = new();
+                allSystems.Add((world, GetType()), systems);
+            }
+
+            systems.Add(this);
+        }
+
+        private void UnregisterSystem()
+        {
+            HashSet<SystemBase> systems = allSystems[(world, GetType())];
+            systems.Remove(this);
+            if (systems.Count == 0)
+            {
+                allSystems.Remove((world, GetType()));
+            }
         }
 
         /// <summary>
@@ -39,12 +61,12 @@ namespace Simulation
         /// </summary>
         public virtual void Dispose()
         {
-            allSystems.Remove((world, GetType()));
+            UnregisterSystem();
             ThrowIfAlreadyDisposed();
             foreach (RuntimeType type in callbacks.Keys)
             {
                 Action<Allocation> callback = callbacks[type];
-                if (staticCallbacks.TryGetValue(type, out List<Action<Allocation>>? actionCallbacks))
+                if (staticCallbacks.TryGetValue((world, type), out List<Action<Allocation>>? actionCallbacks))
                 {
                     actionCallbacks.Remove(callback);
                     if (actionCallbacks.Count == 0)
@@ -60,7 +82,7 @@ namespace Simulation
                             }
                         }
 
-                        staticCallbacks.Remove(type);
+                        staticCallbacks.Remove((world, type));
                     }
                 }
             }
@@ -86,10 +108,10 @@ namespace Simulation
         public unsafe void Subscribe(RuntimeType messageType, Action<Allocation> callback)
         {
             ThrowIfAlreadySubscribed(messageType);
-            if (!staticCallbacks.TryGetValue(messageType, out List<Action<Allocation>>? actionCallbacks))
+            if (!staticCallbacks.TryGetValue((world, messageType), out List<Action<Allocation>>? actionCallbacks))
             {
                 actionCallbacks = new();
-                staticCallbacks.Add(messageType, actionCallbacks);
+                staticCallbacks.Add((world, messageType), actionCallbacks);
                 Listener listener = world.CreateListener(messageType, &StaticEvent);
                 listeners.Add(listener);
             }
@@ -108,7 +130,7 @@ namespace Simulation
         {
             if (callbacks.Remove(messageType, out Action<Allocation>? callback))
             {
-                if (staticCallbacks.TryGetValue(messageType, out List<Action<Allocation>>? actionCallbacks))
+                if (staticCallbacks.TryGetValue((world, messageType), out List<Action<Allocation>>? actionCallbacks))
                 {
                     actionCallbacks.Remove(callback);
                     if (actionCallbacks.Count == 0)
@@ -124,7 +146,7 @@ namespace Simulation
                             }
                         }
 
-                        staticCallbacks.Remove(messageType);
+                        staticCallbacks.Remove((world, messageType));
                     }
                 }
             }
@@ -157,16 +179,36 @@ namespace Simulation
 #endif
         private static void StaticEvent(World world, Allocation message, RuntimeType messageType)
         {
-            foreach (Action<Allocation> callback in staticCallbacks[messageType])
+            foreach (Action<Allocation> callback in staticCallbacks[(world, messageType)])
             {
                 callback(message);
             }
         }
 
-        public static T Get<T>(World world) where T : SystemBase
+        /// <summary>
+        /// Retrieves the first system of type <typeparamref name="T"/>
+        /// registered with the given <see cref="World"/>.
+        /// </summary>
+        public static T GetFirst<T>(World world) where T : SystemBase
         {
             ThrowIfNoSystemFound<T>(world);
-            return (T)allSystems[(world, typeof(T))];
+            HashSet<SystemBase> systems = allSystems[(world, typeof(T))];
+            foreach (SystemBase system in systems)
+            {
+                return (T)system;
+            }
+
+            throw new InvalidOperationException($"No system of type `{typeof(T)}` is present for the world `{world}`");
+        }
+
+        public static IEnumerable<T> GetAll<T>(World world) where T : SystemBase
+        {
+            ThrowIfNoSystemFound<T>(world);
+            HashSet<SystemBase> systems = allSystems[(world, typeof(T))];
+            foreach (SystemBase system in systems)
+            {
+                yield return (T)system;
+            }
         }
 
         [Conditional("DEBUG")]

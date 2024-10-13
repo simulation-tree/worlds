@@ -27,18 +27,18 @@ namespace Simulation
         public readonly override string ToString()
         {
             USpan<char> buffer = stackalloc char[512];
-            uint bufferCount = 0;
+            uint length = 0;
             foreach (RuntimeType type in Types)
             {
-                bufferCount += type.ToString(buffer.Slice(bufferCount));
-                buffer[bufferCount++] = ',';
-                buffer[bufferCount++] = ' ';
+                length += type.ToString(buffer.Slice(length));
+                buffer[length++] = ',';
+                buffer[length++] = ' ';
             }
 
-            if (bufferCount > 0)
+            if (length > 0)
             {
-                bufferCount -= 2;
-                return new string(buffer.pointer, 0, (int)bufferCount);
+                length -= 2;
+                return buffer.Slice(0, length).ToString();
             }
             else
             {
