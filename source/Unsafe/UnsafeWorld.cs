@@ -28,16 +28,12 @@ namespace Simulation.Unsafe
 
         private UnsafeList* slots;
         private UnsafeList* freeEntities;
-        private UnsafeList* submittedEvents;
-        private UnsafeDictionary* listeners;
         private UnsafeDictionary* components;
 
-        private UnsafeWorld(UnsafeList* slots, UnsafeList* freeEntities, UnsafeList* submittedEvents, UnsafeDictionary* listeners, UnsafeDictionary* components)
+        private UnsafeWorld(UnsafeList* slots, UnsafeList* freeEntities, UnsafeDictionary* components)
         {
             this.slots = slots;
             this.freeEntities = freeEntities;
-            this.submittedEvents = submittedEvents;
-            this.listeners = listeners;
             this.components = components;
         }
 
@@ -163,8 +159,6 @@ namespace Simulation.Unsafe
         {
             UnsafeList* slots = UnsafeList.Allocate<EntityDescription>();
             UnsafeList* freeEntities = UnsafeList.Allocate<uint>();
-            UnsafeList* submittedEvents = UnsafeList.Allocate<Container>();
-            UnsafeDictionary* listeners = UnsafeDictionary.Allocate<RuntimeType, UnmanagedList<Listener>>();
             UnsafeDictionary* components = UnsafeDictionary.Allocate<uint, ComponentChunk>();
 
             ComponentChunk defaultComponentChunk = new(Array.Empty<RuntimeType>());
@@ -172,20 +166,18 @@ namespace Simulation.Unsafe
             UnsafeDictionary.Add(components, chunkKey, defaultComponentChunk);
 
             UnsafeWorld* world = Allocations.Allocate<UnsafeWorld>();
-            *world = new(slots, freeEntities, submittedEvents, listeners, components);
+            world->slots = slots;
+            world->freeEntities = freeEntities;
+            world->components = components;
             return world;
         }
 
         public static void Free(ref UnsafeWorld* world)
         {
             ThrowIfNull(world);
-            ClearEvents(world);
-            ClearListeners(world);
             ClearEntities(world);
             UnsafeList.Free(ref world->slots);
             UnsafeList.Free(ref world->freeEntities);
-            UnsafeList.Free(ref world->submittedEvents);
-            UnsafeDictionary.Free(ref world->listeners);
             UnsafeDictionary.Free(ref world->components);
             Allocations.Free(ref world);
         }
@@ -236,150 +228,6 @@ namespace Simulation.Unsafe
 
             //clear free entities
             UnsafeList.Clear(world->freeEntities);
-        }
-
-        public static void ClearListeners(UnsafeWorld* world)
-        {
-            ThrowIfNull(world);
-
-            UnmanagedDictionary<RuntimeType, UnmanagedList<Listener>> listeners = new(world->listeners);
-            foreach (RuntimeType eventType in listeners.Keys)
-            {
-                UnmanagedList<Listener> listenerList = listeners[eventType];
-                uint listenerCount = listenerList.Count;
-                for (uint j = 0; j < listenerCount; j++)
-                {
-                    ref Listener listener = ref listenerList[j];
-                    UnsafeListener* unsafeListener = listener.value;
-                    UnsafeListener.Free(ref unsafeListener);
-                }
-
-                listenerList.Dispose();
-            }
-
-            listeners.Clear();
-        }
-
-        public static void ClearEvents(UnsafeWorld* world)
-        {
-            ThrowIfNull(world);
-
-            uint eventCount = UnsafeList.GetCountRef(world->submittedEvents);
-            for (uint i = 0; i < eventCount; i++)
-            {
-                Container message = UnsafeList.Get<Container>(world->submittedEvents, i);
-                message.Dispose();
-            }
-
-            UnsafeList.Clear(world->submittedEvents);
-        }
-
-        public static void Submit(UnsafeWorld* world, Container message)
-        {
-            ThrowIfNull(world);
-            UnsafeList.Add(world->submittedEvents, message);
-        }
-
-        /// <summary>
-        /// Polls all submitted events and invokes listeners.
-        /// </summary>
-        public static void Poll(UnsafeWorld* world)
-        {
-            ThrowIfNull(world);
-            World worldValue = new(world);
-
-            uint submissionCount = UnsafeList.GetCountRef(world->submittedEvents);
-            USpan<Container> events = stackalloc Container[(int)submissionCount]; //<-- is this gonna blow up?
-            UnsafeList.AsSpan<Container>(world->submittedEvents).CopyTo(events);
-            UnsafeList.Clear(world->submittedEvents);
-
-            Exception? caughtException = null;
-            uint dispatchIndex = 0;
-            UnmanagedDictionary<RuntimeType, UnmanagedList<Listener>> listeners = new(world->listeners);
-            while (dispatchIndex < submissionCount)
-            {
-                Container message = events[dispatchIndex];
-                RuntimeType messageType = message.type;
-                if (listeners.TryGetValue(messageType, out UnmanagedList<Listener> listenerList))
-                {
-                    uint j = 0;
-                    while (j < listenerList.Count)
-                    {
-                        try
-                        {
-                            Listener listener = listenerList[j];
-                            listener.Invoke(worldValue, message.AsAllocation(), messageType);
-                        }
-                        catch (Exception ex)
-                        {
-                            caughtException = ex;
-                            break;
-                        }
-
-                        j++;
-                    }
-                }
-
-                message.Dispose();
-                dispatchIndex++;
-                if (caughtException is not null)
-                {
-                    break;
-                }
-            }
-
-            if (caughtException is not null)
-            {
-                throw caughtException;
-            }
-        }
-
-#if NET
-        public static Listener CreateListener(UnsafeWorld* world, RuntimeType eventType, delegate* unmanaged<World, Allocation, RuntimeType, void> callback)
-        {
-            ThrowIfNull(world);
-            Listener listener = new(new(world), eventType, callback);
-            UnmanagedDictionary<RuntimeType, UnmanagedList<Listener>> listeners = new(world->listeners);
-            if (!listeners.TryGetValue(eventType, out UnmanagedList<Listener> listenerList))
-            {
-                listenerList = UnmanagedList<Listener>.Create();
-                listeners.Add(eventType, listenerList);
-            }
-
-            listenerList.Add(listener);
-            return listener;
-        }
-#else
-        public static Listener CreateListener(UnsafeWorld* world, RuntimeType eventType, delegate*<World, Allocation, RuntimeType, void> callback)
-        {
-            ThrowIfNull(world);
-            Listener listener = new(new(world), eventType, callback);
-            UnmanagedDictionary<RuntimeType, UnmanagedList<Listener>> listeners = new(world->listeners);
-            if (!listeners.TryGetValue(eventType, out UnmanagedList<Listener> listenerList))
-            {
-                listenerList = UnmanagedList<Listener>.Create();
-                listeners.Add(eventType, listenerList);
-            }
-
-            listenerList.Add(listener);
-            return listener;
-        }
-#endif
-
-        internal static void RemoveListener(UnsafeWorld* world, Listener listener)
-        {
-            ThrowIfNull(world);
-            UnmanagedDictionary<RuntimeType, UnmanagedList<Listener>> listeners = new(world->listeners);
-            if (listeners.TryGetValue(listener.messageType, out UnmanagedList<Listener> listenerList))
-            {
-                listenerList.TryRemove(listener);
-                UnsafeListener* unsafeListener = listener.value;
-                UnsafeListener.Free(ref unsafeListener);
-            }
-            else
-            {
-                throw new NullReferenceException($"Listener for {listener.messageType} not found.");
-            }
         }
 
         public static void DestroyEntity(UnsafeWorld* world, uint entity, bool destroyChildren = true)

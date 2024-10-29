@@ -2,14 +2,8 @@
 
 namespace Simulation.Tests
 {
-    public class EntityReferenceTests
+    public class EntityReferenceTests : UnmanagedTests
     {
-        [TearDown]
-        public void CleanUp()
-        {
-            Allocations.ThrowIfAny();
-        }
-
         [Test]
         public void ReferenceAnotherEntity()
         {

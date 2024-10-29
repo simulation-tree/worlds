@@ -2,14 +2,8 @@
 
 namespace Simulation.Tests
 {
-    public class DefinitionTests
+    public class DefinitionTests : UnmanagedTests
     {
-        [TearDown]
-        public void CleanUp()
-        {
-            Allocations.ThrowIfAny();
-        }
-
         [Test]
         public void CompareEquality()
         {

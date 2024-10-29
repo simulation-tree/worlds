@@ -1,22 +1,10 @@
 ﻿using Simulation;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Unmanaged;
 
 public static class EntityFunctions
 {
-    /// <summary>
-    /// Destroys the entity from its world.
-    /// </summary>
-    public static void Destroy<T>(this T entity, bool destroyChildren = true) where T : unmanaged, IEntity
-    {
-        entity.World.DestroyEntity(entity.Value, destroyChildren);
-    }
-
     public static bool IsDestroyed<T>(this T entity) where T : unmanaged, IEntity
     {
         return !entity.World.ContainsEntity(entity.Value);
@@ -75,6 +63,11 @@ public static class EntityFunctions
     public static void AddComponent<T, C>(this T entity, C component) where T : unmanaged, IEntity where C : unmanaged
     {
         entity.World.AddComponent(entity.Value, component);
+    }
+
+    public static void SetComponent<T, C>(this T entity, C component) where T : unmanaged, IEntity where C : unmanaged
+    {
+        entity.World.SetComponent(entity.Value, component);
     }
 
     /// <summary>

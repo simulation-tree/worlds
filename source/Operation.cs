@@ -240,6 +240,11 @@ namespace Simulation
             AddInstruction(Instruction.SetParent(parent));
         }
 
+        public void SetParent<T>(T parent) where T : unmanaged, IEntity
+        {
+            SetParent(parent.GetEntityValue());
+        }
+
         /// <summary>
         /// Assigns the parent of every selected entitiy to the one that was
         /// created <paramref name="offset"/> instructions ago.

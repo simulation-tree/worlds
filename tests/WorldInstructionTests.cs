@@ -5,14 +5,8 @@ using Unmanaged;
 
 namespace Simulation.Tests
 {
-    public class WorldInstructionTests
+    public class WorldInstructionTests : UnmanagedTests
     {
-        [TearDown]
-        public void CleanUp()
-        {
-            Allocations.ThrowIfAny();
-        }
-
         [Test]
         public void CreateOneEntity()
         {

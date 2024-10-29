@@ -1,6 +1,8 @@
-﻿namespace Simulation
+﻿using System;
+
+namespace Simulation
 {
-    public interface IEntity
+    public interface IEntity : IDisposable
     {
         uint Value { get; }
         World World { get; }

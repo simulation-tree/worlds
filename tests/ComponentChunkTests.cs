@@ -4,7 +4,7 @@ using Unmanaged.Collections;
 
 namespace Simulation.Tests
 {
-    public unsafe class ComponentChunkTests
+    public unsafe class ComponentChunkTests : UnmanagedTests
     {
         [Test]
         public void AddEntityNoComponents()

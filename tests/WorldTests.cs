@@ -3,14 +3,8 @@ using Unmanaged;
 
 namespace Simulation.Tests
 {
-    public class WorldTests
+    public class WorldTests : UnmanagedTests
     {
-        [TearDown]
-        public void CleanUp()
-        {
-            Allocations.ThrowIfAny();
-        }
-
         [Test]
         public void CreateAndDisposeWorld()
         {

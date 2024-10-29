@@ -106,18 +106,8 @@ namespace Simulation
         /// <summary>
         /// Resets the world to default state.
         /// </summary>
-        public readonly void Clear(bool clearEvents = false, bool clearListeners = false)
+        public readonly void Clear()
         {
-            if (clearEvents)
-            {
-                UnsafeWorld.ClearEvents(value);
-            }
-
-            if (clearListeners)
-            {
-                UnsafeWorld.ClearListeners(value);
-            }
-
             UnsafeWorld.ClearEntities(value);
         }
 
@@ -393,25 +383,6 @@ namespace Simulation
             }
         }
 
-        public readonly void Submit<T>(T message) where T : unmanaged
-        {
-            UnsafeWorld.Submit(value, Container.Create(message));
-        }
-
-        public readonly void Submit(Container container)
-        {
-            UnsafeWorld.Submit(value, container);
-        }
-
-        /// <summary>
-        /// Iterates over all events that we submitted with <see cref="Submit"/>,
-        /// and notifies the registered listeners.
-        /// </summary>
-        public readonly void Poll()
-        {
-            UnsafeWorld.Poll(value);
-        }
-
         private readonly void Perform(Instruction instruction, UnmanagedList<uint> selection, UnmanagedList<uint> entities)
         {
             if (instruction.type == Instruction.Type.CreateEntity)
@@ -648,48 +619,6 @@ namespace Simulation
         {
             UnsafeWorld.DestroyEntity(value, entity, destroyChildren);
         }
-
-#if NET5_0_OR_GREATER
-        /// <summary>
-        /// Creates a new listener for the given static callback.
-        /// <para>Disposing the listener will unregister the callback.</para>
-        /// <para>Manual disposal is not required.</para>
-        /// </summary>
-        public readonly Listener CreateListener<T>(delegate* unmanaged<World, Allocation, RuntimeType, void> callback) where T : unmanaged
-        {
-            return CreateListener(RuntimeType.Get<T>(), callback);
-        }
-
-        /// <summary>
-        /// Creates a new listener for the given static callback.
-        /// <para>Disposing the listener will unregister the callback.</para>
-        /// <para>Manual disposal is not required.</para>
-        /// </summary>
-        public readonly Listener CreateListener(RuntimeType eventType, delegate* unmanaged<World, Allocation, RuntimeType, void> callback)
-        {
-            return UnsafeWorld.CreateListener(value, eventType, callback);
-        }
-#else
-        /// <summary>
-        /// Creates a new listener for the given static callback.
-        /// <para>Disposing the listener will unregister the callback.</para>
-        /// <para>Manual disposal is not required.</para>
-        /// </summary>
-        public readonly Listener CreateListener<T>(delegate*<World, Allocation, RuntimeType, void> callback) where T : unmanaged
-        {
-            return CreateListener(RuntimeType.Get<T>(), callback);
-        }
-
-        /// <summary>
-        /// Creates a new listener for the given static callback.
-        /// <para>Disposing the listener will unregister the callback.</para>
-        /// <para>Manual disposal is not required.</para>
-        /// </summary>
-        public readonly Listener CreateListener(RuntimeType eventType, delegate*<World, Allocation, RuntimeType, void> callback)
-        {
-            return UnsafeWorld.CreateListener(value, eventType, callback);
-        }
-#endif
 
         public readonly USpan<RuntimeType> GetComponentTypes(uint entity)
         {
@@ -1465,6 +1394,9 @@ namespace Simulation
             return count;
         }
 
+        /// <summary>
+        /// Counts how many entities comply with type <typeparamref name="T"/>.
+        /// </summary>
         public readonly uint CountEntities<T>(bool onlyEnabled = false) where T : unmanaged, IEntity
         {
             UnmanagedDictionary<int, ComponentChunk> chunks = ComponentChunks;

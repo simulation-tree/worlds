@@ -25,6 +25,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\..\unmanaged\source\Unmanaged.csproj" />
+		<ProjectReference Include="..\..\unmanaged\tests\Unmanaged Tests.csproj" />
 		<ProjectReference Include="..\source\Simulation.csproj" />
 	</ItemGroup>
 

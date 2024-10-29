@@ -328,17 +328,35 @@ namespace Simulation.Tests
                 }
             }
 
-            public override bool Equals(object? obj)
+            public readonly override bool Equals(object? obj)
             {
                 return obj is Player player && Equals(player);
             }
 
-            public bool Equals(Player other)
+            public readonly bool Equals(Player other)
             {
-                return hp == other.hp && damage == other.damage && inventory.GetContentHashCode() == other.inventory.GetContentHashCode();
+                return hp == other.hp && damage == other.damage && InventoryContentsEqual(other);
             }
 
-            public override int GetHashCode()
+            public readonly bool InventoryContentsEqual(Player other)
+            {
+                if (inventory.Count != other.inventory.Count)
+                {
+                    return false;
+                }
+
+                for (uint i = 0; i < inventory.Count; i++)
+                {
+                    if (inventory[i] != other.inventory[i])
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            public readonly override int GetHashCode()
             {
                 return HashCode.Combine(hp, damage, inventory);
             }

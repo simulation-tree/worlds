@@ -65,6 +65,11 @@ namespace Simulation
             value = world.CreateEntity();
         }
 
+        public readonly void Dispose()
+        {
+            world.DestroyEntity(value);
+        }
+
         [Conditional("DEBUG")]
         public readonly void ThrowIfDestroyed()
         {
@@ -238,6 +243,12 @@ namespace Simulation
             return world.GetComponentBytes(value, componentType);
         }
 
+        /// <summary>
+        /// Assigns the given value to the entity's component of type <typeparamref name="T"/>.
+        /// <para>
+        /// In debug, may throw an <see cref="Exception"/> if the entity is missing, or the component is missing.
+        /// </para>
+        /// </summary>
         public readonly void SetComponent<T>(T component) where T : unmanaged
         {
             ThrowIfDestroyed();
@@ -312,6 +323,12 @@ namespace Simulation
         {
             ThrowIfDestroyed();
             return new Entity(world, GetReference(reference)).As<T>();
+        }
+
+        public readonly uint GetReferenceCount()
+        {
+            ThrowIfDestroyed();
+            return world.GetReferenceCount(value);
         }
 
         /// <summary>
