@@ -16,12 +16,19 @@ jobs:
         with:
           path: simulation
 
-      - name: Pull dependencies
+      - name: Pull `unmanaged` dependency
         uses: actions/checkout@v4.1.2
         with:
           repository: game-simulations/unmanaged
           token: ${{ secrets.PAT }}
           path: unmanaged
+
+      - name: Pull `collections` dependency
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/collections
+          token: ${{ secrets.PAT }}
+          path: collections
       
       - name: Setup dotnet
         uses: actions/setup-dotnet@v4
