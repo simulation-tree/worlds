@@ -1,14 +1,14 @@
-﻿using System;
+﻿using Collections;
+using System;
 using Unmanaged;
-using Unmanaged.Collections;
 
 namespace Simulation
 {
     public struct DefinitionQuery : IDisposable, IQuery
     {
-        private readonly UnmanagedList<uint> results;
-        private readonly UnmanagedArray<RuntimeType> componentTypes;
-        private readonly UnmanagedArray<RuntimeType> arrayTypes;
+        private readonly List<uint> results;
+        private readonly Array<RuntimeType> componentTypes;
+        private readonly Array<RuntimeType> arrayTypes;
         private readonly bool hasArrays;
         private World world;
 
@@ -60,7 +60,7 @@ namespace Simulation
         {
             this.world = world;
             results.Clear(world.MaxEntityValue);
-            UnmanagedDictionary<int, ComponentChunk> chunks = world.ComponentChunks;
+            Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
             USpan<RuntimeType> componentTypes = this.componentTypes.AsSpan();
             if (!onlyEnabled)
             {
@@ -72,7 +72,7 @@ namespace Simulation
                         ComponentChunk chunk = chunks[hash];
                         if (chunk.ContainsTypes(componentTypes))
                         {
-                            UnmanagedList<uint> entities = chunk.Entities;
+                            List<uint> entities = chunk.Entities;
                             for (uint e = 0; e < entities.Count; e++)
                             {
                                 uint entity = entities[e];
@@ -92,7 +92,7 @@ namespace Simulation
                         ComponentChunk chunk = chunks[hash];
                         if (chunk.ContainsTypes(componentTypes))
                         {
-                            UnmanagedList<uint> entities = chunk.Entities;
+                            List<uint> entities = chunk.Entities;
                             results.AddRange(entities);
                         }
                     }
@@ -108,7 +108,7 @@ namespace Simulation
                         ComponentChunk chunk = chunks[hash];
                         if (chunk.ContainsTypes(componentTypes))
                         {
-                            UnmanagedList<uint> entities = chunk.Entities;
+                            List<uint> entities = chunk.Entities;
                             for (uint e = 0; e < entities.Count; e++)
                             {
                                 uint entity = entities[e];
@@ -131,7 +131,7 @@ namespace Simulation
                         ComponentChunk chunk = chunks[hash];
                         if (chunk.ContainsTypes(componentTypes))
                         {
-                            UnmanagedList<uint> entities = chunk.Entities;
+                            List<uint> entities = chunk.Entities;
                             for (uint e = 0; e < entities.Count; e++)
                             {
                                 uint entity = entities[e];
@@ -196,8 +196,8 @@ namespace Simulation
 
     public struct ComponentQuery<T1> : IDisposable, IQuery where T1 : unmanaged
     {
-        private readonly UnmanagedList<Result> results;
-        private readonly UnmanagedArray<RuntimeType> componentTypes;
+        private readonly List<Result> results;
+        private readonly Array<RuntimeType> componentTypes;
         private World world;
 
         /// <summary>
@@ -219,7 +219,7 @@ namespace Simulation
         }
 #endif
 
-        private ComponentQuery(UnmanagedList<Result> results, UnmanagedArray<RuntimeType> componentTypes)
+        private ComponentQuery(List<Result> results, Array<RuntimeType> componentTypes)
         {
             this.world = default;
             this.results = results;
@@ -236,7 +236,7 @@ namespace Simulation
         {
             this.world = world;
             results.Clear(world.MaxEntityValue);
-            UnmanagedDictionary<int, ComponentChunk> chunks = world.ComponentChunks;
+            Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
             USpan<RuntimeType> componentTypes = this.componentTypes.AsSpan();
             if (!onlyEnabled)
             {
@@ -245,7 +245,7 @@ namespace Simulation
                     ComponentChunk chunk = chunks[hash];
                     if (chunk.ContainsTypes(componentTypes))
                     {
-                        UnmanagedList<uint> entities = chunk.Entities;
+                        List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
                             uint entity = entities[e];
@@ -262,7 +262,7 @@ namespace Simulation
                     ComponentChunk chunk = chunks[hash];
                     if (chunk.ContainsTypes(componentTypes))
                     {
-                        UnmanagedList<uint> entities = chunk.Entities;
+                        List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
                             uint entity = entities[e];
@@ -287,9 +287,9 @@ namespace Simulation
         /// </summary>
         public static ComponentQuery<T1> Create()
         {
-            UnmanagedList<Result> results = new(1);
+            List<Result> results = new(1);
             USpan<RuntimeType> componentTypes = stackalloc RuntimeType[1] { RuntimeType.Get<T1>() };
-            UnmanagedArray<RuntimeType> types = new(componentTypes);
+            Array<RuntimeType> types = new(componentTypes);
             return new(results, types);
         }
 
@@ -330,8 +330,8 @@ namespace Simulation
 
     public struct ComponentQuery<T1, T2> : IDisposable, IQuery where T1 : unmanaged where T2 : unmanaged
     {
-        private readonly UnmanagedList<Result> results;
-        private readonly UnmanagedArray<RuntimeType> componentTypes;
+        private readonly List<Result> results;
+        private readonly Array<RuntimeType> componentTypes;
         private World world;
 
         /// <summary>
@@ -353,7 +353,7 @@ namespace Simulation
         }
 #endif
 
-        private ComponentQuery(UnmanagedList<Result> results, UnmanagedArray<RuntimeType> componentTypes)
+        private ComponentQuery(List<Result> results, Array<RuntimeType> componentTypes)
         {
             this.world = default;
             this.results = results;
@@ -373,7 +373,7 @@ namespace Simulation
         {
             this.world = world;
             results.Clear(world.MaxEntityValue);
-            UnmanagedDictionary<int, ComponentChunk> chunks = world.ComponentChunks;
+            Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
             USpan<RuntimeType> componentTypes = this.componentTypes.AsSpan();
             if (!onlyEnabled)
             {
@@ -382,7 +382,7 @@ namespace Simulation
                     ComponentChunk chunk = chunks[hash];
                     if (chunk.ContainsTypes(componentTypes))
                     {
-                        UnmanagedList<uint> entities = chunk.Entities;
+                        List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
                             uint entity = entities[e];
@@ -400,7 +400,7 @@ namespace Simulation
                     ComponentChunk chunk = chunks[hash];
                     if (chunk.ContainsTypes(componentTypes))
                     {
-                        UnmanagedList<uint> entities = chunk.Entities;
+                        List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
                             uint entity = entities[e];
@@ -426,9 +426,9 @@ namespace Simulation
         /// </summary>
         public static ComponentQuery<T1, T2> Create()
         {
-            UnmanagedList<Result> results = new(1);
+            List<Result> results = new(1);
             USpan<RuntimeType> componentTypes = stackalloc RuntimeType[2] { RuntimeType.Get<T1>(), RuntimeType.Get<T2>() };
-            UnmanagedArray<RuntimeType> types = new(componentTypes);
+            Array<RuntimeType> types = new(componentTypes);
             return new(results, types);
         }
 
@@ -472,8 +472,8 @@ namespace Simulation
 
     public struct ComponentQuery<T1, T2, T3> : IDisposable, IQuery where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
     {
-        private readonly UnmanagedList<Result> results;
-        private readonly UnmanagedArray<RuntimeType> componentTypes;
+        private readonly List<Result> results;
+        private readonly Array<RuntimeType> componentTypes;
         private World world;
 
         /// <summary>
@@ -495,7 +495,7 @@ namespace Simulation
         }
 #endif
 
-        private ComponentQuery(UnmanagedList<Result> results, UnmanagedArray<RuntimeType> componentTypes)
+        private ComponentQuery(List<Result> results, Array<RuntimeType> componentTypes)
         {
             this.world = default;
             this.results = results;
@@ -512,7 +512,7 @@ namespace Simulation
         {
             this.world = world;
             results.Clear(world.MaxEntityValue);
-            UnmanagedDictionary<int, ComponentChunk> chunks = world.ComponentChunks;
+            Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
             USpan<RuntimeType> componentTypes = this.componentTypes.AsSpan();
             if (!onlyEnabled)
             {
@@ -521,7 +521,7 @@ namespace Simulation
                     ComponentChunk chunk = chunks[hash];
                     if (chunk.ContainsTypes(componentTypes))
                     {
-                        UnmanagedList<uint> entities = chunk.Entities;
+                        List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
                             uint entity = entities[e];
@@ -540,7 +540,7 @@ namespace Simulation
                     ComponentChunk chunk = chunks[hash];
                     if (chunk.ContainsTypes(componentTypes))
                     {
-                        UnmanagedList<uint> entities = chunk.Entities;
+                        List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
                             uint entity = entities[e];
@@ -567,9 +567,9 @@ namespace Simulation
         /// </summary>
         public static ComponentQuery<T1, T2, T3> Create()
         {
-            UnmanagedList<Result> results = new(1);
+            List<Result> results = new(1);
             USpan<RuntimeType> componentTypes = stackalloc RuntimeType[3] { RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>() };
-            UnmanagedArray<RuntimeType> types = new(componentTypes);
+            Array<RuntimeType> types = new(componentTypes);
             return new(results, types);
         }
 
@@ -616,8 +616,8 @@ namespace Simulation
 
     public struct ComponentQuery<T1, T2, T3, T4> : IDisposable, IQuery where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
     {
-        private readonly UnmanagedList<Result> results;
-        private readonly UnmanagedArray<RuntimeType> componentTypes;
+        private readonly List<Result> results;
+        private readonly Array<RuntimeType> componentTypes;
         private World world;
 
         /// <summary>
@@ -639,7 +639,7 @@ namespace Simulation
         }
 #endif
 
-        private ComponentQuery(UnmanagedList<Result> results, UnmanagedArray<RuntimeType> componentTypes)
+        private ComponentQuery(List<Result> results, Array<RuntimeType> componentTypes)
         {
             this.world = default;
             this.results = results;
@@ -656,7 +656,7 @@ namespace Simulation
         {
             this.world = world;
             results.Clear(world.MaxEntityValue);
-            UnmanagedDictionary<int, ComponentChunk> chunks = world.ComponentChunks;
+            Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
             USpan<RuntimeType> componentTypes = this.componentTypes.AsSpan();
             if (!onlyEnabled)
             {
@@ -665,7 +665,7 @@ namespace Simulation
                     ComponentChunk chunk = chunks[hash];
                     if (chunk.ContainsTypes(componentTypes))
                     {
-                        UnmanagedList<uint> entities = chunk.Entities;
+                        List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
                             uint entity = entities[e];
@@ -685,7 +685,7 @@ namespace Simulation
                     ComponentChunk chunk = chunks[hash];
                     if (chunk.ContainsTypes(componentTypes))
                     {
-                        UnmanagedList<uint> entities = chunk.Entities;
+                        List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
                             uint entity = entities[e];
@@ -713,9 +713,9 @@ namespace Simulation
         /// </summary>
         public static ComponentQuery<T1, T2, T3, T4> Create()
         {
-            UnmanagedList<Result> results = new(1);
+            List<Result> results = new(1);
             USpan<RuntimeType> componentTypes = stackalloc RuntimeType[4] { RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>(), RuntimeType.Get<T4>() };
-            UnmanagedArray<RuntimeType> types = new(componentTypes);
+            Array<RuntimeType> types = new(componentTypes);
             return new(results, types);
         }
 

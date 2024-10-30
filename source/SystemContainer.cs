@@ -1,8 +1,8 @@
-﻿using Simulation.Functions;
+﻿using Collections;
+using Simulation.Functions;
 using System;
 using System.Diagnostics;
 using Unmanaged;
-using Unmanaged.Collections;
 
 namespace Simulation
 {
@@ -11,8 +11,8 @@ namespace Simulation
         public readonly RuntimeType type;
         public readonly Allocation allocation;
 
-        private readonly UnmanagedDictionary<RuntimeType, HandleFunction> handlers;
-        private readonly UnmanagedList<World> programWorlds;
+        private readonly Dictionary<RuntimeType, HandleFunction> handlers;
+        private readonly List<World> programWorlds;
         private readonly UnsafeSimulator* simulator;
         private readonly InitializeFunction initialize;
         private readonly IterateFunction update;
@@ -25,7 +25,7 @@ namespace Simulation
         /// </summary>
         public readonly World World => UnsafeSimulator.GetWorld(simulator);
 
-        public SystemContainer(UnsafeSimulator* simulator, Allocation system, RuntimeType type, UnmanagedDictionary<RuntimeType, HandleFunction> handlers, InitializeFunction initialize, IterateFunction update, FinalizeFunction finalize)
+        public SystemContainer(UnsafeSimulator* simulator, Allocation system, RuntimeType type, Dictionary<RuntimeType, HandleFunction> handlers, InitializeFunction initialize, IterateFunction update, FinalizeFunction finalize)
         {
             this.simulator = simulator;
             this.allocation = system;

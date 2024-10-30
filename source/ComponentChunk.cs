@@ -1,7 +1,8 @@
-﻿using Simulation.Unsafe;
+﻿using Collections;
+using Collections.Unsafe;
+using Simulation.Unsafe;
 using System;
 using Unmanaged;
-using Unmanaged.Collections;
 
 namespace Simulation
 {
@@ -10,7 +11,7 @@ namespace Simulation
         private UnsafeComponentChunk* value;
 
         public readonly bool IsDisposed => UnsafeComponentChunk.IsDisposed(value);
-        public readonly UnmanagedList<uint> Entities => UnsafeComponentChunk.GetEntities(value);
+        public readonly List<uint> Entities => UnsafeComponentChunk.GetEntities(value);
         public readonly USpan<RuntimeType> Types => UnsafeComponentChunk.GetTypes(value);
         public readonly int Key => UnsafeComponentChunk.GetKey(value);
 
@@ -94,14 +95,14 @@ namespace Simulation
             return UnsafeComponentChunk.GetComponents(value, type);
         }
 
-        public readonly UnmanagedList<T> GetComponents<T>() where T : unmanaged
+        public readonly List<T> GetComponents<T>() where T : unmanaged
         {
             return new(GetComponents(RuntimeType.Get<T>()));
         }
 
         public readonly ref T GetComponentRef<T>(uint index) where T : unmanaged
         {
-            UnmanagedList<T> components = GetComponents<T>();
+            List<T> components = GetComponents<T>();
             return ref components[index];
         }
 

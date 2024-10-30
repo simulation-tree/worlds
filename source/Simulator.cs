@@ -1,10 +1,10 @@
-﻿using Programs;
+﻿using Collections;
+using Programs;
 using Programs.Components;
 using Programs.System;
 using System;
 using System.Diagnostics;
 using Unmanaged;
-using Unmanaged.Collections;
 
 namespace Simulation
 {
@@ -58,7 +58,7 @@ namespace Simulation
             }
 
             //clean up previously known programs
-            ref UnmanagedList<ProgramContainer> knownPrograms = ref UnsafeSimulator.GetKnownPrograms(value);
+            ref List<ProgramContainer> knownPrograms = ref UnsafeSimulator.GetKnownPrograms(value);
             for (uint i = knownPrograms.Count - 1; i != uint.MaxValue; i--)
             {
                 ref ProgramContainer program = ref knownPrograms[i];
@@ -72,7 +72,7 @@ namespace Simulation
 
         private readonly void FinishDestroyedPrograms()
         {
-            ref UnmanagedList<ProgramContainer> knownPrograms = ref UnsafeSimulator.GetKnownPrograms(value);
+            ref List<ProgramContainer> knownPrograms = ref UnsafeSimulator.GetKnownPrograms(value);
             for (uint i = knownPrograms.Count - 1; i != uint.MaxValue; i--)
             {
                 ref ProgramContainer program = ref knownPrograms[i];
@@ -102,7 +102,7 @@ namespace Simulation
             InitializePrograms();
 
             //update program worlds
-            ref UnmanagedList<ProgramContainer> knownPrograms = ref UnsafeSimulator.GetKnownPrograms(value);
+            ref List<ProgramContainer> knownPrograms = ref UnsafeSimulator.GetKnownPrograms(value);
             uint updatedPrograms = 0;
             for (uint p = 0; p < knownPrograms.Count; p++)
             {
@@ -147,7 +147,7 @@ namespace Simulation
             }
 
             //update systems with each program worlds
-            ref UnmanagedList<ProgramContainer> knownPrograms = ref UnsafeSimulator.GetKnownPrograms(value);
+            ref List<ProgramContainer> knownPrograms = ref UnsafeSimulator.GetKnownPrograms(value);
             for (uint p = 0; p < knownPrograms.Count; p++)
             {
                 ref ProgramContainer programContainer = ref knownPrograms[p];
@@ -207,7 +207,7 @@ namespace Simulation
 
         private readonly void InitializeSystems()
         {
-            ref UnmanagedList<ProgramContainer> knownPrograms = ref UnsafeSimulator.GetKnownPrograms(value);
+            ref List<ProgramContainer> knownPrograms = ref UnsafeSimulator.GetKnownPrograms(value);
             USpan<SystemContainer> systems = UnsafeSimulator.GetSystems(value);
             for (uint p = 0; p < knownPrograms.Count; p++)
             {
@@ -227,7 +227,7 @@ namespace Simulation
         private readonly void InitializePrograms()
         {
             World hostWorld = World;
-            ref UnmanagedList<ProgramContainer> knownPrograms = ref UnsafeSimulator.GetKnownPrograms(value);
+            ref List<ProgramContainer> knownPrograms = ref UnsafeSimulator.GetKnownPrograms(value);
             ref ComponentQuery<IsProgram, ProgramState> query = ref UnsafeSimulator.GetProgramQuery(value);
             query.Update(hostWorld, true);
             foreach (var x in query)

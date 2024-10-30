@@ -1,18 +1,18 @@
-﻿using Programs;
+﻿using Collections;
+using Programs;
 using Programs.Components;
 using Programs.System;
 using Simulation.Functions;
 using System;
 using Unmanaged;
-using Unmanaged.Collections;
 
 namespace Simulation
 {
     public unsafe struct UnsafeSimulator
     {
         private World world;
-        private UnmanagedList<SystemContainer> systems;
-        private UnmanagedList<ProgramContainer> knownPrograms;
+        private List<SystemContainer> systems;
+        private List<ProgramContainer> knownPrograms;
         private ComponentQuery<IsProgram, ProgramState> programQuery;
 
         public static UnsafeSimulator* Allocate(World world)
@@ -58,7 +58,7 @@ namespace Simulation
             return simulator->systems.AsSpan();
         }
 
-        public static ref UnmanagedList<ProgramContainer> GetKnownPrograms(UnsafeSimulator* simulator)
+        public static ref List<ProgramContainer> GetKnownPrograms(UnsafeSimulator* simulator)
         {
             Allocations.ThrowIfNull(simulator);
             return ref simulator->knownPrograms;
@@ -87,7 +87,7 @@ namespace Simulation
             //add message handlers
             USpan<MessageHandler> buffer = stackalloc MessageHandler[32];
             uint messageHandlerCount = template.GetMessageHandlers(buffer);
-            UnmanagedDictionary<RuntimeType, HandleFunction> handlers;
+            Dictionary<RuntimeType, HandleFunction> handlers;
             if (messageHandlerCount > 0)
             {
                 handlers = new(messageHandlerCount);

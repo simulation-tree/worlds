@@ -1,5 +1,5 @@
-﻿using Unmanaged;
-using Unmanaged.Collections;
+﻿using Collections;
+using Unmanaged;
 
 namespace Simulation.Unsafe
 {
@@ -8,11 +8,11 @@ namespace Simulation.Unsafe
         public uint entity;
         public uint parent;
         public int componentsKey;
-        public UnmanagedList<Allocation> arrays;
-        public UnmanagedList<RuntimeType> arrayTypes;
-        public UnmanagedList<uint> arrayLengths;
-        public UnmanagedList<uint> children;
-        public UnmanagedList<uint> references;
+        public List<Allocation> arrays;
+        public List<RuntimeType> arrayTypes;
+        public List<uint> arrayLengths;
+        public List<uint> children;
+        public List<uint> references;
         public State state;
 
         public enum State : byte

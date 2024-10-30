@@ -1,18 +1,19 @@
-﻿using System;
+﻿using Collections;
+using Collections.Unsafe;
+using System;
 using System.Diagnostics;
 using Unmanaged;
-using Unmanaged.Collections;
 
 namespace Simulation.Unsafe
 {
     public unsafe struct UnsafeComponentChunk
     {
-        private UnmanagedList<uint> entities;
-        private UnmanagedArray<RuntimeType> types;
-        private UnmanagedArray<nint> components;
+        private List<uint> entities;
+        private Array<RuntimeType> types;
+        private Array<nint> components;
         private readonly int key;
 
-        private UnsafeComponentChunk(UnmanagedList<uint> entities, UnmanagedArray<RuntimeType> types, UnmanagedArray<nint> components, int key)
+        private UnsafeComponentChunk(List<uint> entities, Array<RuntimeType> types, Array<nint> components, int key)
         {
             this.entities = entities;
             this.types = types;
@@ -22,9 +23,9 @@ namespace Simulation.Unsafe
 
         public static UnsafeComponentChunk* Allocate(USpan<RuntimeType> types)
         {
-            UnmanagedList<uint> entities = UnmanagedList<uint>.Create();
-            UnmanagedArray<RuntimeType> typeArray = new(types);
-            UnmanagedArray<nint> componentArray = new(types.Length);
+            List<uint> entities = List<uint>.Create();
+            Array<RuntimeType> typeArray = new(types);
+            Array<nint> componentArray = new(types.Length);
             for (uint i = 0; i < types.Length; i++)
             {
                 RuntimeType type = types[i];
@@ -57,7 +58,7 @@ namespace Simulation.Unsafe
             Allocations.Free(ref chunk);
         }
 
-        public static UnmanagedList<uint> GetEntities(UnsafeComponentChunk* chunk)
+        public static List<uint> GetEntities(UnsafeComponentChunk* chunk)
         {
             Allocations.ThrowIfNull(chunk);
             return chunk->entities;

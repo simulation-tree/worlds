@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Collections;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Unmanaged;
-using Unmanaged.Collections;
 
 namespace Simulation.Tests
 {
@@ -71,7 +71,7 @@ namespace Simulation.Tests
             world.AddComponent(b, new Cherry("pie"));
             world.AddComponent(c, new Cherry("fortune"));
             world.SetEnabled(a, false);
-            List<Cherry> values = [];
+            System.Collections.Generic.List<Cherry> values = [];
             foreach (uint entity in world.GetAll<Cherry>(true))
             {
                 values.Add(world.GetComponent<Cherry>(entity));
@@ -103,7 +103,7 @@ namespace Simulation.Tests
             world.DestroyEntity(entity1);
             world.AddComponent(entity2, new Berry(5));
             world.DestroyEntity(entity2);
-            List<(uint, Cherry)> found = new();
+            System.Collections.Generic.List<(uint, Cherry)> found = new();
             foreach (uint entity in world.GetAll<Cherry>())
             {
                 found.Add((entity, world.GetComponent<Cherry>(entity)));
@@ -131,8 +131,8 @@ namespace Simulation.Tests
             uint entity5 = world.CreateEntity();
             world.AddComponent(entity5, component1);
             world.AddComponent(entity5, another2);
-            using UnmanagedList<SimpleComponent> buffer = UnmanagedList<SimpleComponent>.Create();
-            using UnmanagedList<uint> entities = UnmanagedList<uint>.Create();
+            using Collections.List<SimpleComponent> buffer = Collections.List<SimpleComponent>.Create();
+            using Collections.List<uint> entities = Collections.List<uint>.Create();
             world.Fill(buffer, entities);
             Assert.That(buffer.Count, Is.EqualTo(3));
             var entitiesSpan = entities.AsSpan();
@@ -140,7 +140,7 @@ namespace Simulation.Tests
             Assert.That(entities.Contains(entity2), Is.True);
             Assert.That(entities.Contains(entity5), Is.True);
             entities.Clear();
-            using UnmanagedList<Another> anotherBuffer = UnmanagedList<Another>.Create();
+            using Collections.List<Another> anotherBuffer = Collections.List<Another>.Create();
             world.Fill(anotherBuffer, entities);
             Assert.That(anotherBuffer.Count, Is.EqualTo(3));
             Assert.That(entities.Contains(entity3), Is.True);
@@ -194,8 +194,8 @@ namespace Simulation.Tests
             uint entity5 = world.CreateEntity();
             world.AddComponent(entity5, component1);
             world.AddComponent(entity5, another2);
-            List<uint> simpleComponents = world.GetAll<Cherry>().ToList();
-            List<uint> anotherComponents = world.GetAll<Berry>().ToList();
+            System.Collections.Generic.List<uint> simpleComponents = world.GetAll<Cherry>().ToList();
+            System.Collections.Generic.List<uint> anotherComponents = world.GetAll<Berry>().ToList();
             Assert.That(simpleComponents.Count, Is.EqualTo(3));
             Assert.That(anotherComponents.Count, Is.EqualTo(3));
             Assert.That(simpleComponents.Contains(entity1), Is.True);
@@ -259,7 +259,7 @@ namespace Simulation.Tests
             stopwatch.Stop();
             Console.WriteLine($"Creating {count} entities took {stopwatch.ElapsedMilliseconds}ms");
 
-            List<(uint, Apple, Berry, Cherry)> results = [];
+            System.Collections.Generic.List<(uint, Apple, Berry, Cherry)> results = [];
 
             //benchmark query
             using ComponentQuery<Apple, Berry, Cherry> query = new();
@@ -299,7 +299,7 @@ namespace Simulation.Tests
 
             //benchmarking manually iterating
             results.Clear();
-            UnmanagedDictionary<int, ComponentChunk> chunks = world.ComponentChunks;
+            Collections.Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
             USpan<RuntimeType> typesSpan = [RuntimeType.Get<Apple>(), RuntimeType.Get<Berry>(), RuntimeType.Get<Cherry>()];
             stopwatch.Restart();
             for (uint i = 0; i < chunks.Count; i++)
@@ -308,7 +308,7 @@ namespace Simulation.Tests
                 ComponentChunk chunk = chunks[key];
                 if (chunk.ContainsTypes(typesSpan))
                 {
-                    UnmanagedList<uint> entities = chunk.Entities;
+                    Collections.List<uint> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
                         uint entity = entities[e];

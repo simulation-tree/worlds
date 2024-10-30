@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Collections;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unmanaged;
-using Unmanaged.Collections;
 
 namespace Simulation.Tests
 {
@@ -30,8 +30,8 @@ namespace Simulation.Tests
             uint list = world.CreateEntity();
             world.CreateArray<char>(list, "Well hello there list".AsUSpan());
 
-            List<uint> oldEntities = world.Entities.ToList();
-            List<(uint, Apple)> apples = new();
+            System.Collections.Generic.List<uint> oldEntities = world.Entities.ToList();
+            System.Collections.Generic.List<(uint, Apple)> apples = new();
             world.ForEach((in uint entity, ref Apple apple) =>
             {
                 apples.Add((entity, apple));
@@ -45,8 +45,8 @@ namespace Simulation.Tests
             using BinaryReader reader = new(data);
 
             using World loadedWorld = reader.ReadObject<World>();
-            List<uint> newEntities = loadedWorld.Entities.ToList();
-            List<(uint, Apple)> newApples = new();
+            System.Collections.Generic.List<uint> newEntities = loadedWorld.Entities.ToList();
+            System.Collections.Generic.List<(uint, Apple)> newApples = new();
             loadedWorld.ForEach((in uint entity, ref Apple apple) =>
             {
                 newApples.Add((entity, apple));
@@ -175,27 +175,15 @@ namespace Simulation.Tests
             }
         }
 
-        [Test]
-        public void SerializeWithObjects()
-        {
-            using Types types = new();
-            types.Add<int>();
-            types.Add<float>();
-            types.Add<double>();
-
-            Dictionary<uint, object> objects = new();
-            using BinaryWriter writer = BinaryWriter.Create();
-        }
-
         public struct Types : IDisposable, ISerializable
         {
-            private UnmanagedList<RuntimeType> types;
+            private Collections.List<RuntimeType> types;
 
             public readonly USpan<RuntimeType> List => types.AsSpan();
 
             public Types()
             {
-                this.types = UnmanagedList<RuntimeType>.Create();
+                this.types = Collections.List<RuntimeType>.Create();
             }
 
             public readonly void Add<T>() where T : unmanaged
@@ -211,7 +199,7 @@ namespace Simulation.Tests
             void ISerializable.Read(BinaryReader reader)
             {
                 byte count = reader.ReadValue<byte>();
-                types = UnmanagedList<RuntimeType>.Create();
+                types = Collections.List<RuntimeType>.Create();
                 for (uint i = 0; i < count; i++)
                 {
                     RuntimeType type = reader.ReadValue<RuntimeType>();
@@ -230,13 +218,13 @@ namespace Simulation.Tests
 
         public struct Complicated : IDisposable, ISerializable
         {
-            private UnmanagedList<Player> players;
+            private Collections.List<Player> players;
 
             public readonly USpan<Player> List => players.AsSpan();
 
             public Complicated()
             {
-                players = UnmanagedList<Player>.Create();
+                players = Collections.List<Player>.Create();
             }
 
             public readonly void Add(Player player)
@@ -257,7 +245,7 @@ namespace Simulation.Tests
             void ISerializable.Read(BinaryReader reader)
             {
                 byte count = reader.ReadValue<byte>();
-                players = UnmanagedList<Player>.Create();
+                players = Collections.List<Player>.Create();
                 for (uint i = 0; i < count; i++)
                 {
                     Player player = reader.ReadObject<Player>();
@@ -279,7 +267,7 @@ namespace Simulation.Tests
         {
             public uint hp;
             public uint damage;
-            private UnmanagedList<Fruit> inventory;
+            private Collections.List<Fruit> inventory;
 
             public readonly USpan<Fruit> Inventory => inventory.AsSpan();
 
@@ -287,7 +275,7 @@ namespace Simulation.Tests
             {
                 this.hp = hp;
                 this.damage = damage;
-                this.inventory = UnmanagedList<Fruit>.Create();
+                this.inventory = Collections.List<Fruit>.Create();
             }
 
             public readonly override string ToString()
@@ -309,7 +297,7 @@ namespace Simulation.Tests
             {
                 hp = reader.ReadValue<uint>();
                 damage = reader.ReadValue<uint>();
-                inventory = UnmanagedList<Fruit>.Create();
+                inventory = Collections.List<Fruit>.Create();
                 uint count = reader.ReadValue<uint>();
                 for (uint i = 0; i < count; i++)
                 {
@@ -376,7 +364,7 @@ namespace Simulation.Tests
         {
             public readonly int a = a;
             public readonly Apple apple = apple;
-            public readonly UnmanagedList<Fruit> fruits = new(fruits);
+            public readonly Collections.List<Fruit> fruits = new(fruits);
 
             public void Dispose()
             {

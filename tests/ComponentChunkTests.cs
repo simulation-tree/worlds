@@ -1,6 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿using Collections;
+using System.Runtime.InteropServices;
 using Unmanaged;
-using Unmanaged.Collections;
 
 namespace Simulation.Tests
 {
@@ -30,8 +30,8 @@ namespace Simulation.Tests
             floatComponent = 3.14f;
             Assert.That(chunk.Entities, Has.Count.EqualTo(1));
             Assert.That(chunk.Entities[0], Is.EqualTo(entity));
-            UnmanagedList<int> intComponents = chunk.GetComponents<int>();
-            UnmanagedList<float> floatComponents = chunk.GetComponents<float>();
+            List<int> intComponents = chunk.GetComponents<int>();
+            List<float> floatComponents = chunk.GetComponents<float>();
             Assert.That(intComponents, Has.Count.EqualTo(1));
             Assert.That(intComponents[0], Is.EqualTo(42));
             Assert.That(floatComponents, Has.Count.EqualTo(1));
@@ -52,8 +52,8 @@ namespace Simulation.Tests
             floatComponent = 3.14f;
             chunk.RemoveEntity(entity);
             Assert.That(chunk.Entities, Is.Empty);
-            UnmanagedList<int> intComponents = chunk.GetComponents<int>();
-            UnmanagedList<float> floatComponents = chunk.GetComponents<float>();
+            List<int> intComponents = chunk.GetComponents<int>();
+            List<float> floatComponents = chunk.GetComponents<float>();
             Assert.That(intComponents, Is.Empty);
             Assert.That(floatComponents, Is.Empty);
             chunk.Dispose();
@@ -75,7 +75,7 @@ namespace Simulation.Tests
             Assert.That(chunkA.Entities, Is.Empty);
             Assert.That(chunkB.Entities, Has.Count.EqualTo(1));
             Assert.That(chunkB.Entities[0], Is.EqualTo(entity));
-            UnmanagedList<int> intComponents = chunkB.GetComponents<int>();
+            List<int> intComponents = chunkB.GetComponents<int>();
             Assert.That(intComponents, Has.Count.EqualTo(1));
             Assert.That(intComponents[0], Is.EqualTo(42));
 
@@ -87,7 +87,7 @@ namespace Simulation.Tests
             Assert.That(chunkB.Entities, Is.Empty);
             Assert.That(chunkC.Entities, Has.Count.EqualTo(1));
             Assert.That(chunkC.Entities[0], Is.EqualTo(entity));
-            UnmanagedList<float> floatComponents = chunkC.GetComponents<float>();
+            List<float> floatComponents = chunkC.GetComponents<float>();
             Assert.That(floatComponents, Has.Count.EqualTo(1));
             Assert.That(floatComponents[0], Is.EqualTo(3.14f));
 
