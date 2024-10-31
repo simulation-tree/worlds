@@ -1098,7 +1098,7 @@ namespace Simulation
         public readonly void RemoveReference(uint entity, uint referencedEntity)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
-            UnsafeWorld.ThrowIfEntityIsMissing(value, referencedEntity);
+            //UnsafeWorld.ThrowIfEntityIsMissing(value, referencedEntity);
             ref EntityDescription slot = ref Slots[entity - 1];
             uint index = slot.references.IndexOf(referencedEntity);
             slot.references.RemoveAt(index);
