@@ -105,7 +105,7 @@ namespace Simulation
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfNoEntities(uint count)
+        private static void ThrowIfNoEntities(uint count)
         {
             if (count == 0)
             {
@@ -146,6 +146,9 @@ namespace Simulation
             throw new InvalidOperationException("Entity selection is empty, unable to proceed.");
         }
 
+        /// <summary>
+        /// Removes all instructions inside this operation.
+        /// </summary>
         public readonly void ClearInstructions()
         {
             ThrowIfDisposed();
@@ -223,7 +226,7 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Resets the selection.
+        /// Resets the entity selection.
         /// </summary>
         public void ClearSelection()
         {
@@ -292,7 +295,7 @@ namespace Simulation
         public void AddComponent<T>(T component) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
-            AddInstruction(Instruction.AddComponent<T>(component));
+            AddInstruction(Instruction.AddComponent(component));
         }
 
         /// <summary>
@@ -303,6 +306,15 @@ namespace Simulation
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.SetComponent(component));
+        }
+
+        /// <summary>
+        /// Removes the given component type from all selected entities.
+        /// </summary>
+        public void RemoveComponent<T>() where T : unmanaged
+        {
+            ThrowIfSelectionIsEmpty();
+            AddInstruction(Instruction.RemoveComponent<T>());
         }
 
         /// <summary>
@@ -369,7 +381,7 @@ namespace Simulation
             list.Write((uint)(start + (sizeof(Instruction) * length)), instruction);
         }
 
-        public unsafe void RemoveInstructionAt(uint index)
+        public readonly unsafe void RemoveInstructionAt(uint index)
         {
             ThrowIfOutOfRange(index);
             ThrowIfNoInstructions();

@@ -40,8 +40,8 @@ namespace Simulation.Tests
             operation.DestroySelected();
             world.Perform(operation);
 
-            Assert.That(world.Count, Is.EqualTo(29));
-            Assert.That((uint)world.Entities.First(), Is.EqualTo(1));
+            Assert.That(world.Count, Is.EqualTo(1));
+            Assert.That(world.Entities.First(), Is.EqualTo(1));
         }
 
         [Test]
@@ -96,16 +96,6 @@ namespace Simulation.Tests
             Assert.That(world.GetParent(firstEntity), Is.EqualTo(default(uint)));
             Assert.That(world.GetParent(secondEntity), Is.EqualTo(default(uint)));
             Assert.That(world.GetParent(thirdEntity), Is.EqualTo(firstEntity));
-        }
-
-        public struct TestComponent
-        {
-            public int value;
-
-            public TestComponent(int value)
-            {
-                this.value = value;
-            }
         }
 
         [Test]
@@ -206,6 +196,60 @@ namespace Simulation.Tests
             world.Perform(operation);
 
             Assert.That(world.GetArrayLength<char>(entity), Is.EqualTo(8));
+        }
+
+        [Test]
+        public void AddThenRemoveComponents()
+        {
+            using Operation operation = new();
+            for (uint i = 1; i <= 5; i++)
+            {
+                operation.CreateEntity();
+            }
+
+            operation.AddComponent(new TestComponent(1));
+            operation.AddComponent(new SimpleComponent("what"));
+
+            using World world = new();
+            world.Perform(operation);
+
+            for (uint i = 1; i <= 5; i++)
+            {
+                Assert.That(world.ContainsComponent<TestComponent>(i), Is.True);
+                Assert.That(world.ContainsComponent<SimpleComponent>(i), Is.True);
+            }
+
+            operation.ClearInstructions();
+            for (uint i = 1; i <= 5; i++)
+            {
+                operation.SelectEntity(i);
+            }
+
+            operation.RemoveComponent<TestComponent>();
+
+            world.Perform(operation);
+
+            for (uint i = 1; i <= 5; i++)
+            {
+                Assert.That(world.ContainsComponent<TestComponent>(i), Is.False);
+                Assert.That(world.ContainsComponent<SimpleComponent>(i), Is.True);
+            }
+
+            operation.ClearInstructions();
+            for (uint i = 1; i <= 5; i++)
+            {
+                operation.SelectEntity(i);
+            }
+
+            operation.RemoveComponent<SimpleComponent>();
+
+            world.Perform(operation);
+
+            for (uint i = 1; i <= 5; i++)
+            {
+                Assert.That(world.ContainsComponent<TestComponent>(i), Is.False);
+                Assert.That(world.ContainsComponent<SimpleComponent>(i), Is.False);
+            }
         }
     }
 }

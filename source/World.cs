@@ -1,9 +1,9 @@
 ﻿using Collections;
 using Simulation.Unsafe;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using Unmanaged;
+using IEnumerableUInt = System.Collections.Generic.IEnumerable<uint>;
 
 namespace Simulation
 {
@@ -29,19 +29,19 @@ namespace Simulation
         public readonly uint MaxEntityValue => Slots.Count;
 
         public readonly bool IsDisposed => UnsafeWorld.IsDisposed(value);
-        public readonly Collections.List<EntityDescription> Slots => UnsafeWorld.GetEntitySlots(value);
-        public readonly Collections.List<uint> Free => UnsafeWorld.GetFreeEntities(value);
-        public readonly Collections.Dictionary<int, ComponentChunk> ComponentChunks => UnsafeWorld.GetComponentChunks(value);
+        public readonly List<EntityDescription> Slots => UnsafeWorld.GetEntitySlots(value);
+        public readonly List<uint> Free => UnsafeWorld.GetFreeEntities(value);
+        public readonly Dictionary<int, ComponentChunk> ComponentChunks => UnsafeWorld.GetComponentChunks(value);
 
         /// <summary>
         /// All entities that exist in the world.
         /// </summary>
-        public readonly IEnumerable<uint> Entities
+        public readonly IEnumerableUInt Entities
         {
             get
             {
-                Collections.List<EntityDescription> slots = Slots;
-                Collections.List<uint> free = Free;
+                List<EntityDescription> slots = Slots;
+                List<uint> free = Free;
                 for (uint i = 0; i < slots.Count; i++)
                 {
                     EntityDescription description = slots[i];
@@ -153,8 +153,8 @@ namespace Simulation
         readonly void ISerializable.Write(BinaryWriter writer)
         {
             //collect info about all types referenced
-            using Collections.List<RuntimeType> uniqueTypes = Collections.List<RuntimeType>.Create();
-            Collections.Dictionary<int, ComponentChunk> chunks = ComponentChunks;
+            using List<RuntimeType> uniqueTypes = new(4);
+            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
             {
                 ComponentChunk chunk = chunks[hash];
@@ -237,8 +237,8 @@ namespace Simulation
         {
             value = UnsafeWorld.Allocate();
             uint typeCount = reader.ReadValue<uint>();
-            Collections.List<EntityDescription> slots = Slots;
-            using Collections.List<RuntimeType> uniqueTypes = Collections.List<RuntimeType>.Create();
+            List<EntityDescription> slots = Slots;
+            using List<RuntimeType> uniqueTypes = new(4);
             for (uint i = 0; i < typeCount; i++)
             {
                 RuntimeType type = reader.ReadValue<RuntimeType>();
@@ -248,7 +248,7 @@ namespace Simulation
             //create entities and fill them with components and arrays
             uint entityCount = reader.ReadValue<uint>();
             uint currentEntityId = 1;
-            using Collections.List<uint> temporaryEntities = Collections.List<uint>.Create();
+            using List<uint> temporaryEntities = new(4);
             for (uint i = 0; i < entityCount; i++)
             {
                 uint entityId = reader.ReadValue<uint>();
@@ -383,7 +383,7 @@ namespace Simulation
             }
         }
 
-        private readonly void Perform(Instruction instruction, Collections.List<uint> selection, Collections.List<uint> entities)
+        private readonly void Perform(Instruction instruction, List<uint> selection, List<uint> entities)
         {
             if (instruction.type == Instruction.Type.CreateEntity)
             {
@@ -427,13 +427,11 @@ namespace Simulation
                 {
                     uint relativeOffset = (uint)instruction.B;
                     uint entity = entities[(entities.Count - 1) - relativeOffset];
-                    selection.Clear();
                     selection.Add(entity);
                 }
                 else if (instruction.A == 1)
                 {
                     uint entity = (uint)instruction.B;
-                    selection.Clear();
                     selection.Add(entity);
                 }
             }
@@ -579,15 +577,15 @@ namespace Simulation
 
         public readonly void Perform(USpan<Instruction> instructions)
         {
-            using Collections.List<uint> selection = Collections.List<uint>.Create();
-            using Collections.List<uint> entities = Collections.List<uint>.Create();
+            using List<uint> selection = new(4);
+            using List<uint> entities = new(4);
             foreach (Instruction instruction in instructions)
             {
                 Perform(instruction, selection, entities);
             }
         }
 
-        public readonly void Perform(Collections.List<Instruction> instructions)
+        public readonly void Perform(List<Instruction> instructions)
         {
             Perform(instructions.AsSpan());
         }
@@ -602,8 +600,8 @@ namespace Simulation
         /// </summary>
         public readonly void Perform(Operation operation)
         {
-            using Collections.List<uint> selection = Collections.List<uint>.Create();
-            using Collections.List<uint> entities = Collections.List<uint>.Create();
+            using List<uint> selection = new(4);
+            using List<uint> entities = new(4);
             uint length = operation.Length;
             for (uint i = 0; i < length; i++)
             {
@@ -684,7 +682,7 @@ namespace Simulation
         public readonly bool TryGetFirst<T>(out T entity, bool onlyEnabled = false) where T : unmanaged, IEntity
         {
             Entity.ThrowIfTypeLayoutMismatches<T>();
-            Collections.Dictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             Definition definition = default(T).Definition;
             USpan<RuntimeType> componentTypes = stackalloc RuntimeType[definition.ComponentTypeCount];
             definition.CopyComponentTypes(componentTypes);
@@ -1287,7 +1285,7 @@ namespace Simulation
         /// </summary>
         public readonly bool ContainsAnyComponent<T>() where T : unmanaged
         {
-            Collections.Dictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             RuntimeType type = RuntimeType.Get<T>();
             foreach (int hash in chunks.Keys)
             {
@@ -1469,7 +1467,7 @@ namespace Simulation
         /// </summary>
         public readonly uint CountEntities<T>(bool onlyEnabled = false) where T : unmanaged, IEntity
         {
-            Collections.Dictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             Definition definition = default(T).Definition;
             USpan<RuntimeType> componentTypes = stackalloc RuntimeType[definition.ComponentTypeCount];
             definition.CopyComponentTypes(componentTypes);
@@ -1616,9 +1614,9 @@ namespace Simulation
         /// Finds all entities that contain all of the given component types and
         /// adds them to the given list.
         /// </summary>
-        public readonly void Fill(USpan<RuntimeType> componentTypes, Collections.List<uint> list, bool onlyEnabled = false)
+        public readonly void Fill(USpan<RuntimeType> componentTypes, List<uint> list, bool onlyEnabled = false)
         {
-            Collections.Dictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
             {
                 ComponentChunk chunk = chunks[hash];
@@ -1643,10 +1641,10 @@ namespace Simulation
             }
         }
 
-        public readonly void Fill<T>(Collections.List<T> list, bool onlyEnabled = false) where T : unmanaged
+        public readonly void Fill<T>(List<T> list, bool onlyEnabled = false) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
-            Collections.Dictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
             {
                 ComponentChunk chunk = chunks[hash];
@@ -1671,10 +1669,10 @@ namespace Simulation
             }
         }
 
-        public readonly void Fill<T>(Collections.List<uint> entities, bool onlyEnabled = false) where T : unmanaged
+        public readonly void Fill<T>(List<uint> entities, bool onlyEnabled = false) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
-            Collections.Dictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
             {
                 ComponentChunk chunk = chunks[hash];
@@ -1699,10 +1697,10 @@ namespace Simulation
             }
         }
 
-        public readonly void Fill<T>(Collections.List<T> components, Collections.List<uint> entities, bool onlyEnabled = false) where T : unmanaged
+        public readonly void Fill<T>(List<T> components, List<uint> entities, bool onlyEnabled = false) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
-            Collections.Dictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
             {
                 ComponentChunk chunk = chunks[hash];
@@ -1729,9 +1727,9 @@ namespace Simulation
             }
         }
 
-        public readonly void Fill(RuntimeType componentType, Collections.List<uint> entities, bool onlyEnabled = false)
+        public readonly void Fill(RuntimeType componentType, List<uint> entities, bool onlyEnabled = false)
         {
-            Collections.Dictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
             {
                 ComponentChunk chunk = chunks[hash];
@@ -1759,9 +1757,9 @@ namespace Simulation
         /// <summary>
         /// Iterates over all entities that contain the given component type.
         /// </summary>
-        public readonly IEnumerable<uint> GetAll(RuntimeType componentType, bool onlyEnabled = false)
+        public readonly IEnumerableUInt GetAll(RuntimeType componentType, bool onlyEnabled = false)
         {
-            Collections.Dictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             uint chunkCount = chunks.Count;
             for (uint i = 0; i < chunkCount; i++)
             {
@@ -1788,7 +1786,7 @@ namespace Simulation
             }
         }
 
-        public readonly IEnumerable<uint> GetAll<T>(bool onlyEnabled = false) where T : unmanaged
+        public readonly IEnumerableUInt GetAll<T>(bool onlyEnabled = false) where T : unmanaged
         {
             return GetAll(RuntimeType.Get<T>(), onlyEnabled);
         }
@@ -1796,7 +1794,7 @@ namespace Simulation
         public readonly void ForEach<T>(QueryCallback callback, bool onlyEnabled = false) where T : unmanaged
         {
             RuntimeType componentType = RuntimeType.Get<T>();
-            Collections.Dictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
             {
                 ComponentChunk chunk = chunks[hash];
@@ -1830,7 +1828,7 @@ namespace Simulation
         /// </summary>
         public readonly void ForEach(USpan<RuntimeType> componentTypes, QueryCallback callback, bool onlyEnabled = false)
         {
-            Collections.Dictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
             {
                 ComponentChunk chunk = chunks[hash];
@@ -1859,13 +1857,13 @@ namespace Simulation
         {
             USpan<RuntimeType> types = stackalloc RuntimeType[1];
             types[0] = RuntimeType.Get<T>();
-            Collections.Dictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
             {
                 ComponentChunk chunk = chunks[hash];
                 if (chunk.ContainsTypes(types))
                 {
-                    Collections.List<uint> entities = chunk.Entities;
+                    List<uint> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
                         if (!onlyEnabled)
@@ -1892,13 +1890,13 @@ namespace Simulation
             USpan<RuntimeType> types = stackalloc RuntimeType[2];
             types[0] = RuntimeType.Get<T1>();
             types[1] = RuntimeType.Get<T2>();
-            Collections.Dictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
             {
                 ComponentChunk chunk = chunks[hash];
                 if (chunk.ContainsTypes(types))
                 {
-                    Collections.List<uint> entities = chunk.Entities;
+                    List<uint> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
                         if (!onlyEnabled)
@@ -1928,13 +1926,13 @@ namespace Simulation
             types[0] = RuntimeType.Get<T1>();
             types[1] = RuntimeType.Get<T2>();
             types[2] = RuntimeType.Get<T3>();
-            Collections.Dictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
             {
                 ComponentChunk chunk = chunks[hash];
                 if (chunk.ContainsTypes(types))
                 {
-                    Collections.List<uint> entities = chunk.Entities;
+                    List<uint> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
                         if (!onlyEnabled)
@@ -1967,13 +1965,13 @@ namespace Simulation
             types[1] = RuntimeType.Get<T2>();
             types[2] = RuntimeType.Get<T3>();
             types[3] = RuntimeType.Get<T4>();
-            Collections.Dictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
             {
                 ComponentChunk chunk = chunks[hash];
                 if (chunk.ContainsTypes(types))
                 {
-                    Collections.List<uint> entities = chunk.Entities;
+                    List<uint> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
                         if (!onlyEnabled)
