@@ -189,18 +189,6 @@ namespace Simulation
             return ContainsArray(RuntimeType.Get<T>());
         }
 
-        public readonly Definition AddComponentType(RuntimeType type)
-        {
-            ThrowIfFull();
-            ThrowIfComponentTypeAlreadyExists(type);
-            byte typeCount = TotalTypeCount;
-            Definition newDefinition = this;
-            newDefinition.types[typeCount] = type.value;
-            newDefinition.typesMask = (uint)(typesMask & ~(1UL << typeCount));
-            newDefinition.componentTypes++;
-            return newDefinition;
-        }
-
         public readonly Definition AddComponentTypes(USpan<RuntimeType> types)
         {
             ThrowIfFull();
@@ -210,16 +198,33 @@ namespace Simulation
             for (uint i = 0; i < types.Length; i++)
             {
                 newDefinition.types[typeCount + i] = types[i].value;
-                newDefinition.typesMask = (uint)(typesMask & ~(1UL << (byte)(typeCount + i)));
+                newDefinition.typesMask = (uint)(newDefinition.typesMask & ~(1UL << (byte)(typeCount + i)));
             }
 
             newDefinition.componentTypes += (byte)types.Length;
             return newDefinition;
         }
 
+        public readonly Definition AddArrayTypes(USpan<RuntimeType> types)
+        {
+            ThrowIfFull();
+            byte typeCount = TotalTypeCount;
+            ThrowIfTypeCountIsTooGreat(typeCount + types.Length);
+            Definition newDefinition = this;
+            for (uint i = 0; i < types.Length; i++)
+            {
+                newDefinition.types[typeCount + i] = types[i].value;
+                newDefinition.typesMask = (uint)(newDefinition.typesMask | 1UL << (byte)(typeCount + i));
+            }
+
+            newDefinition.arrayTypes += (byte)types.Length;
+            return newDefinition;
+        }
+
         public readonly Definition AddComponentType<T>() where T : unmanaged
         {
-            return AddComponentType(RuntimeType.Get<T>());
+            USpan<RuntimeType> types = stackalloc RuntimeType[1] { RuntimeType.Get<T>() };
+            return AddComponentTypes(types);
         }
 
         public readonly Definition AddComponentTypes<T1, T2>() where T1 : unmanaged where T2 : unmanaged
@@ -252,37 +257,10 @@ namespace Simulation
             return AddComponentTypes(types);
         }
 
-        public readonly Definition AddArrayType(RuntimeType type)
-        {
-            ThrowIfFull();
-            ThrowIfArrayTypeAlreadyExists(type);
-            byte typeCount = TotalTypeCount;
-            Definition newDefinition = this;
-            newDefinition.types[typeCount] = type.value;
-            newDefinition.typesMask = (uint)(typesMask | 1UL << typeCount);
-            newDefinition.arrayTypes++;
-            return newDefinition;
-        }
-
         public readonly Definition AddArrayType<T>() where T : unmanaged
         {
-            return AddArrayType(RuntimeType.Get<T>());
-        }
-
-        public readonly Definition AddArrayTypes(USpan<RuntimeType> types)
-        {
-            ThrowIfFull();
-            byte typeCount = TotalTypeCount;
-            ThrowIfTypeCountIsTooGreat(typeCount + types.Length);
-            Definition newDefinition = this;
-            for (uint i = 0; i < types.Length; i++)
-            {
-                newDefinition.types[typeCount + i] = types[i].value;
-                newDefinition.typesMask = (uint)(typesMask | 1UL << (byte)(typeCount + i));
-            }
-
-            newDefinition.arrayTypes += (byte)types.Length;
-            return newDefinition;
+            USpan<RuntimeType> types = stackalloc RuntimeType[1] { RuntimeType.Get<T>() };
+            return AddArrayTypes(types);
         }
 
         public readonly Definition AddArrayTypes<T1, T2>() where T1 : unmanaged where T2 : unmanaged

@@ -108,7 +108,7 @@ namespace Simulation
             }
 
             World hostWorld = GetWorld(simulator);
-            SystemContainer container = new(simulator, instance, type, handlers, template.Initialize, template.Update, template.Finalize);
+            SystemContainer container = new(simulator, instance, type, handlers, template.Initialize, template.Iterate, template.Finalize);
             simulator->systems.Add(container);
             SystemContainer<T> genericContainer = new(simulator, simulator->systems.Count - 1);
             container.Initialize(hostWorld);

@@ -75,8 +75,8 @@ public static class EntityFunctions
     /// </summary>
     public static T Clone<T>(this T entity) where T : unmanaged, IEntity
     {
-        World world = entity.GetWorld();
-        uint sourceEntity = entity.GetEntityValue();
+        World world = entity.World;
+        uint sourceEntity = entity.Value;
         uint destinationEntity = world.CloneEntity(sourceEntity);
         return new Entity(world, destinationEntity).As<T>();
     }
@@ -88,25 +88,26 @@ public static class EntityFunctions
     public static void Become<T>(this T entity, Definition definition) where T : unmanaged, IEntity
     {
         //todo: efficiency: kinda expensive to perform these ops one by one, should instead add all missing at once
-        USpan<RuntimeType> componentTypes = stackalloc RuntimeType[definition.ComponentTypeCount];
-        definition.CopyComponentTypes(componentTypes);
-        for (uint i = 0; i < componentTypes.Length; i++)
+        World world = entity.World;
+        uint value = entity.Value;
+        USpan<RuntimeType> buffer = stackalloc RuntimeType[definition.TotalTypeCount];
+        definition.CopyComponentTypes(buffer);
+        for (uint i = 0; i < definition.ComponentTypeCount; i++)
         {
-            RuntimeType componentType = componentTypes[i];
-            if (!entity.World.ContainsComponent(entity.Value, componentType))
+            RuntimeType componentType = buffer[i];
+            if (!world.ContainsComponent(value, componentType))
             {
-                entity.World.AddComponent(entity.Value, componentType);
+                world.AddComponent(value, componentType);
             }
         }
 
-        USpan<RuntimeType> arrayTypes = stackalloc RuntimeType[definition.ArrayTypeCount];
-        definition.CopyArrayTypes(arrayTypes);
-        for (uint i = 0; i < arrayTypes.Length; i++)
+        definition.CopyArrayTypes(buffer);
+        for (uint i = 0; i < definition.ArrayTypeCount; i++)
         {
-            RuntimeType arrayType = arrayTypes[i];
-            if (!entity.World.ContainsArray(entity.Value, arrayType))
+            RuntimeType arrayType = buffer[i];
+            if (!world.ContainsArray(value, arrayType))
             {
-                entity.World.CreateArray(entity.Value, arrayType);
+                world.CreateArray(value, arrayType);
             }
         }
     }
@@ -118,21 +119,20 @@ public static class EntityFunctions
     {
         World world = entity.World;
         uint value = entity.Value;
-        USpan<RuntimeType> componentTypes = stackalloc RuntimeType[definition.ComponentTypeCount];
-        definition.CopyComponentTypes(componentTypes);
-        for (uint i = 0; i < componentTypes.Length; i++)
+        USpan<RuntimeType> buffer = stackalloc RuntimeType[definition.TotalTypeCount];
+        definition.CopyComponentTypes(buffer);
+        for (uint i = 0; i < definition.ComponentTypeCount; i++)
         {
-            if (!world.ContainsComponent(value, componentTypes[i]))
+            if (!world.ContainsComponent(value, buffer[i]))
             {
                 return false;
             }
         }
 
-        USpan<RuntimeType> arrayTypes = stackalloc RuntimeType[definition.ArrayTypeCount];
-        definition.CopyArrayTypes(arrayTypes);
-        for (uint i = 0; i < arrayTypes.Length; i++)
+        definition.CopyArrayTypes(buffer);
+        for (uint i = 0; i < definition.ArrayTypeCount; i++)
         {
-            if (!world.ContainsArray(value, arrayTypes[i]))
+            if (!world.ContainsArray(value, buffer[i]))
             {
                 return false;
             }
@@ -149,21 +149,20 @@ public static class EntityFunctions
         World world = entity.World;
         uint value = entity.Value;
         Definition definition = entity.Definition;
-        USpan<RuntimeType> componentTypes = stackalloc RuntimeType[definition.ComponentTypeCount];
-        definition.CopyComponentTypes(componentTypes);
-        for (uint i = 0; i < componentTypes.Length; i++)
+        USpan<RuntimeType> buffer = stackalloc RuntimeType[definition.TotalTypeCount];
+        definition.CopyComponentTypes(buffer);
+        for (uint i = 0; i < definition.ComponentTypeCount; i++)
         {
-            if (!world.ContainsComponent(value, componentTypes[i]))
+            if (!world.ContainsComponent(value, buffer[i]))
             {
                 return false;
             }
         }
 
-        USpan<RuntimeType> arrayTypes = stackalloc RuntimeType[definition.ArrayTypeCount];
-        definition.CopyArrayTypes(arrayTypes);
-        for (uint i = 0; i < arrayTypes.Length; i++)
+        definition.CopyArrayTypes(buffer);
+        for (uint i = 0; i < definition.ArrayTypeCount; i++)
         {
-            if (!world.ContainsArray(value, arrayTypes[i]))
+            if (!world.ContainsArray(value, buffer[i]))
             {
                 return false;
             }
@@ -180,11 +179,12 @@ public static class EntityFunctions
     /// </summary>
     public static async Task UntilCompliant<T>(this T entity, Wait action, CancellationToken cancellation = default) where T : unmanaged, IEntity
     {
+        World world = entity.World;
         while (true)
         {
             if (!entity.IsCompliant())
             {
-                await action(entity.World, cancellation);
+                await action(world, cancellation);
             }
             else
             {

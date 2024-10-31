@@ -197,5 +197,20 @@ namespace Simulation.Tests
             Assert.That(entityA.Is(definition), Is.False);
             Assert.That(entityB.Is(definition), Is.True);
         }
+
+        [Test]
+        public void ListingTypes()
+        {
+            Definition a = new Definition().AddComponentType<byte>().AddArrayTypes<char, float>();
+            Assert.That(a.ComponentTypeCount, Is.EqualTo(1));
+            Assert.That(a.ArrayTypeCount, Is.EqualTo(2));
+            Assert.That(a.TotalTypeCount, Is.EqualTo(3));
+            Assert.That(a[0].type, Is.EqualTo(RuntimeType.Get<byte>()));
+            Assert.That(a[1].type, Is.EqualTo(RuntimeType.Get<char>()));
+            Assert.That(a[2].type, Is.EqualTo(RuntimeType.Get<float>()));
+            Assert.That(a.IsArrayType(0), Is.False);
+            Assert.That(a.IsArrayType(1), Is.True);
+            Assert.That(a.IsArrayType(2), Is.True);
+        }
     }
 }

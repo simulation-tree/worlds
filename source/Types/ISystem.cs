@@ -6,7 +6,7 @@ namespace Simulation
     public interface ISystem
     {
         InitializeFunction Initialize { get; }
-        IterateFunction Update { get; }
+        IterateFunction Iterate { get; }
         FinalizeFunction Finalize { get; }
 
         public uint GetMessageHandlers(USpan<MessageHandler> buffer)
