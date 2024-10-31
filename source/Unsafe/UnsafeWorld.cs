@@ -64,7 +64,7 @@ namespace Simulation.Unsafe
 
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, position);
             if (slot.state == EntityDescription.State.Destroyed)
-            {
+            {   
                 throw new NullReferenceException($"Entity `{entity}` not found");
             }
         }

@@ -853,9 +853,7 @@ namespace Simulation
         /// </summary>
         public readonly uint CreateEntity()
         {
-            uint entity = GetNextEntity();
-            InitializeEntity(default, entity, default);
-            return entity;
+            return CreateEntity(default, default);
         }
 
         /// <summary>
@@ -863,15 +861,87 @@ namespace Simulation
         /// </summary>
         public readonly uint CreateEntity(uint parent)
         {
-            uint entity = GetNextEntity();
-            InitializeEntity(default, entity, parent);
-            return entity;
+            return CreateEntity(default, parent);
         }
 
-        public readonly uint CreateEntity(Definition definition, uint parent = default)
+        public readonly uint CreateEntity(Definition definition)
+        {
+            return CreateEntity(definition, default);
+        }
+
+        public readonly uint CreateEntity(Definition definition, uint parent)
         {
             uint entity = GetNextEntity();
             InitializeEntity(definition, entity, parent);
+            return entity;
+        }
+
+        public readonly uint CreateEntity<T1>(T1 component1) where T1 : unmanaged
+        {
+            uint entity = GetNextEntity();
+            Definition definition = new Definition().AddComponentType<T1>();
+            InitializeEntity(definition, entity, default);
+            SetComponent(entity, component1);
+            return entity;
+        }
+
+        public readonly uint CreateEntity<T1, T2>(T1 component1, T2 component2) where T1 : unmanaged where T2 : unmanaged
+        {
+            uint entity = GetNextEntity();
+            Definition definition = new Definition().AddComponentTypes<T1, T2>();
+            InitializeEntity(definition, entity, default);
+            SetComponent(entity, component1);
+            SetComponent(entity, component2);
+            return entity;
+        }
+
+        public readonly uint CreateEntity<T1, T2, T3>(T1 component1, T2 component2, T3 component3) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+        {
+            uint entity = GetNextEntity();
+            Definition definition = new Definition().AddComponentTypes<T1, T2, T3>();
+            InitializeEntity(definition, entity, default);
+            SetComponent(entity, component1);
+            SetComponent(entity, component2);
+            SetComponent(entity, component3);
+            return entity;
+        }
+
+        public readonly uint CreateEntity<T1, T2, T3, T4>(T1 component1, T2 component2, T3 component3, T4 component4) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+        {
+            uint entity = GetNextEntity();
+            Definition definition = new Definition().AddComponentTypes<T1, T2, T3, T4>();
+            InitializeEntity(definition, entity, default);
+            SetComponent(entity, component1);
+            SetComponent(entity, component2);
+            SetComponent(entity, component3);
+            SetComponent(entity, component4);
+            return entity;
+        }
+
+        public readonly uint CreateEntity<T1, T2, T3, T4, T5>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
+        {
+            uint entity = GetNextEntity();
+            Definition definition = new Definition().AddComponentTypes<T1, T2, T3, T4, T5>();
+            InitializeEntity(definition, entity, default);
+            SetComponent(entity, component1);
+            SetComponent(entity, component2);
+            SetComponent(entity, component3);
+            SetComponent(entity, component4);
+            SetComponent(entity, component5);
+            return entity;
+        }
+
+        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
+        {
+            uint entity = GetNextEntity();
+            Definition definition = new Definition().AddComponentTypes<T1, T2, T3, T4, T5, T6>();
+            InitializeEntity(definition, entity, default);
+            SetComponent(entity, component1);
+            SetComponent(entity, component2);
+            SetComponent(entity, component3);
+            SetComponent(entity, component4);
+            SetComponent(entity, component5);
+            SetComponent(entity, component6);
             return entity;
         }
 

@@ -79,7 +79,7 @@ namespace Simulation.Tests
         }
 
         [Test]
-        public void TwoComponents()
+        public void AddingTwoComponents()
         {
             using World world = new();
             uint entity = world.CreateEntity();
@@ -92,6 +92,22 @@ namespace Simulation.Tests
             world.RemoveComponent<SimpleComponent>(entity);
             Assert.Throws<NullReferenceException>(() => world.GetComponentRef<SimpleComponent>(entity));
             Assert.That(world.GetComponent<Another>(entity), Is.EqualTo(component2));
+        }
+
+        [Test]
+        public void TwoInitialComponents()
+        {
+            using World world = new();
+            uint a = world.CreateEntity(new Another(32), new SimpleComponent("what is this?"));
+            Assert.That(world.ContainsComponent<SimpleComponent>(a), Is.True);
+            Assert.That(world.ContainsComponent<Another>(a), Is.True);
+            uint b = world.CreateEntity(new SimpleComponent("what is this?"), new Another(32));
+            Assert.That(world.ContainsComponent<SimpleComponent>(b), Is.True);
+            Assert.That(world.ContainsComponent<Another>(b), Is.True);
+            Assert.That(world.GetComponent<SimpleComponent>(a), Is.EqualTo(world.GetComponent<SimpleComponent>(b)));
+            Assert.That(world.GetComponent<Another>(a), Is.EqualTo(world.GetComponent<Another>(b)));
+            world.RemoveComponent<SimpleComponent>(a);
+            Assert.That(world.ContainsComponent<SimpleComponent>(a), Is.False);
         }
 
         [Test]

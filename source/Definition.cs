@@ -151,6 +151,44 @@ namespace Simulation
             return true;
         }
 
+        public readonly bool ContainsComponent(RuntimeType type)
+        {
+            byte typeCount = TotalTypeCount;
+            for (uint i = 0; i < typeCount; i++)
+            {
+                if (types[i] == type.value && !IsArrayType(i))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public readonly bool ContainsComponent<T>() where T : unmanaged
+        {
+            return ContainsComponent(RuntimeType.Get<T>());
+        }
+
+        public readonly bool ContainsArray(RuntimeType type)
+        {
+            byte typeCount = TotalTypeCount;
+            for (uint i = 0; i < typeCount; i++)
+            {
+                if (types[i] == type.value && IsArrayType(i))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public readonly bool ContainsArray<T>() where T : unmanaged
+        {
+            return ContainsArray(RuntimeType.Get<T>());
+        }
+
         public readonly Definition AddComponentType(RuntimeType type)
         {
             ThrowIfFull();
@@ -163,6 +201,22 @@ namespace Simulation
             return newDefinition;
         }
 
+        public readonly Definition AddComponentTypes(USpan<RuntimeType> types)
+        {
+            ThrowIfFull();
+            byte typeCount = TotalTypeCount;
+            ThrowIfTypeCountIsTooGreat(typeCount + types.Length);
+            Definition newDefinition = this;
+            for (uint i = 0; i < types.Length; i++)
+            {
+                newDefinition.types[typeCount + i] = types[i].value;
+                newDefinition.typesMask = (uint)(typesMask & ~(1UL << (byte)(typeCount + i)));
+            }
+
+            newDefinition.componentTypes += (byte)types.Length;
+            return newDefinition;
+        }
+
         public readonly Definition AddComponentType<T>() where T : unmanaged
         {
             return AddComponentType(RuntimeType.Get<T>());
@@ -170,22 +224,32 @@ namespace Simulation
 
         public readonly Definition AddComponentTypes<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
-            return AddComponentType<T1>().AddComponentType<T2>();
+            USpan<RuntimeType> types = stackalloc RuntimeType[2] { RuntimeType.Get<T1>(), RuntimeType.Get<T2>() };
+            return AddComponentTypes(types);
         }
 
         public readonly Definition AddComponentTypes<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            return AddComponentType<T1>().AddComponentType<T2>().AddComponentType<T3>();
+            USpan<RuntimeType> types = stackalloc RuntimeType[3] { RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>() };
+            return AddComponentTypes(types);
         }
 
         public readonly Definition AddComponentTypes<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            return AddComponentType<T1>().AddComponentType<T2>().AddComponentType<T3>().AddComponentType<T4>();
+            USpan<RuntimeType> types = stackalloc RuntimeType[4] { RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>(), RuntimeType.Get<T4>() };
+            return AddComponentTypes(types);
         }
 
         public readonly Definition AddComponentTypes<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
-            return AddComponentType<T1>().AddComponentType<T2>().AddComponentType<T3>().AddComponentType<T4>().AddComponentType<T5>();
+            USpan<RuntimeType> types = stackalloc RuntimeType[5] { RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>(), RuntimeType.Get<T4>(), RuntimeType.Get<T5>() };
+            return AddComponentTypes(types);
+        }
+
+        public readonly Definition AddComponentTypes<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
+        {
+            USpan<RuntimeType> types = stackalloc RuntimeType[6] { RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>(), RuntimeType.Get<T4>(), RuntimeType.Get<T5>(), RuntimeType.Get<T6>() };
+            return AddComponentTypes(types);
         }
 
         public readonly Definition AddArrayType(RuntimeType type)
@@ -205,28 +269,54 @@ namespace Simulation
             return AddArrayType(RuntimeType.Get<T>());
         }
 
+        public readonly Definition AddArrayTypes(USpan<RuntimeType> types)
+        {
+            ThrowIfFull();
+            byte typeCount = TotalTypeCount;
+            ThrowIfTypeCountIsTooGreat(typeCount + types.Length);
+            Definition newDefinition = this;
+            for (uint i = 0; i < types.Length; i++)
+            {
+                newDefinition.types[typeCount + i] = types[i].value;
+                newDefinition.typesMask = (uint)(typesMask | 1UL << (byte)(typeCount + i));
+            }
+
+            newDefinition.arrayTypes += (byte)types.Length;
+            return newDefinition;
+        }
+
         public readonly Definition AddArrayTypes<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
-            return AddArrayType<T1>().AddArrayType<T2>();
+            USpan<RuntimeType> types = stackalloc RuntimeType[2] { RuntimeType.Get<T1>(), RuntimeType.Get<T2>() };
+            return AddArrayTypes(types);
         }
 
         public readonly Definition AddArrayTypes<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            return AddArrayType<T1>().AddArrayType<T2>().AddArrayType<T3>();
+            USpan<RuntimeType> types = stackalloc RuntimeType[3] { RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>() };
+            return AddArrayTypes(types);
         }
 
         public readonly Definition AddArrayTypes<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            return AddArrayType<T1>().AddArrayType<T2>().AddArrayType<T3>().AddArrayType<T4>();
+            USpan<RuntimeType> types = stackalloc RuntimeType[4] { RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>(), RuntimeType.Get<T4>() };
+            return AddArrayTypes(types);
         }
 
         public readonly Definition AddArrayTypes<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
-            return AddArrayType<T1>().AddArrayType<T2>().AddArrayType<T3>().AddArrayType<T4>().AddArrayType<T5>();
+            USpan<RuntimeType> types = stackalloc RuntimeType[5] { RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>(), RuntimeType.Get<T4>(), RuntimeType.Get<T5>() };
+            return AddArrayTypes(types);
+        }
+
+        public readonly Definition AddArrayTypes<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
+        {
+            USpan<RuntimeType> types = stackalloc RuntimeType[6] { RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>(), RuntimeType.Get<T4>(), RuntimeType.Get<T5>(), RuntimeType.Get<T6>() };
+            return AddArrayTypes(types);
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfFull()
+        public readonly void ThrowIfFull()
         {
             if (TotalTypeCount == MaxTypes)
             {
@@ -235,7 +325,7 @@ namespace Simulation
         }
 
         [Conditional("DEBUG")]
-        private static void ThrowIfTypeCountIsTooGreat(uint count)
+        public static void ThrowIfTypeCountIsTooGreat(uint count)
         {
             if (count > MaxTypes)
             {
@@ -244,7 +334,7 @@ namespace Simulation
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfIndexOutOfRange(uint index)
+        public readonly void ThrowIfIndexOutOfRange(uint index)
         {
             if (index >= TotalTypeCount)
             {
@@ -253,7 +343,7 @@ namespace Simulation
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfComponentTypeAlreadyExists(RuntimeType type)
+        public readonly void ThrowIfComponentTypeAlreadyExists(RuntimeType type)
         {
             uint typeCount = TotalTypeCount;
             for (uint i = 0; i < typeCount; i++)
@@ -269,7 +359,7 @@ namespace Simulation
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfArrayTypeAlreadyExists(RuntimeType type)
+        public readonly void ThrowIfArrayTypeAlreadyExists(RuntimeType type)
         {
             uint typeCount = TotalTypeCount;
             for (uint i = 0; i < typeCount; i++)

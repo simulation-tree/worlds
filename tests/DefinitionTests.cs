@@ -86,6 +86,19 @@ namespace Simulation.Tests
         }
 
         [Test]
+        public void CreateDefinitionFromMany()
+        {
+            Definition definition = new Definition().AddComponentTypes<int, char, double, float>();
+            Assert.That(definition.ComponentTypeCount, Is.EqualTo(4));
+            Assert.That(definition.ArrayTypeCount, Is.EqualTo(0));
+            Assert.That(definition.TotalTypeCount, Is.EqualTo(4));
+            Assert.That(definition.ContainsComponent<int>(), Is.True);
+            Assert.That(definition.ContainsComponent<char>(), Is.True);
+            Assert.That(definition.ContainsComponent<double>(), Is.True);
+            Assert.That(definition.ContainsComponent<float>(), Is.True);
+        }
+
+        [Test]
         public void QueryUsingDefinition()
         {
             using World world = new();
@@ -111,6 +124,16 @@ namespace Simulation.Tests
             charQuery.Update(world);
             Assert.That(charQuery.Count, Is.EqualTo(1));
             Assert.That(charQuery[0], Is.EqualTo(entityA));
+        }
+
+        [Test]
+        public void ContainsComponentTypes()
+        {
+            Definition definition = new([RuntimeType.Get<byte>(), RuntimeType.Get<float>()], [RuntimeType.Get<char>()]);
+            Assert.That(definition.ContainsComponent<byte>(), Is.True);
+            Assert.That(definition.ContainsComponent<float>(), Is.True);
+            Assert.That(definition.ContainsComponent<char>(), Is.False);
+            Assert.That(definition.ContainsArray<char>(), Is.True);
         }
 
         [Test]
