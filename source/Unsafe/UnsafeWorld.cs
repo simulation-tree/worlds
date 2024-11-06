@@ -79,6 +79,19 @@ namespace Simulation.Unsafe
         }
 
         [Conditional("DEBUG")]
+        public static void ThrowIfReferenceIsMissing(UnsafeWorld* world, uint entity, uint referencedEntity)
+        {
+            ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
+            if (slot.referenceCount > 0)
+            {
+                if (!slot.references.Contains(referencedEntity))
+                {
+                    throw new NullReferenceException($"Reference to entity `{referencedEntity}` not found on entity `{entity}`");
+                }
+            }
+        }
+
+        [Conditional("DEBUG")]
         public static void ThrowIfEntityIsAlreadyPresent(UnsafeWorld* world, uint entity)
         {
             if (entity == uint.MaxValue)

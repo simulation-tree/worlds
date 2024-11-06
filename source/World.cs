@@ -1093,6 +1093,16 @@ namespace Simulation
             return slot.references[reference.value - 1];
         }
 
+        public readonly rint GetReference(uint entity, uint referencedEntity)
+        {
+            UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
+            UnsafeWorld.ThrowIfReferenceIsMissing(value, entity, referencedEntity);
+
+            ref EntityDescription slot = ref Slots[entity - 1];
+            uint index = slot.references.IndexOf(referencedEntity);
+            return new(index + 1);
+        }
+
         public readonly bool TryGetReference(uint entity, rint position, out uint referencedEntity)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
