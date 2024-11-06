@@ -418,7 +418,6 @@ namespace Simulation
             return HashCode.Combine(value, world);
         }
 
-
         /// <summary>
         /// Throws if the given type doesnt have a similar enough layout to <see cref="Entity"/>.
         /// Because the methods that use will perform native ruinterprets.

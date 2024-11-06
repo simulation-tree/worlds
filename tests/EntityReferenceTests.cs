@@ -39,7 +39,8 @@ namespace Simulation.Tests
         {
             using World firstWorld = new();
             uint parent = firstWorld.CreateEntity();
-            uint child = firstWorld.CreateEntity(parent);
+            uint child = firstWorld.CreateEntity();
+            firstWorld.SetParent(child, parent);
             firstWorld.AddComponent(parent, (short)0);
             firstWorld.AddComponent(child, (ushort)0);
 
@@ -53,6 +54,14 @@ namespace Simulation.Tests
             secondWorld.GetFirstComponent<short>(out parent);
             secondWorld.GetFirstComponent<ushort>(out child);
             Assert.That(secondWorld.GetParent(child), Is.EqualTo(parent));
+        }
+
+        [Test]
+        public void DefaultValueCantExist()
+        {
+            using World world = new();
+            uint entity = world.CreateEntity();
+            Assert.That(world.ContainsReference(entity, default(rint)), Is.False);
         }
 
         public struct ReferencedEntity

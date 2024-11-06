@@ -33,8 +33,10 @@ namespace Simulation.Tests
         {
             using World world = new();
             uint a = world.CreateEntity();
-            uint b = world.CreateEntity(a);
-            uint c = world.CreateEntity(a);
+            uint b = world.CreateEntity();
+            uint c = world.CreateEntity();
+            world.SetParent(b, a);
+            world.SetParent(c, a);
             Assert.That(world.ContainsEntity(a), Is.True);
             Assert.That(world.ContainsEntity(b), Is.True);
             Assert.That(world.ContainsEntity(c), Is.True);
@@ -157,6 +159,34 @@ namespace Simulation.Tests
                 world.ContainsArray<SimpleComponent>(entity);
             });
 
+            world.Dispose();
+            Assert.That(Allocations.Count, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void CreateThenEmptyArray()
+        {
+            World world = new();
+            uint entity = world.CreateEntity();
+            world.CreateArray<SimpleComponent>(entity, 2);
+            world.DestroyArray<SimpleComponent>(entity);
+            Assert.That(world.ContainsArray<SimpleComponent>(entity), Is.False);
+            world.Dispose();
+            Assert.That(Allocations.Count, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void MoveChildToAnotherParent()
+        {
+            World world = new();
+            uint a = world.CreateEntity();
+            uint b = world.CreateEntity();
+            uint c = world.CreateEntity();
+            world.SetParent(a, b);
+            world.SetParent(a, c);
+            Assert.That(world.GetParent(a), Is.EqualTo(c));
+            Assert.That(world.GetChildCount(b), Is.EqualTo(0));
+            Assert.That(world.GetChildCount(c), Is.EqualTo(1));
             world.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }

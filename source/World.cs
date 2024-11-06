@@ -170,8 +170,9 @@ namespace Simulation
             for (uint i = 0; i < Slots.Count; i++)
             {
                 EntityDescription slot = Slots[i];
-                foreach (RuntimeType type in slot.arrayTypes)
+                for (uint a = 0; a < slot.arrayCount; a++)
                 {
+                    RuntimeType type = slot.arrayTypes[a];
                     if (!uniqueTypes.Contains(type))
                     {
                         uniqueTypes.Add(type);
@@ -189,9 +190,9 @@ namespace Simulation
 
             //write each entity and its components
             writer.WriteValue(Count);
-            for (uint i = 0; i < Slots.Count; i++)
+            for (uint s = 0; s < Slots.Count; s++)
             {
-                EntityDescription slot = Slots[i];
+                EntityDescription slot = Slots[s];
                 uint entity = slot.entity;
                 if (!Free.Contains(entity))
                 {
@@ -209,8 +210,8 @@ namespace Simulation
                     }
 
                     //write arrays
-                    writer.WriteValue(slot.arrayTypes.Count);
-                    for (uint t = 0; t < slot.arrayTypes.Count; t++)
+                    writer.WriteValue(slot.arrayCount);
+                    for (uint t = 0; t < slot.arrayCount; t++)
                     {
                         RuntimeType type = slot.arrayTypes[t];
                         void* array = slot.arrays[t];
@@ -224,9 +225,10 @@ namespace Simulation
                     }
 
                     //write references
-                    writer.WriteValue(slot.references.Count);
-                    foreach (uint referencedEntity in slot.references)
+                    writer.WriteValue(slot.referenceCount);
+                    for (uint r = 0; r < slot.referenceCount; r++)
                     {
+                        uint referencedEntity = slot.references[r];
                         writer.WriteValue(referencedEntity);
                     }
                 }
@@ -282,7 +284,7 @@ namespace Simulation
                 }
 
                 //read arrays
-                uint arrayCount = reader.ReadValue<uint>();
+                ushort arrayCount = reader.ReadValue<ushort>();
                 for (uint a = 0; a < arrayCount; a++)
                 {
                     uint typeIndex = reader.ReadValue<uint>();
@@ -297,7 +299,7 @@ namespace Simulation
                 }
 
                 //read references
-                uint referenceCount = reader.ReadValue<uint>();
+                ushort referenceCount = reader.ReadValue<ushort>();
                 for (uint j = 0; j < referenceCount; j++)
                 {
                     uint referencedEntity = reader.ReadValue<uint>();
@@ -314,7 +316,13 @@ namespace Simulation
                 if (parent != default)
                 {
                     ref EntityDescription parentSlot = ref slots[parent - 1];
+                    if (parentSlot.childCount == 0)
+                    {
+                        parentSlot.children = new(4);
+                    }
+
                     parentSlot.children.Add(entity);
+                    parentSlot.childCount++;
                 }
             }
 
@@ -338,7 +346,9 @@ namespace Simulation
                 if (!sourceWorld.Free.Contains(sourceEntity))
                 {
                     uint destinationEntity = start + entityIndex;
-                    InitializeEntity(default, destinationEntity, start + sourceSlot.parent);
+                    uint destinationParent = start + sourceSlot.parent;
+                    InitializeEntity(default, destinationEntity);
+                    SetParent(destinationEntity, destinationParent);
                     entityIndex++;
 
                     //add components
@@ -352,7 +362,7 @@ namespace Simulation
                     }
 
                     //add arrays
-                    for (uint t = 0; t < sourceSlot.arrayTypes.Count; t++)
+                    for (uint t = 0; t < sourceSlot.arrayCount; t++)
                     {
                         RuntimeType sourceArrayType = sourceSlot.arrayTypes[t];
                         uint sourceArrayLength = sourceSlot.arrayLengths[t];
@@ -375,8 +385,9 @@ namespace Simulation
                 if (!sourceWorld.Free.Contains(sourceEntity))
                 {
                     uint destinationEntity = start + entityIndex;
-                    foreach (uint referencedEntity in sourceSlot.references)
+                    for (uint r = 0; r < sourceSlot.referenceCount; r++)
                     {
+                        uint referencedEntity = sourceSlot.references[r];
                         AddReference(destinationEntity, start + referencedEntity);
                     }
                 }
@@ -669,7 +680,7 @@ namespace Simulation
                 slot.state = state ? EntityDescription.State.Enabled : EntityDescription.State.Disabled;
             }
 
-            for (uint i = 0; i < slot.children.Count; i++)
+            for (uint i = 0; i < slot.childCount; i++)
             {
                 uint child = slot.children[i];
                 SetEnabled(child, state);
@@ -851,26 +862,13 @@ namespace Simulation
         /// </summary>
         public readonly uint CreateEntity()
         {
-            return CreateEntity(default, default);
-        }
-
-        /// <summary>
-        /// Creates a new entity with an assigned parent.
-        /// </summary>
-        public readonly uint CreateEntity(uint parent)
-        {
-            return CreateEntity(default, parent);
+            return CreateEntity(default);
         }
 
         public readonly uint CreateEntity(Definition definition)
         {
-            return CreateEntity(definition, default);
-        }
-
-        public readonly uint CreateEntity(Definition definition, uint parent)
-        {
             uint entity = GetNextEntity();
-            InitializeEntity(definition, entity, parent);
+            InitializeEntity(definition, entity);
             return entity;
         }
 
@@ -878,7 +876,7 @@ namespace Simulation
         {
             uint entity = GetNextEntity();
             Definition definition = new Definition().AddComponentType<T1>();
-            InitializeEntity(definition, entity, default);
+            InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             return entity;
         }
@@ -887,7 +885,7 @@ namespace Simulation
         {
             uint entity = GetNextEntity();
             Definition definition = new Definition().AddComponentTypes<T1, T2>();
-            InitializeEntity(definition, entity, default);
+            InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
             return entity;
@@ -897,7 +895,7 @@ namespace Simulation
         {
             uint entity = GetNextEntity();
             Definition definition = new Definition().AddComponentTypes<T1, T2, T3>();
-            InitializeEntity(definition, entity, default);
+            InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
             SetComponent(entity, component3);
@@ -908,7 +906,7 @@ namespace Simulation
         {
             uint entity = GetNextEntity();
             Definition definition = new Definition().AddComponentTypes<T1, T2, T3, T4>();
-            InitializeEntity(definition, entity, default);
+            InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
             SetComponent(entity, component3);
@@ -920,7 +918,7 @@ namespace Simulation
         {
             uint entity = GetNextEntity();
             Definition definition = new Definition().AddComponentTypes<T1, T2, T3, T4, T5>();
-            InitializeEntity(definition, entity, default);
+            InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
             SetComponent(entity, component3);
@@ -933,7 +931,7 @@ namespace Simulation
         {
             uint entity = GetNextEntity();
             Definition definition = new Definition().AddComponentTypes<T1, T2, T3, T4, T5, T6>();
-            InitializeEntity(definition, entity, default);
+            InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
             SetComponent(entity, component3);
@@ -955,9 +953,9 @@ namespace Simulation
         /// Creates an entity with the given value assuming its 
         /// not already in use (otherwise an <see cref="Exception"/> will be thrown).
         /// </summary>
-        public readonly void InitializeEntity(Definition definition, uint newEntity, uint parent)
+        public readonly void InitializeEntity(Definition definition, uint newEntity)
         {
-            UnsafeWorld.InitializeEntity(value, definition, newEntity, parent);
+            UnsafeWorld.InitializeEntity(value, definition, newEntity);
         }
 
         /// <summary>
@@ -997,8 +995,23 @@ namespace Simulation
         public readonly USpan<uint> GetChildren(uint entity)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
+
             EntityDescription slot = Slots[entity - 1];
-            return slot.children.AsSpan<uint>();
+            if (slot.childCount > 0)
+            {
+                return slot.children.AsSpan<uint>();
+            }
+            else
+            {
+                return default;
+            }
+        }
+
+        public readonly uint GetChildCount(uint entity)
+        {
+            UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
+
+            return Slots[entity - 1].childCount;
         }
 
         /// <summary>
@@ -1008,10 +1021,16 @@ namespace Simulation
         public readonly rint AddReference(uint entity, uint referencedEntity)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
-            //UnsafeWorld.ThrowIfEntityIsMissing(value, referencedEntity);
+
             ref EntityDescription slot = ref Slots[entity - 1];
+            if (slot.referenceCount == 0)
+            {
+                slot.references = new(4);
+            }
+
             slot.references.Add(referencedEntity);
-            return new(slot.references.Count);
+            slot.referenceCount++;
+            return new(slot.referenceCount);
         }
 
         public readonly rint AddReference<T>(uint entity, T referencedEntity) where T : unmanaged, IEntity
@@ -1024,13 +1043,9 @@ namespace Simulation
         /// </summary>
         public readonly void SetReference(uint entity, rint reference, uint referencedEntity)
         {
-            if (reference == default)
-            {
-                throw new InvalidOperationException($"Attempting to assign entity `{entity}` into a default reference slot");
-            }
-
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
-            //UnsafeWorld.ThrowIfEntityIsMissing(value, referencedEntity);
+            UnsafeWorld.ThrowIfReferenceIsMissing(value, entity, reference);
+
             ref EntityDescription slot = ref Slots[entity - 1];
             slot.references[reference.value - 1] = referencedEntity;
         }
@@ -1043,9 +1058,9 @@ namespace Simulation
         public readonly bool ContainsReference(uint entity, uint referencedEntity)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
-            //UnsafeWorld.ThrowIfEntityIsMissing(value, referencedEntity);
+
             ref EntityDescription slot = ref Slots[entity - 1];
-            return slot.references.Contains(referencedEntity);
+            return slot.referenceCount > 0 && slot.references.Contains(referencedEntity);
         }
 
         public readonly bool ContainsReference<T>(uint entity, T referencedEntity) where T : unmanaged, IEntity
@@ -1056,59 +1071,59 @@ namespace Simulation
         public readonly bool ContainsReference(uint entity, rint reference)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
+
             ref EntityDescription slot = ref Slots[entity - 1];
-            return (reference.value - 1) < slot.references.Count;
+            return reference.value > 0 && reference.value <= slot.referenceCount;
         }
 
-        //todo: polish: this is kinda like `rint GetLastReference(uint entity)` <-- should it be like this instead?
         public readonly uint GetReferenceCount(uint entity)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
+
             ref EntityDescription slot = ref Slots[entity - 1];
-            return slot.references.Count;
+            return slot.referenceCount;
         }
 
         public readonly uint GetReference(uint entity, rint reference)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
-            if (reference == default)
-            {
-                return default;
-            }
+            UnsafeWorld.ThrowIfReferenceIsMissing(value, entity, reference);
 
             ref EntityDescription slot = ref Slots[entity - 1];
-            return slot.references[(uint)reference - 1];
+            return slot.references[reference.value - 1];
         }
 
         public readonly bool TryGetReference(uint entity, rint position, out uint referencedEntity)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
+
             ref EntityDescription slot = ref Slots[entity - 1];
             uint index = position.value - 1;
-            if (index < slot.references.Count)
+            if (index < slot.referenceCount)
             {
                 referencedEntity = slot.references[index];
                 return true;
             }
-
-            referencedEntity = default;
-            return false;
-        }
-
-        public readonly void RemoveReference(uint entity, uint referencedEntity)
-        {
-            UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
-            //UnsafeWorld.ThrowIfEntityIsMissing(value, referencedEntity);
-            ref EntityDescription slot = ref Slots[entity - 1];
-            uint index = slot.references.IndexOf(referencedEntity);
-            slot.references.RemoveAt(index);
+            else
+            {
+                referencedEntity = default;
+                return false;
+            }
         }
 
         public readonly void RemoveReference(uint entity, rint reference)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
+            UnsafeWorld.ThrowIfReferenceIsMissing(value, entity, reference);
+
             ref EntityDescription slot = ref Slots[entity - 1];
             slot.references.RemoveAt(reference.value - 1);
+            slot.referenceCount--;
+
+            if (slot.referenceCount == 0)
+            {
+                slot.references.Dispose();
+            }
         }
 
         /// <summary>
@@ -1117,8 +1132,16 @@ namespace Simulation
         public readonly USpan<RuntimeType> GetArrayTypes(uint entity)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
+
             EntityDescription slot = Slots[entity - 1];
-            return slot.arrayTypes.AsSpan();
+            if (slot.arrayCount > 0)
+            {
+                return slot.arrayTypes.AsSpan();
+            }
+            else
+            {
+                return default;
+            }
         }
 
         /// <summary>
@@ -1202,6 +1225,7 @@ namespace Simulation
         public readonly ref T GetArrayElementRef<T>(uint entity, uint index) where T : unmanaged
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
+
             RuntimeType arrayType = RuntimeType.Get<T>();
             UnsafeWorld.ThrowIfArrayIsMissing(value, entity, arrayType);
             void* array = UnsafeWorld.GetArray(value, entity, arrayType, out uint arrayLength);
@@ -1370,7 +1394,8 @@ namespace Simulation
             else
             {
                 contains = false;
-                return ref System.Runtime.CompilerServices.Unsafe.AsRef<T>(null);
+                void* nullPointer = null;
+                return ref *(T*)nullPointer;
             }
         }
 

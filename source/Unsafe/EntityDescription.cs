@@ -8,12 +8,20 @@ namespace Simulation.Unsafe
         public uint entity;
         public uint parent;
         public int componentsKey;
+        public ushort childCount;
+        public List<uint> children;
+        public ushort referenceCount;
+        public List<uint> references;
+        public ushort arrayCount;
         public List<Allocation> arrays;
         public List<RuntimeType> arrayTypes;
         public List<uint> arrayLengths;
-        public List<uint> children;
-        public List<uint> references;
         public State state;
+
+        public EntityDescription(uint entity)
+        {
+            this.entity = entity;
+        }
 
         public enum State : byte
         {
