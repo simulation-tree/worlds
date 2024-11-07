@@ -484,6 +484,7 @@ namespace Simulation
 
         internal class EntityDebugView
         {
+#if DEBUG
             public readonly uint entity;
             public readonly World world;
             public readonly StackTrace creationStackTrace;
@@ -498,6 +499,7 @@ namespace Simulation
                 this.componentTypes = entity.GetComponentTypes().ToArray();
                 this.arrayTypes = entity.GetArrayTypes().ToArray();
             }
+#endif
         }
     }
 }

@@ -530,7 +530,9 @@ namespace Simulation.Unsafe
                 }
             }
 
+#if DEBUG
             createStackTraces[new Entity(new World(world), entity)] = stackTrace;
+#endif
         }
 
         public static bool ContainsEntity(UnsafeWorld* world, uint entity)
