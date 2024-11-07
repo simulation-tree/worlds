@@ -17,7 +17,7 @@ namespace Simulation
         public readonly Result this[uint index] => results[index];
 
         readonly nint IQuery.Results => results.StartAddress;
-        readonly uint IQuery.ResultSize => USpan<Result>.ElementSize;
+        readonly uint IQuery.ResultSize => TypeInfo<Result>.size;
 
 #if NET
         /// <summary>
@@ -151,7 +151,7 @@ namespace Simulation
         public readonly Result this[uint index] => results[index];
 
         readonly nint IQuery.Results => results.StartAddress;
-        readonly uint IQuery.ResultSize => USpan<Result>.ElementSize;
+        readonly uint IQuery.ResultSize => TypeInfo<Result>.size;
 
 #if NET
         /// <summary>
@@ -293,7 +293,7 @@ namespace Simulation
         public readonly Result this[uint index] => results[index];
 
         readonly nint IQuery.Results => results.StartAddress;
-        readonly uint IQuery.ResultSize => USpan<Result>.ElementSize;
+        readonly uint IQuery.ResultSize => TypeInfo<Result>.size;
 
 #if NET
         /// <summary>
@@ -437,7 +437,7 @@ namespace Simulation
         public readonly Result this[uint index] => results[index];
 
         readonly nint IQuery.Results => results.StartAddress;
-        readonly uint IQuery.ResultSize => USpan<Result>.ElementSize;
+        readonly uint IQuery.ResultSize => TypeInfo<Result>.size;
 
 #if NET
         /// <summary>
@@ -586,7 +586,7 @@ namespace Simulation
         public readonly Result this[uint index] => results[index];
 
         readonly nint IQuery.Results => results.StartAddress;
-        readonly uint IQuery.ResultSize => USpan<Result>.ElementSize;
+        readonly uint IQuery.ResultSize => TypeInfo<Result>.size;
 
 #if NET
         /// <summary>

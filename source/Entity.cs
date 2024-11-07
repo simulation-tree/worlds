@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Simulation.Unsafe;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
@@ -6,6 +7,7 @@ using Unmanaged;
 
 namespace Simulation
 {
+    [DebuggerTypeProxy(typeof(EntityDebugView))]
     public readonly struct Entity : IEntity, IEquatable<Entity>
     {
         public readonly uint value;
@@ -123,6 +125,12 @@ namespace Simulation
         {
             ThrowIfDestroyed();
             return world.GetArrayLength<T>(value);
+        }
+
+        public readonly USpan<RuntimeType> GetArrayTypes()
+        {
+            ThrowIfDestroyed();
+            return world.GetArrayTypes(value);
         }
 
         public readonly bool ContainsArray<T>() where T : unmanaged
@@ -472,6 +480,24 @@ namespace Simulation
         public static bool operator !=(Entity left, Entity right)
         {
             return !(left == right);
+        }
+
+        internal class EntityDebugView
+        {
+            public readonly uint entity;
+            public readonly World world;
+            public readonly StackTrace creationStackTrace;
+            public readonly RuntimeType[] componentTypes;
+            public readonly RuntimeType[] arrayTypes;
+
+            public EntityDebugView(Entity entity)
+            {
+                this.entity = entity.GetEntityValue();
+                this.world = entity.GetWorld();
+                this.creationStackTrace = UnsafeWorld.createStackTraces[entity];
+                this.componentTypes = entity.GetComponentTypes().ToArray();
+                this.arrayTypes = entity.GetArrayTypes().ToArray();
+            }
         }
     }
 }

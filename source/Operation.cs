@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Collections;
+using System;
 using System.Diagnostics;
 using Unmanaged;
 
@@ -7,6 +8,7 @@ namespace Simulation
     /// <summary>
     /// Series of world instructions to perform all in one go.
     /// </summary>
+    [DebuggerTypeProxy(typeof(OperationDebugView))]
     public struct Operation : IDisposable
     {
         private Allocation list;
@@ -22,7 +24,7 @@ namespace Simulation
             {
                 ThrowIfOutOfRange(index);
                 uint start = sizeof(uint) + sizeof(uint);
-                return list.Read<Instruction>((uint)(start + (sizeof(Instruction) * index)));
+                return list.Read<Instruction>(start + (TypeInfo<Instruction>.size * index));
             }
         }
 
@@ -41,7 +43,7 @@ namespace Simulation
         public unsafe Operation(uint initialCapacity = 0)
         {
             uint start = sizeof(uint) + sizeof(uint);
-            uint size = (uint)(start + (sizeof(Instruction) * initialCapacity));
+            uint size = start + (TypeInfo<Instruction>.size * initialCapacity);
             list = new(size);
             list.Write(sizeof(uint) * 0, 0);
             list.Write(sizeof(uint) * 1, initialCapacity);
@@ -71,19 +73,33 @@ namespace Simulation
 
         public readonly override string ToString()
         {
-            uint length = Length;
-            if (length == 0)
+            USpan<char> buffer = stackalloc char[64];
+            uint length = ToString(buffer);
+            return buffer.Slice(0, length).ToString();
+        }
+
+        public readonly uint ToString(USpan<char> buffer)
+        {
+            uint thisLength = Length;
+            uint length = 0;
+            length += "Operation".AsUSpan().CopyTo(buffer);
+            if (thisLength == 0)
             {
-                return "Operation(Empty)";
+                length += "(Empty)".AsUSpan().CopyTo(buffer.Slice(length));
             }
-            else if (length == 1)
+            else if (thisLength == 1)
             {
-                return $"Operation(1 instruction)";
+                length += "(1 instruction)".AsUSpan().CopyTo(buffer.Slice(length));
             }
             else
             {
-                return $"Operation({length} instructions)";
+                buffer[length++] = '(';
+                length += thisLength.ToString(buffer.Slice(length));
+                buffer[length++] = ' ';
+                length += "instructions)".AsUSpan().CopyTo(buffer.Slice(length));
             }
+
+            return length;
         }
 
         [Conditional("DEBUG")]
@@ -144,6 +160,88 @@ namespace Simulation
             }
 
             throw new InvalidOperationException("Entity selection is empty, unable to proceed.");
+        }
+
+        public readonly void ReadSelection(List<uint> selection)
+        {
+            ThrowIfDisposed();
+
+            uint length = Length;
+            using List<uint> created = new(length);
+            for (uint i = 0; i < length; i++)
+            {
+                Instruction instruction = this[i];
+                if (instruction.type == Instruction.Type.CreateEntity)
+                {
+                    uint createCount = (uint)instruction.A;
+                    for (uint c = 0; c < createCount; c++)
+                    {
+                        uint pretendEntity = created.Count + 1;
+                        selection.Add(pretendEntity);
+                        created.Add(pretendEntity);
+                    }
+                }
+                else if (instruction.type == Instruction.Type.ClearSelection)
+                {
+                    selection.Clear();
+                }
+                else if (instruction.type == Instruction.Type.SelectEntity)
+                {
+                    bool isRelative = instruction.A == 0;
+                    if (isRelative)
+                    {
+                        uint relativeOffset = (uint)instruction.B;
+                        uint entity = created[(created.Count - 1) - relativeOffset];
+                        selection.Add(entity);
+                    }
+                    else
+                    {
+                        uint entity = (uint)instruction.B;
+                        selection.Add(entity);
+                    }
+                }
+            }
+        }
+
+        public readonly void ReadSelection(World world, List<uint> selection)
+        {
+            ThrowIfDisposed();
+
+            uint length = Length;
+            using List<uint> created = new(length);
+            for (uint i = 0; i < length; i++)
+            {
+                Instruction instruction = this[i];
+                if (instruction.type == Instruction.Type.CreateEntity)
+                {
+                    uint createCount = (uint)instruction.A;
+                    for (uint c = 0; c < createCount; c++)
+                    {
+                        uint pretendEntity = world.GetNextEntity();
+                        selection.Add(pretendEntity);
+                        created.Add(pretendEntity);
+                    }
+                }
+                else if (instruction.type == Instruction.Type.ClearSelection)
+                {
+                    selection.Clear();
+                }
+                else if (instruction.type == Instruction.Type.SelectEntity)
+                {
+                    bool isRelative = instruction.A == 0;
+                    if (isRelative)
+                    {
+                        uint relativeOffset = (uint)instruction.B;
+                        uint entity = created[(created.Count - 1) - relativeOffset];
+                        selection.Add(entity);
+                    }
+                    else
+                    {
+                        uint entity = (uint)instruction.B;
+                        selection.Add(entity);
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -373,12 +471,12 @@ namespace Simulation
             if (length == capacity)
             {
                 capacity = Math.Max(capacity * 2, 4);
-                Allocation.Resize(ref list, (uint)(start + (sizeof(Instruction) * capacity)));
+                Allocation.Resize(ref list, start + (TypeInfo<Instruction>.size * capacity));
                 list.Write(sizeof(uint) * 1, capacity);
             }
 
             list.Write(sizeof(uint) * 0, length + 1);
-            list.Write((uint)(start + (sizeof(Instruction) * length)), instruction);
+            list.Write(start + (TypeInfo<Instruction>.size * length), instruction);
         }
 
         public readonly unsafe void RemoveInstructionAt(uint index)
@@ -391,15 +489,15 @@ namespace Simulation
             for (uint i = index; i < length - 1; i++)
             {
                 Instruction instruction = this[i + 1];
-                list.Write((uint)(start + (sizeof(Instruction) * i)), instruction);
+                list.Write(start + (TypeInfo<Instruction>.size * i), instruction);
             }
 
             list.Write(sizeof(uint) * 0, length - 1);
         }
 
-        public unsafe static Operation Create(uint initialCapacity = 0)
+        public unsafe static Operation Create(uint initialCapacity = 1)
         {
-            uint size = (uint)(sizeof(uint) + sizeof(uint) + (sizeof(Instruction) * initialCapacity));
+            uint size = sizeof(uint) + sizeof(uint) + (TypeInfo<Instruction>.size * initialCapacity);
             Allocation list = new(size);
             list.Write(sizeof(uint) * 0, 0);
             list.Write(sizeof(uint) * 1, initialCapacity);
@@ -418,6 +516,23 @@ namespace Simulation
             public void AddComponent<T>(T component) where T : unmanaged
             {
                 operation.AddComponent(component);
+            }
+        }
+
+        internal class OperationDebugView
+        {
+            public readonly uint[] selected;
+
+            public OperationDebugView(Operation operation)
+            {
+                using List<uint> selection = new();
+                operation.ReadSelection(selection);
+
+                selected = new uint[selection.Count];
+                for (int i = 0; i < selection.Count; i++)
+                {
+                    selected[i] = selection[(uint)i];
+                }
             }
         }
     }

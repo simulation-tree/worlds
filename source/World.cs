@@ -398,8 +398,8 @@ namespace Simulation
         {
             if (instruction.type == Instruction.Type.CreateEntity)
             {
-                uint count = (uint)instruction.A;
-                for (uint i = 0; i < count; i++)
+                uint createCount = (uint)instruction.A;
+                for (uint i = 0; i < createCount; i++)
                 {
                     uint newEntity = CreateEntity();
                     selection.Add(newEntity);
@@ -434,13 +434,14 @@ namespace Simulation
             }
             else if (instruction.type == Instruction.Type.SelectEntity)
             {
-                if (instruction.A == 0)
+                bool isRelative = instruction.A == 0;
+                if (isRelative)
                 {
                     uint relativeOffset = (uint)instruction.B;
                     uint entity = entities[(entities.Count - 1) - relativeOffset];
                     selection.Add(entity);
                 }
-                else if (instruction.A == 1)
+                else
                 {
                     uint entity = (uint)instruction.B;
                     selection.Add(entity);

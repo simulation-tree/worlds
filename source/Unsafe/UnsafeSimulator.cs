@@ -27,7 +27,7 @@ namespace Simulation
 
         public static bool IsDisposed(UnsafeSimulator* simulator)
         {
-            return Allocations.IsNull(simulator);
+            return simulator is null;
         }
 
         public static void Free(ref UnsafeSimulator* simulator)

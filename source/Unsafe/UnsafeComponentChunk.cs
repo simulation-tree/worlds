@@ -40,7 +40,7 @@ namespace Simulation.Unsafe
 
         public static bool IsDisposed(UnsafeComponentChunk* chunk)
         {
-            return Allocations.IsNull(chunk) || chunk->entities.IsDisposed;
+            return chunk is null;
         }
 
         public static void Free(ref UnsafeComponentChunk* chunk)
