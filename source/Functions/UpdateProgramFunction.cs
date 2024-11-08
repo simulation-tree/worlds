@@ -2,14 +2,14 @@
 using System;
 using Unmanaged;
 
-namespace Programs.Functions
+namespace Programs
 {
-    public unsafe readonly struct UpdateFunction : IEquatable<UpdateFunction>
+    public unsafe readonly struct UpdateProgramFunction : IEquatable<UpdateProgramFunction>
     {
 #if NET
         private readonly delegate* unmanaged<Simulator, Allocation, World, TimeSpan, uint> function;
 
-        public UpdateFunction(delegate* unmanaged<Simulator, Allocation, World, TimeSpan, uint> function)
+        public UpdateProgramFunction(delegate* unmanaged<Simulator, Allocation, World, TimeSpan, uint> function)
         {
             this.function = function;
         }
@@ -29,10 +29,10 @@ namespace Programs.Functions
 
         public readonly override bool Equals(object? obj)
         {
-            return obj is UpdateFunction function && Equals(function);
+            return obj is UpdateProgramFunction function && Equals(function);
         }
 
-        public readonly bool Equals(UpdateFunction other)
+        public readonly bool Equals(UpdateProgramFunction other)
         {
             nint a = (nint)function;
             nint b = (nint)other.function;
@@ -44,12 +44,12 @@ namespace Programs.Functions
             return ((nint)function).GetHashCode();
         }
 
-        public static bool operator ==(UpdateFunction left, UpdateFunction right)
+        public static bool operator ==(UpdateProgramFunction left, UpdateProgramFunction right)
         {
             return left.Equals(right);
         }
 
-        public static bool operator !=(UpdateFunction left, UpdateFunction right)
+        public static bool operator !=(UpdateProgramFunction left, UpdateProgramFunction right)
         {
             return !(left == right);
         }

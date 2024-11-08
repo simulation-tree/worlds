@@ -1,5 +1,4 @@
 ﻿using Programs.Components;
-using Programs.Functions;
 using Simulation;
 using System;
 using System.Diagnostics;
@@ -17,7 +16,7 @@ namespace Programs
         readonly World IEntity.World => entity.GetWorld();
         readonly Definition IEntity.Definition => new Definition().AddComponentTypes<IsProgram, ProgramState>();
 
-        public Program(World world, StartFunction start, UpdateFunction update, FinishFunction finish, RuntimeType type)
+        public Program(World world, StartProgramFunction start, UpdateProgramFunction update, FinishProgramFunction finish, RuntimeType type)
         {
             entity = new(world);
             entity.AddComponent(new IsProgram(start, update, finish, type));

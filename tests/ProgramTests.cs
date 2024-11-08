@@ -1,5 +1,4 @@
 ﻿using Programs;
-using Programs.Functions;
 using System;
 using System.Runtime.InteropServices;
 using Unmanaged;
@@ -53,9 +52,9 @@ namespace Simulation.Tests
             public byte value;
             public FixedString state;
 
-            unsafe readonly StartFunction IProgram.Start => new(&Start);
-            unsafe readonly UpdateFunction IProgram.Update => new(&Update);
-            unsafe readonly FinishFunction IProgram.Finish => new(&Finish);
+            unsafe readonly StartProgramFunction IProgram.Start => new(&Start);
+            unsafe readonly UpdateProgramFunction IProgram.Update => new(&Update);
+            unsafe readonly FinishProgramFunction IProgram.Finish => new(&Finish);
 
             [UnmanagedCallersOnly]
             private static void Start(Simulator simulator, Allocation allocation, World world)
