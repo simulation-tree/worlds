@@ -77,7 +77,7 @@ namespace Simulation
 
             World hostWorld = GetWorld(simulator);
             RuntimeType type = RuntimeType.Get<T>();
-            Debug.WriteLine($"Adding system {type} to {hostWorld}");
+            Trace.WriteLine($"Adding system {type} to {hostWorld}");
 
             T template = new();
             Allocation instance = Allocation.Create(template);
@@ -118,7 +118,7 @@ namespace Simulation
 
             World world = GetWorld(simulator);
             RuntimeType type = RuntimeType.Get<T>();
-            Debug.WriteLine($"Removing system {type} from {world}");
+            Trace.WriteLine($"Removing system {type} from {world}");
 
             for (uint i = 0; i < simulator->systems.Count; i++)
             {
