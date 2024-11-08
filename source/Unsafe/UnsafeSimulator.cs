@@ -4,6 +4,7 @@ using Programs.Components;
 using Programs.System;
 using Simulation.Functions;
 using System;
+using System.Diagnostics;
 using Unmanaged;
 
 namespace Simulation
@@ -74,8 +75,11 @@ namespace Simulation
         {
             Allocations.ThrowIfNull(simulator);
 
-            T template = new();
+            World hostWorld = GetWorld(simulator);
             RuntimeType type = RuntimeType.Get<T>();
+            Debug.WriteLine($"Adding system {type} to {hostWorld}");
+
+            T template = new();
             Allocation instance = Allocation.Create(template);
 
             //add message handlers
@@ -101,7 +105,6 @@ namespace Simulation
                 handlers = new(1);
             }
 
-            World hostWorld = GetWorld(simulator);
             SystemContainer container = new(simulator, instance, type, handlers, template.Initialize, template.Iterate, template.Finalize);
             simulator->systems.Add(container);
             SystemContainer<T> genericContainer = new(simulator, simulator->systems.Count - 1);
@@ -113,7 +116,10 @@ namespace Simulation
         {
             Allocations.ThrowIfNull(simulator);
 
+            World world = GetWorld(simulator);
             RuntimeType type = RuntimeType.Get<T>();
+            Debug.WriteLine($"Removing system {type} from {world}");
+
             for (uint i = 0; i < simulator->systems.Count; i++)
             {
                 ref SystemContainer system = ref simulator->systems[i];
