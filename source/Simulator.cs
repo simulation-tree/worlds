@@ -47,9 +47,9 @@ namespace Simulation
             foreach (var x in query)
             {
                 uint programEntity = x.entity;
-                World programWorld = hostWorld.GetComponent<World>(programEntity);
                 if (!hostWorld.ContainsComponent<uint>(programEntity))
                 {
+                    World programWorld = hostWorld.GetComponent<World>(programEntity);
                     ProgramAllocation allocation = programWorld.GetComponent<ProgramAllocation>(programEntity);
                     x.Component1.finish.Invoke(this, allocation.value, programWorld, default);
                     ref ProgramState state = ref x.Component2;
