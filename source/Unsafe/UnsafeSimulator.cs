@@ -35,12 +35,6 @@ namespace Simulation
             Allocations.ThrowIfNull(simulator);
 
             simulator->programQuery.Dispose();
-            for (uint i = 0; i < simulator->systems.Count; i++)
-            {
-                ref SystemContainer system = ref simulator->systems[i];
-                system.Dispose();
-            }
-
             simulator->knownPrograms.Dispose();
             simulator->systems.Dispose();
             Allocations.Free(ref simulator);

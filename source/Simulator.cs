@@ -57,6 +57,14 @@ namespace Simulation
                 }
             }
 
+            //dispose systems
+            USpan<SystemContainer> systems = UnsafeSimulator.GetSystems(value);
+            for (uint i = 0; i < systems.Length; i++)
+            {
+                ref SystemContainer system = ref systems[i];
+                system.Dispose();
+            }
+
             //clean up previously known programs
             ref List<ProgramContainer> knownPrograms = ref UnsafeSimulator.GetKnownPrograms(value);
             for (uint i = knownPrograms.Count - 1; i != uint.MaxValue; i--)
