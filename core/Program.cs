@@ -11,15 +11,14 @@ namespace Programs
         public readonly Entity entity;
 
         public readonly ProgramState State => entity.GetComponent<ProgramState>();
-        public readonly RuntimeType Type => entity.GetComponent<RuntimeType>();
         readonly uint IEntity.Value => entity.GetEntityValue();
         readonly World IEntity.World => entity.GetWorld();
         readonly Definition IEntity.Definition => new Definition().AddComponentTypes<IsProgram, ProgramState>();
 
-        public Program(World world, StartProgramFunction start, UpdateProgramFunction update, FinishProgramFunction finish, RuntimeType type)
+        public Program(World world, StartProgramFunction start, UpdateProgramFunction update, FinishProgramFunction finish, ushort typeSize)
         {
             entity = new(world);
-            entity.AddComponent(new IsProgram(start, update, finish, type));
+            entity.AddComponent(new IsProgram(start, update, finish, typeSize));
             entity.AddComponent(ProgramState.Uninitialized);
         }
 
@@ -60,9 +59,8 @@ namespace Programs
 
         public static Program Create<T>(World world) where T : unmanaged, IProgram
         {
-            RuntimeType type = RuntimeType.Get<T>();
             T template = default;
-            return new Program(world, template.Start, template.Update, template.Finish, type);
+            return new Program(world, template.Start, template.Update, template.Finish, (ushort)TypeInfo<T>.size);
         }
     }
 }

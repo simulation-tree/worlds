@@ -1,19 +1,12 @@
 ﻿using Collections;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Unmanaged;
 
 namespace Simulation.Tests
 {
-    public class SerializationTests
+    public class SerializationTests : SimulationTests
     {
-        [TearDown]
-        public void CleanUp()
-        {
-            Allocations.ThrowIfAny();
-        }
-
         [Test]
         public void SaveWorld()
         {
@@ -37,12 +30,36 @@ namespace Simulation.Tests
                 apples.Add((entity, apple));
             });
 
-            using BinaryWriter writer = BinaryWriter.Create();
+            using BinaryWriter writer = new();
             writer.WriteObject(world);
             world.Dispose();
 
             USpan<byte> data = writer.GetBytes();
             using BinaryReader reader = new(data);
+
+            World.SerializationContext.GetComponentType = (fullTypeName) =>
+            {
+                if (fullTypeName.SequenceEqual(typeof(Fruit).FullName.AsSpan()))
+                {
+                    return ComponentType.Get<Fruit>();
+                }
+                else if (fullTypeName.SequenceEqual(typeof(Apple).FullName.AsSpan()))
+                {
+                    return ComponentType.Get<Apple>();
+                }
+
+                throw new Exception($"Unknown type {fullTypeName.ToString()}");
+            };
+
+            World.SerializationContext.GetArrayType = (fullTypeName) =>
+            {
+                if (fullTypeName.SequenceEqual(typeof(char).FullName.AsSpan()))
+                {
+                    return ArrayType.Get<char>();
+                }
+
+                throw new Exception($"Unknown type {fullTypeName.ToString()}");
+            };
 
             using World loadedWorld = reader.ReadObject<World>();
             System.Collections.Generic.List<uint> newEntities = loadedWorld.Entities.ToList();
@@ -67,7 +84,7 @@ namespace Simulation.Tests
             prefabWorld.AddComponent(a, new Apple("Hello, World!"));
             prefabWorld.AddComponent(a, new Prefab());
 
-            using BinaryWriter writer = BinaryWriter.Create();
+            using BinaryWriter writer = new();
             writer.WriteObject(prefabWorld);
 
             using World world = new();
@@ -76,6 +93,24 @@ namespace Simulation.Tests
 
             uint c = world.CreateEntity();
             world.AddComponent(c, new Apple("Goodbye, World!"));
+
+            World.SerializationContext.GetComponentType = (fullTypeName) =>
+            {
+                if (fullTypeName.SequenceEqual(typeof(Prefab).FullName.AsSpan()))
+                {
+                    return ComponentType.Get<Prefab>();
+                }
+                else if (fullTypeName.SequenceEqual(typeof(Fruit).FullName.AsSpan()))
+                {
+                    return ComponentType.Get<Fruit>();
+                }
+                else if (fullTypeName.SequenceEqual(typeof(Apple).FullName.AsSpan()))
+                {
+                    return ComponentType.Get<Apple>();
+                }
+
+                throw new Exception($"Unknown type {fullTypeName.ToString()}");
+            };
 
             using BinaryReader reader = new(writer);
             using World loadedWorld = reader.ReadObject<World>();
@@ -104,7 +139,7 @@ namespace Simulation.Tests
             ];
 
             Big big = new(32, new Apple("apple"), fruits);
-            using BinaryWriter writer = BinaryWriter.Create();
+            using BinaryWriter writer = new();
             writer.WriteValue(big);
             using BinaryReader reader = new(writer.GetBytes());
             using Big loadedBig = reader.ReadValue<Big>();
@@ -114,7 +149,7 @@ namespace Simulation.Tests
         [Test]
         public void SaveAndLoadSpans()
         {
-            using BinaryWriter writer = BinaryWriter.Create();
+            using BinaryWriter writer = new();
             writer.WriteSpan<byte>([1, 2, 3, 4, 5]);
             writer.WriteSpan<int>([1, 2, 3, 4, 5]);
             writer.WriteSpan<FixedString>(["Hello", "World", "Goodbye"]);
@@ -132,7 +167,7 @@ namespace Simulation.Tests
         [Test]
         public void ReadTooMuch()
         {
-            using BinaryWriter writer = BinaryWriter.Create();
+            using BinaryWriter writer = new();
             writer.WriteSpan<char>("The snake that eats its own tail".AsUSpan());
             using BinaryReader reader = new(writer.GetBytes());
             Assert.Throws<InvalidOperationException>(() => reader.ReadSpan<char>(100));
@@ -153,7 +188,7 @@ namespace Simulation.Tests
             complicated.Add(player2);
             complicated.Add(player3);
 
-            using BinaryWriter writer = BinaryWriter.Create();
+            using BinaryWriter writer = new();
             writer.WriteObject(complicated);
             using BinaryReader reader = new(writer.GetBytes());
             using Complicated loadedComplicated = reader.ReadObject<Complicated>();
@@ -177,18 +212,18 @@ namespace Simulation.Tests
 
         public struct Types : IDisposable, ISerializable
         {
-            private Collections.List<RuntimeType> types;
+            private List<ComponentType> types;
 
-            public readonly USpan<RuntimeType> List => types.AsSpan();
+            public readonly USpan<ComponentType> List => types.AsSpan();
 
             public Types()
             {
-                this.types = Collections.List<RuntimeType>.Create();
+                this.types = new();
             }
 
             public readonly void Add<T>() where T : unmanaged
             {
-                types.Add(RuntimeType.Get<T>());
+                types.Add(ComponentType.Get<T>());
             }
 
             public void Dispose()
@@ -199,10 +234,10 @@ namespace Simulation.Tests
             void ISerializable.Read(BinaryReader reader)
             {
                 byte count = reader.ReadValue<byte>();
-                types = Collections.List<RuntimeType>.Create();
+                types = new();
                 for (uint i = 0; i < count; i++)
                 {
-                    RuntimeType type = reader.ReadValue<RuntimeType>();
+                    ComponentType type = reader.ReadValue<ComponentType>();
                     types.Add(type);
                 }
             }
@@ -218,13 +253,13 @@ namespace Simulation.Tests
 
         public struct Complicated : IDisposable, ISerializable
         {
-            private Collections.List<Player> players;
+            private List<Player> players;
 
             public readonly USpan<Player> List => players.AsSpan();
 
             public Complicated()
             {
-                players = Collections.List<Player>.Create();
+                players = new();
             }
 
             public readonly void Add(Player player)
@@ -245,7 +280,7 @@ namespace Simulation.Tests
             void ISerializable.Read(BinaryReader reader)
             {
                 byte count = reader.ReadValue<byte>();
-                players = Collections.List<Player>.Create();
+                players = new();
                 for (uint i = 0; i < count; i++)
                 {
                     Player player = reader.ReadObject<Player>();
@@ -267,7 +302,7 @@ namespace Simulation.Tests
         {
             public uint hp;
             public uint damage;
-            private Collections.List<Fruit> inventory;
+            private List<Fruit> inventory;
 
             public readonly USpan<Fruit> Inventory => inventory.AsSpan();
 
@@ -275,7 +310,7 @@ namespace Simulation.Tests
             {
                 this.hp = hp;
                 this.damage = damage;
-                this.inventory = Collections.List<Fruit>.Create();
+                this.inventory = new();
             }
 
             public readonly override string ToString()
@@ -297,7 +332,7 @@ namespace Simulation.Tests
             {
                 hp = reader.ReadValue<uint>();
                 damage = reader.ReadValue<uint>();
-                inventory = Collections.List<Fruit>.Create();
+                inventory = new();
                 uint count = reader.ReadValue<uint>();
                 for (uint i = 0; i < count; i++)
                 {
@@ -364,7 +399,7 @@ namespace Simulation.Tests
         {
             public readonly int a = a;
             public readonly Apple apple = apple;
-            public readonly Collections.List<Fruit> fruits = new(fruits);
+            public readonly List<Fruit> fruits = new(fruits);
 
             public void Dispose()
             {

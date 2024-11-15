@@ -4,7 +4,7 @@ using Unmanaged;
 
 namespace Simulation.Tests
 {
-    public unsafe class ComponentChunkTests : UnmanagedTests
+    public unsafe class ComponentChunkTests : SimulationTests
     {
         [Test]
         public void AddEntityNoComponents()
@@ -21,7 +21,7 @@ namespace Simulation.Tests
         [Test]
         public void AddEntityWithComponents()
         {
-            ComponentChunk chunk = new([RuntimeType.Get<int>(), RuntimeType.Get<float>()]);
+            ComponentChunk chunk = new([ComponentType.Get<int>(), ComponentType.Get<float>()]);
             uint entity = new Union(7).entity;
             uint index = chunk.AddEntity(entity);
             ref int intComponent = ref chunk.GetComponentRef<int>(index);
@@ -43,7 +43,7 @@ namespace Simulation.Tests
         [Test]
         public void RemovingEntity()
         {
-            ComponentChunk chunk = new([RuntimeType.Get<int>(), RuntimeType.Get<float>()]);
+            ComponentChunk chunk = new([ComponentType.Get<int>(), ComponentType.Get<float>()]);
             uint entity = new Union(7).entity;
             uint index = chunk.AddEntity(entity);
             ref int intComponent = ref chunk.GetComponentRef<int>(index);
@@ -67,7 +67,7 @@ namespace Simulation.Tests
             uint entity = new Union(7).entity;
             uint oldIndex = chunkA.AddEntity(entity);
 
-            ComponentChunk chunkB = new([RuntimeType.Get<int>()]);
+            ComponentChunk chunkB = new([ComponentType.Get<int>()]);
             uint newIndex = chunkA.MoveEntity(entity, chunkB);
             ref int intComponent = ref chunkB.GetComponentRef<int>(newIndex);
             intComponent = 42;
@@ -79,7 +79,7 @@ namespace Simulation.Tests
             Assert.That(intComponents, Has.Count.EqualTo(1));
             Assert.That(intComponents[0], Is.EqualTo(42));
 
-            ComponentChunk chunkC = new([RuntimeType.Get<float>(), RuntimeType.Get<int>()]);
+            ComponentChunk chunkC = new([ComponentType.Get<float>(), ComponentType.Get<int>()]);
             uint newerIndex = chunkB.MoveEntity(entity, chunkC);
             ref float floatComponent = ref chunkC.GetComponentRef<float>(newerIndex);
             floatComponent = 3.14f;
@@ -100,8 +100,8 @@ namespace Simulation.Tests
         [Test]
         public void HashTypes()
         {
-            ComponentChunk chunkA = new([RuntimeType.Get<int>(), RuntimeType.Get<float>()]);
-            ComponentChunk chunkB = new([RuntimeType.Get<float>(), RuntimeType.Get<int>()]);
+            ComponentChunk chunkA = new([ComponentType.Get<int>(), ComponentType.Get<float>()]);
+            ComponentChunk chunkB = new([ComponentType.Get<float>(), ComponentType.Get<int>()]);
             int hashA = chunkA.Key;
             int hashB = chunkB.Key;
             Assert.That(hashA, Is.EqualTo(hashB));

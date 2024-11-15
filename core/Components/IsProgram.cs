@@ -1,5 +1,3 @@
-using Unmanaged;
-
 namespace Programs.Components
 {
     public readonly struct IsProgram
@@ -7,14 +5,14 @@ namespace Programs.Components
         public readonly StartProgramFunction start;
         public readonly UpdateProgramFunction update;
         public readonly FinishProgramFunction finish;
-        public readonly RuntimeType type;
+        public readonly ushort typeSize;
 
-        public IsProgram(StartProgramFunction start, UpdateProgramFunction update, FinishProgramFunction finish, RuntimeType type)
+        public IsProgram(StartProgramFunction start, UpdateProgramFunction update, FinishProgramFunction finish, ushort typeSize)
         {
             this.start = start;
             this.update = update;
             this.finish = finish;
-            this.type = type;
+            this.typeSize = typeSize;
         }
     }
 }

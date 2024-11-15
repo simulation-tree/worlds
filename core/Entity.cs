@@ -77,7 +77,7 @@ namespace Simulation
         {
             if (this.IsDestroyed())
             {
-                throw new InvalidOperationException($"Entity `{value}` is destroyed and no longer available.");
+                throw new InvalidOperationException($"Entity `{value}` is destroyed and no longer available");
             }
         }
 
@@ -127,7 +127,7 @@ namespace Simulation
             return world.GetArrayLength<T>(value);
         }
 
-        public readonly USpan<RuntimeType> GetArrayTypes()
+        public readonly USpan<ArrayType> GetArrayTypes()
         {
             ThrowIfDestroyed();
             return world.GetArrayTypes(value);
@@ -194,13 +194,13 @@ namespace Simulation
             return world.ContainsComponent<T>(value);
         }
 
-        public readonly bool ContainsComponent(RuntimeType componentType)
+        public readonly bool ContainsComponent(ComponentType componentType)
         {
             ThrowIfDestroyed();
             return world.ContainsComponent(value, componentType);
         }
 
-        public readonly USpan<RuntimeType> GetComponentTypes()
+        public readonly USpan<ComponentType> GetComponentTypes()
         {
             ThrowIfDestroyed();
             return world.GetComponentTypes(value);
@@ -245,7 +245,7 @@ namespace Simulation
             return world.GetComponent(value, defaultValue);
         }
 
-        public readonly USpan<byte> GetComponentBytes(RuntimeType componentType)
+        public readonly USpan<byte> GetComponentBytes(ComponentType componentType)
         {
             ThrowIfDestroyed();
             return world.GetComponentBytes(value, componentType);
@@ -284,7 +284,7 @@ namespace Simulation
         /// <summary>
         /// Adds a new component of the given type with uninitialized data.
         /// </summary>
-        public readonly void AddComponent(RuntimeType componentType)
+        public readonly void AddComponent(ComponentType componentType)
         {
             ThrowIfDestroyed();
             world.AddComponent(value, componentType);
@@ -296,7 +296,7 @@ namespace Simulation
             world.RemoveComponent<T>(value);
         }
 
-        public readonly void RemoveComponent(RuntimeType componentType)
+        public readonly void RemoveComponent(ComponentType componentType)
         {
             ThrowIfDestroyed();
             world.RemoveComponent(value, componentType);
@@ -488,8 +488,8 @@ namespace Simulation
             public readonly uint entity;
             public readonly World world;
             public readonly StackTrace creationStackTrace;
-            public readonly RuntimeType[] componentTypes;
-            public readonly RuntimeType[] arrayTypes;
+            public readonly ComponentType[] componentTypes;
+            public readonly ArrayType[] arrayTypes;
 
             public EntityDebugView(Entity entity)
             {

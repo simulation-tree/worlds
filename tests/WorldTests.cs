@@ -3,7 +3,7 @@ using Unmanaged;
 
 namespace Simulation.Tests
 {
-    public class WorldTests : UnmanagedTests
+    public class WorldTests : SimulationTests
     {
         [Test]
         public void CreateAndDisposeWorld()

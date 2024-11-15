@@ -2,6 +2,19 @@
 Library for implementing logic acting on data stored as _components_ and _arrays_, where both can be found through _entities_.
 Entities themselves are stored in _worlds_, which can be serialized, deserialized and appended to other worlds at runtime.
 
+### Initializing
+To use this library, a source generated `TypeTable` must be invoked to register all component and array types:
+```cs
+private static void Main()
+{
+    RuntimeHelpers.RunClassConstructor(typeof(TypeTable).TypeHandle);
+    Console.WriteLine($"Component types: {ComponentType.All.Count}");
+    Console.WriteLine($"Array types: {ArrayType.All.Count}");
+}
+```
+
+> If you'd like, registration of types can be done manually with the `Register<T>()` method in `ComponentType` and `ArrayType`.
+
 ### Storing values in components
 ```cs
 using (World world = new())
@@ -26,7 +39,7 @@ Span<char> moreMany = world.ResizeArray<char>(entity, 5);
 Assert.That(moreMany.ToString(), Is.EqualTo("Hello"));
 ```
 
-### Fetching data
+### Fetching data and querying
 Polling of components, and modifying them can be done through multiple ways.
 The following examples ascend in efficiency:
 ```cs
@@ -306,6 +319,53 @@ public unsafe readonly struct ExampleSystem : ISystem
 ```
 > Checking if the system's world is the given world is a way to run these functions
 only once within a simulator.
+
+### Serialization and deserialization
+Serializing a world to bytes is simple:
+```cs
+using World world = new();
+Entity entity = new(world);
+entity.AddComponent(25f);
+entity.AddComponent(true);
+world.CreateArray<char>(entity, "Hello world");
+
+using BinaryWriter writer = new();
+writer.WriteObject(world);
+USpan<byte> bytes = writer.GetBytes();
+```
+
+But for deserializing, because component and array types are not deterministic (due to the order
+that they're registered with, and which are used), deserialization requires functions for
+remapping the saved type to the expected:
+```cs
+World.SerializationContext.GetComponentType = (fullTypeName) =>
+{
+    if (fullTypeName.SequenceEqual(typeof(float).FullName.AsSpan()))
+    {
+        return ComponentType.Get<float>();
+    }
+    else if (fullTypeName.SequenceEqual(typeof(bool).FullName.AsSpan()))
+    {
+        return ComponentType.Get<bool>();
+    }
+
+    throw new Exception($"Unknown type {fullTypeName.ToString()}");
+};
+
+World.SerializationContext.GetArrayType = (fullTypeName) =>
+{
+    if (fullTypeName.SequenceEqual(typeof(char).FullName.AsSpan()))
+    {
+        return ArrayType.Get<char>();
+    }
+
+    throw new Exception($"Unknown type {fullTypeName.ToString()}");
+};
+
+using BinaryReader reader = new(bytes);
+World deserializedWorld = reader.ReadObject<World>();
+anotherWorld.Append(deserializedWorld);
+```
 
 ### Contributing and Design
 This library implements the "[entity-component-system](https://en.wikipedia.org/wiki/Entity_component_system)" pattern of the "archetype" variety.

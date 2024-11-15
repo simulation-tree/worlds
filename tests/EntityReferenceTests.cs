@@ -1,8 +1,6 @@
-﻿using Unmanaged;
-
-namespace Simulation.Tests
+﻿namespace Simulation.Tests
 {
-    public class EntityReferenceTests : UnmanagedTests
+    public class EntityReferenceTests : SimulationTests
     {
         [Test]
         public void ReferenceAnotherEntity()

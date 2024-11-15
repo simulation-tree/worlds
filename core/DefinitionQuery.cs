@@ -7,8 +7,8 @@ namespace Simulation
     public struct DefinitionQuery : IDisposable, IQuery
     {
         private readonly List<uint> results;
-        private readonly Array<RuntimeType> componentTypes;
-        private readonly Array<RuntimeType> arrayTypes;
+        private readonly Array<ComponentType> componentTypes;
+        private readonly Array<ArrayType> arrayTypes;
         private readonly bool hasArrays;
         private World world;
 
@@ -32,14 +32,14 @@ namespace Simulation
         public DefinitionQuery(Definition definition)
         {
             results = new(1);
-            USpan<RuntimeType> componentTypes = stackalloc RuntimeType[definition.ComponentTypeCount];
+            USpan<ComponentType> componentTypes = stackalloc ComponentType[definition.componentTypeCount];
             definition.CopyComponentTypes(componentTypes);
             this.componentTypes = new(componentTypes);
 
-            hasArrays = definition.ArrayTypeCount > 0;
+            hasArrays = definition.arrayTypeCount > 0;
             if (hasArrays)
             {
-                USpan<RuntimeType> arrayTypes = stackalloc RuntimeType[definition.ArrayTypeCount];
+                USpan<ArrayType> arrayTypes = stackalloc ArrayType[definition.arrayTypeCount];
                 definition.CopyArrayTypes(arrayTypes);
                 this.arrayTypes = new(arrayTypes);
             }
@@ -61,12 +61,12 @@ namespace Simulation
             this.world = world;
             results.Clear(world.MaxEntityValue);
             Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
-            USpan<RuntimeType> componentTypes = this.componentTypes.AsSpan();
+            USpan<ComponentType> componentTypes = this.componentTypes.AsSpan();
             if (!onlyEnabled)
             {
                 if (hasArrays)
                 {
-                    USpan<RuntimeType> arrayTypes = this.arrayTypes.AsSpan();
+                    USpan<ArrayType> arrayTypes = this.arrayTypes.AsSpan();
                     foreach (int hash in chunks.Keys)
                     {
                         ComponentChunk chunk = chunks[hash];
@@ -76,8 +76,8 @@ namespace Simulation
                             for (uint e = 0; e < entities.Count; e++)
                             {
                                 uint entity = entities[e];
-                                USpan<RuntimeType> entityArrays = world.GetArrayTypes(entity);
-                                if (ContainsArray(arrayTypes, entityArrays))
+                                USpan<ArrayType> entityArrays = world.GetArrayTypes(entity);
+                                if (ContainsArrays(arrayTypes, entityArrays))
                                 {
                                     results.Add(entity);
                                 }
@@ -102,7 +102,7 @@ namespace Simulation
             {
                 if (hasArrays)
                 {
-                    USpan<RuntimeType> arrayTypes = this.arrayTypes.AsSpan();
+                    USpan<ArrayType> arrayTypes = this.arrayTypes.AsSpan();
                     foreach (int hash in chunks.Keys)
                     {
                         ComponentChunk chunk = chunks[hash];
@@ -114,8 +114,8 @@ namespace Simulation
                                 uint entity = entities[e];
                                 if (world.IsEnabled(entity))
                                 {
-                                    USpan<RuntimeType> entityArrays = world.GetArrayTypes(entity);
-                                    if (ContainsArray(arrayTypes, entityArrays))
+                                    USpan<ArrayType> entityArrays = world.GetArrayTypes(entity);
+                                    if (ContainsArrays(arrayTypes, entityArrays))
                                     {
                                         results.Add(entity);
                                     }
@@ -151,7 +151,10 @@ namespace Simulation
             return new(this);
         }
 
-        private static bool ContainsArray(USpan<RuntimeType> arrayTypes, USpan<RuntimeType> entityArrays)
+        /// <summary>
+        /// Checks if all values from the 2nd array are in the 1st.
+        /// </summary>
+        public static bool ContainsArrays(USpan<ArrayType> arrayTypes, USpan<ArrayType> entityArrays)
         {
             for (uint i = 0; i < arrayTypes.Length; i++)
             {

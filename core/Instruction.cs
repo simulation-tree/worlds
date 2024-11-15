@@ -234,7 +234,7 @@ namespace Simulation
                 buffer[length++] = 'n';
                 buffer[length++] = 't';
                 buffer[length++] = '<';
-                RuntimeType componentType = new((uint)a);
+                ComponentType componentType = new((byte)a);
                 length += componentType.ToString(buffer.Slice(length));
                 buffer[length++] = '>';
                 buffer[length++] = '(';
@@ -260,7 +260,7 @@ namespace Simulation
                 buffer[length++] = 'n';
                 buffer[length++] = 't';
                 buffer[length++] = '<';
-                RuntimeType componentType = new((uint)a);
+                ComponentType componentType = new((byte)a);
                 length += componentType.ToString(buffer.Slice(length));
                 buffer[length++] = '>';
                 buffer[length++] = '(';
@@ -281,8 +281,8 @@ namespace Simulation
                 buffer[length++] = 'n';
                 buffer[length++] = 't';
                 buffer[length++] = '<';
-                RuntimeType componentType = new((uint)a);
-                length += componentType.ToString(buffer.Slice(length)); 
+                ComponentType componentType = new((byte)a);
+                length += componentType.ToString(buffer.Slice(length));
                 buffer[length++] = '>';
                 buffer[length++] = '(';
                 nint allocationAddress = (nint)b;
@@ -303,7 +303,7 @@ namespace Simulation
                 buffer[length++] = 'a';
                 buffer[length++] = 'y';
                 buffer[length++] = '<';
-                RuntimeType arrayType = new((uint)a);
+                ArrayType arrayType = new((byte)a);
                 length += arrayType.ToString(buffer.Slice(length));
                 buffer[length++] = '>';
                 buffer[length++] = '(';
@@ -325,7 +325,7 @@ namespace Simulation
                 buffer[length++] = 'a';
                 buffer[length++] = 'y';
                 buffer[length++] = '<';
-                RuntimeType arrayType = new((uint)a);
+                ArrayType arrayType = new((byte)a);
                 length += arrayType.ToString(buffer.Slice(length));
                 buffer[length++] = '>';
                 buffer[length++] = '(';
@@ -345,7 +345,7 @@ namespace Simulation
                 buffer[length++] = 'a';
                 buffer[length++] = 'y';
                 buffer[length++] = '<';
-                RuntimeType arrayType = new((uint)a);
+                ArrayType arrayType = new((byte)a);
                 length += arrayType.ToString(buffer.Slice(length));
                 buffer[length++] = '>';
                 buffer[length++] = '(';
@@ -374,7 +374,7 @@ namespace Simulation
 
                 buffer[length++] = '<';
 
-                RuntimeType elementType = new((uint)a);
+                ArrayType elementType = new((byte)a);
                 length += elementType.ToString(buffer.Slice(length));
 
                 buffer[length++] = '>';
@@ -484,16 +484,16 @@ namespace Simulation
         public static Instruction AddComponent<T>(T component, out Allocation allocation) where T : unmanaged
         {
             allocation = Allocation.Create(component);
-            return new(Type.AddComponent, RuntimeType.Get<T>().value, (ulong)allocation.Address, 0);
+            return new(Type.AddComponent, ComponentType.Get<T>().value, (ulong)allocation.Address, 0);
         }
 
-        public static Instruction AddComponent(RuntimeType componentType)
+        public static Instruction AddComponent(ComponentType componentType)
         {
             Allocation allocation = Allocation.Create(componentType.Size);
             return new(Type.AddComponent, componentType.value, (ulong)allocation.Address, 0);
         }
 
-        public static Instruction AddComponent(RuntimeType componentType, USpan<byte> componentData)
+        public static Instruction AddComponent(ComponentType componentType, USpan<byte> componentData)
         {
             Allocation allocation = Allocation.Create(componentData);
             return new(Type.AddComponent, componentType.value, (ulong)allocation.Address, 0);
@@ -501,10 +501,10 @@ namespace Simulation
 
         public static Instruction RemoveComponent<T>() where T : unmanaged
         {
-            return RemoveComponent(RuntimeType.Get<T>());
+            return RemoveComponent(ComponentType.Get<T>());
         }
 
-        public static Instruction RemoveComponent(RuntimeType componentType)
+        public static Instruction RemoveComponent(ComponentType componentType)
         {
             return new(Type.RemoveComponent, componentType.value, 0, 0);
         }
@@ -515,10 +515,10 @@ namespace Simulation
         public static Instruction SetComponent<T>(T component) where T : unmanaged
         {
             Allocation allocation = Allocation.Create(component);
-            return new(Type.SetComponent, RuntimeType.Get<T>().value, (ulong)allocation.Address, 0);
+            return new(Type.SetComponent, ComponentType.Get<T>().value, (ulong)allocation.Address, 0);
         }
 
-        public static Instruction SetComponent(RuntimeType componentType, USpan<byte> componentData)
+        public static Instruction SetComponent(ComponentType componentType, USpan<byte> componentData)
         {
             Allocation allocation = Allocation.Create(componentData);
             return new(Type.SetComponent, componentType.value, (ulong)allocation.Address, 0);
@@ -529,10 +529,10 @@ namespace Simulation
         /// </summary>
         public static Instruction CreateArray<T>(uint length) where T : unmanaged
         {
-            return CreateArray(RuntimeType.Get<T>(), length);
+            return CreateArray(ArrayType.Get<T>(), length);
         }
 
-        public static Instruction CreateArray(RuntimeType arrayType, uint length)
+        public static Instruction CreateArray(ArrayType arrayType, uint length)
         {
             Allocation allocaton = new(arrayType.Size * length);
             return new(Type.CreateArray, arrayType.value, (ulong)(nint)allocaton, length);
@@ -541,15 +541,15 @@ namespace Simulation
         public unsafe static Instruction CreateArray<T>(USpan<T> values) where T : unmanaged
         {
             Allocation allocation = Allocation.Create(values);
-            return new(Type.CreateArray, RuntimeType.Get<T>().value, (ulong)(nint)allocation, (uint)values.Length);
+            return new(Type.CreateArray, ArrayType.Get<T>().value, (ulong)(nint)allocation, (uint)values.Length);
         }
 
         public static Instruction DestroyArray<T>() where T : unmanaged
         {
-            return DestroyArray(RuntimeType.Get<T>());
+            return DestroyArray(ArrayType.Get<T>());
         }
 
-        public static Instruction DestroyArray(RuntimeType elementType)
+        public static Instruction DestroyArray(ArrayType elementType)
         {
             return new(Type.DestroyArray, elementType.value, 0, 0);
         }
@@ -559,7 +559,7 @@ namespace Simulation
             Allocation allocation = new(sizeof(uint) + TypeInfo<T>.size);
             allocation.Write(0, 1);
             allocation.Write(sizeof(uint), element);
-            return new(Type.SetArrayElement, RuntimeType.Get<T>().value, (ulong)(nint)allocation, index);
+            return new(Type.SetArrayElement, ArrayType.Get<T>().value, (ulong)(nint)allocation, index);
         }
 
         public unsafe static Instruction SetArrayElement<T>(uint index, USpan<T> elements) where T : unmanaged
@@ -567,15 +567,15 @@ namespace Simulation
             Allocation allocation = new(sizeof(uint) + (TypeInfo<T>.size * elements.Length));
             allocation.Write(0, elements.Length);
             allocation.Write(sizeof(uint), elements);
-            return new(Type.SetArrayElement, RuntimeType.Get<T>().value, (ulong)(nint)allocation, index);
+            return new(Type.SetArrayElement, ArrayType.Get<T>().value, (ulong)(nint)allocation, index);
         }
 
         public static Instruction ResizeArray<T>(uint newLength) where T : unmanaged
         {
-            return ResizeArray(RuntimeType.Get<T>(), newLength);
+            return ResizeArray(ArrayType.Get<T>(), newLength);
         }
 
-        public static Instruction ResizeArray(RuntimeType arrayType, uint newLength)
+        public static Instruction ResizeArray(ArrayType arrayType, uint newLength)
         {
             return new(Type.ResizeArray, arrayType.value, newLength, 0);
         }

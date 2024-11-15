@@ -26,11 +26,6 @@ namespace Simulation
             return simulator;
         }
 
-        public static bool IsDisposed(UnsafeSimulator* simulator)
-        {
-            return simulator is null;
-        }
-
         public static void Free(ref UnsafeSimulator* simulator)
         {
             Allocations.ThrowIfNull(simulator);
@@ -44,30 +39,35 @@ namespace Simulation
         public static World GetWorld(UnsafeSimulator* simulator)
         {
             Allocations.ThrowIfNull(simulator);
+
             return simulator->world;
         }
 
         public static USpan<SystemContainer> GetSystems(UnsafeSimulator* simulator)
         {
             Allocations.ThrowIfNull(simulator);
+
             return simulator->systems.AsSpan();
         }
 
         public static ref List<ProgramContainer> GetKnownPrograms(UnsafeSimulator* simulator)
         {
             Allocations.ThrowIfNull(simulator);
+
             return ref simulator->knownPrograms;
         }
 
         public static ref ComponentQuery<IsProgram, ProgramState> GetProgramQuery(UnsafeSimulator* simulator)
         {
             Allocations.ThrowIfNull(simulator);
+
             return ref simulator->programQuery;
         }
 
         public static uint GetSystemCount(UnsafeSimulator* simulator)
         {
             Allocations.ThrowIfNull(simulator);
+
             return simulator->systems.Count;
         }
 
@@ -76,8 +76,8 @@ namespace Simulation
             Allocations.ThrowIfNull(simulator);
 
             World hostWorld = GetWorld(simulator);
-            RuntimeType type = RuntimeType.Get<T>();
-            Trace.WriteLine($"Adding system {type} to {hostWorld}");
+            nint systemType = RuntimeTypeHandle.ToIntPtr(typeof(T).TypeHandle);
+            Trace.WriteLine($"Adding system `{typeof(T)}` to `{hostWorld}`");
 
             T template = new();
             Allocation instance = Allocation.Create(template);
@@ -85,7 +85,7 @@ namespace Simulation
             //add message handlers
             USpan<MessageHandler> buffer = stackalloc MessageHandler[32];
             uint messageHandlerCount = template.GetMessageHandlers(buffer);
-            Dictionary<RuntimeType, HandleFunction> handlers;
+            Dictionary<nint, HandleFunction> handlers;
             if (messageHandlerCount > 0)
             {
                 handlers = new(messageHandlerCount);
@@ -94,10 +94,10 @@ namespace Simulation
                     MessageHandler handler = buffer[i];
                     if (handler == default)
                     {
-                        throw new InvalidOperationException($"Message handler at index {i} is uninitialized in system {type}");
+                        throw new InvalidOperationException($"Message handler at index {i} is uninitialized in system `{typeof(T)}`");
                     }
 
-                    handlers.Add(handler.type, handler.function);
+                    handlers.Add(handler.messageType, handler.function);
                 }
             }
             else
@@ -105,7 +105,7 @@ namespace Simulation
                 handlers = new(1);
             }
 
-            SystemContainer container = new(simulator, instance, type, handlers, template.Initialize, template.Iterate, template.Finalize);
+            SystemContainer container = new(simulator, instance, systemType, handlers, template.Initialize, template.Iterate, template.Finalize);
             simulator->systems.Add(container);
             SystemContainer<T> genericContainer = new(simulator, simulator->systems.Count - 1);
             container.Initialize(hostWorld);
@@ -117,13 +117,13 @@ namespace Simulation
             Allocations.ThrowIfNull(simulator);
 
             World world = GetWorld(simulator);
-            RuntimeType type = RuntimeType.Get<T>();
-            Trace.WriteLine($"Removing system {type} from {world}");
+            nint systemType = RuntimeTypeHandle.ToIntPtr(typeof(T).TypeHandle);
+            Trace.WriteLine($"Removing system `{typeof(T)}` from `{world}`");
 
             for (uint i = 0; i < simulator->systems.Count; i++)
             {
                 ref SystemContainer system = ref simulator->systems[i];
-                if (system.type == type)
+                if (system.systemType == systemType)
                 {
                     system.Dispose();
                     simulator->systems.RemoveAt(i);

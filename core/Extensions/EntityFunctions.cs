@@ -90,21 +90,22 @@ public static class EntityFunctions
         //todo: efficiency: kinda expensive to perform these ops one by one, should instead add all missing at once
         World world = entity.World;
         uint value = entity.Value;
-        USpan<RuntimeType> buffer = stackalloc RuntimeType[definition.TotalTypeCount];
-        definition.CopyComponentTypes(buffer);
-        for (uint i = 0; i < definition.ComponentTypeCount; i++)
+        USpan<ComponentType> componentTypes = stackalloc ComponentType[definition.componentTypeCount];
+        definition.CopyComponentTypes(componentTypes);
+        for (uint i = 0; i < definition.componentTypeCount; i++)
         {
-            RuntimeType componentType = buffer[i];
+            ComponentType componentType = componentTypes[i];
             if (!world.ContainsComponent(value, componentType))
             {
                 world.AddComponent(value, componentType);
             }
         }
 
-        definition.CopyArrayTypes(buffer);
-        for (uint i = 0; i < definition.ArrayTypeCount; i++)
+        USpan<ArrayType> arrayTypes = stackalloc ArrayType[definition.arrayTypeCount];
+        definition.CopyArrayTypes(arrayTypes);
+        for (uint i = 0; i < definition.arrayTypeCount; i++)
         {
-            RuntimeType arrayType = buffer[i];
+            ArrayType arrayType = arrayTypes[i];
             if (!world.ContainsArray(value, arrayType))
             {
                 world.CreateArray(value, arrayType);
@@ -119,20 +120,21 @@ public static class EntityFunctions
     {
         World world = entity.World;
         uint value = entity.Value;
-        USpan<RuntimeType> buffer = stackalloc RuntimeType[definition.TotalTypeCount];
-        definition.CopyComponentTypes(buffer);
-        for (uint i = 0; i < definition.ComponentTypeCount; i++)
+        USpan<ComponentType> componentTypes = stackalloc ComponentType[definition.componentTypeCount];
+        definition.CopyComponentTypes(componentTypes);
+        for (uint i = 0; i < definition.componentTypeCount; i++)
         {
-            if (!world.ContainsComponent(value, buffer[i]))
+            if (!world.ContainsComponent(value, componentTypes[i]))
             {
                 return false;
             }
         }
 
-        definition.CopyArrayTypes(buffer);
-        for (uint i = 0; i < definition.ArrayTypeCount; i++)
+        USpan<ArrayType> arrayTypes = stackalloc ArrayType[definition.arrayTypeCount];
+        definition.CopyArrayTypes(arrayTypes);
+        for (uint i = 0; i < definition.arrayTypeCount; i++)
         {
-            if (!world.ContainsArray(value, buffer[i]))
+            if (!world.ContainsArray(value, arrayTypes[i]))
             {
                 return false;
             }
@@ -149,20 +151,21 @@ public static class EntityFunctions
         World world = entity.World;
         uint value = entity.Value;
         Definition definition = entity.Definition;
-        USpan<RuntimeType> buffer = stackalloc RuntimeType[definition.TotalTypeCount];
-        definition.CopyComponentTypes(buffer);
-        for (uint i = 0; i < definition.ComponentTypeCount; i++)
+        USpan<ComponentType> componentTypes = stackalloc ComponentType[definition.componentTypeCount];
+        definition.CopyComponentTypes(componentTypes);
+        for (uint i = 0; i < definition.componentTypeCount; i++)
         {
-            if (!world.ContainsComponent(value, buffer[i]))
+            if (!world.ContainsComponent(value, componentTypes[i]))
             {
                 return false;
             }
         }
 
-        definition.CopyArrayTypes(buffer);
-        for (uint i = 0; i < definition.ArrayTypeCount; i++)
+        USpan<ArrayType> arrayTypes = stackalloc ArrayType[definition.arrayTypeCount];
+        definition.CopyArrayTypes(arrayTypes);
+        for (uint i = 0; i < definition.arrayTypeCount; i++)
         {
-            if (!world.ContainsArray(value, buffer[i]))
+            if (!world.ContainsArray(value, arrayTypes[i]))
             {
                 return false;
             }

@@ -13,7 +13,7 @@ namespace Simulation
         private UnsafeSimulator* value;
 
         public readonly World World => UnsafeSimulator.GetWorld(value);
-        public readonly bool IsDisposed => UnsafeSimulator.IsDisposed(value);
+        public readonly bool IsDisposed => value is null;
         public readonly nint Address => (nint)value;
         public readonly uint SystemCount => UnsafeSimulator.GetSystems(value).Length;
         public readonly USpan<ProgramContainer> Programs => UnsafeSimulator.GetKnownPrograms(value).AsSpan();
@@ -180,8 +180,8 @@ namespace Simulation
             InitializeSystems();
             InitializePrograms();
 
-            using Allocation allocation = Allocation.Create(message);
-            RuntimeType type = RuntimeType.Get<T>();
+            using Allocation messageContainer = Allocation.Create(message);
+            nint messageType = RuntimeTypeHandle.ToIntPtr(typeof(T).TypeHandle);
             USpan<SystemContainer> systems = UnsafeSimulator.GetSystems(value);
             World hostWorld = World;
             bool handled = false;
@@ -190,7 +190,7 @@ namespace Simulation
             for (uint i = 0; i < systems.Length; i++)
             {
                 ref SystemContainer system = ref systems[i];
-                handled |= system.TryHandleMessage(hostWorld, type, allocation);
+                handled |= system.TryHandleMessage(hostWorld, messageType, messageContainer);
             }
 
             //tell program worlds
@@ -205,7 +205,7 @@ namespace Simulation
                     for (uint i = 0; i < systems.Length; i++)
                     {
                         ref SystemContainer system = ref systems[i];
-                        handled |= system.TryHandleMessage(programWorld, type, allocation);
+                        handled |= system.TryHandleMessage(programWorld, messageType, messageContainer);
                     }
                 }
             }
@@ -246,7 +246,7 @@ namespace Simulation
                     World newProgramWorld = new();
                     ref ProgramState state = ref x.Component2;
                     state = ProgramState.Active;
-                    Allocation programAllocation = new(x.Component1.type.Size);
+                    Allocation programAllocation = new(x.Component1.typeSize);
                     ProgramContainer programContainer = new(x.Component1, newProgramWorld, program, programAllocation);
                     program.AddComponent(newProgramWorld);
                     program.AddComponent(new ProgramAllocation(programAllocation));
@@ -273,12 +273,12 @@ namespace Simulation
 
         public readonly bool ContainsSystem<T>() where T : unmanaged, ISystem
         {
-            RuntimeType type = RuntimeType.Get<T>();
+            nint systemType = RuntimeTypeHandle.ToIntPtr(typeof(T).TypeHandle);
             USpan<SystemContainer> systems = UnsafeSimulator.GetSystems(value);
             for (uint i = 0; i < systems.Length; i++)
             {
                 ref SystemContainer system = ref systems[i];
-                if (system.type == type)
+                if (system.systemType == systemType)
                 {
                     return true;
                 }
@@ -289,28 +289,29 @@ namespace Simulation
 
         public readonly SystemContainer<T> GetSystem<T>() where T : unmanaged, ISystem
         {
-            RuntimeType type = RuntimeType.Get<T>();
+            nint systemType = RuntimeTypeHandle.ToIntPtr(typeof(T).TypeHandle);
             USpan<SystemContainer> systems = UnsafeSimulator.GetSystems(value);
             for (uint i = 0; i < systems.Length; i++)
             {
                 ref SystemContainer system = ref systems[i];
-                if (system.type == type)
+                if (system.systemType == systemType)
                 {
                     return new(value, i);
                 }
             }
 
-            throw new InvalidOperationException($"System `{type}` is not registered in the simulator");
+            throw new InvalidOperationException($"System `{typeof(T)}` is not registered in the simulator");
         }
 
         [Conditional("DEBUG")]
         public readonly void ThrowIfSystemIsMissing<T>() where T : unmanaged, ISystem
         {
+            nint systemType = RuntimeTypeHandle.ToIntPtr(typeof(T).TypeHandle);
             USpan<SystemContainer> systems = UnsafeSimulator.GetSystems(value);
             for (uint i = 0; i < systems.Length; i++)
             {
                 ref SystemContainer system = ref systems[i];
-                if (system.type.Is<T>())
+                if (system.systemType == systemType)
                 {
                     return;
                 }

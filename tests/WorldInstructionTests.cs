@@ -5,7 +5,7 @@ using Unmanaged;
 
 namespace Simulation.Tests
 {
-    public class WorldInstructionTests : UnmanagedTests
+    public class WorldInstructionTests : SimulationTests
     {
         [Test]
         public void CreateOneEntity()

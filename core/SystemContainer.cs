@@ -8,10 +8,10 @@ namespace Simulation
 {
     public unsafe struct SystemContainer : IDisposable
     {
-        public readonly RuntimeType type;
+        public readonly nint systemType;
         public readonly Allocation allocation;
 
-        private readonly Dictionary<RuntimeType, HandleFunction> handlers;
+        private readonly Dictionary<nint, HandleFunction> handlers;
         private readonly List<World> programWorlds;
         private readonly UnsafeSimulator* simulator;
         private readonly InitializeFunction initialize;
@@ -25,11 +25,20 @@ namespace Simulation
         /// </summary>
         public readonly World World => UnsafeSimulator.GetWorld(simulator);
 
-        public SystemContainer(UnsafeSimulator* simulator, Allocation system, RuntimeType type, Dictionary<RuntimeType, HandleFunction> handlers, InitializeFunction initialize, IterateFunction update, FinalizeFunction finalize)
+        public readonly Type Type
+        {
+            get
+            {
+                RuntimeTypeHandle handle = RuntimeTypeHandle.FromIntPtr(systemType);
+                return Type.GetTypeFromHandle(handle) ?? throw new();
+            }
+        }
+
+        public SystemContainer(UnsafeSimulator* simulator, Allocation system, nint systemType, Dictionary<nint, HandleFunction> handlers, InitializeFunction initialize, IterateFunction update, FinalizeFunction finalize)
         {
             this.simulator = simulator;
             this.allocation = system;
-            this.type = type;
+            this.systemType = systemType;
             this.handlers = handlers;
             programWorlds = new();
             this.initialize = initialize;
@@ -39,7 +48,9 @@ namespace Simulation
 
         public readonly uint ToString(USpan<char> buffer)
         {
-            return type.ToString(buffer);
+            string name = Type.Name;
+            name.CopyTo(buffer.AsSystemSpan());
+            return (uint)name.Length;
         }
 
         public readonly override string ToString()
@@ -98,9 +109,9 @@ namespace Simulation
             finalize.Invoke(this, programWorld);
         }
 
-        public readonly bool TryHandleMessage(World programWorld, RuntimeType type, Allocation message)
+        public readonly bool TryHandleMessage(World programWorld, nint messageType, Allocation message)
         {
-            if (handlers.TryGetValue(type, out HandleFunction handler))
+            if (handlers.TryGetValue(messageType, out HandleFunction handler))
             {
                 handler.Invoke(this, programWorld, message);
                 return true;
@@ -109,12 +120,18 @@ namespace Simulation
             return false;
         }
 
+        public readonly bool TryHandleMessage<T>(World programWorld, Allocation message) where T : unmanaged
+        {
+            nint messageType = RuntimeTypeHandle.ToIntPtr(typeof(T).TypeHandle);
+            return TryHandleMessage(programWorld, messageType, message);
+        }
+
         [Conditional("DEBUG")]
         public readonly void ThrowIfNotInitializedWith(World programWorld)
         {
             if (!IsInitializedWith(programWorld))
             {
-                throw new InvalidOperationException($"System {this} is not initialized with world {programWorld}");
+                throw new InvalidOperationException($"System `{this}` is not initialized with world `{programWorld}`");
             }
         }
     }

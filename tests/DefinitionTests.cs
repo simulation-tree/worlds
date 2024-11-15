@@ -2,13 +2,13 @@
 
 namespace Simulation.Tests
 {
-    public class DefinitionTests : UnmanagedTests
+    public class DefinitionTests : SimulationTests
     {
         [Test]
         public void CompareEquality()
         {
-            Definition a = new([RuntimeType.Get<float>()], [RuntimeType.Get<byte>()]);
-            Definition b = new([RuntimeType.Get<float>()], [RuntimeType.Get<byte>()]);
+            Definition a = new([ComponentType.Get<float>()], [ArrayType.Get<byte>()]);
+            Definition b = new([ComponentType.Get<float>()], [ArrayType.Get<byte>()]);
 
             Assert.That(a, Is.EqualTo(b));
 
@@ -28,8 +28,8 @@ namespace Simulation.Tests
         [Test]
         public void NotEqual()
         {
-            Definition a = new([RuntimeType.Get<float>()], [RuntimeType.Get<byte>()]);
-            Definition b = new([RuntimeType.Get<float>()], [RuntimeType.Get<float>()]);
+            Definition a = new([ComponentType.Get<float>()], [ArrayType.Get<byte>()]);
+            Definition b = new([ComponentType.Get<float>()], [ArrayType.Get<float>()]);
 
             Assert.That(a, Is.Not.EqualTo(b));
         }
@@ -43,54 +43,25 @@ namespace Simulation.Tests
             a = a.AddComponentType<char>();
             a = a.AddArrayType<float>();
 
-            Assert.That(a.ComponentTypeCount, Is.EqualTo(2));
-            Assert.That(a.ArrayTypeCount, Is.EqualTo(2));
+            Assert.That(a.componentTypeCount, Is.EqualTo(2));
+            Assert.That(a.arrayTypeCount, Is.EqualTo(2));
             Assert.That(a.TotalTypeCount, Is.EqualTo(4));
-            Assert.That(a[0].type, Is.EqualTo(RuntimeType.Get<int>()));
-            Assert.That(a[0].isArray, Is.False);
-            Assert.That(a[1].type, Is.EqualTo(RuntimeType.Get<double>()));
-            Assert.That(a[1].isArray, Is.True);
-            Assert.That(a[2].type, Is.EqualTo(RuntimeType.Get<char>()));
-            Assert.That(a[2].isArray, Is.False);
-            Assert.That(a[3].type, Is.EqualTo(RuntimeType.Get<float>()));
-            Assert.That(a[3].isArray, Is.True);
-        }
-
-        [Test]
-        public void ReadTypeValues()
-        {
-            Definition a = new();
-            a = a.AddComponentType<int>();
-            a = a.AddArrayType<double>();
-            a = a.AddComponentType<char>();
-            a = a.AddArrayType<float>();
-
-            USpan<RuntimeType> buffer = stackalloc RuntimeType[8];
-            uint count = a.CopyAllTypes(buffer);
-
-            Assert.That(count, Is.EqualTo(4));
-            Assert.That(buffer[0], Is.EqualTo(RuntimeType.Get<int>()));
-            Assert.That(buffer[1], Is.EqualTo(RuntimeType.Get<double>()));
-            Assert.That(buffer[2], Is.EqualTo(RuntimeType.Get<char>()));
-            Assert.That(buffer[3], Is.EqualTo(RuntimeType.Get<float>()));
-
-            count = a.CopyComponentTypes(buffer);
-            Assert.That(count, Is.EqualTo(2));
-            Assert.That(buffer[0], Is.EqualTo(RuntimeType.Get<int>()));
-            Assert.That(buffer[1], Is.EqualTo(RuntimeType.Get<char>()));
-
-            count = a.CopyArrayTypes(buffer);
-            Assert.That(count, Is.EqualTo(2));
-            Assert.That(buffer[0], Is.EqualTo(RuntimeType.Get<double>()));
-            Assert.That(buffer[1], Is.EqualTo(RuntimeType.Get<float>()));
+            USpan<ComponentType> componentTypes = stackalloc ComponentType[a.componentTypeCount];
+            USpan<ArrayType> arrayTypes = stackalloc ArrayType[a.arrayTypeCount];
+            a.CopyComponentTypes(componentTypes);
+            a.CopyArrayTypes(arrayTypes);
+            Assert.That(componentTypes.Contains(ComponentType.Get<int>()), Is.True);
+            Assert.That(componentTypes.Contains(ComponentType.Get<char>()), Is.True);
+            Assert.That(arrayTypes.Contains(ArrayType.Get<double>()), Is.True);
+            Assert.That(arrayTypes.Contains(ArrayType.Get<float>()), Is.True);
         }
 
         [Test]
         public void CreateDefinitionFromMany()
         {
             Definition definition = new Definition().AddComponentTypes<int, char, double, float>();
-            Assert.That(definition.ComponentTypeCount, Is.EqualTo(4));
-            Assert.That(definition.ArrayTypeCount, Is.EqualTo(0));
+            Assert.That(definition.componentTypeCount, Is.EqualTo(4));
+            Assert.That(definition.arrayTypeCount, Is.EqualTo(0));
             Assert.That(definition.TotalTypeCount, Is.EqualTo(4));
             Assert.That(definition.ContainsComponent<int>(), Is.True);
             Assert.That(definition.ContainsComponent<char>(), Is.True);
@@ -111,8 +82,8 @@ namespace Simulation.Tests
             uint entityB = world.CreateEntity();
             world.AddComponent(entityB, (byte)2);
 
-            Definition byteComponent = new([RuntimeType.Get<byte>()], []);
-            Definition charArray = new([], [RuntimeType.Get<char>()]);
+            Definition byteComponent = new([ComponentType.Get<byte>()], []);
+            Definition charArray = new([], [ArrayType.Get<char>()]);
 
             using DefinitionQuery byteQuery = new(byteComponent);
             byteQuery.Update(world);
@@ -129,7 +100,7 @@ namespace Simulation.Tests
         [Test]
         public void ContainsComponentTypes()
         {
-            Definition definition = new([RuntimeType.Get<byte>(), RuntimeType.Get<float>()], [RuntimeType.Get<char>()]);
+            Definition definition = new([ComponentType.Get<byte>(), ComponentType.Get<float>()], [ArrayType.Get<char>()]);
             Assert.That(definition.ContainsComponent<byte>(), Is.True);
             Assert.That(definition.ContainsComponent<float>(), Is.True);
             Assert.That(definition.ContainsComponent<char>(), Is.False);
@@ -141,7 +112,7 @@ namespace Simulation.Tests
         {
             using World world = new();
 
-            Definition definition = new([RuntimeType.Get<byte>(), RuntimeType.Get<float>()], [RuntimeType.Get<char>()]);
+            Definition definition = new([ComponentType.Get<byte>(), ComponentType.Get<float>()], [ArrayType.Get<char>()]);
             uint entity = world.CreateEntity(definition);
             byte defaultByte = world.GetComponent<byte>(entity);
             float defaultFloat = world.GetComponent<float>(entity);
@@ -157,7 +128,7 @@ namespace Simulation.Tests
         {
             using World world = new();
 
-            Definition definitionA = new([RuntimeType.Get<byte>(), RuntimeType.Get<float>()], [RuntimeType.Get<char>()]);
+            Definition definitionA = new([ComponentType.Get<byte>(), ComponentType.Get<float>()], [ArrayType.Get<char>()]);
 
             Entity entity = new(world);
             entity.Become(definitionA);
@@ -171,7 +142,7 @@ namespace Simulation.Tests
             Assert.That(entity.GetComponent<float>(), Is.EqualTo(default(float)));
             Assert.That(entity.GetArray<char>().Length, Is.EqualTo(0));
 
-            Definition definitionB = new([], [RuntimeType.Get<byte>()]);
+            Definition definitionB = new([], [ArrayType.Get<byte>()]);
 
             entity.Become(definitionB);
 
@@ -192,25 +163,10 @@ namespace Simulation.Tests
             entityB.AddComponent<float>();
             entityB.CreateArray<char>();
 
-            Definition definition = new([RuntimeType.Get<byte>(), RuntimeType.Get<float>()], [RuntimeType.Get<char>()]);
+            Definition definition = new([ComponentType.Get<byte>(), ComponentType.Get<float>()], [ArrayType.Get<char>()]);
 
             Assert.That(entityA.Is(definition), Is.False);
             Assert.That(entityB.Is(definition), Is.True);
-        }
-
-        [Test]
-        public void ListingTypes()
-        {
-            Definition a = new Definition().AddComponentType<byte>().AddArrayTypes<char, float>();
-            Assert.That(a.ComponentTypeCount, Is.EqualTo(1));
-            Assert.That(a.ArrayTypeCount, Is.EqualTo(2));
-            Assert.That(a.TotalTypeCount, Is.EqualTo(3));
-            Assert.That(a[0].type, Is.EqualTo(RuntimeType.Get<byte>()));
-            Assert.That(a[1].type, Is.EqualTo(RuntimeType.Get<char>()));
-            Assert.That(a[2].type, Is.EqualTo(RuntimeType.Get<float>()));
-            Assert.That(a.IsArrayType(0), Is.False);
-            Assert.That(a.IsArrayType(1), Is.True);
-            Assert.That(a.IsArrayType(2), Is.True);
         }
     }
 }

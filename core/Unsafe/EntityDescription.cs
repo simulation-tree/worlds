@@ -14,7 +14,7 @@ namespace Simulation.Unsafe
         public List<uint> references;
         public ushort arrayCount;
         public List<Allocation> arrays;
-        public List<RuntimeType> arrayTypes;
+        public List<ArrayType> arrayTypes;
         public List<uint> arrayLengths;
         public State state;
 

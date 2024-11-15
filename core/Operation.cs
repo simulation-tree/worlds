@@ -125,7 +125,7 @@ namespace Simulation
         {
             if (count == 0)
             {
-                throw new ArgumentException("Entity count is zero.", nameof(count));
+                throw new ArgumentException("Entity count is zero", nameof(count));
             }
         }
 
@@ -134,7 +134,7 @@ namespace Simulation
         {
             if (Length == 0)
             {
-                throw new InvalidOperationException("No instructions are present.");
+                throw new InvalidOperationException("No instructions are present");
             }
         }
 
@@ -159,7 +159,7 @@ namespace Simulation
                 }
             }
 
-            throw new InvalidOperationException("Entity selection is empty, unable to proceed.");
+            throw new InvalidOperationException("Entity selection is empty, unable to proceed");
         }
 
         public readonly void ReadSelection(List<uint> selection)

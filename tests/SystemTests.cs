@@ -5,7 +5,7 @@ using Unmanaged;
 
 namespace Simulation.Tests
 {
-    public class SystemTests
+    public class SystemTests : SimulationTests
     {
         [Test]
         public void SimpleTest()

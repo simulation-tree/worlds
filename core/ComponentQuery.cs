@@ -7,7 +7,7 @@ namespace Simulation
     public struct ComponentQuery<T1> : IDisposable, IQuery where T1 : unmanaged
     {
         private readonly List<Result> results;
-        private readonly Array<RuntimeType> componentTypes;
+        private readonly Array<ComponentType> componentTypes;
         private World world;
 
         /// <summary>
@@ -29,7 +29,7 @@ namespace Simulation
         }
 #endif
 
-        private ComponentQuery(List<Result> results, Array<RuntimeType> componentTypes)
+        private ComponentQuery(List<Result> results, Array<ComponentType> componentTypes)
         {
             this.world = default;
             this.results = results;
@@ -47,7 +47,7 @@ namespace Simulation
             this.world = world;
             results.Clear(world.MaxEntityValue);
             Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
-            USpan<RuntimeType> componentTypes = this.componentTypes.AsSpan();
+            USpan<ComponentType> componentTypes = this.componentTypes.AsSpan();
             if (!onlyEnabled)
             {
                 foreach (int hash in chunks.Keys)
@@ -98,8 +98,8 @@ namespace Simulation
         public static ComponentQuery<T1> Create()
         {
             List<Result> results = new(1);
-            USpan<RuntimeType> componentTypes = stackalloc RuntimeType[1] { RuntimeType.Get<T1>() };
-            Array<RuntimeType> types = new(componentTypes);
+            USpan<ComponentType> componentTypes = stackalloc ComponentType[1] { ComponentType.Get<T1>() };
+            Array<ComponentType> types = new(componentTypes);
             return new(results, types);
         }
 
@@ -109,7 +109,7 @@ namespace Simulation
 
             private readonly nint component1;
 
-            public unsafe ref T1 Component1 => ref System.Runtime.CompilerServices.Unsafe.AsRef<T1>((void*)component1);
+            public unsafe ref T1 Component1 => ref *(T1*)component1;
 
             internal Result(uint entity, nint component1)
             {
@@ -141,7 +141,7 @@ namespace Simulation
     public struct ComponentQuery<T1, T2> : IDisposable, IQuery where T1 : unmanaged where T2 : unmanaged
     {
         private readonly List<Result> results;
-        private readonly Array<RuntimeType> componentTypes;
+        private readonly Array<ComponentType> componentTypes;
         private World world;
 
         /// <summary>
@@ -163,7 +163,7 @@ namespace Simulation
         }
 #endif
 
-        private ComponentQuery(List<Result> results, Array<RuntimeType> componentTypes)
+        private ComponentQuery(List<Result> results, Array<ComponentType> componentTypes)
         {
             this.world = default;
             this.results = results;
@@ -184,7 +184,7 @@ namespace Simulation
             this.world = world;
             results.Clear(world.MaxEntityValue);
             Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
-            USpan<RuntimeType> componentTypes = this.componentTypes.AsSpan();
+            USpan<ComponentType> componentTypes = this.componentTypes.AsSpan();
             if (!onlyEnabled)
             {
                 foreach (int hash in chunks.Keys)
@@ -237,8 +237,8 @@ namespace Simulation
         public static ComponentQuery<T1, T2> Create()
         {
             List<Result> results = new(1);
-            USpan<RuntimeType> componentTypes = stackalloc RuntimeType[2] { RuntimeType.Get<T1>(), RuntimeType.Get<T2>() };
-            Array<RuntimeType> types = new(componentTypes);
+            USpan<ComponentType> componentTypes = stackalloc ComponentType[2] { ComponentType.Get<T1>(), ComponentType.Get<T2>() };
+            Array<ComponentType> types = new(componentTypes);
             return new(results, types);
         }
 
@@ -249,8 +249,8 @@ namespace Simulation
             private readonly nint c1;
             private readonly nint c2;
 
-            public unsafe ref T1 Component1 => ref System.Runtime.CompilerServices.Unsafe.AsRef<T1>((void*)c1);
-            public unsafe ref T2 Component2 => ref System.Runtime.CompilerServices.Unsafe.AsRef<T2>((void*)c2);
+            public unsafe ref T1 Component1 => ref *(T1*)c1;
+            public unsafe ref T2 Component2 => ref *(T2*)c2;
 
             internal Result(uint entity, nint c1, nint c2)
             {
@@ -283,7 +283,7 @@ namespace Simulation
     public struct ComponentQuery<T1, T2, T3> : IDisposable, IQuery where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
     {
         private readonly List<Result> results;
-        private readonly Array<RuntimeType> componentTypes;
+        private readonly Array<ComponentType> componentTypes;
         private World world;
 
         /// <summary>
@@ -305,7 +305,7 @@ namespace Simulation
         }
 #endif
 
-        private ComponentQuery(List<Result> results, Array<RuntimeType> componentTypes)
+        private ComponentQuery(List<Result> results, Array<ComponentType> componentTypes)
         {
             this.world = default;
             this.results = results;
@@ -323,7 +323,7 @@ namespace Simulation
             this.world = world;
             results.Clear(world.MaxEntityValue);
             Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
-            USpan<RuntimeType> componentTypes = this.componentTypes.AsSpan();
+            USpan<ComponentType> componentTypes = this.componentTypes.AsSpan();
             if (!onlyEnabled)
             {
                 foreach (int hash in chunks.Keys)
@@ -378,8 +378,8 @@ namespace Simulation
         public static ComponentQuery<T1, T2, T3> Create()
         {
             List<Result> results = new(1);
-            USpan<RuntimeType> componentTypes = stackalloc RuntimeType[3] { RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>() };
-            Array<RuntimeType> types = new(componentTypes);
+            USpan<ComponentType> componentTypes = stackalloc ComponentType[3] { ComponentType.Get<T1>(), ComponentType.Get<T2>(), ComponentType.Get<T3>() };
+            Array<ComponentType> types = new(componentTypes);
             return new(results, types);
         }
 
@@ -391,9 +391,9 @@ namespace Simulation
             private readonly nint c2;
             private readonly nint c3;
 
-            public unsafe ref T1 Component1 => ref System.Runtime.CompilerServices.Unsafe.AsRef<T1>((void*)c1);
-            public unsafe ref T2 Component2 => ref System.Runtime.CompilerServices.Unsafe.AsRef<T2>((void*)c2);
-            public unsafe ref T3 Component3 => ref System.Runtime.CompilerServices.Unsafe.AsRef<T3>((void*)c3);
+            public unsafe ref T1 Component1 => ref *(T1*)c1;
+            public unsafe ref T2 Component2 => ref *(T2*)c2;
+            public unsafe ref T3 Component3 => ref *(T3*)c3;
 
             internal Result(uint entity, nint c1, nint c2, nint c3)
             {
@@ -427,7 +427,7 @@ namespace Simulation
     public struct ComponentQuery<T1, T2, T3, T4> : IDisposable, IQuery where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
     {
         private readonly List<Result> results;
-        private readonly Array<RuntimeType> componentTypes;
+        private readonly Array<ComponentType> componentTypes;
         private World world;
 
         /// <summary>
@@ -449,7 +449,7 @@ namespace Simulation
         }
 #endif
 
-        private ComponentQuery(List<Result> results, Array<RuntimeType> componentTypes)
+        private ComponentQuery(List<Result> results, Array<ComponentType> componentTypes)
         {
             this.world = default;
             this.results = results;
@@ -467,7 +467,7 @@ namespace Simulation
             this.world = world;
             results.Clear(world.MaxEntityValue);
             Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
-            USpan<RuntimeType> componentTypes = this.componentTypes.AsSpan();
+            USpan<ComponentType> componentTypes = this.componentTypes.AsSpan();
             if (!onlyEnabled)
             {
                 foreach (int hash in chunks.Keys)
@@ -524,8 +524,8 @@ namespace Simulation
         public static ComponentQuery<T1, T2, T3, T4> Create()
         {
             List<Result> results = new(1);
-            USpan<RuntimeType> componentTypes = stackalloc RuntimeType[4] { RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>(), RuntimeType.Get<T4>() };
-            Array<RuntimeType> types = new(componentTypes);
+            USpan<ComponentType> componentTypes = stackalloc ComponentType[4] { ComponentType.Get<T1>(), ComponentType.Get<T2>(), ComponentType.Get<T3>(), ComponentType.Get<T4>() };
+            Array<ComponentType> types = new(componentTypes);
             return new(results, types);
         }
 
@@ -538,10 +538,10 @@ namespace Simulation
             private readonly nint c3;
             private readonly nint c4;
 
-            public unsafe ref T1 Component1 => ref System.Runtime.CompilerServices.Unsafe.AsRef<T1>((void*)c1);
-            public unsafe ref T2 Component2 => ref System.Runtime.CompilerServices.Unsafe.AsRef<T2>((void*)c2);
-            public unsafe ref T3 Component3 => ref System.Runtime.CompilerServices.Unsafe.AsRef<T3>((void*)c3);
-            public unsafe ref T4 Component4 => ref System.Runtime.CompilerServices.Unsafe.AsRef<T4>((void*)c4);
+            public unsafe ref T1 Component1 => ref *(T1*)c1;
+            public unsafe ref T2 Component2 => ref *(T2*)c2;
+            public unsafe ref T3 Component3 => ref *(T3*)c3;
+            public unsafe ref T4 Component4 => ref *(T4*)c4;
 
             internal Result(uint entity, nint c1, nint c2, nint c3, nint c4)
             {
@@ -576,7 +576,7 @@ namespace Simulation
     public struct ComponentQuery<T1, T2, T3, T4, T5> : IDisposable, IQuery where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
     {
         private readonly List<Result> results;
-        private readonly Array<RuntimeType> componentTypes;
+        private readonly Array<ComponentType> componentTypes;
         private World world;
 
         /// <summary>
@@ -598,7 +598,7 @@ namespace Simulation
         }
 #endif
 
-        private ComponentQuery(List<Result> results, Array<RuntimeType> componentTypes)
+        private ComponentQuery(List<Result> results, Array<ComponentType> componentTypes)
         {
             this.world = default;
             this.results = results;
@@ -616,7 +616,7 @@ namespace Simulation
             this.world = world;
             results.Clear(world.MaxEntityValue);
             Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
-            USpan<RuntimeType> componentTypes = this.componentTypes.AsSpan();
+            USpan<ComponentType> componentTypes = this.componentTypes.AsSpan();
             if (!onlyEnabled)
             {
                 foreach (int hash in chunks.Keys)
@@ -675,8 +675,8 @@ namespace Simulation
         public static ComponentQuery<T1, T2, T3, T4, T5> Create()
         {
             List<Result> results = new(1);
-            USpan<RuntimeType> componentTypes = stackalloc RuntimeType[5] { RuntimeType.Get<T1>(), RuntimeType.Get<T2>(), RuntimeType.Get<T3>(), RuntimeType.Get<T4>(), RuntimeType.Get<T5>() };
-            Array<RuntimeType> types = new(componentTypes);
+            USpan<ComponentType> componentTypes = stackalloc ComponentType[5] { ComponentType.Get<T1>(), ComponentType.Get<T2>(), ComponentType.Get<T3>(), ComponentType.Get<T4>(), ComponentType.Get<T5>() };
+            Array<ComponentType> types = new(componentTypes);
             return new(results, types);
         }
 
@@ -690,11 +690,11 @@ namespace Simulation
             private readonly nint c4;
             private readonly nint c5;
 
-            public unsafe ref T1 Component1 => ref System.Runtime.CompilerServices.Unsafe.AsRef<T1>((void*)c1);
-            public unsafe ref T2 Component2 => ref System.Runtime.CompilerServices.Unsafe.AsRef<T2>((void*)c2);
-            public unsafe ref T3 Component3 => ref System.Runtime.CompilerServices.Unsafe.AsRef<T3>((void*)c3);
-            public unsafe ref T4 Component4 => ref System.Runtime.CompilerServices.Unsafe.AsRef<T4>((void*)c4);
-            public unsafe ref T5 Component5 => ref System.Runtime.CompilerServices.Unsafe.AsRef<T5>((void*)c5);
+            public unsafe ref T1 Component1 => ref *(T1*)c1;
+            public unsafe ref T2 Component2 => ref *(T2*)c2;
+            public unsafe ref T3 Component3 => ref *(T3*)c3;
+            public unsafe ref T4 Component4 => ref *(T4*)c4;
+            public unsafe ref T5 Component5 => ref *(T5*)c5;
 
             internal Result(uint entity, nint c1, nint c2, nint c3, nint c4, nint c5)
             {

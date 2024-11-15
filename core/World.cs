@@ -1,4 +1,6 @@
 ﻿using Collections;
+using Programs;
+using Programs.Components;
 using Simulation.Unsafe;
 using System;
 using System.Diagnostics;
@@ -12,6 +14,14 @@ namespace Simulation
     /// </summary>
     public unsafe struct World : IDisposable, IEquatable<World>, ISerializable
     {
+        static World()
+        {
+            ComponentType.Register<World>();
+            ComponentType.Register<IsProgram>();
+            ComponentType.Register<ProgramState>();
+            ComponentType.Register<ProgramAllocation>();
+        }
+
         internal UnsafeWorld* value;
 
         public readonly nint Address => (nint)value;
@@ -28,7 +38,7 @@ namespace Simulation
         /// </summary>
         public readonly uint MaxEntityValue => Slots.Count;
 
-        public readonly bool IsDisposed => UnsafeWorld.IsDisposed(value);
+        public readonly bool IsDisposed => value is null;
         public readonly List<EntityDescription> Slots => UnsafeWorld.GetEntitySlots(value);
         public readonly List<uint> Free => UnsafeWorld.GetFreeEntities(value);
         public readonly Dictionary<int, ComponentChunk> ComponentChunks => UnsafeWorld.GetComponentChunks(value);
@@ -153,16 +163,17 @@ namespace Simulation
         readonly void ISerializable.Write(BinaryWriter writer)
         {
             //collect info about all types referenced
-            using List<RuntimeType> uniqueTypes = new(4);
+            using List<ComponentType> uniqueComponentTypes = new(4);
+            using List<ArrayType> uniqueArrayTypes = new(4);
             Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
             {
                 ComponentChunk chunk = chunks[hash];
-                foreach (RuntimeType type in chunk.Types)
+                foreach (ComponentType type in chunk.Types)
                 {
-                    if (!uniqueTypes.Contains(type))
+                    if (!uniqueComponentTypes.Contains(type))
                     {
-                        uniqueTypes.Add(type);
+                        uniqueComponentTypes.Add(type);
                     }
                 }
             }
@@ -172,20 +183,31 @@ namespace Simulation
                 EntityDescription slot = Slots[i];
                 for (uint a = 0; a < slot.arrayCount; a++)
                 {
-                    RuntimeType type = slot.arrayTypes[a];
-                    if (!uniqueTypes.Contains(type))
+                    ArrayType type = slot.arrayTypes[a];
+                    if (!uniqueArrayTypes.Contains(type))
                     {
-                        uniqueTypes.Add(type);
+                        uniqueArrayTypes.Add(type);
                     }
                 }
             }
 
             //write info about the type tree
-            writer.WriteValue(uniqueTypes.Count);
-            for (uint a = 0; a < uniqueTypes.Count; a++)
+            writer.WriteValue((ushort)uniqueComponentTypes.Count);
+            for (uint t = 0; t < uniqueComponentTypes.Count; t++)
             {
-                RuntimeType type = uniqueTypes[a];
-                writer.WriteValue(type);
+                ComponentType type = uniqueComponentTypes[t];
+                USpan<char> typeFullName = type.FullName;
+                writer.WriteValue((ushort)typeFullName.Length);
+                writer.WriteSpan(typeFullName);
+            }
+
+            writer.WriteValue((ushort)uniqueArrayTypes.Count);
+            for (uint t = 0; t < uniqueArrayTypes.Count; t++)
+            {
+                ArrayType type = uniqueArrayTypes[t];
+                USpan<char> typeFullName = type.FullName;
+                writer.WriteValue((ushort)typeFullName.Length);
+                writer.WriteSpan(typeFullName);
             }
 
             //write each entity and its components
@@ -202,21 +224,22 @@ namespace Simulation
                     //write component
                     ComponentChunk chunk = chunks[slot.componentsKey];
                     writer.WriteValue(chunk.Types.Length);
-                    foreach (RuntimeType type in chunk.Types)
+                    for (uint c = 0; c < chunk.Types.Length; c++)
                     {
-                        writer.WriteValue(uniqueTypes.IndexOf(type));
+                        ComponentType type = chunk.Types[c];
+                        writer.WriteValue(uniqueComponentTypes.IndexOf(type));
                         USpan<byte> componentBytes = chunk.GetComponentBytes(chunk.Entities.IndexOf(entity), type);
                         writer.WriteSpan(componentBytes);
                     }
 
                     //write arrays
                     writer.WriteValue(slot.arrayCount);
-                    for (uint t = 0; t < slot.arrayCount; t++)
+                    for (uint a = 0; a < slot.arrayCount; a++)
                     {
-                        RuntimeType type = slot.arrayTypes[t];
-                        void* array = slot.arrays[t];
-                        uint arrayLength = slot.arrayLengths[t];
-                        writer.WriteValue(uniqueTypes.IndexOf(type));
+                        ArrayType type = slot.arrayTypes[a];
+                        void* array = slot.arrays[a];
+                        uint arrayLength = slot.arrayLengths[a];
+                        writer.WriteValue(uniqueArrayTypes.IndexOf(type));
                         writer.WriteValue(arrayLength);
                         if (arrayLength > 0)
                         {
@@ -235,30 +258,83 @@ namespace Simulation
             }
         }
 
+        public static class SerializationContext
+        {
+            private static GetComponentTypeDelegate? getComponentType;
+            private static GetArrayTypeDelegate? getArrayType;
+
+            public static GetComponentTypeDelegate GetComponentType
+            {
+                get
+                {
+                    if (getComponentType is null)
+                    {
+                        throw new InvalidOperationException("No component type delegate has been set");
+                    }
+
+                    return getComponentType;
+                }
+                set
+                {
+                    getComponentType = value;
+                }
+            }
+
+            public static GetArrayTypeDelegate GetArrayType
+            {
+                get
+                {
+                    if (getArrayType is null)
+                    {
+                        throw new InvalidOperationException("No array type delegate has been set");
+                    }
+                    return getArrayType;
+                }
+                set
+                {
+                    getArrayType = value;
+                }
+            }
+
+            public delegate ComponentType GetComponentTypeDelegate(USpan<char> fullTypeName);
+            public delegate ArrayType GetArrayTypeDelegate(USpan<char> fullTypeName);
+        }
+
         void ISerializable.Read(BinaryReader reader)
         {
             value = UnsafeWorld.Allocate();
-            uint typeCount = reader.ReadValue<uint>();
-            List<EntityDescription> slots = Slots;
-            using List<RuntimeType> uniqueTypes = new(4);
-            for (uint i = 0; i < typeCount; i++)
+            ushort componentTypeCount = reader.ReadValue<ushort>();
+            using Array<ComponentType> uniqueComponentTypes = new(componentTypeCount);
+            for (uint i = 0; i < componentTypeCount; i++)
             {
-                RuntimeType type = reader.ReadValue<RuntimeType>();
-                uniqueTypes.Add(type);
+                ushort nameLength = reader.ReadValue<ushort>();
+                USpan<char> typeFullName = reader.ReadSpan<char>(nameLength);
+                uniqueComponentTypes[i] = SerializationContext.GetComponentType(typeFullName);
             }
+
+            ushort arrayTypeCount = reader.ReadValue<ushort>();
+            using Array<ArrayType> uniqueArrayTypes = new(arrayTypeCount);
+            for (uint i = 0; i < arrayTypeCount; i++)
+            {
+                ushort nameLength = reader.ReadValue<ushort>();
+                USpan<char> typeFullName = reader.ReadSpan<char>(nameLength);
+                uniqueArrayTypes[i] = SerializationContext.GetArrayType(typeFullName);
+            }
+
+            List<EntityDescription> slots = Slots;
 
             //create entities and fill them with components and arrays
             uint entityCount = reader.ReadValue<uint>();
             uint currentEntityId = 1;
             using List<uint> temporaryEntities = new(4);
-            for (uint i = 0; i < entityCount; i++)
+            for (uint e = 0; e < entityCount; e++)
             {
                 uint entityId = reader.ReadValue<uint>();
                 uint parentId = reader.ReadValue<uint>();
 
                 //skip through the island of free entities
                 uint catchup = entityId - currentEntityId;
-                for (uint j = 0; j < catchup; j++)
+                for (uint i = 0; i < catchup; i++)
                 {
                     uint temporaryEntity = CreateEntity();
                     temporaryEntities.Add(temporaryEntity);
@@ -274,13 +350,13 @@ namespace Simulation
 
                 //read components
                 uint componentCount = reader.ReadValue<uint>();
-                for (uint j = 0; j < componentCount; j++)
+                for (uint c = 0; c < componentCount; c++)
                 {
                     uint typeIndex = reader.ReadValue<uint>();
-                    RuntimeType type = uniqueTypes[typeIndex];
-                    USpan<byte> bytes = UnsafeWorld.AddComponent(value, entity, type);
-                    reader.ReadSpan<byte>(type.Size).CopyTo(bytes);
-                    UnsafeWorld.NotifyComponentAdded(this, entity, type);
+                    ComponentType componentType = uniqueComponentTypes[typeIndex];
+                    USpan<byte> bytes = UnsafeWorld.AddComponent(value, entity, componentType);
+                    reader.ReadSpan<byte>(componentType.Size).CopyTo(bytes);
+                    UnsafeWorld.NotifyComponentAdded(this, entity, componentType);
                 }
 
                 //read arrays
@@ -289,7 +365,7 @@ namespace Simulation
                 {
                     uint typeIndex = reader.ReadValue<uint>();
                     uint arrayLength = reader.ReadValue<uint>();
-                    RuntimeType arrayType = uniqueTypes[typeIndex];
+                    ArrayType arrayType = uniqueArrayTypes[typeIndex];
                     uint byteCount = arrayLength * arrayType.Size;
                     void* array = UnsafeWorld.CreateArray(value, entity, arrayType, arrayLength);
                     if (arrayLength > 0)
@@ -354,7 +430,7 @@ namespace Simulation
                     //add components
                     ComponentChunk sourceChunk = sourceWorld.ComponentChunks[sourceSlot.componentsKey];
                     uint sourceIndex = sourceChunk.Entities.IndexOf(sourceEntity);
-                    foreach (RuntimeType componentType in sourceChunk.Types)
+                    foreach (ComponentType componentType in sourceChunk.Types)
                     {
                         USpan<byte> bytes = UnsafeWorld.AddComponent(value, destinationEntity, componentType);
                         sourceChunk.GetComponentBytes(sourceIndex, componentType).CopyTo(bytes);
@@ -364,7 +440,7 @@ namespace Simulation
                     //add arrays
                     for (uint t = 0; t < sourceSlot.arrayCount; t++)
                     {
-                        RuntimeType sourceArrayType = sourceSlot.arrayTypes[t];
+                        ArrayType sourceArrayType = sourceSlot.arrayTypes[t];
                         uint sourceArrayLength = sourceSlot.arrayLengths[t];
                         void* sourceArray = sourceSlot.arrays[t];
                         void* destinationArray = UnsafeWorld.CreateArray(value, destinationEntity, sourceArrayType, sourceArrayLength);
@@ -504,7 +580,7 @@ namespace Simulation
             }
             else if (instruction.type == Instruction.Type.AddComponent)
             {
-                RuntimeType componentType = new((uint)instruction.A);
+                ComponentType componentType = new((byte)instruction.A);
                 Allocation allocation = new((void*)(nint)instruction.B);
                 USpan<byte> componentData = allocation.AsSpan<byte>(0, componentType.Size);
                 for (uint i = 0; i < selection.Count; i++)
@@ -515,7 +591,7 @@ namespace Simulation
             }
             else if (instruction.type == Instruction.Type.RemoveComponent)
             {
-                RuntimeType componentType = new((uint)instruction.A);
+                ComponentType componentType = new((byte)instruction.A);
                 for (uint i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
@@ -524,7 +600,7 @@ namespace Simulation
             }
             else if (instruction.type == Instruction.Type.SetComponent)
             {
-                RuntimeType componentType = new((uint)instruction.A);
+                ComponentType componentType = new((byte)instruction.A);
                 Allocation allocation = new((void*)(nint)instruction.B);
                 USpan<byte> componentBytes = allocation.AsSpan<byte>(0, componentType.Size);
                 for (uint i = 0; i < selection.Count; i++)
@@ -535,7 +611,7 @@ namespace Simulation
             }
             else if (instruction.type == Instruction.Type.CreateArray)
             {
-                RuntimeType arrayType = new((uint)instruction.A);
+                ArrayType arrayType = new((byte)instruction.A);
                 uint arrayTypeSize = arrayType.Size;
                 Allocation allocation = new((void*)(nint)instruction.B);
                 uint count = (uint)instruction.C;
@@ -548,7 +624,7 @@ namespace Simulation
             }
             else if (instruction.type == Instruction.Type.DestroyArray)
             {
-                RuntimeType arrayType = new((uint)instruction.A);
+                ArrayType arrayType = new((byte)instruction.A);
                 for (uint i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
@@ -557,7 +633,7 @@ namespace Simulation
             }
             else if (instruction.type == Instruction.Type.SetArrayElement)
             {
-                RuntimeType arrayType = new((uint)instruction.A);
+                ArrayType arrayType = new((byte)instruction.A);
                 uint arrayTypeSize = arrayType.Size;
                 Allocation allocation = new((void*)(nint)instruction.B);
                 uint elementCount = allocation.Read<uint>();
@@ -573,7 +649,7 @@ namespace Simulation
             }
             else if (instruction.type == Instruction.Type.ResizeArray)
             {
-                RuntimeType arrayType = new((uint)instruction.A);
+                ArrayType arrayType = new((byte)instruction.A);
                 uint newLength = (uint)instruction.B;
                 for (uint i = 0; i < selection.Count; i++)
                 {
@@ -583,7 +659,7 @@ namespace Simulation
             }
             else
             {
-                throw new NotImplementedException($"Unknown instruction: {instruction.type}");
+                throw new NotImplementedException($"Unknown instruction type `{instruction.type}`");
             }
         }
 
@@ -630,7 +706,7 @@ namespace Simulation
             UnsafeWorld.DestroyEntity(value, entity, destroyChildren);
         }
 
-        public readonly USpan<RuntimeType> GetComponentTypes(uint entity)
+        public readonly USpan<ComponentType> GetComponentTypes(uint entity)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
             EntityDescription slot = Slots[entity - 1];
@@ -696,11 +772,11 @@ namespace Simulation
             Entity.ThrowIfTypeLayoutMismatches<T>();
             Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             Definition definition = default(T).Definition;
-            USpan<RuntimeType> componentTypes = stackalloc RuntimeType[definition.ComponentTypeCount];
+            USpan<ComponentType> componentTypes = stackalloc ComponentType[definition.componentTypeCount];
             definition.CopyComponentTypes(componentTypes);
-            if (definition.ArrayTypeCount > 0)
+            if (definition.arrayTypeCount > 0)
             {
-                USpan<RuntimeType> arrayTypes = stackalloc RuntimeType[definition.ArrayTypeCount];
+                USpan<ArrayType> arrayTypes = stackalloc ArrayType[definition.arrayTypeCount];
                 definition.CopyArrayTypes(arrayTypes);
                 foreach (int hash in chunks.Keys)
                 {
@@ -710,8 +786,8 @@ namespace Simulation
                         for (uint e = 0; e < chunk.Entities.Count; e++)
                         {
                             uint entityValue = chunk.Entities[e];
-                            USpan<RuntimeType> entityArrays = GetArrayTypes(entityValue);
-                            if (ContainsArrays(arrayTypes, entityArrays))
+                            USpan<ArrayType> entityArrays = GetArrayTypes(entityValue);
+                            if (DefinitionQuery.ContainsArrays(arrayTypes, entityArrays))
                             {
                                 if (onlyEnabled)
                                 {
@@ -767,19 +843,6 @@ namespace Simulation
                 }
             }
 
-            static bool ContainsArrays(USpan<RuntimeType> arrayTypes, USpan<RuntimeType> entityArrays)
-            {
-                for (uint i = 0; i < arrayTypes.Length; i++)
-                {
-                    if (!entityArrays.Contains(arrayTypes[i]))
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-
             entity = default;
             return false;
         }
@@ -799,7 +862,7 @@ namespace Simulation
         {
             if (!TryGetFirst(out T _, onlyEnabled))
             {
-                throw new NullReferenceException($"No entity of type {typeof(T)} exists");
+                throw new NullReferenceException($"No entity of type `{typeof(T)}` exists");
             }
         }
 
@@ -815,7 +878,7 @@ namespace Simulation
 
         public readonly bool TryGetFirstComponent<T>(out uint entity, out T component) where T : unmanaged
         {
-            foreach (uint e in GetAll(RuntimeType.Get<T>()))
+            foreach (uint e in GetAll(ComponentType.Get<T>()))
             {
                 entity = e;
                 component = GetComponentRef<T>(e);
@@ -829,33 +892,33 @@ namespace Simulation
 
         public readonly T GetFirstComponent<T>() where T : unmanaged
         {
-            foreach (uint e in GetAll(RuntimeType.Get<T>()))
+            foreach (uint e in GetAll(ComponentType.Get<T>()))
             {
                 return GetComponent<T>(e);
             }
 
-            throw new NullReferenceException($"No entity with component of type {typeof(T)} found.");
+            throw new NullReferenceException($"No entity with component of type `{typeof(T)}` found");
         }
 
         public readonly T GetFirstComponent<T>(out uint entity) where T : unmanaged
         {
-            foreach (uint e in GetAll(RuntimeType.Get<T>()))
+            foreach (uint e in GetAll(ComponentType.Get<T>()))
             {
                 entity = e;
                 return GetComponent<T>(e);
             }
 
-            throw new NullReferenceException($"No entity with component of type {typeof(T)} found.");
+            throw new NullReferenceException($"No entity with component of type `{typeof(T)}` found");
         }
 
         public readonly ref T GetFirstComponentRef<T>() where T : unmanaged
         {
-            foreach (uint e in GetAll(RuntimeType.Get<T>()))
+            foreach (uint e in GetAll(ComponentType.Get<T>()))
             {
                 return ref GetComponentRef<T>(e);
             }
 
-            throw new NullReferenceException($"No entity with component of type {typeof(T)} found.");
+            throw new NullReferenceException($"No entity with component of type `{typeof(T)}` found");
         }
 
         /// <summary>
@@ -1140,7 +1203,7 @@ namespace Simulation
         /// <summary>
         /// Retrieves the types of all arrays on this entity.
         /// </summary>
-        public readonly USpan<RuntimeType> GetArrayTypes(uint entity)
+        public readonly USpan<ArrayType> GetArrayTypes(uint entity)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
@@ -1158,9 +1221,9 @@ namespace Simulation
         /// <summary>
         /// Creates a new uninitialized array with the given length and type.
         /// </summary>
-        public readonly Allocation CreateArray(uint entity, RuntimeType arrayLength, uint length = 0)
+        public readonly Allocation CreateArray(uint entity, ArrayType arrayType, uint length = 0)
         {
-            return new(UnsafeWorld.CreateArray(value, entity, arrayLength, length));
+            return new(UnsafeWorld.CreateArray(value, entity, arrayType, length));
         }
 
         /// <summary>
@@ -1168,7 +1231,7 @@ namespace Simulation
         /// </summary>
         public readonly USpan<T> CreateArray<T>(uint entity, uint length = 0) where T : unmanaged
         {
-            Allocation array = CreateArray(entity, RuntimeType.Get<T>(), length);
+            Allocation array = CreateArray(entity, ArrayType.Get<T>(), length);
             return array.AsSpan<T>(0, length);
         }
 
@@ -1183,10 +1246,10 @@ namespace Simulation
 
         public readonly bool ContainsArray<T>(uint entity) where T : unmanaged
         {
-            return ContainsArray(entity, RuntimeType.Get<T>());
+            return ContainsArray(entity, ArrayType.Get<T>());
         }
 
-        public readonly bool ContainsArray(uint entity, RuntimeType arrayType)
+        public readonly bool ContainsArray(uint entity, ArrayType arrayType)
         {
             return UnsafeWorld.ContainsArray(value, entity, arrayType);
         }
@@ -1196,22 +1259,22 @@ namespace Simulation
         /// </summary>
         public readonly USpan<T> GetArray<T>(uint entity) where T : unmanaged
         {
-            void* array = UnsafeWorld.GetArray(value, entity, RuntimeType.Get<T>(), out uint length);
+            void* array = UnsafeWorld.GetArray(value, entity, ArrayType.Get<T>(), out uint length);
             return new USpan<T>(array, length);
         }
 
-        public readonly Allocation GetArray(uint entity, RuntimeType arrayType, out uint length)
+        public readonly Allocation GetArray(uint entity, ArrayType arrayType, out uint length)
         {
             return new(UnsafeWorld.GetArray(value, entity, arrayType, out length));
         }
 
         public readonly USpan<T> ResizeArray<T>(uint entity, uint newLength) where T : unmanaged
         {
-            void* array = UnsafeWorld.ResizeArray(value, entity, RuntimeType.Get<T>(), newLength);
+            void* array = UnsafeWorld.ResizeArray(value, entity, ArrayType.Get<T>(), newLength);
             return new USpan<T>(array, newLength);
         }
 
-        public readonly Allocation ResizeArray(uint entity, RuntimeType arrayType, uint newLength)
+        public readonly Allocation ResizeArray(uint entity, ArrayType arrayType, uint newLength)
         {
             return new(UnsafeWorld.ResizeArray(value, entity, arrayType, newLength));
         }
@@ -1237,7 +1300,7 @@ namespace Simulation
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
-            RuntimeType arrayType = RuntimeType.Get<T>();
+            ArrayType arrayType = ArrayType.Get<T>();
             UnsafeWorld.ThrowIfArrayIsMissing(value, entity, arrayType);
             void* array = UnsafeWorld.GetArray(value, entity, arrayType, out uint arrayLength);
             USpan<T> span = new(array, arrayLength);
@@ -1249,22 +1312,22 @@ namespace Simulation
         /// </summary>
         public readonly uint GetArrayLength<T>(uint entity) where T : unmanaged
         {
-            return UnsafeWorld.GetArrayLength(value, entity, RuntimeType.Get<T>());
+            return UnsafeWorld.GetArrayLength(value, entity, ArrayType.Get<T>());
         }
 
         public readonly void DestroyArray<T>(uint entity) where T : unmanaged
         {
-            DestroyArray(entity, RuntimeType.Get<T>());
+            DestroyArray(entity, ArrayType.Get<T>());
         }
 
-        public readonly void DestroyArray(uint entity, RuntimeType arrayType)
+        public readonly void DestroyArray(uint entity, ArrayType arrayType)
         {
             UnsafeWorld.DestroyArray(value, entity, arrayType);
         }
 
         public readonly void AddComponent<T>(uint entity, T component) where T : unmanaged
         {
-            RuntimeType type = RuntimeType.Get<T>();
+            ComponentType type = ComponentType.Get<T>();
             ref T target = ref UnsafeWorld.AddComponent<T>(value, entity);
             target = component;
             UnsafeWorld.NotifyComponentAdded(this, entity, type);
@@ -1275,7 +1338,7 @@ namespace Simulation
         /// </summary>
         public readonly void AddComponent<T>(uint entity) where T : unmanaged
         {
-            RuntimeType type = RuntimeType.Get<T>();
+            ComponentType type = ComponentType.Get<T>();
             UnsafeWorld.AddComponent(value, entity, type);
             UnsafeWorld.NotifyComponentAdded(this, entity, type);
         }
@@ -1283,13 +1346,13 @@ namespace Simulation
         /// <summary>
         /// Adds a new default component with the given type.
         /// </summary>
-        public readonly void AddComponent(uint entity, RuntimeType componentType)
+        public readonly void AddComponent(uint entity, ComponentType componentType)
         {
             UnsafeWorld.AddComponent(value, entity, componentType);
             UnsafeWorld.NotifyComponentAdded(this, entity, componentType);
         }
 
-        public readonly void AddComponent(uint entity, RuntimeType componentType, USpan<byte> componentData)
+        public readonly void AddComponent(uint entity, ComponentType componentType, USpan<byte> componentData)
         {
             USpan<byte> bytes = UnsafeWorld.AddComponent(value, entity, componentType);
             componentData.CopyTo(bytes);
@@ -1310,7 +1373,7 @@ namespace Simulation
             UnsafeWorld.RemoveComponent<T>(value, entity);
         }
 
-        public readonly void RemoveComponent(uint entity, RuntimeType componentType)
+        public readonly void RemoveComponent(uint entity, ComponentType componentType)
         {
             UnsafeWorld.RemoveComponent(value, entity, componentType);
         }
@@ -1321,7 +1384,7 @@ namespace Simulation
         public readonly bool ContainsAnyComponent<T>() where T : unmanaged
         {
             Dictionary<int, ComponentChunk> chunks = ComponentChunks;
-            RuntimeType type = RuntimeType.Get<T>();
+            ComponentType type = ComponentType.Get<T>();
             foreach (int hash in chunks.Keys)
             {
                 ComponentChunk chunk = chunks[hash];
@@ -1339,10 +1402,10 @@ namespace Simulation
 
         public readonly bool ContainsComponent<T>(uint entity) where T : unmanaged
         {
-            return ContainsComponent(entity, RuntimeType.Get<T>());
+            return ContainsComponent(entity, ComponentType.Get<T>());
         }
 
-        public readonly bool ContainsComponent(uint entity, RuntimeType type)
+        public readonly bool ContainsComponent(uint entity, ComponentType type)
         {
             return UnsafeWorld.ContainsComponent(value, entity, type);
         }
@@ -1376,7 +1439,7 @@ namespace Simulation
         /// <summary>
         /// Fetches the component from this entity as a span of bytes.
         /// </summary>
-        public readonly USpan<byte> GetComponentBytes(uint entity, RuntimeType type)
+        public readonly USpan<byte> GetComponentBytes(uint entity, ComponentType type)
         {
             return UnsafeWorld.GetComponentBytes(value, entity, type);
         }
@@ -1416,7 +1479,7 @@ namespace Simulation
             existing = component;
         }
 
-        public readonly void SetComponent(uint entity, RuntimeType componentType, USpan<byte> componentData)
+        public readonly void SetComponent(uint entity, ComponentType componentType, USpan<byte> componentData)
         {
             USpan<byte> bytes = GetComponentBytes(entity, componentType);
             componentData.CopyTo(bytes);
@@ -1435,28 +1498,28 @@ namespace Simulation
         /// <summary>
         /// Returns the main component chunk that contains all of the given component types.
         /// </summary>
-        public readonly ComponentChunk GetComponentChunk(USpan<RuntimeType> componentTypes)
+        public readonly ComponentChunk GetComponentChunk(USpan<ComponentType> componentTypes)
         {
-            int key = RuntimeType.CombineHash(componentTypes);
+            int key = ComponentType.CombineHash(componentTypes);
             if (ComponentChunks.TryGetValue(key, out ComponentChunk chunk))
             {
                 return chunk;
             }
             else
             {
-                throw new NullReferenceException($"No components found for the given types.");
+                throw new NullReferenceException($"No components found for the given types");
             }
         }
 
-        public readonly bool ContainsComponentChunk(USpan<RuntimeType> componentTypes)
+        public readonly bool ContainsComponentChunk(USpan<ComponentType> componentTypes)
         {
-            int key = RuntimeType.CombineHash(componentTypes);
+            int key = ComponentType.CombineHash(componentTypes);
             return ComponentChunks.ContainsKey(key);
         }
 
-        public readonly bool TryGetComponentChunk(USpan<RuntimeType> componentTypes, out ComponentChunk chunk)
+        public readonly bool TryGetComponentChunk(USpan<ComponentType> componentTypes, out ComponentChunk chunk)
         {
-            int key = RuntimeType.CombineHash(componentTypes);
+            int key = ComponentType.CombineHash(componentTypes);
             return ComponentChunks.TryGetValue(key, out chunk);
         }
 
@@ -1465,11 +1528,11 @@ namespace Simulation
         /// </summary>
         public readonly uint CountEntitiesWithComponent<T>(bool onlyEnabled = false) where T : unmanaged
         {
-            RuntimeType type = RuntimeType.Get<T>();
+            ComponentType type = ComponentType.Get<T>();
             return CountEntitiesWithComponent(type, onlyEnabled);
         }
 
-        public readonly uint CountEntitiesWithComponent(RuntimeType type, bool onlyEnabled = false)
+        public readonly uint CountEntitiesWithComponent(ComponentType type, bool onlyEnabled = false)
         {
             uint count = 0;
             foreach (int hash in ComponentChunks.Keys)
@@ -1505,9 +1568,9 @@ namespace Simulation
         {
             Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             Definition definition = default(T).Definition;
-            USpan<RuntimeType> componentTypes = stackalloc RuntimeType[definition.ComponentTypeCount];
+            USpan<ComponentType> componentTypes = stackalloc ComponentType[definition.componentTypeCount];
             definition.CopyComponentTypes(componentTypes);
-            USpan<RuntimeType> arrayTypes = stackalloc RuntimeType[definition.ArrayTypeCount];
+            USpan<ArrayType> arrayTypes = stackalloc ArrayType[definition.arrayTypeCount];
             definition.CopyArrayTypes(arrayTypes);
             uint count = 0;
             if (arrayTypes.Length > 0)
@@ -1520,7 +1583,7 @@ namespace Simulation
                         for (uint e = 0; e < chunk.Entities.Count; e++)
                         {
                             uint entity = chunk.Entities[e];
-                            USpan<RuntimeType> entityArrays = GetArrayTypes(entity);
+                            USpan<ArrayType> entityArrays = GetArrayTypes(entity);
                             if (ContainsArrays(arrayTypes, entityArrays))
                             {
                                 if (onlyEnabled)
@@ -1572,7 +1635,7 @@ namespace Simulation
                 }
             }
 
-            static bool ContainsArrays(USpan<RuntimeType> arrayTypes, USpan<RuntimeType> entityArrays)
+            static bool ContainsArrays(USpan<ArrayType> arrayTypes, USpan<ArrayType> entityArrays)
             {
                 for (uint i = 0; i < arrayTypes.Length; i++)
                 {
@@ -1595,7 +1658,7 @@ namespace Simulation
         /// </summary>
         public readonly void CopyComponentsTo(uint sourceEntity, World destinationWorld, uint destinationEntity)
         {
-            foreach (RuntimeType type in GetComponentTypes(sourceEntity))
+            foreach (ComponentType type in GetComponentTypes(sourceEntity))
             {
                 if (!destinationWorld.ContainsComponent(destinationEntity, type))
                 {
@@ -1615,7 +1678,7 @@ namespace Simulation
         /// </summary>
         public readonly void CopyArraysTo(uint sourceEntity, World destinationWorld, uint destinationEntity)
         {
-            foreach (RuntimeType sourceArrayType in GetArrayTypes(sourceEntity))
+            foreach (ArrayType sourceArrayType in GetArrayTypes(sourceEntity))
             {
                 void* sourceArray = UnsafeWorld.GetArray(value, sourceEntity, sourceArrayType, out uint sourceLength);
                 void* destinationArray;
@@ -1650,7 +1713,7 @@ namespace Simulation
         /// Finds all entities that contain all of the given component types and
         /// adds them to the given list.
         /// </summary>
-        public readonly void Fill(USpan<RuntimeType> componentTypes, List<uint> list, bool onlyEnabled = false)
+        public readonly void Fill(USpan<ComponentType> componentTypes, List<uint> list, bool onlyEnabled = false)
         {
             Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
@@ -1679,7 +1742,7 @@ namespace Simulation
 
         public readonly void Fill<T>(List<T> list, bool onlyEnabled = false) where T : unmanaged
         {
-            RuntimeType type = RuntimeType.Get<T>();
+            ComponentType type = ComponentType.Get<T>();
             Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
             {
@@ -1707,7 +1770,7 @@ namespace Simulation
 
         public readonly void Fill<T>(List<uint> entities, bool onlyEnabled = false) where T : unmanaged
         {
-            RuntimeType type = RuntimeType.Get<T>();
+            ComponentType type = ComponentType.Get<T>();
             Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
             {
@@ -1735,7 +1798,7 @@ namespace Simulation
 
         public readonly void Fill<T>(List<T> components, List<uint> entities, bool onlyEnabled = false) where T : unmanaged
         {
-            RuntimeType type = RuntimeType.Get<T>();
+            ComponentType type = ComponentType.Get<T>();
             Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
             {
@@ -1763,7 +1826,7 @@ namespace Simulation
             }
         }
 
-        public readonly void Fill(RuntimeType componentType, List<uint> entities, bool onlyEnabled = false)
+        public readonly void Fill(ComponentType componentType, List<uint> entities, bool onlyEnabled = false)
         {
             Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
@@ -1793,13 +1856,12 @@ namespace Simulation
         /// <summary>
         /// Iterates over all entities that contain the given component type.
         /// </summary>
-        public readonly IEnumerableUInt GetAll(RuntimeType componentType, bool onlyEnabled = false)
+        public readonly IEnumerableUInt GetAll(ComponentType componentType, bool onlyEnabled = false)
         {
             Dictionary<int, ComponentChunk> chunks = ComponentChunks;
-            uint chunkCount = chunks.Count;
-            for (uint i = 0; i < chunkCount; i++)
+            for (uint i = 0; i < chunks.Keys.Length; i++)
             {
-                int hash = chunks.GetKeyAtIndex(i);
+                int hash = chunks.Keys[i];
                 ComponentChunk chunk = chunks[hash];
                 if (chunk.Types.Contains(componentType))
                 {
@@ -1824,12 +1886,12 @@ namespace Simulation
 
         public readonly IEnumerableUInt GetAll<T>(bool onlyEnabled = false) where T : unmanaged
         {
-            return GetAll(RuntimeType.Get<T>(), onlyEnabled);
+            return GetAll(ComponentType.Get<T>(), onlyEnabled);
         }
 
         public readonly void ForEach<T>(QueryCallback callback, bool onlyEnabled = false) where T : unmanaged
         {
-            RuntimeType componentType = RuntimeType.Get<T>();
+            ComponentType componentType = ComponentType.Get<T>();
             Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
             {
@@ -1862,7 +1924,7 @@ namespace Simulation
         /// Destroying entities inside the callback is not recommended.
         /// </para>
         /// </summary>
-        public readonly void ForEach(USpan<RuntimeType> componentTypes, QueryCallback callback, bool onlyEnabled = false)
+        public readonly void ForEach(USpan<ComponentType> componentTypes, QueryCallback callback, bool onlyEnabled = false)
         {
             Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
@@ -1891,8 +1953,8 @@ namespace Simulation
 
         public readonly void ForEach<T>(QueryCallback<T> callback, bool onlyEnabled = false) where T : unmanaged
         {
-            USpan<RuntimeType> types = stackalloc RuntimeType[1];
-            types[0] = RuntimeType.Get<T>();
+            USpan<ComponentType> types = stackalloc ComponentType[1];
+            types[0] = ComponentType.Get<T>();
             Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
             {
@@ -1923,9 +1985,9 @@ namespace Simulation
 
         public readonly void ForEach<T1, T2>(QueryCallback<T1, T2> callback, bool onlyEnabled = false) where T1 : unmanaged where T2 : unmanaged
         {
-            USpan<RuntimeType> types = stackalloc RuntimeType[2];
-            types[0] = RuntimeType.Get<T1>();
-            types[1] = RuntimeType.Get<T2>();
+            USpan<ComponentType> types = stackalloc ComponentType[2];
+            types[0] = ComponentType.Get<T1>();
+            types[1] = ComponentType.Get<T2>();
             Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
             {
@@ -1958,10 +2020,10 @@ namespace Simulation
 
         public readonly void ForEach<T1, T2, T3>(QueryCallback<T1, T2, T3> callback, bool onlyEnabled = false) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            USpan<RuntimeType> types = stackalloc RuntimeType[3];
-            types[0] = RuntimeType.Get<T1>();
-            types[1] = RuntimeType.Get<T2>();
-            types[2] = RuntimeType.Get<T3>();
+            USpan<ComponentType> types = stackalloc ComponentType[3];
+            types[0] = ComponentType.Get<T1>();
+            types[1] = ComponentType.Get<T2>();
+            types[2] = ComponentType.Get<T3>();
             Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
             {
@@ -1996,11 +2058,11 @@ namespace Simulation
 
         public readonly void ForEach<T1, T2, T3, T4>(QueryCallback<T1, T2, T3, T4> callback, bool onlyEnabled = false) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            USpan<RuntimeType> types = stackalloc RuntimeType[4];
-            types[0] = RuntimeType.Get<T1>();
-            types[1] = RuntimeType.Get<T2>();
-            types[2] = RuntimeType.Get<T3>();
-            types[3] = RuntimeType.Get<T4>();
+            USpan<ComponentType> types = stackalloc ComponentType[4];
+            types[0] = ComponentType.Get<T1>();
+            types[1] = ComponentType.Get<T2>();
+            types[2] = ComponentType.Get<T3>();
+            types[3] = ComponentType.Get<T4>();
             Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             foreach (int hash in chunks.Keys)
             {
@@ -2060,6 +2122,6 @@ namespace Simulation
     public delegate void EntityCreatedCallback(World world, uint entity);
     public delegate void EntityDestroyedCallback(World world, uint entity);
     public delegate void EntityParentChangedCallback(World world, uint entity, uint parent);
-    public delegate void ComponentAddedCallback(World world, uint entity, RuntimeType componentType);
-    public delegate void ComponentRemovedCallback(World world, uint entity, RuntimeType componentType);
+    public delegate void ComponentAddedCallback(World world, uint entity, ComponentType componentType);
+    public delegate void ComponentRemovedCallback(World world, uint entity, ComponentType componentType);
 }

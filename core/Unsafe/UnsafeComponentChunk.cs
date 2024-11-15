@@ -9,11 +9,11 @@ namespace Simulation.Unsafe
     public unsafe struct UnsafeComponentChunk
     {
         private List<uint> entities;
-        private Array<RuntimeType> types;
+        private Array<ComponentType> types;
         private Array<nint> components;
         private readonly int key;
 
-        private UnsafeComponentChunk(List<uint> entities, Array<RuntimeType> types, Array<nint> components, int key)
+        private UnsafeComponentChunk(List<uint> entities, Array<ComponentType> types, Array<nint> components, int key)
         {
             this.entities = entities;
             this.types = types;
@@ -21,18 +21,18 @@ namespace Simulation.Unsafe
             this.key = key;
         }
 
-        public static UnsafeComponentChunk* Allocate(USpan<RuntimeType> types)
+        public static UnsafeComponentChunk* Allocate(USpan<ComponentType> types)
         {
-            List<uint> entities = List<uint>.Create();
-            Array<RuntimeType> typeArray = new(types);
+            List<uint> entities = new(4);
+            Array<ComponentType> typeArray = new(types);
             Array<nint> componentArray = new(types.Length);
             for (uint i = 0; i < types.Length; i++)
             {
-                RuntimeType type = types[i];
-                componentArray[i] = (nint)UnsafeList.Allocate(type);
+                ComponentType type = types[i];
+                componentArray[i] = (nint)UnsafeList.Allocate(4, type.Size);
             }
 
-            int key = RuntimeType.CombineHash(types);
+            int key = ComponentType.CombineHash(types);
             UnsafeComponentChunk* chunk = Allocations.Allocate<UnsafeComponentChunk>();
             chunk[0] = new(entities, typeArray, componentArray, key);
             return chunk;
@@ -70,7 +70,7 @@ namespace Simulation.Unsafe
             return chunk->key;
         }
 
-        public static USpan<RuntimeType> GetTypes(UnsafeComponentChunk* chunk)
+        public static USpan<ComponentType> GetTypes(UnsafeComponentChunk* chunk)
         {
             Allocations.ThrowIfNull(chunk);
             return chunk->types.AsSpan();
@@ -111,14 +111,14 @@ namespace Simulation.Unsafe
             destination->entities.Add(entity);
             for (uint i = 0; i < destination->types.Length; i++)
             {
-                RuntimeType type = destination->types[i];
+                ComponentType type = destination->types[i];
                 UnsafeList* destinationList = (UnsafeList*)destination->components[i];
                 UnsafeList.AddDefault(destinationList);
             }
 
             for (uint i = 0; i < source->types.Length; i++)
             {
-                RuntimeType type = source->types[i];
+                ComponentType type = source->types[i];
                 if (destination->types.Contains(type))
                 {
                     uint d = destination->types.IndexOf(type);
@@ -134,22 +134,22 @@ namespace Simulation.Unsafe
             return newIndex;
         }
 
-        public static UnsafeList* GetComponents(UnsafeComponentChunk* chunk, RuntimeType type)
+        public static UnsafeList* GetComponents(UnsafeComponentChunk* chunk, ComponentType type)
         {
             Allocations.ThrowIfNull(chunk);
             ThrowIfComponentTypeIsMissing(chunk, type);
-            USpan<RuntimeType> types = chunk->types.AsSpan();
+            USpan<ComponentType> types = chunk->types.AsSpan();
             uint index = types.IndexOf(type);
             return (UnsafeList*)chunk->components[index];
         }
 
         [Conditional("DEBUG")]
-        private static void ThrowIfComponentTypeIsMissing(UnsafeComponentChunk* chunk, RuntimeType type)
+        private static void ThrowIfComponentTypeIsMissing(UnsafeComponentChunk* chunk, ComponentType type)
         {
-            USpan<RuntimeType> types = chunk->types.AsSpan();
+            USpan<ComponentType> types = chunk->types.AsSpan();
             if (!types.Contains(type))
             {
-                throw new ArgumentException($"Component list of type {type} not found in chunk.");
+                throw new ArgumentException($"Component of type `{type}` not found in chunk");
             }
         }
     }

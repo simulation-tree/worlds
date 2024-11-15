@@ -1,20 +1,13 @@
 ﻿using Collections;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Unmanaged;
 
 namespace Simulation.Tests
 {
-    public class QueryTests
+    public class QueryTests : SimulationTests
     {
-        [TearDown]
-        public void CleanUp()
-        {
-            Allocations.ThrowIfAny();
-        }
-
         [Test]
         public void FindComponents()
         {
@@ -131,8 +124,8 @@ namespace Simulation.Tests
             uint entity5 = world.CreateEntity();
             world.AddComponent(entity5, component1);
             world.AddComponent(entity5, another2);
-            using Collections.List<SimpleComponent> buffer = Collections.List<SimpleComponent>.Create();
-            using Collections.List<uint> entities = Collections.List<uint>.Create();
+            using List<SimpleComponent> buffer = new(4);
+            using List<uint> entities = new(4);
             world.Fill(buffer, entities);
             Assert.That(buffer.Count, Is.EqualTo(3));
             var entitiesSpan = entities.AsSpan();
@@ -140,7 +133,7 @@ namespace Simulation.Tests
             Assert.That(entities.Contains(entity2), Is.True);
             Assert.That(entities.Contains(entity5), Is.True);
             entities.Clear();
-            using Collections.List<Another> anotherBuffer = Collections.List<Another>.Create();
+            using List<Another> anotherBuffer = new(4);
             world.Fill(anotherBuffer, entities);
             Assert.That(anotherBuffer.Count, Is.EqualTo(3));
             Assert.That(entities.Contains(entity3), Is.True);
@@ -211,7 +204,7 @@ namespace Simulation.Tests
         {
             using World world = new();
 
-            Definition definition = new([RuntimeType.Get<Apple>(), RuntimeType.Get<Berry>(), RuntimeType.Get<Cherry>()], []);
+            Definition definition = new([ComponentType.Get<Apple>(), ComponentType.Get<Berry>(), ComponentType.Get<Cherry>()], []);
             uint entity1 = world.CreateEntity(definition);
             uint entity2 = world.CreateEntity(definition);
             uint entity3 = world.CreateEntity(definition);
@@ -243,12 +236,12 @@ namespace Simulation.Tests
                 {
                     if (i % 3 == 0)
                     {
-                        Definition definition = new([RuntimeType.Get<Apple>(), RuntimeType.Get<Berry>(), RuntimeType.Get<Cherry>()], []);
+                        Definition definition = new([ComponentType.Get<Apple>(), ComponentType.Get<Berry>(), ComponentType.Get<Cherry>()], []);
                         world.CreateEntity(definition);
                     }
                     else
                     {
-                        Definition definition = new([RuntimeType.Get<Apple>(), RuntimeType.Get<Berry>()], []);
+                        Definition definition = new([ComponentType.Get<Apple>(), ComponentType.Get<Berry>()], []);
                         world.CreateEntity(definition);
                     }
 
@@ -274,7 +267,7 @@ namespace Simulation.Tests
             Console.WriteLine($"Querying took {stopwatch.ElapsedTicks}t");
 
             //benchmark definition query
-            using DefinitionQuery defQuery = new(new([RuntimeType.Get<Apple>(), RuntimeType.Get<Berry>(), RuntimeType.Get<Cherry>()], []));
+            using DefinitionQuery defQuery = new(new([ComponentType.Get<Apple>(), ComponentType.Get<Berry>(), ComponentType.Get<Cherry>()], []));
             results.Clear();
             stopwatch.Restart();
             defQuery.Update(world);
@@ -285,7 +278,7 @@ namespace Simulation.Tests
 
             stopwatch.Stop();
             Console.WriteLine($"DefinitionQuery took {stopwatch.ElapsedTicks}t");
-            
+
             //benchmark ForEach
             results.Clear();
             stopwatch.Restart();
@@ -299,8 +292,8 @@ namespace Simulation.Tests
 
             //benchmarking manually iterating
             results.Clear();
-            Collections.Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
-            USpan<RuntimeType> typesSpan = [RuntimeType.Get<Apple>(), RuntimeType.Get<Berry>(), RuntimeType.Get<Cherry>()];
+            Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
+            USpan<ComponentType> typesSpan = [ComponentType.Get<Apple>(), ComponentType.Get<Berry>(), ComponentType.Get<Cherry>()];
             stopwatch.Restart();
             for (uint i = 0; i < chunks.Count; i++)
             {
@@ -308,7 +301,7 @@ namespace Simulation.Tests
                 ComponentChunk chunk = chunks[key];
                 if (chunk.ContainsTypes(typesSpan))
                 {
-                    Collections.List<uint> entities = chunk.Entities;
+                    List<uint> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
                         uint entity = entities[e];

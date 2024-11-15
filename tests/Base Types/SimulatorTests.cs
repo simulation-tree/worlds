@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Unmanaged;
 
 namespace Simulation.Tests
 {
-    public abstract class SimulationTests : UnmanagedTests
+    public abstract class SimulatorTests : SimulationTests
     {
         private World world;
         private Simulator simulator;
@@ -28,7 +27,7 @@ namespace Simulation.Tests
             base.CleanUp();
         }
 
-        protected async Task Simulate(World world, CancellationToken cancellation)
+        protected async Task Simulate(CancellationToken cancellation)
         {
             TimeSpan delta = TimeSpan.FromSeconds(0.1f);
             Simulator.Update(delta);

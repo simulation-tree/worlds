@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<IsAotCompatible>True</IsAotCompatible>
+		<IsTrimmable>True</IsTrimmable>
+		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+		<WarningLevel>7</WarningLevel>
+		<NoWarn>NU1900</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<IsAotCompatible>True</IsAotCompatible>
+		<IsTrimmable>True</IsTrimmable>
+		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+		<WarningLevel>7</WarningLevel>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\collections\source\Collections.csproj" />
+		<ProjectReference Include="..\..\unmanaged\source\Unmanaged.csproj" />
+	</ItemGroup>
+
+</Project>
