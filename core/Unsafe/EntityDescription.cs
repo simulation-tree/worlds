@@ -7,12 +7,12 @@ namespace Simulation.Unsafe
     {
         public uint entity;
         public uint parent;
-        public int componentsKey;
+        public int chunkKey;
         public ushort childCount;
         public List<uint> children;
         public ushort referenceCount;
         public List<uint> references;
-        public ushort arrayCount;
+        public byte arrayCount;
         public List<Allocation> arrays;
         public List<ArrayType> arrayTypes;
         public List<uint> arrayLengths;

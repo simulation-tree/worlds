@@ -67,14 +67,17 @@ namespace Simulation
 
         public static ComponentType Register<T>() where T : unmanaged
         {
-            ThrowIfTypeAlreadyExists<T>();
-            byte index = (byte)systemTypes.Count;
-            ComponentType type = new(index);
             Type systemType = typeof(T);
-            systemTypeToType.Add(systemType, type);
-            systemTypes.Add(systemType);
-            sizes.Add((ushort)TypeInfo<T>.size);
-            all.Add(type);
+            if (!systemTypeToType.TryGetValue(systemType, out ComponentType type))
+            {
+                byte index = (byte)systemTypes.Count;
+                type = new(index);
+                systemTypeToType.Add(systemType, type);
+                systemTypes.Add(systemType);
+                sizes.Add((ushort)TypeInfo<T>.size);
+                all.Add(type);
+            }
+
             return type;
         }
 
@@ -82,53 +85,6 @@ namespace Simulation
         {
             ThrowIfTypeDoesntExist<T>();
             return systemTypeToType[typeof(T)];
-        }
-
-        public static int CombineHash(USpan<ComponentType> types)
-        {
-            uint typeCount = types.Length;
-            if (typeCount == 0)
-            {
-                return 0;
-            }
-
-            USpan<ComponentType> typesSpan = stackalloc ComponentType[(int)typeCount];
-            types.CopyTo(typesSpan);
-            uint hash = 0;
-            uint max = 0;
-            uint index = 0;
-            while (true)
-            {
-                max = 0;
-                index = 0;
-                for (uint i = 0; i < typeCount; i++)
-                {
-                    ComponentType type = typesSpan[i];
-                    if (type.value > max)
-                    {
-                        max = type.value;
-                        index = i;
-                    }
-                }
-
-                unchecked
-                {
-                    hash += max * 174440041u;
-                }
-
-                ComponentType last = typesSpan[typeCount - 1];
-                typesSpan[index] = last;
-                typeCount--;
-                if (typeCount == 0)
-                {
-                    break;
-                }
-            }
-
-            unchecked
-            {
-                return (int)hash;
-            }
         }
 
         [Conditional("DEBUG")]
@@ -157,6 +113,11 @@ namespace Simulation
         public static bool operator !=(ComponentType left, ComponentType right)
         {
             return !(left == right);
+        }
+
+        public static implicit operator byte(ComponentType type)
+        {
+            return type.value;
         }
     }
 }

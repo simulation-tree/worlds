@@ -117,6 +117,7 @@ namespace Simulation.Tests
             world.Append(loadedWorld);
 
             world.TryGetFirstComponent<Prefab>(out uint prefabEntity, out _);
+            Assert.That(prefabEntity, Is.Not.EqualTo((uint)0));
             Assert.That(world.ContainsEntity(prefabEntity), Is.True);
             Assert.That(world.GetComponent<Fruit>(prefabEntity).data, Is.EqualTo(42));
             Assert.That(world.GetComponent<Apple>(prefabEntity).data.ToString(), Is.EqualTo("Hello, World!"));

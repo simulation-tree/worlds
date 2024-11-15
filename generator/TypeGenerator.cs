@@ -132,7 +132,7 @@ namespace Generator
                             }
                             else if (containingTypeName == "Entity" || containingTypeName == "World" || containingTypeName == "Operation" || containingTypeName == "Instruction")
                             {
-                                if (methodName == "AddComponent" || methodName == "GetComponent" || methodName == "SetComponent" || methodName == "RemoveComponent" || methodName == "ContainsComponent")
+                                if (methodName == "AddComponent" || methodName == "GetComponent" || methodName == "SetComponent" || methodName == "RemoveComponent" || methodName == "ContainsComponent" || methodName == "ContainsAnyComponent" || methodName == "Fill" || methodName == "ForEach")
                                 {
                                     if (methodSymbol.Arity == 1)
                                     {

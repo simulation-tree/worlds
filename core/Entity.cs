@@ -24,12 +24,14 @@ namespace Simulation
             get
             {
                 ThrowIfDestroyed();
+
                 uint parent = world.GetParent(value);
                 return parent == default ? default : new(world, parent);
             }
             set
             {
                 ThrowIfDestroyed();
+
                 world.SetParent(this.value, value.value);
             }
         }
@@ -39,6 +41,7 @@ namespace Simulation
             get
             {
                 ThrowIfDestroyed();
+
                 return world.GetChildren(value);
             }
         }
@@ -51,7 +54,7 @@ namespace Simulation
         [Obsolete("Default constructor not available", true)]
         public Entity()
         {
-            throw new NotSupportedException();
+            throw new NotSupportedException("Default constructor not available");
         }
 #endif
 
@@ -112,24 +115,28 @@ namespace Simulation
         public readonly USpan<T> GetArray<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
+
             return world.GetArray<T>(value);
         }
 
         public readonly ref T GetArrayElementRef<T>(uint index) where T : unmanaged
         {
             ThrowIfDestroyed();
+
             return ref world.GetArrayElementRef<T>(value, index);
         }
 
         public readonly uint GetArrayLength<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
+
             return world.GetArrayLength<T>(value);
         }
 
         public readonly USpan<ArrayType> GetArrayTypes()
         {
             ThrowIfDestroyed();
+
             return world.GetArrayTypes(value);
         }
 
@@ -142,6 +149,7 @@ namespace Simulation
         public readonly void DestroyArray<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
+
             world.DestroyArray<T>(value);
         }
 
@@ -151,24 +159,28 @@ namespace Simulation
         public readonly USpan<T> CreateArray<T>(uint length = 0) where T : unmanaged
         {
             ThrowIfDestroyed();
+
             return world.CreateArray<T>(value, length);
         }
 
         public readonly void CreateArray<T>(USpan<T> values) where T : unmanaged
         {
             ThrowIfDestroyed();
+
             world.CreateArray(value, values);
         }
 
         public readonly USpan<T> ResizeArray<T>(uint newLength) where T : unmanaged
         {
             ThrowIfDestroyed();
+
             return world.ResizeArray<T>(value, newLength);
         }
 
         public readonly bool TryGetArray<T>(out USpan<T> values) where T : unmanaged
         {
             ThrowIfDestroyed();
+
             if (ContainsArray<T>())
             {
                 values = GetArray<T>();
@@ -184,6 +196,7 @@ namespace Simulation
         public readonly bool TryGetParent(out uint parent)
         {
             ThrowIfDestroyed();
+
             parent = world.GetParent(value);
             return parent != default;
         }
@@ -191,48 +204,56 @@ namespace Simulation
         public readonly bool ContainsComponent<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
+
             return world.ContainsComponent<T>(value);
         }
 
         public readonly bool ContainsComponent(ComponentType componentType)
         {
             ThrowIfDestroyed();
+
             return world.ContainsComponent(value, componentType);
         }
 
-        public readonly USpan<ComponentType> GetComponentTypes()
+        public readonly uint CopyComponentTypesTo(USpan<ComponentType> buffer)
         {
             ThrowIfDestroyed();
-            return world.GetComponentTypes(value);
+
+            return world.CopyComponentTypesTo(value, buffer);
         }
 
         public readonly T GetComponent<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
+
             return world.GetComponent<T>(value);
         }
 
         public readonly ref T GetComponentRef<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
+
             return ref world.GetComponentRef<T>(value);
         }
 
         public readonly ref T AddComponentRef<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
+
             return ref world.AddComponentRef<T>(value);
         }
 
         public readonly ref T TryGetComponentRef<T>(out bool contains) where T : unmanaged
         {
             ThrowIfDestroyed();
+
             return ref world.TryGetComponentRef<T>(value, out contains);
         }
 
         public readonly bool TryGetComponent<T>(out T component) where T : unmanaged
         {
             ThrowIfDestroyed();
+
             return world.TryGetComponent(value, out component);
         }
 
@@ -242,12 +263,14 @@ namespace Simulation
         public readonly T GetComponent<T>(T defaultValue) where T : unmanaged
         {
             ThrowIfDestroyed();
+
             return world.GetComponent(value, defaultValue);
         }
 
         public readonly USpan<byte> GetComponentBytes(ComponentType componentType)
         {
             ThrowIfDestroyed();
+
             return world.GetComponentBytes(value, componentType);
         }
 
@@ -260,6 +283,7 @@ namespace Simulation
         public readonly void SetComponent<T>(T component) where T : unmanaged
         {
             ThrowIfDestroyed();
+
             world.SetComponent(value, component);
         }
 
@@ -269,6 +293,7 @@ namespace Simulation
         public readonly void AddComponent<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
+
             world.AddComponent<T>(value);
         }
 
@@ -278,6 +303,7 @@ namespace Simulation
         public readonly void AddComponent<T>(T component) where T : unmanaged
         {
             ThrowIfDestroyed();
+
             world.AddComponent(value, component);
         }
 
@@ -287,24 +313,28 @@ namespace Simulation
         public readonly void AddComponent(ComponentType componentType)
         {
             ThrowIfDestroyed();
+
             world.AddComponent(value, componentType);
         }
 
         public readonly void RemoveComponent<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
+
             world.RemoveComponent<T>(value);
         }
 
         public readonly void RemoveComponent(ComponentType componentType)
         {
             ThrowIfDestroyed();
+
             world.RemoveComponent(value, componentType);
         }
 
         public readonly void RemoveComponent<T>(out T removedComponent) where T : unmanaged
         {
             ThrowIfDestroyed();
+
             removedComponent = GetComponentRef<T>();
             world.RemoveComponent<T>(value);
         }
@@ -312,30 +342,35 @@ namespace Simulation
         public readonly rint AddReference(uint otherEntity)
         {
             ThrowIfDestroyed();
+
             return world.AddReference(value, otherEntity);
         }
 
         public readonly rint AddReference<T>(T otherEntity) where T : unmanaged, IEntity
         {
             ThrowIfDestroyed();
+
             return AddReference(otherEntity.Value);
         }
 
         public readonly uint GetReference(rint reference)
         {
             ThrowIfDestroyed();
+
             return world.GetReference(value, reference);
         }
 
         public readonly T GetReference<T>(rint reference) where T : unmanaged, IEntity
         {
             ThrowIfDestroyed();
+
             return new Entity(world, GetReference(reference)).As<T>();
         }
 
         public readonly uint GetReferenceCount()
         {
             ThrowIfDestroyed();
+
             return world.GetReferenceCount(value);
         }
 
@@ -345,6 +380,7 @@ namespace Simulation
         public readonly void SetReference(rint reference, uint otherEntity)
         {
             ThrowIfDestroyed();
+
             world.SetReference(value, reference, otherEntity);
         }
 
@@ -354,24 +390,28 @@ namespace Simulation
         public readonly void SetReference<T>(rint reference, T otherEntity) where T : unmanaged, IEntity
         {
             ThrowIfDestroyed();
+
             SetReference(reference, otherEntity.Value);
         }
 
         public readonly bool ContainsReference(rint reference)
         {
             ThrowIfDestroyed();
+
             return world.ContainsReference(value, reference);
         }
 
         public readonly bool TryGetReference(rint reference, out uint otherEntity)
         {
             ThrowIfDestroyed();
+
             return world.TryGetReference(value, reference, out otherEntity);
         }
 
         public readonly bool TryGetReference<T>(rint reference, out T otherEntity) where T : unmanaged, IEntity
         {
             ThrowIfDestroyed();
+
             if (TryGetReference(reference, out uint otherValue))
             {
                 otherEntity = new Entity(world, otherValue).As<T>();
@@ -390,6 +430,7 @@ namespace Simulation
         public readonly unsafe T As<T>() where T : unmanaged, IEntity
         {
             ThrowIfTypeLayoutMismatches<T>();
+
             Entity self = this;
             return *(T*)&self;
         }
@@ -496,7 +537,9 @@ namespace Simulation
                 this.entity = entity.GetEntityValue();
                 this.world = entity.GetWorld();
                 this.creationStackTrace = UnsafeWorld.createStackTraces[entity];
-                this.componentTypes = entity.GetComponentTypes().ToArray();
+                USpan<ComponentType> buffer = stackalloc ComponentType[BitSet.Capacity];
+                uint bufferLength = entity.CopyComponentTypesTo(buffer);
+                this.componentTypes = buffer.Slice(0, bufferLength).ToArray();
                 this.arrayTypes = entity.GetArrayTypes().ToArray();
             }
 #endif

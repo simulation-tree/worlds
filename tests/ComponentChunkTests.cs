@@ -9,7 +9,7 @@ namespace Simulation.Tests
         [Test]
         public void AddEntityNoComponents()
         {
-            ComponentChunk chunk = new([]);
+            ComponentChunk chunk = new();
             uint entity = new Union(7).entity;
             chunk.AddEntity(entity);
             Assert.That(chunk.Entities, Has.Count.EqualTo(1));
@@ -84,6 +84,7 @@ namespace Simulation.Tests
             ref float floatComponent = ref chunkC.GetComponentRef<float>(newerIndex);
             floatComponent = 3.14f;
 
+            Assert.That(chunkB.GetComponents<int>(), Is.Empty);
             Assert.That(chunkB.Entities, Is.Empty);
             Assert.That(chunkC.Entities, Has.Count.EqualTo(1));
             Assert.That(chunkC.Entities[0], Is.EqualTo(entity));
@@ -102,8 +103,8 @@ namespace Simulation.Tests
         {
             ComponentChunk chunkA = new([ComponentType.Get<int>(), ComponentType.Get<float>()]);
             ComponentChunk chunkB = new([ComponentType.Get<float>(), ComponentType.Get<int>()]);
-            int hashA = chunkA.Key;
-            int hashB = chunkB.Key;
+            int hashA = chunkA.TypesMask.GetHashCode();
+            int hashB = chunkB.TypesMask.GetHashCode();
             Assert.That(hashA, Is.EqualTo(hashB));
             chunkA.Dispose();
             chunkB.Dispose();

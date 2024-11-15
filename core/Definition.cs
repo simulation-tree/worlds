@@ -15,7 +15,8 @@ namespace Simulation
         private BitSet componentTypesMask;
         private BitSet arrayTypesMask;
 
-        public readonly ushort TotalTypeCount => (ushort)(componentTypeCount + arrayTypeCount);
+        public readonly BitSet ComponentTypesMask => componentTypesMask;
+        public readonly BitSet ArrayTypesMask => arrayTypesMask;
 
         public Definition(USpan<ComponentType> componentTypes, USpan<ArrayType> arrayTypes)
         {
@@ -45,7 +46,7 @@ namespace Simulation
             uint count = 0;
             for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                if (componentTypesMask.Has(i))
+                if (componentTypesMask.Contains(i))
                 {
                     buffer[count] = new(i);
                     count++;
@@ -60,7 +61,7 @@ namespace Simulation
             uint count = 0;
             for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                if (arrayTypesMask.Has(i))
+                if (arrayTypesMask.Contains(i))
                 {
                     buffer[count] = new(i);
                     count++;
@@ -87,7 +88,7 @@ namespace Simulation
 
         public readonly bool ContainsComponent(ComponentType type)
         {
-            return componentTypesMask.Has(type.value);
+            return componentTypesMask.Contains(type.value);
         }
 
         public readonly bool ContainsComponent<T>() where T : unmanaged
@@ -97,7 +98,7 @@ namespace Simulation
 
         public readonly bool ContainsArray(ArrayType type)
         {
-            return arrayTypesMask.Has(type.value);
+            return arrayTypesMask.Contains(type.value);
         }
 
         public readonly bool ContainsArray<T>() where T : unmanaged
@@ -208,7 +209,7 @@ namespace Simulation
         {
             for (uint i = 0; i < componentTypeCount; i++)
             {
-                if (componentTypesMask.Has(type.value))
+                if (componentTypesMask.Contains(type.value))
                 {
                     throw new InvalidOperationException($"Component type `{type}` already in this definition");
                 }
@@ -220,7 +221,7 @@ namespace Simulation
         {
             for (uint i = 0; i < arrayTypeCount; i++)
             {
-                if (arrayTypesMask.Has(type.value))
+                if (arrayTypesMask.Contains(type.value))
                 {
                     throw new InvalidOperationException($"Array type `{type}` already in this definition");
                 }

@@ -1,4 +1,6 @@
-﻿using Unmanaged;
+﻿using Programs;
+using Programs.Components;
+using Unmanaged;
 
 namespace Simulation.Tests
 {
@@ -35,6 +37,14 @@ namespace Simulation.Tests
         }
 
         [Test]
+        public void CompareHashCodeCase1()
+        {
+            BitSet a = new([ComponentType.Get<World>(), ComponentType.Get<IsProgram>(), ComponentType.Get<ProgramState>()]);
+            BitSet b = new([ComponentType.Get<IsProgram>(), ComponentType.Get<ProgramState>()]);
+            Assert.That(a, Is.Not.EqualTo(b));
+        }
+
+        [Test]
         public void AddingAndIndexing()
         {
             Definition a = new();
@@ -45,7 +55,6 @@ namespace Simulation.Tests
 
             Assert.That(a.componentTypeCount, Is.EqualTo(2));
             Assert.That(a.arrayTypeCount, Is.EqualTo(2));
-            Assert.That(a.TotalTypeCount, Is.EqualTo(4));
             USpan<ComponentType> componentTypes = stackalloc ComponentType[a.componentTypeCount];
             USpan<ArrayType> arrayTypes = stackalloc ArrayType[a.arrayTypeCount];
             a.CopyComponentTypes(componentTypes);
@@ -62,7 +71,6 @@ namespace Simulation.Tests
             Definition definition = new Definition().AddComponentTypes<int, char, double, float>();
             Assert.That(definition.componentTypeCount, Is.EqualTo(4));
             Assert.That(definition.arrayTypeCount, Is.EqualTo(0));
-            Assert.That(definition.TotalTypeCount, Is.EqualTo(4));
             Assert.That(definition.ContainsComponent<int>(), Is.True);
             Assert.That(definition.ContainsComponent<char>(), Is.True);
             Assert.That(definition.ContainsComponent<double>(), Is.True);

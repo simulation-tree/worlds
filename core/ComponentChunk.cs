@@ -10,14 +10,31 @@ namespace Simulation
     {
         private UnsafeComponentChunk* value;
 
-        public readonly bool IsDisposed => UnsafeComponentChunk.IsDisposed(value);
+        public readonly bool IsDisposed => value is null;
         public readonly List<uint> Entities => UnsafeComponentChunk.GetEntities(value);
-        public readonly USpan<ComponentType> Types => UnsafeComponentChunk.GetTypes(value);
-        public readonly int Key => UnsafeComponentChunk.GetKey(value);
+        public readonly BitSet TypesMask => UnsafeComponentChunk.GetTypesMask(value);
 
-        public ComponentChunk(USpan<ComponentType> types)
+#if NET
+        public ComponentChunk()
         {
-            value = UnsafeComponentChunk.Allocate(types);
+            value = UnsafeComponentChunk.Allocate(default);
+        }
+#endif
+
+        public ComponentChunk(BitSet componentTypes)
+        {
+            value = UnsafeComponentChunk.Allocate(componentTypes);
+        }
+
+        public ComponentChunk(USpan<ComponentType> componentTypes)
+        {
+            BitSet typesMask = new();
+            for (byte i = 0; i < componentTypes.Length; i++)
+            {
+                typesMask.Set(componentTypes[i]);
+            }
+
+            value = UnsafeComponentChunk.Allocate(typesMask);
         }
 
         public void Dispose()
@@ -29,11 +46,16 @@ namespace Simulation
         {
             USpan<char> buffer = stackalloc char[512];
             uint length = 0;
-            foreach (ComponentType type in Types)
+            BitSet typeMask = TypesMask;
+            for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                length += type.ToString(buffer.Slice(length));
-                buffer[length++] = ',';
-                buffer[length++] = ' ';
+                if (typeMask.Contains(i))
+                {
+                    ComponentType type = new(i);
+                    length += type.ToString(buffer.Slice(length));
+                    buffer[length++] = ',';
+                    buffer[length++] = ' ';
+                }
             }
 
             if (length > 0)
@@ -47,20 +69,34 @@ namespace Simulation
             }
         }
 
-        /// <summary>
-        /// Checks if the chunk contains all of the given component types.
-        /// </summary>
-        public readonly bool ContainsTypes(USpan<ComponentType> componentTypes)
+        public readonly byte CopyTypesTo(USpan<ComponentType> buffer)
         {
-            USpan<ComponentType> myTypes = Types;
-            if (componentTypes.Length > myTypes.Length)
+            BitSet typeMask = TypesMask;
+            byte count = 0;
+            for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                return false;
+                if (typeMask.Contains(i))
+                {
+                    buffer[count++] = new(i);
+                }
             }
 
-            for (uint i = 0; i < componentTypes.Length; i++)
+            return count;
+        }
+
+        /// <summary>
+        /// Checks if this chunk contains all of the given <paramref name="componentTypes"/>.
+        /// </summary>
+        public readonly bool ContainsTypes(BitSet componentTypes)
+        {
+            return TypesMask.ContainsAll(componentTypes);
+        }
+
+        public readonly bool ContainsTypes(USpan<ComponentType> componentTypes)
+        {
+            for (byte i = 0; i < componentTypes.Length; i++)
             {
-                if (!myTypes.Contains(componentTypes[i]))
+                if (!ContainsType(componentTypes[i]))
                 {
                     return false;
                 }
@@ -70,20 +106,31 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Adds an entity into this chunk and returns its referrable index.
+        /// Checks if this chunk contains the given <paramref name="componentType"/>
+        /// </summary>
+        public readonly bool ContainsType(ComponentType componentType)
+        {
+            return TypesMask.Contains(componentType);
+        }
+
+        /// <summary>
+        /// Adds the given <paramref name="entity"/> into this chunk and returns its referrable index.
         /// </summary>
         public readonly uint AddEntity(uint entity)
         {
             return UnsafeComponentChunk.Add(value, entity);
         }
 
+        /// <summary>
+        /// Removes the given <paramref name="entity"/> from this chunk.
+        /// </summary>
         public readonly void RemoveEntity(uint entity)
         {
             UnsafeComponentChunk.Remove(value, entity);
         }
 
         /// <summary>
-        /// Moves the entity and all of its components to another chunk.
+        /// Moves the <paramref name="entity"/> and all of its components to the <paramref name="destination"/> chunk.
         /// </summary>
         public readonly uint MoveEntity(uint entity, ComponentChunk destination)
         {

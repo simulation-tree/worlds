@@ -107,8 +107,8 @@ namespace Simulation.Unsafe
         {
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
             Dictionary<int, ComponentChunk> components = GetComponentChunks(world);
-            ComponentChunk chunk = components[slot.componentsKey];
-            if (!chunk.Types.Contains(type))
+            ComponentChunk chunk = components[slot.chunkKey];
+            if (!chunk.ContainsType(type))
             {
                 throw new NullReferenceException($"Component `{type}` not found on `{entity}`");
             }
@@ -119,8 +119,8 @@ namespace Simulation.Unsafe
         {
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
             Dictionary<int, ComponentChunk> components = GetComponentChunks(world);
-            ComponentChunk chunk = components[slot.componentsKey];
-            if (chunk.Types.Contains(type))
+            ComponentChunk chunk = components[slot.chunkKey];
+            if (chunk.ContainsType(type))
             {
                 throw new InvalidOperationException($"Component `{type}` already present on `{entity}`");
             }
@@ -173,8 +173,8 @@ namespace Simulation.Unsafe
             UnsafeList* freeEntities = UnsafeList.Allocate<uint>(4);
             UnsafeDictionary* components = UnsafeDictionary.Allocate<uint, ComponentChunk>(4);
 
-            ComponentChunk defaultComponentChunk = new(default);
-            int chunkKey = defaultComponentChunk.Key;
+            ComponentChunk defaultComponentChunk = new(default(BitSet));
+            int chunkKey = defaultComponentChunk.TypesMask.GetHashCode();
             UnsafeDictionary.Add(components, chunkKey, defaultComponentChunk);
 
             UnsafeWorld* world = Allocations.Allocate<UnsafeWorld>();
@@ -292,7 +292,7 @@ namespace Simulation.Unsafe
             }
 
             Dictionary<int, ComponentChunk> components = GetComponentChunks(world);
-            ComponentChunk chunk = components[slot.componentsKey];
+            ComponentChunk chunk = components[slot.chunkKey];
             chunk.RemoveEntity(entity);
 
             //reset arrays
@@ -315,21 +315,21 @@ namespace Simulation.Unsafe
             //reset the rest
             slot.entity = default;
             slot.parent = default;
-            slot.componentsKey = default;
+            slot.chunkKey = default;
             slot.state = EntityDescription.State.Destroyed;
             UnsafeList.Add(world->freeEntities, entity);
             NotifyDestruction(new(world), entity);
         }
 
-        public static USpan<ComponentType> GetComponentTypes(UnsafeWorld* world, uint entity)
+        public static uint CopyComponentTypes(UnsafeWorld* world, uint entity, USpan<ComponentType> buffer)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
 
             EntityDescription slot = UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
             Dictionary<int, ComponentChunk> components = GetComponentChunks(world);
-            ComponentChunk chunk = components[slot.componentsKey];
-            return chunk.Types;
+            ComponentChunk chunk = components[slot.chunkKey];
+            return chunk.CopyTypesTo(buffer);
         }
 
         public static USpan<ArrayType> GetArrayTypes(UnsafeWorld* world, uint entity)
@@ -460,20 +460,17 @@ namespace Simulation.Unsafe
                 //free slot reused
             }
 
-            USpan<ComponentType> componentTypes = stackalloc ComponentType[definition.componentTypeCount];
-            definition.CopyComponentTypes(componentTypes);
-            int componentsKey = ComponentType.CombineHash(componentTypes);
-
+            int componentsKey = definition.ComponentTypesMask.GetHashCode();
             ref EntityDescription slot = ref slots[entity - 1];
             slot.entity = entity;
-            slot.componentsKey = componentsKey;
+            slot.chunkKey = componentsKey;
             slot.state = EntityDescription.State.Enabled;
 
             //put entity into correct chunk
             Dictionary<int, ComponentChunk> components = GetComponentChunks(world);
             if (!components.TryGetValue(componentsKey, out ComponentChunk chunk))
             {
-                chunk = new(componentTypes);
+                chunk = new(definition.ComponentTypesMask);
                 components.Add(componentsKey, chunk);
             }
 
@@ -645,23 +642,21 @@ namespace Simulation.Unsafe
 
             Dictionary<int, ComponentChunk> components = GetComponentChunks(world);
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
-            int previousTypesKey = slot.componentsKey;
-            ComponentChunk current = components[previousTypesKey];
-            USpan<ComponentType> oldTypes = current.Types;
-            USpan<ComponentType> newTypes = stackalloc ComponentType[(int)(oldTypes.Length + 1)];
-            oldTypes.CopyTo(newTypes);
-            newTypes[newTypes.Length - 1] = componentType;
-            int newTypesKey = ComponentType.CombineHash(newTypes);
-            slot.componentsKey = newTypesKey;
+            int previousChunkKey = slot.chunkKey;
+            ComponentChunk previousChunk = components[previousChunkKey];
+            BitSet newComponentTypes = previousChunk.TypesMask;
+            newComponentTypes.Set(componentType);
+            int newChunkKey = newComponentTypes.GetHashCode();
+            slot.chunkKey = newChunkKey;
 
-            if (!components.TryGetValue(newTypesKey, out ComponentChunk destination))
+            if (!components.TryGetValue(newChunkKey, out ComponentChunk destinationChunk))
             {
-                destination = new(newTypes);
-                components.Add(newTypesKey, destination);
+                destinationChunk = new(newComponentTypes);
+                components.Add(newChunkKey, destinationChunk);
             }
 
-            uint index = current.MoveEntity(entity, destination);
-            return destination.GetComponentBytes(index, componentType);
+            uint index = previousChunk.MoveEntity(entity, destinationChunk);
+            return destinationChunk.GetComponentBytes(index, componentType);
         }
 
         public static ref T AddComponent<T>(UnsafeWorld* world, uint entity) where T : unmanaged
@@ -674,23 +669,21 @@ namespace Simulation.Unsafe
 
             Dictionary<int, ComponentChunk> components = GetComponentChunks(world);
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
-            int previousTypesKey = slot.componentsKey;
-            ComponentChunk current = components[previousTypesKey];
-            USpan<ComponentType> oldTypes = current.Types;
-            USpan<ComponentType> newTypes = stackalloc ComponentType[(int)(oldTypes.Length + 1)];
-            oldTypes.CopyTo(newTypes);
-            newTypes[newTypes.Length - 1] = componentType;
-            int newTypesKey = ComponentType.CombineHash(newTypes);
-            slot.componentsKey = newTypesKey;
+            int previousChunkKey = slot.chunkKey;
+            ComponentChunk previousChunk = components[previousChunkKey];
+            BitSet newComponentTypes = previousChunk.TypesMask;
+            newComponentTypes.Set(componentType);
+            int newChunkKey = newComponentTypes.GetHashCode();
+            slot.chunkKey = newChunkKey;
 
-            if (!components.TryGetValue(newTypesKey, out ComponentChunk destination))
+            if (!components.TryGetValue(newChunkKey, out ComponentChunk destinationChunk))
             {
-                destination = new(newTypes);
-                components.Add(newTypesKey, destination);
+                destinationChunk = new(newComponentTypes);
+                components.Add(newChunkKey, destinationChunk);
             }
 
-            uint index = current.MoveEntity(entity, destination);
-            return ref destination.GetComponentRef<T>(index);
+            uint index = previousChunk.MoveEntity(entity, destinationChunk);
+            return ref destinationChunk.GetComponentRef<T>(index);
         }
 
         public static void SetComponentBytes(UnsafeWorld* world, uint entity, ComponentType type, USpan<byte> bytes)
@@ -701,7 +694,7 @@ namespace Simulation.Unsafe
 
             Dictionary<int, ComponentChunk> components = GetComponentChunks(world);
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
-            ComponentChunk chunk = components[slot.componentsKey];
+            ComponentChunk chunk = components[slot.chunkKey];
             chunk.SetComponentBytes(entity, type, bytes);
         }
 
@@ -718,30 +711,20 @@ namespace Simulation.Unsafe
 
             Dictionary<int, ComponentChunk> components = GetComponentChunks(world);
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
-            int previousTypesKey = slot.componentsKey;
-            ComponentChunk current = components[previousTypesKey];
-            USpan<ComponentType> oldTypes = current.Types;
-            USpan<ComponentType> newTypes = stackalloc ComponentType[(int)(oldTypes.Length - 1)];
-            uint count = 0;
-            for (uint i = 0; i < oldTypes.Length; i++)
+            int previousChunkKey = slot.chunkKey;
+            ComponentChunk previousChunk = components[previousChunkKey];
+            BitSet newComponentTypes = previousChunk.TypesMask;
+            newComponentTypes.Clear(type);
+            int newChunkKey = newComponentTypes.GetHashCode();
+            slot.chunkKey = newChunkKey;
+
+            if (!components.TryGetValue(newChunkKey, out ComponentChunk destinationChunk))
             {
-                if (oldTypes[i] != type)
-                {
-                    newTypes[count] = oldTypes[i];
-                    count++;
-                }
+                destinationChunk = new(newComponentTypes);
+                components.Add(newChunkKey, destinationChunk);
             }
 
-            int newTypesKey = ComponentType.CombineHash(newTypes);
-            slot.componentsKey = newTypesKey;
-
-            if (!components.TryGetValue(newTypesKey, out ComponentChunk destination))
-            {
-                destination = new(newTypes);
-                components.Add(newTypesKey, destination);
-            }
-
-            current.MoveEntity(entity, destination);
+            previousChunk.MoveEntity(entity, destinationChunk);
             NotifyComponentRemoved(new(world), entity, type);
         }
 
@@ -753,8 +736,8 @@ namespace Simulation.Unsafe
             uint index = entity - 1;
             Dictionary<int, ComponentChunk> components = GetComponentChunks(world);
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, index);
-            ComponentChunk chunk = components[slot.componentsKey];
-            return chunk.Types.Contains(type);
+            ComponentChunk chunk = components[slot.chunkKey];
+            return chunk.ContainsType(type);
         }
 
         public static ref T GetComponentRef<T>(UnsafeWorld* world, uint entity) where T : unmanaged
@@ -767,7 +750,7 @@ namespace Simulation.Unsafe
 
             Dictionary<int, ComponentChunk> components = GetComponentChunks(world);
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
-            ComponentChunk chunk = components[slot.componentsKey];
+            ComponentChunk chunk = components[slot.chunkKey];
             uint index = chunk.Entities.IndexOf(entity);
             return ref chunk.GetComponentRef<T>(index);
         }
@@ -780,7 +763,7 @@ namespace Simulation.Unsafe
 
             Dictionary<int, ComponentChunk> components = GetComponentChunks(world);
             ref EntityDescription slot = ref UnsafeList.GetRef<EntityDescription>(world->slots, entity - 1);
-            ComponentChunk chunk = components[slot.componentsKey];
+            ComponentChunk chunk = components[slot.chunkKey];
             uint index = chunk.Entities.IndexOf(entity);
             return chunk.GetComponentBytes(index, type);
         }

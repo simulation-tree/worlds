@@ -9,81 +9,80 @@ namespace Simulation.Unsafe
     public unsafe struct UnsafeComponentChunk
     {
         private List<uint> entities;
-        private Array<ComponentType> types;
-        private Array<nint> components;
-        private readonly int key;
+        private Array<nint> componentArrays;
+        private readonly BitSet typeMask;
 
-        private UnsafeComponentChunk(List<uint> entities, Array<ComponentType> types, Array<nint> components, int key)
+        private UnsafeComponentChunk(List<uint> entities, BitSet componentTypesMask, Array<nint> componentArrays)
         {
             this.entities = entities;
-            this.types = types;
-            this.components = components;
-            this.key = key;
+            this.componentArrays = componentArrays;
+            this.typeMask = componentTypesMask;
         }
 
-        public static UnsafeComponentChunk* Allocate(USpan<ComponentType> types)
+        public static UnsafeComponentChunk* Allocate(BitSet componentTypesMask)
         {
-            List<uint> entities = new(4);
-            Array<ComponentType> typeArray = new(types);
-            Array<nint> componentArray = new(types.Length);
-            for (uint i = 0; i < types.Length; i++)
+            Array<nint> componentArrays = new(BitSet.Capacity);
+            USpan<ComponentType> componentTypes = stackalloc ComponentType[BitSet.Capacity];
+            for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                ComponentType type = types[i];
-                componentArray[i] = (nint)UnsafeList.Allocate(4, type.Size);
+                if (componentTypesMask.Contains(i))
+                {
+                    ComponentType componentType = new(i);
+                    componentArrays[i] = (nint)UnsafeList.Allocate(4, componentType.Size);
+                }
             }
 
-            int key = ComponentType.CombineHash(types);
+            List<uint> entities = new(4);
+            int key = componentTypesMask.GetHashCode();
             UnsafeComponentChunk* chunk = Allocations.Allocate<UnsafeComponentChunk>();
-            chunk[0] = new(entities, typeArray, componentArray, key);
+            chunk[0] = new(entities, componentTypesMask, componentArrays);
             return chunk;
-        }
-
-        public static bool IsDisposed(UnsafeComponentChunk* chunk)
-        {
-            return chunk is null;
         }
 
         public static void Free(ref UnsafeComponentChunk* chunk)
         {
             Allocations.ThrowIfNull(chunk);
+
             chunk->entities.Dispose();
-            for (uint i = 0; i < chunk->types.Length; i++)
+            for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                UnsafeList* components = (UnsafeList*)chunk->components[i];
-                UnsafeList.Free(ref components);
+                if (chunk->typeMask.Contains(i))
+                {
+                    UnsafeList* components = (UnsafeList*)chunk->componentArrays[i];
+                    UnsafeList.Free(ref components);
+                }
             }
 
-            chunk->types.Dispose();
-            chunk->components.Dispose();
+            chunk->componentArrays.Dispose();
             Allocations.Free(ref chunk);
         }
 
         public static List<uint> GetEntities(UnsafeComponentChunk* chunk)
         {
             Allocations.ThrowIfNull(chunk);
+
             return chunk->entities;
         }
 
-        public static int GetKey(UnsafeComponentChunk* chunk)
+        public static BitSet GetTypesMask(UnsafeComponentChunk* chunk)
         {
             Allocations.ThrowIfNull(chunk);
-            return chunk->key;
-        }
 
-        public static USpan<ComponentType> GetTypes(UnsafeComponentChunk* chunk)
-        {
-            Allocations.ThrowIfNull(chunk);
-            return chunk->types.AsSpan();
+            return chunk->typeMask;
         }
 
         public static uint Add(UnsafeComponentChunk* chunk, uint entity)
         {
             Allocations.ThrowIfNull(chunk);
+
             chunk->entities.Add(entity);
-            for (uint i = 0; i < chunk->types.Length; i++)
+            for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                UnsafeList* list = (UnsafeList*)chunk->components[i];
-                UnsafeList.AddDefault(list);
+                if (chunk->typeMask.Contains(i))
+                {
+                    UnsafeList* list = (UnsafeList*)chunk->componentArrays[i];
+                    UnsafeList.AddDefault(list);
+                }
             }
 
             return chunk->entities.Count - 1;
@@ -92,12 +91,16 @@ namespace Simulation.Unsafe
         public static void Remove(UnsafeComponentChunk* chunk, uint entity)
         {
             Allocations.ThrowIfNull(chunk);
+
             uint index = chunk->entities.IndexOf(entity);
             chunk->entities.RemoveAtBySwapping(index);
-            for (uint i = 0; i < chunk->types.Length; i++)
+            for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                UnsafeList* list = (UnsafeList*)chunk->components[i];
-                UnsafeList.RemoveAtBySwapping(list, index);
+                if (chunk->typeMask.Contains(i))
+                {
+                    UnsafeList* list = (UnsafeList*)chunk->componentArrays[i];
+                    UnsafeList.RemoveAtBySwapping(list, index);
+                }
             }
         }
 
@@ -105,30 +108,35 @@ namespace Simulation.Unsafe
         {
             Allocations.ThrowIfNull(source);
             Allocations.ThrowIfNull(destination);
+
             uint oldIndex = source->entities.IndexOf(entity);
             source->entities.RemoveAtBySwapping(oldIndex);
             uint newIndex = destination->entities.Count;
             destination->entities.Add(entity);
-            for (uint i = 0; i < destination->types.Length; i++)
-            {
-                ComponentType type = destination->types[i];
-                UnsafeList* destinationList = (UnsafeList*)destination->components[i];
-                UnsafeList.AddDefault(destinationList);
-            }
 
-            for (uint i = 0; i < source->types.Length; i++)
+            //add a default slot into destination, then copy from source
+            for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                ComponentType type = source->types[i];
-                if (destination->types.Contains(type))
+                if (destination->typeMask.Contains(i))
                 {
-                    uint d = destination->types.IndexOf(type);
-                    UnsafeList* destinationList = (UnsafeList*)destination->components[d];
-                    UnsafeList* sourceList = (UnsafeList*)source->components[i];
-                    UnsafeList.CopyElementTo(sourceList, oldIndex, destinationList, newIndex);
-                }
+                    UnsafeList* destinationList = (UnsafeList*)destination->componentArrays[i];
+                    UnsafeList.AddDefault(destinationList);
 
-                UnsafeList* oldList = (UnsafeList*)source->components[i];
-                UnsafeList.RemoveAtBySwapping(oldList, oldIndex);
+                    if (source->typeMask.Contains(i))
+                    {
+                        UnsafeList* sourceList = (UnsafeList*)source->componentArrays[i];
+                        UnsafeList.CopyElementTo(sourceList, oldIndex, destinationList, newIndex);
+                        UnsafeList.RemoveAtBySwapping(sourceList, oldIndex);
+                    }
+                }
+                else
+                {
+                    if (source->typeMask.Contains(i))
+                    {
+                        UnsafeList* sourceList = (UnsafeList*)source->componentArrays[i];
+                        UnsafeList.RemoveAtBySwapping(sourceList, oldIndex);
+                    }
+                }
             }
 
             return newIndex;
@@ -138,18 +146,16 @@ namespace Simulation.Unsafe
         {
             Allocations.ThrowIfNull(chunk);
             ThrowIfComponentTypeIsMissing(chunk, type);
-            USpan<ComponentType> types = chunk->types.AsSpan();
-            uint index = types.IndexOf(type);
-            return (UnsafeList*)chunk->components[index];
+
+            return (UnsafeList*)chunk->componentArrays[type];
         }
 
         [Conditional("DEBUG")]
         private static void ThrowIfComponentTypeIsMissing(UnsafeComponentChunk* chunk, ComponentType type)
         {
-            USpan<ComponentType> types = chunk->types.AsSpan();
-            if (!types.Contains(type))
+            if (!chunk->typeMask.Contains(type))
             {
-                throw new ArgumentException($"Component of type `{type}` not found in chunk");
+                throw new ArgumentException($"Component type `{type}` is missing from the chunk");
             }
         }
     }

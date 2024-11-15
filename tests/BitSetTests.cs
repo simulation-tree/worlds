@@ -1,0 +1,45 @@
+﻿namespace Simulation.Tests
+{
+    public class BitSetTests
+    {
+        [Test]
+        public void SetThenCheckIfContains()
+        {
+            BitSet a = new();
+            a.Set(3);
+            Assert.That(a.Contains(0), Is.False);
+            Assert.That(a.Contains(1), Is.False);
+            Assert.That(a.Contains(2), Is.False);
+            Assert.That(a.Contains(3), Is.True);
+        }
+
+        [Test]
+        public void CheckIfIntersects()
+        {
+            BitSet a = new();
+            a.Set(3);
+            a.Set(4);
+            a.Set(5);
+
+            BitSet b = new();
+            b.Set(4);
+
+            Assert.That(a.ContainsAll(b), Is.True);
+        }
+
+        [Test]
+        public void MustContainAll()
+        {
+            BitSet a = new();
+            a.Set(3);
+            a.Set(4);
+            a.Set(5);
+
+            BitSet b = new();
+            b.Set(4);
+            b.Set(9);
+
+            Assert.That(a.ContainsAll(b), Is.False);
+        }
+    }
+}

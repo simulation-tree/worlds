@@ -84,53 +84,6 @@ namespace Simulation
             return systemTypeToType[typeof(T)];
         }
 
-        public static int CombineHash(USpan<ArrayType> types)
-        {
-            uint typeCount = types.Length;
-            if (typeCount == 0)
-            {
-                return 0;
-            }
-
-            USpan<ArrayType> typesSpan = stackalloc ArrayType[(int)typeCount];
-            types.CopyTo(typesSpan);
-            uint hash = 0;
-            uint max = 0;
-            uint index = 0;
-            while (true)
-            {
-                max = 0;
-                index = 0;
-                for (uint i = 0; i < typeCount; i++)
-                {
-                    ArrayType type = typesSpan[i];
-                    if (type.value > max)
-                    {
-                        max = type.value;
-                        index = i;
-                    }
-                }
-
-                unchecked
-                {
-                    hash += max * 174440041u;
-                }
-
-                ArrayType last = typesSpan[typeCount - 1];
-                typesSpan[index] = last;
-                typeCount--;
-                if (typeCount == 0)
-                {
-                    break;
-                }
-            }
-
-            unchecked
-            {
-                return (int)hash;
-            }
-        }
-
         [Conditional("DEBUG")]
         public static void ThrowIfTypeAlreadyExists<T>() where T : unmanaged
         {
@@ -157,6 +110,11 @@ namespace Simulation
         public static bool operator !=(ArrayType left, ArrayType right)
         {
             return !(left == right);
+        }
+
+        public static implicit operator byte(ArrayType type)
+        {
+            return type.value;
         }
     }
 }
