@@ -7,8 +7,7 @@ namespace Simulation
     public struct ComponentQuery<T1> : IDisposable, IQuery where T1 : unmanaged
     {
         private readonly List<Result> results;
-        private readonly Array<ComponentType> componentTypes;
-        private World world;
+        private readonly BitSet componentTypes;
 
         /// <summary>
         /// All entities found after updating.
@@ -29,31 +28,27 @@ namespace Simulation
         }
 #endif
 
-        private ComponentQuery(List<Result> results, Array<ComponentType> componentTypes)
+        private ComponentQuery(List<Result> results, BitSet componentTypes)
         {
-            this.world = default;
             this.results = results;
             this.componentTypes = componentTypes;
         }
 
         public readonly void Dispose()
         {
-            componentTypes.Dispose();
             results.Dispose();
         }
 
         public void Update(World world, bool onlyEnabled = false)
         {
-            this.world = world;
             results.Clear(world.MaxEntityValue);
             Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
-            USpan<ComponentType> componentTypes = this.componentTypes.AsSpan();
             if (!onlyEnabled)
             {
                 foreach (int hash in chunks.Keys)
                 {
                     ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsTypes(componentTypes))
+                    if (chunk.ContainsAllTypes(componentTypes))
                     {
                         List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
@@ -70,7 +65,7 @@ namespace Simulation
                 foreach (int hash in chunks.Keys)
                 {
                     ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsTypes(componentTypes))
+                    if (chunk.ContainsAllTypes(componentTypes))
                     {
                         List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
@@ -98,9 +93,7 @@ namespace Simulation
         public static ComponentQuery<T1> Create()
         {
             List<Result> results = new(1);
-            USpan<ComponentType> componentTypes = stackalloc ComponentType[1] { ComponentType.Get<T1>() };
-            Array<ComponentType> types = new(componentTypes);
-            return new(results, types);
+            return new(results, new BitSet([ComponentType.Get<T1>()]));
         }
 
         public readonly struct Result
@@ -141,8 +134,7 @@ namespace Simulation
     public struct ComponentQuery<T1, T2> : IDisposable, IQuery where T1 : unmanaged where T2 : unmanaged
     {
         private readonly List<Result> results;
-        private readonly Array<ComponentType> componentTypes;
-        private World world;
+        private readonly BitSet componentTypes;
 
         /// <summary>
         /// All entities found after updating.
@@ -163,9 +155,8 @@ namespace Simulation
         }
 #endif
 
-        private ComponentQuery(List<Result> results, Array<ComponentType> componentTypes)
+        private ComponentQuery(List<Result> results, BitSet componentTypes)
         {
-            this.world = default;
             this.results = results;
             this.componentTypes = componentTypes;
         }
@@ -175,22 +166,19 @@ namespace Simulation
         /// </summary>
         public readonly void Dispose()
         {
-            componentTypes.Dispose();
             results.Dispose();
         }
 
         public void Update(World world, bool onlyEnabled = false)
         {
-            this.world = world;
             results.Clear(world.MaxEntityValue);
             Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
-            USpan<ComponentType> componentTypes = this.componentTypes.AsSpan();
             if (!onlyEnabled)
             {
                 foreach (int hash in chunks.Keys)
                 {
                     ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsTypes(componentTypes))
+                    if (chunk.ContainsAllTypes(componentTypes))
                     {
                         List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
@@ -208,7 +196,7 @@ namespace Simulation
                 foreach (int hash in chunks.Keys)
                 {
                     ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsTypes(componentTypes))
+                    if (chunk.ContainsAllTypes(componentTypes))
                     {
                         List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
@@ -237,9 +225,7 @@ namespace Simulation
         public static ComponentQuery<T1, T2> Create()
         {
             List<Result> results = new(1);
-            USpan<ComponentType> componentTypes = stackalloc ComponentType[2] { ComponentType.Get<T1>(), ComponentType.Get<T2>() };
-            Array<ComponentType> types = new(componentTypes);
-            return new(results, types);
+            return new(results, new BitSet([ComponentType.Get<T1>(), ComponentType.Get<T2>()]));
         }
 
         public readonly struct Result
@@ -283,8 +269,7 @@ namespace Simulation
     public struct ComponentQuery<T1, T2, T3> : IDisposable, IQuery where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
     {
         private readonly List<Result> results;
-        private readonly Array<ComponentType> componentTypes;
-        private World world;
+        private readonly BitSet componentTypes;
 
         /// <summary>
         /// All entities found after updating.
@@ -305,31 +290,27 @@ namespace Simulation
         }
 #endif
 
-        private ComponentQuery(List<Result> results, Array<ComponentType> componentTypes)
+        private ComponentQuery(List<Result> results, BitSet componentTypes)
         {
-            this.world = default;
             this.results = results;
             this.componentTypes = componentTypes;
         }
 
         public readonly void Dispose()
         {
-            componentTypes.Dispose();
             results.Dispose();
         }
 
         public void Update(World world, bool onlyEnabled = false)
         {
-            this.world = world;
             results.Clear(world.MaxEntityValue);
             Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
-            USpan<ComponentType> componentTypes = this.componentTypes.AsSpan();
             if (!onlyEnabled)
             {
                 foreach (int hash in chunks.Keys)
                 {
                     ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsTypes(componentTypes))
+                    if (chunk.ContainsAllTypes(componentTypes))
                     {
                         List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
@@ -348,7 +329,7 @@ namespace Simulation
                 foreach (int hash in chunks.Keys)
                 {
                     ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsTypes(componentTypes))
+                    if (chunk.ContainsAllTypes(componentTypes))
                     {
                         List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
@@ -378,9 +359,7 @@ namespace Simulation
         public static ComponentQuery<T1, T2, T3> Create()
         {
             List<Result> results = new(1);
-            USpan<ComponentType> componentTypes = stackalloc ComponentType[3] { ComponentType.Get<T1>(), ComponentType.Get<T2>(), ComponentType.Get<T3>() };
-            Array<ComponentType> types = new(componentTypes);
-            return new(results, types);
+            return new(results, new BitSet([ComponentType.Get<T1>(), ComponentType.Get<T2>(), ComponentType.Get<T3>()]));
         }
 
         public readonly struct Result
@@ -427,8 +406,7 @@ namespace Simulation
     public struct ComponentQuery<T1, T2, T3, T4> : IDisposable, IQuery where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
     {
         private readonly List<Result> results;
-        private readonly Array<ComponentType> componentTypes;
-        private World world;
+        private readonly BitSet componentTypes;
 
         /// <summary>
         /// All entities found after updating.
@@ -449,31 +427,27 @@ namespace Simulation
         }
 #endif
 
-        private ComponentQuery(List<Result> results, Array<ComponentType> componentTypes)
+        private ComponentQuery(List<Result> results, BitSet componentTypes)
         {
-            this.world = default;
             this.results = results;
             this.componentTypes = componentTypes;
         }
 
         public readonly void Dispose()
         {
-            componentTypes.Dispose();
             results.Dispose();
         }
 
         public void Update(World world, bool onlyEnabled = false)
         {
-            this.world = world;
             results.Clear(world.MaxEntityValue);
             Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
-            USpan<ComponentType> componentTypes = this.componentTypes.AsSpan();
             if (!onlyEnabled)
             {
                 foreach (int hash in chunks.Keys)
                 {
                     ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsTypes(componentTypes))
+                    if (chunk.ContainsAllTypes(componentTypes))
                     {
                         List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
@@ -493,7 +467,7 @@ namespace Simulation
                 foreach (int hash in chunks.Keys)
                 {
                     ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsTypes(componentTypes))
+                    if (chunk.ContainsAllTypes(componentTypes))
                     {
                         List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
@@ -524,9 +498,7 @@ namespace Simulation
         public static ComponentQuery<T1, T2, T3, T4> Create()
         {
             List<Result> results = new(1);
-            USpan<ComponentType> componentTypes = stackalloc ComponentType[4] { ComponentType.Get<T1>(), ComponentType.Get<T2>(), ComponentType.Get<T3>(), ComponentType.Get<T4>() };
-            Array<ComponentType> types = new(componentTypes);
-            return new(results, types);
+            return new(results, new BitSet([ComponentType.Get<T1>(), ComponentType.Get<T2>(), ComponentType.Get<T3>(), ComponentType.Get<T4>()]));
         }
 
         public readonly struct Result
@@ -576,8 +548,7 @@ namespace Simulation
     public struct ComponentQuery<T1, T2, T3, T4, T5> : IDisposable, IQuery where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
     {
         private readonly List<Result> results;
-        private readonly Array<ComponentType> componentTypes;
-        private World world;
+        private readonly BitSet componentTypes;
 
         /// <summary>
         /// All entities found after updating.
@@ -598,31 +569,27 @@ namespace Simulation
         }
 #endif
 
-        private ComponentQuery(List<Result> results, Array<ComponentType> componentTypes)
+        private ComponentQuery(List<Result> results, BitSet componentTypes)
         {
-            this.world = default;
             this.results = results;
             this.componentTypes = componentTypes;
         }
 
         public readonly void Dispose()
         {
-            componentTypes.Dispose();
             results.Dispose();
         }
 
         public void Update(World world, bool onlyEnabled = false)
         {
-            this.world = world;
             results.Clear(world.MaxEntityValue);
             Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
-            USpan<ComponentType> componentTypes = this.componentTypes.AsSpan();
             if (!onlyEnabled)
             {
                 foreach (int hash in chunks.Keys)
                 {
                     ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsTypes(componentTypes))
+                    if (chunk.ContainsAllTypes(componentTypes))
                     {
                         List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
@@ -643,7 +610,7 @@ namespace Simulation
                 foreach (int hash in chunks.Keys)
                 {
                     ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsTypes(componentTypes))
+                    if (chunk.ContainsAllTypes(componentTypes))
                     {
                         List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
@@ -675,9 +642,7 @@ namespace Simulation
         public static ComponentQuery<T1, T2, T3, T4, T5> Create()
         {
             List<Result> results = new(1);
-            USpan<ComponentType> componentTypes = stackalloc ComponentType[5] { ComponentType.Get<T1>(), ComponentType.Get<T2>(), ComponentType.Get<T3>(), ComponentType.Get<T4>(), ComponentType.Get<T5>() };
-            Array<ComponentType> types = new(componentTypes);
-            return new(results, types);
+            return new(results, new BitSet([ComponentType.Get<T1>(), ComponentType.Get<T2>(), ComponentType.Get<T3>(), ComponentType.Get<T4>(), ComponentType.Get<T5>()]));
         }
 
         public readonly struct Result

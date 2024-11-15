@@ -57,8 +57,8 @@ namespace Simulation.Tests
             Assert.That(a.arrayTypeCount, Is.EqualTo(2));
             USpan<ComponentType> componentTypes = stackalloc ComponentType[a.componentTypeCount];
             USpan<ArrayType> arrayTypes = stackalloc ArrayType[a.arrayTypeCount];
-            a.CopyComponentTypes(componentTypes);
-            a.CopyArrayTypes(arrayTypes);
+            a.CopyComponentTypesTo(componentTypes);
+            a.CopyArrayTypesTo(arrayTypes);
             Assert.That(componentTypes.Contains(ComponentType.Get<int>()), Is.True);
             Assert.That(componentTypes.Contains(ComponentType.Get<char>()), Is.True);
             Assert.That(arrayTypes.Contains(ArrayType.Get<double>()), Is.True);

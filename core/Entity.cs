@@ -133,11 +133,11 @@ namespace Simulation
             return world.GetArrayLength<T>(value);
         }
 
-        public readonly USpan<ArrayType> GetArrayTypes()
+        public readonly byte CopyArrayTypesTo(USpan<ArrayType> buffer)
         {
             ThrowIfDestroyed();
 
-            return world.GetArrayTypes(value);
+            return world.CopyArrayTypesTo(value, buffer);
         }
 
         public readonly bool ContainsArray<T>() where T : unmanaged
@@ -215,7 +215,7 @@ namespace Simulation
             return world.ContainsComponent(value, componentType);
         }
 
-        public readonly uint CopyComponentTypesTo(USpan<ComponentType> buffer)
+        public readonly byte CopyComponentTypesTo(USpan<ComponentType> buffer)
         {
             ThrowIfDestroyed();
 
@@ -526,7 +526,7 @@ namespace Simulation
         internal class EntityDebugView
         {
 #if DEBUG
-            public readonly uint entity;
+            public readonly uint value;
             public readonly World world;
             public readonly StackTrace creationStackTrace;
             public readonly ComponentType[] componentTypes;
@@ -534,13 +534,15 @@ namespace Simulation
 
             public EntityDebugView(Entity entity)
             {
-                this.entity = entity.GetEntityValue();
-                this.world = entity.GetWorld();
-                this.creationStackTrace = UnsafeWorld.createStackTraces[entity];
-                USpan<ComponentType> buffer = stackalloc ComponentType[BitSet.Capacity];
-                uint bufferLength = entity.CopyComponentTypesTo(buffer);
-                this.componentTypes = buffer.Slice(0, bufferLength).ToArray();
-                this.arrayTypes = entity.GetArrayTypes().ToArray();
+                value = entity.GetEntityValue();
+                world = entity.GetWorld();
+                creationStackTrace = UnsafeWorld.createStackTraces[entity];
+                USpan<ComponentType> componentTypeBuffer = stackalloc ComponentType[BitSet.Capacity];
+                uint bufferLength = entity.CopyComponentTypesTo(componentTypeBuffer);
+                componentTypes = componentTypeBuffer.Slice(0, bufferLength).ToArray();
+                USpan<ArrayType> arrayTypeBuffer = stackalloc ArrayType[BitSet.Capacity];
+                bufferLength = entity.CopyArrayTypesTo(arrayTypeBuffer);
+                arrayTypes = arrayTypeBuffer.Slice(0, bufferLength).ToArray();
             }
 #endif
         }

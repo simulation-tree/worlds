@@ -87,12 +87,12 @@ namespace Simulation
         /// <summary>
         /// Checks if this chunk contains all of the given <paramref name="componentTypes"/>.
         /// </summary>
-        public readonly bool ContainsTypes(BitSet componentTypes)
+        public readonly bool ContainsAllTypes(BitSet componentTypes)
         {
             return TypesMask.ContainsAll(componentTypes);
         }
 
-        public readonly bool ContainsTypes(USpan<ComponentType> componentTypes)
+        public readonly bool ContainsAllTypes(USpan<ComponentType> componentTypes)
         {
             for (byte i = 0; i < componentTypes.Length; i++)
             {

@@ -41,9 +41,9 @@ namespace Simulation
             this.arrayTypesMask = arrayTypesMask;
         }
 
-        public readonly uint CopyComponentTypes(USpan<ComponentType> buffer)
+        public readonly byte CopyComponentTypesTo(USpan<ComponentType> buffer)
         {
-            uint count = 0;
+            byte count = 0;
             for (byte i = 0; i < BitSet.Capacity; i++)
             {
                 if (componentTypesMask.Contains(i))
@@ -56,9 +56,9 @@ namespace Simulation
             return count;
         }
 
-        public readonly uint CopyArrayTypes(USpan<ArrayType> buffer)
+        public readonly byte CopyArrayTypesTo(USpan<ArrayType> buffer)
         {
-            uint count = 0;
+            byte count = 0;
             for (byte i = 0; i < BitSet.Capacity; i++)
             {
                 if (arrayTypesMask.Contains(i))

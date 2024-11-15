@@ -91,7 +91,7 @@ public static class EntityFunctions
         World world = entity.World;
         uint value = entity.Value;
         USpan<ComponentType> componentTypes = stackalloc ComponentType[definition.componentTypeCount];
-        definition.CopyComponentTypes(componentTypes);
+        definition.CopyComponentTypesTo(componentTypes);
         for (uint i = 0; i < definition.componentTypeCount; i++)
         {
             ComponentType componentType = componentTypes[i];
@@ -102,7 +102,7 @@ public static class EntityFunctions
         }
 
         USpan<ArrayType> arrayTypes = stackalloc ArrayType[definition.arrayTypeCount];
-        definition.CopyArrayTypes(arrayTypes);
+        definition.CopyArrayTypesTo(arrayTypes);
         for (uint i = 0; i < definition.arrayTypeCount; i++)
         {
             ArrayType arrayType = arrayTypes[i];
@@ -121,7 +121,7 @@ public static class EntityFunctions
         World world = entity.World;
         uint value = entity.Value;
         USpan<ComponentType> componentTypes = stackalloc ComponentType[definition.componentTypeCount];
-        definition.CopyComponentTypes(componentTypes);
+        definition.CopyComponentTypesTo(componentTypes);
         for (uint i = 0; i < definition.componentTypeCount; i++)
         {
             if (!world.ContainsComponent(value, componentTypes[i]))
@@ -131,7 +131,7 @@ public static class EntityFunctions
         }
 
         USpan<ArrayType> arrayTypes = stackalloc ArrayType[definition.arrayTypeCount];
-        definition.CopyArrayTypes(arrayTypes);
+        definition.CopyArrayTypesTo(arrayTypes);
         for (uint i = 0; i < definition.arrayTypeCount; i++)
         {
             if (!world.ContainsArray(value, arrayTypes[i]))
@@ -152,7 +152,7 @@ public static class EntityFunctions
         uint value = entity.Value;
         Definition definition = entity.Definition;
         USpan<ComponentType> componentTypes = stackalloc ComponentType[definition.componentTypeCount];
-        definition.CopyComponentTypes(componentTypes);
+        definition.CopyComponentTypesTo(componentTypes);
         for (uint i = 0; i < definition.componentTypeCount; i++)
         {
             if (!world.ContainsComponent(value, componentTypes[i]))
@@ -162,7 +162,7 @@ public static class EntityFunctions
         }
 
         USpan<ArrayType> arrayTypes = stackalloc ArrayType[definition.arrayTypeCount];
-        definition.CopyArrayTypes(arrayTypes);
+        definition.CopyArrayTypesTo(arrayTypes);
         for (uint i = 0; i < definition.arrayTypeCount; i++)
         {
             if (!world.ContainsArray(value, arrayTypes[i]))

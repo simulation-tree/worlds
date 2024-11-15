@@ -258,26 +258,32 @@ namespace Simulation.Tests
             using ComponentQuery<Apple, Berry, Cherry> query = new();
             stopwatch.Restart();
             query.Update(world);
+            stopwatch.Stop();
+            Console.WriteLine($"ComponentQuery took {stopwatch.ElapsedTicks}t");
+            stopwatch.Restart();
             foreach (var r in query)
             {
                 results.Add((r.entity, r.Component1, r.Component2, r.Component3));
             }
 
             stopwatch.Stop();
-            Console.WriteLine($"Querying took {stopwatch.ElapsedTicks}t");
+            Console.WriteLine($"    Iterating took {stopwatch.ElapsedTicks}t");
 
             //benchmark definition query
             using DefinitionQuery defQuery = new(new([ComponentType.Get<Apple>(), ComponentType.Get<Berry>(), ComponentType.Get<Cherry>()], []));
             results.Clear();
             stopwatch.Restart();
             defQuery.Update(world);
+            stopwatch.Stop();
+            Console.WriteLine($"DefinitionQuery took {stopwatch.ElapsedTicks}t");
+            stopwatch.Restart();
             foreach (var r in defQuery)
             {
                 //results.Add((r.value, r.Component1, r.Component2, r.Component3));
             }
 
             stopwatch.Stop();
-            Console.WriteLine($"DefinitionQuery took {stopwatch.ElapsedTicks}t");
+            Console.WriteLine($"    Iterating took {stopwatch.ElapsedTicks}t");
 
             //benchmark ForEach
             results.Clear();
@@ -299,7 +305,7 @@ namespace Simulation.Tests
             {
                 int key = chunks.Keys[i];
                 ComponentChunk chunk = chunks[key];
-                if (chunk.ContainsTypes(typesSpan))
+                if (chunk.ContainsAllTypes(typesSpan))
                 {
                     List<uint> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)

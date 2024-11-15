@@ -34,9 +34,26 @@ namespace Simulation
             }
         }
 
+        public BitSet(params byte[] values)
+        {
+            ThrowIfOutOfRange((uint)values.Length);
+
+            fixed (ulong* ptr = data)
+            {
+                for (int i = 0; i < values.Length; i++)
+                {
+                    byte index = values[i];
+                    int ulongIndex = index / 64;
+                    int bitPosition = index % 64;
+                    ptr[ulongIndex] |= 1UL << bitPosition;
+                }
+            }
+        }
+
         public BitSet(USpan<byte> values)
         {
             ThrowIfOutOfRange(values.Length);
+
             fixed (ulong* ptr = data)
             {
                 for (uint i = 0; i < values.Length; i++)
@@ -84,6 +101,20 @@ namespace Simulation
             fixed (ulong* ptr = data)
             {
                 ptr[ulongIndex] |= 1UL << bitPosition;
+            }
+        }
+
+        /// <summary>
+        /// Resets all bits to 0.
+        /// </summary>
+        public void Clear()
+        {
+            fixed (ulong* ptr = data)
+            {
+                ptr[0] = 0;
+                ptr[1] = 0;
+                ptr[2] = 0;
+                ptr[3] = 0;
             }
         }
 

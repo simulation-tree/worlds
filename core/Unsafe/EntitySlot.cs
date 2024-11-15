@@ -3,7 +3,7 @@ using Unmanaged;
 
 namespace Simulation.Unsafe
 {
-    public struct EntityDescription
+    public struct EntitySlot
     {
         public uint entity;
         public uint parent;
@@ -12,13 +12,12 @@ namespace Simulation.Unsafe
         public List<uint> children;
         public ushort referenceCount;
         public List<uint> references;
-        public byte arrayCount;
-        public List<Allocation> arrays;
-        public List<ArrayType> arrayTypes;
-        public List<uint> arrayLengths;
+        public Array<Allocation> arrays;
+        public BitSet arrayTypes;
+        public Array<uint> arrayLengths;
         public State state;
 
-        public EntityDescription(uint entity)
+        public EntitySlot(uint entity)
         {
             this.entity = entity;
         }

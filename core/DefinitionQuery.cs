@@ -1,15 +1,13 @@
 ﻿using Collections;
 using System;
-using Unmanaged;
 
 namespace Simulation
 {
     public struct DefinitionQuery : IDisposable, IQuery
     {
         private readonly List<uint> results;
-        private readonly Array<ComponentType> componentTypes;
-        private readonly Array<ArrayType> arrayTypes;
-        private readonly bool hasArrays;
+        private readonly BitSet componentTypes;
+        private readonly BitSet arrayTypes;
         private World world;
 
         /// <summary>
@@ -32,27 +30,12 @@ namespace Simulation
         public DefinitionQuery(Definition definition)
         {
             results = new(1);
-            USpan<ComponentType> componentTypes = stackalloc ComponentType[definition.componentTypeCount];
-            definition.CopyComponentTypes(componentTypes);
-            this.componentTypes = new(componentTypes);
-
-            hasArrays = definition.arrayTypeCount > 0;
-            if (hasArrays)
-            {
-                USpan<ArrayType> arrayTypes = stackalloc ArrayType[definition.arrayTypeCount];
-                definition.CopyArrayTypes(arrayTypes);
-                this.arrayTypes = new(arrayTypes);
-            }
+            componentTypes = definition.ComponentTypesMask;
+            arrayTypes = definition.ArrayTypesMask;
         }
 
         public readonly void Dispose()
         {
-            if (hasArrays)
-            {
-                arrayTypes.Dispose();
-            }
-
-            componentTypes.Dispose();
             results.Dispose();
         }
 
@@ -61,23 +44,21 @@ namespace Simulation
             this.world = world;
             results.Clear(world.MaxEntityValue);
             Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
-            USpan<ComponentType> componentTypes = this.componentTypes.AsSpan();
             if (!onlyEnabled)
             {
-                if (hasArrays)
+                if (arrayTypes != default)
                 {
-                    USpan<ArrayType> arrayTypes = this.arrayTypes.AsSpan();
                     foreach (int hash in chunks.Keys)
                     {
                         ComponentChunk chunk = chunks[hash];
-                        if (chunk.ContainsTypes(componentTypes))
+                        if (chunk.ContainsAllTypes(componentTypes))
                         {
                             List<uint> entities = chunk.Entities;
                             for (uint e = 0; e < entities.Count; e++)
                             {
                                 uint entity = entities[e];
-                                USpan<ArrayType> entityArrays = world.GetArrayTypes(entity);
-                                if (ContainsArrays(arrayTypes, entityArrays))
+                                BitSet entityArrayTypes = world.GetArrayTypesMask(entity);
+                                if (entityArrayTypes.ContainsAll(arrayTypes))
                                 {
                                     results.Add(entity);
                                 }
@@ -90,7 +71,7 @@ namespace Simulation
                     foreach (int hash in chunks.Keys)
                     {
                         ComponentChunk chunk = chunks[hash];
-                        if (chunk.ContainsTypes(componentTypes))
+                        if (chunk.ContainsAllTypes(componentTypes))
                         {
                             List<uint> entities = chunk.Entities;
                             results.AddRange(entities);
@@ -100,13 +81,12 @@ namespace Simulation
             }
             else
             {
-                if (hasArrays)
+                if (arrayTypes != default)
                 {
-                    USpan<ArrayType> arrayTypes = this.arrayTypes.AsSpan();
                     foreach (int hash in chunks.Keys)
                     {
                         ComponentChunk chunk = chunks[hash];
-                        if (chunk.ContainsTypes(componentTypes))
+                        if (chunk.ContainsAllTypes(componentTypes))
                         {
                             List<uint> entities = chunk.Entities;
                             for (uint e = 0; e < entities.Count; e++)
@@ -114,8 +94,8 @@ namespace Simulation
                                 uint entity = entities[e];
                                 if (world.IsEnabled(entity))
                                 {
-                                    USpan<ArrayType> entityArrays = world.GetArrayTypes(entity);
-                                    if (ContainsArrays(arrayTypes, entityArrays))
+                                    BitSet entityArrayTypes = world.GetArrayTypesMask(entity);
+                                    if (entityArrayTypes.ContainsAll(arrayTypes))
                                     {
                                         results.Add(entity);
                                     }
@@ -129,7 +109,7 @@ namespace Simulation
                     foreach (int hash in chunks.Keys)
                     {
                         ComponentChunk chunk = chunks[hash];
-                        if (chunk.ContainsTypes(componentTypes))
+                        if (chunk.ContainsAllTypes(componentTypes))
                         {
                             List<uint> entities = chunk.Entities;
                             for (uint e = 0; e < entities.Count; e++)
@@ -149,32 +129,6 @@ namespace Simulation
         public readonly Enumerator GetEnumerator()
         {
             return new(this);
-        }
-
-        /// <summary>
-        /// Checks if all values from the 2nd array are in the 1st.
-        /// </summary>
-        public static bool ContainsArrays(USpan<ArrayType> arrayTypes, USpan<ArrayType> entityArrays)
-        {
-            for (uint i = 0; i < arrayTypes.Length; i++)
-            {
-                bool found = false;
-                for (uint j = 0; j < entityArrays.Length; j++)
-                {
-                    if (arrayTypes[i] == entityArrays[j])
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!found)
-                {
-                    return false;
-                }
-            }
-
-            return true;
         }
 
         public ref struct Enumerator

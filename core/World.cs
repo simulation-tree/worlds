@@ -39,7 +39,7 @@ namespace Simulation
         public readonly uint MaxEntityValue => Slots.Count;
 
         public readonly bool IsDisposed => value is null;
-        public readonly List<EntityDescription> Slots => UnsafeWorld.GetEntitySlots(value);
+        public readonly List<EntitySlot> Slots => UnsafeWorld.GetEntitySlots(value);
         public readonly List<uint> Free => UnsafeWorld.GetFreeEntities(value);
         public readonly Dictionary<int, ComponentChunk> ComponentChunks => UnsafeWorld.GetComponentChunks(value);
 
@@ -50,11 +50,11 @@ namespace Simulation
         {
             get
             {
-                List<EntityDescription> slots = Slots;
+                List<EntitySlot> slots = Slots;
                 List<uint> free = Free;
                 for (uint i = 0; i < slots.Count; i++)
                 {
-                    EntityDescription description = slots[i];
+                    EntitySlot description = slots[i];
                     if (!free.Contains(description.entity))
                     {
                         yield return description.entity;
@@ -70,7 +70,7 @@ namespace Simulation
                 uint i = 0;
                 for (uint j = 0; j < Slots.Count; j++)
                 {
-                    EntityDescription description = Slots[j];
+                    EntitySlot description = Slots[j];
                     if (!Free.Contains(description.entity))
                     {
                         if (i == index)
@@ -174,10 +174,10 @@ namespace Simulation
                 {
                     if (typesMask.Contains(i))
                     {
-                        ComponentType type = new(i);
-                        if (!uniqueComponentTypes.Contains(type))
+                        ComponentType componentType = new(i);
+                        if (!uniqueComponentTypes.Contains(componentType))
                         {
-                            uniqueComponentTypes.Add(type);
+                            uniqueComponentTypes.Add(componentType);
                         }
                     }
                 }
@@ -185,13 +185,16 @@ namespace Simulation
 
             for (uint i = 0; i < Slots.Count; i++)
             {
-                EntityDescription slot = Slots[i];
-                for (uint a = 0; a < slot.arrayCount; a++)
+                EntitySlot slot = Slots[i];
+                for (byte a = 0; a < BitSet.Capacity; a++)
                 {
-                    ArrayType type = slot.arrayTypes[a];
-                    if (!uniqueArrayTypes.Contains(type))
+                    if (slot.arrayTypes.Contains(a))
                     {
-                        uniqueArrayTypes.Add(type);
+                        ArrayType arrayType = new(a);
+                        if (!uniqueArrayTypes.Contains(arrayType))
+                        {
+                            uniqueArrayTypes.Add(arrayType);
+                        }
                     }
                 }
             }
@@ -219,7 +222,7 @@ namespace Simulation
             writer.WriteValue(Count);
             for (uint s = 0; s < Slots.Count; s++)
             {
-                EntityDescription slot = Slots[s];
+                EntitySlot slot = Slots[s];
                 uint entity = slot.entity;
                 if (!Free.Contains(entity))
                 {
@@ -242,17 +245,20 @@ namespace Simulation
                     }
 
                     //write arrays
-                    writer.WriteValue(slot.arrayCount);
-                    for (uint a = 0; a < slot.arrayCount; a++)
+                    writer.WriteValue(slot.arrayTypes.Count);
+                    for (byte a = 0; a < BitSet.Capacity; a++)
                     {
-                        ArrayType type = slot.arrayTypes[a];
-                        void* array = slot.arrays[a];
-                        uint arrayLength = slot.arrayLengths[a];
-                        writer.WriteValue((byte)uniqueArrayTypes.IndexOf(type));
-                        writer.WriteValue(arrayLength);
-                        if (arrayLength > 0)
+                        if (slot.arrayTypes.Contains(a))
                         {
-                            writer.WriteSpan(new USpan<byte>(array, arrayLength * type.Size));
+                            ArrayType arrayType = new(a);
+                            void* array = slot.arrays[a];
+                            uint arrayLength = slot.arrayLengths[a];
+                            writer.WriteValue((byte)uniqueArrayTypes.IndexOf(arrayType));
+                            writer.WriteValue(arrayLength);
+                            if (arrayLength > 0)
+                            {
+                                writer.WriteSpan(new USpan<byte>(array, arrayLength * arrayType.Size));
+                            }
                         }
                     }
 
@@ -330,7 +336,7 @@ namespace Simulation
                 uniqueArrayTypes[i] = SerializationContext.GetArrayType(typeFullName);
             }
 
-            List<EntityDescription> slots = Slots;
+            List<EntitySlot> slots = Slots;
 
             //create entities and fill them with components and arrays
             uint entityCount = reader.ReadValue<uint>();
@@ -352,7 +358,7 @@ namespace Simulation
                 uint entity = CreateEntity();
                 if (parentId != default)
                 {
-                    ref EntityDescription slot = ref slots[entity - 1];
+                    ref EntitySlot slot = ref slots[entity - 1];
                     slot.parent = parentId;
                     UnsafeWorld.NotifyParentChange(this, entity, parentId);
                 }
@@ -400,7 +406,7 @@ namespace Simulation
                 uint parent = GetParent(entity);
                 if (parent != default)
                 {
-                    ref EntityDescription parentSlot = ref slots[parent - 1];
+                    ref EntitySlot parentSlot = ref slots[parent - 1];
                     if (parentSlot.childCount == 0)
                     {
                         parentSlot.children = new(4);
@@ -425,7 +431,7 @@ namespace Simulation
         {
             uint start = Slots.Count;
             uint entityIndex = 1;
-            foreach (EntityDescription sourceSlot in sourceWorld.Slots)
+            foreach (EntitySlot sourceSlot in sourceWorld.Slots)
             {
                 uint sourceEntity = sourceSlot.entity;
                 if (!sourceWorld.Free.Contains(sourceEntity))
@@ -451,16 +457,19 @@ namespace Simulation
                     }
 
                     //add arrays
-                    for (uint t = 0; t < sourceSlot.arrayCount; t++)
+                    for (byte a = 0; a < BitSet.Capacity; a++)
                     {
-                        ArrayType sourceArrayType = sourceSlot.arrayTypes[t];
-                        uint sourceArrayLength = sourceSlot.arrayLengths[t];
-                        void* sourceArray = sourceSlot.arrays[t];
-                        void* destinationArray = UnsafeWorld.CreateArray(value, destinationEntity, sourceArrayType, sourceArrayLength);
-                        if (sourceArrayLength > 0)
+                        if (sourceSlot.arrayTypes.Contains(a))
                         {
-                            USpan<byte> sourceBytes = new(sourceArray, sourceArrayLength * sourceArrayType.Size);
-                            sourceBytes.CopyTo(new USpan<byte>(destinationArray, sourceArrayLength * sourceArrayType.Size));
+                            ArrayType sourceArrayType = new(a);
+                            uint sourceArrayLength = sourceSlot.arrayLengths[a];
+                            void* sourceArray = sourceSlot.arrays[a];
+                            void* destinationArray = UnsafeWorld.CreateArray(value, destinationEntity, sourceArrayType, sourceArrayLength);
+                            if (sourceArrayLength > 0)
+                            {
+                                USpan<byte> sourceBytes = new(sourceArray, sourceArrayLength * sourceArrayType.Size);
+                                sourceBytes.CopyTo(new USpan<byte>(destinationArray, sourceArrayLength * sourceArrayType.Size));
+                            }
                         }
                     }
                 }
@@ -468,7 +477,7 @@ namespace Simulation
 
             //assign references last
             entityIndex = 1;
-            foreach (EntityDescription sourceSlot in sourceWorld.Slots)
+            foreach (EntitySlot sourceSlot in sourceWorld.Slots)
             {
                 uint sourceEntity = sourceSlot.entity;
                 if (!sourceWorld.Free.Contains(sourceEntity))
@@ -723,7 +732,7 @@ namespace Simulation
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
-            EntityDescription slot = Slots[entity - 1];
+            EntitySlot slot = Slots[entity - 1];
             ComponentChunk chunk = ComponentChunks[slot.chunkKey];
             return chunk.CopyTypesTo(buffer);
         }
@@ -736,8 +745,8 @@ namespace Simulation
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
-            EntityDescription slot = Slots[entity - 1];
-            return slot.state == EntityDescription.State.Enabled;
+            EntitySlot slot = Slots[entity - 1];
+            return slot.state == EntitySlot.State.Enabled;
         }
 
         /// <summary>
@@ -748,30 +757,30 @@ namespace Simulation
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
-            EntityDescription slot = Slots[entity - 1];
-            return slot.state == EntityDescription.State.Enabled || slot.state == EntityDescription.State.EnabledButDisabledDueToAncestor;
+            EntitySlot slot = Slots[entity - 1];
+            return slot.state == EntitySlot.State.Enabled || slot.state == EntitySlot.State.EnabledButDisabledDueToAncestor;
         }
 
         public readonly void SetEnabled(uint entity, bool state)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
-            ref EntityDescription slot = ref Slots[entity - 1];
+            ref EntitySlot slot = ref Slots[entity - 1];
             if (slot.parent != default)
             {
-                EntityDescription.State parentState = Slots[slot.parent - 1].state;
-                if (parentState == EntityDescription.State.Disabled || parentState == EntityDescription.State.EnabledButDisabledDueToAncestor)
+                EntitySlot.State parentState = Slots[slot.parent - 1].state;
+                if (parentState == EntitySlot.State.Disabled || parentState == EntitySlot.State.EnabledButDisabledDueToAncestor)
                 {
-                    slot.state = state ? EntityDescription.State.EnabledButDisabledDueToAncestor : EntityDescription.State.Disabled;
+                    slot.state = state ? EntitySlot.State.EnabledButDisabledDueToAncestor : EntitySlot.State.Disabled;
                 }
                 else
                 {
-                    slot.state = state ? EntityDescription.State.Enabled : EntityDescription.State.Disabled;
+                    slot.state = state ? EntitySlot.State.Enabled : EntitySlot.State.Disabled;
                 }
             }
             else
             {
-                slot.state = state ? EntityDescription.State.Enabled : EntityDescription.State.Disabled;
+                slot.state = state ? EntitySlot.State.Enabled : EntitySlot.State.Disabled;
             }
 
             for (uint i = 0; i < slot.childCount; i++)
@@ -792,18 +801,15 @@ namespace Simulation
             Definition definition = default(T).Definition;
             if (definition.arrayTypeCount > 0)
             {
-                USpan<ArrayType> arrayTypes = stackalloc ArrayType[definition.arrayTypeCount];
-                definition.CopyArrayTypes(arrayTypes);
                 foreach (int hash in chunks.Keys)
                 {
                     ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsTypes(definition.ComponentTypesMask))
+                    if (chunk.ContainsAllTypes(definition.ComponentTypesMask))
                     {
                         for (uint e = 0; e < chunk.Entities.Count; e++)
                         {
                             uint entityValue = chunk.Entities[e];
-                            USpan<ArrayType> entityArrays = GetArrayTypes(entityValue);
-                            if (DefinitionQuery.ContainsArrays(arrayTypes, entityArrays))
+                            if (definition.ArrayTypesMask.ContainsAll(GetArrayTypesMask(entityValue)))
                             {
                                 if (onlyEnabled)
                                 {
@@ -830,7 +836,7 @@ namespace Simulation
                     foreach (int hash in chunks.Keys)
                     {
                         ComponentChunk chunk = chunks[hash];
-                        if (chunk.Entities.Count > 0 && chunk.ContainsTypes(definition.ComponentTypesMask))
+                        if (chunk.Entities.Count > 0 && chunk.ContainsAllTypes(definition.ComponentTypesMask))
                         {
                             uint entityValue = chunk.Entities[0];
                             entity = new Entity(this, entityValue).As<T>();
@@ -843,7 +849,7 @@ namespace Simulation
                     foreach (int hash in chunks.Keys)
                     {
                         ComponentChunk chunk = chunks[hash];
-                        if (chunk.ContainsTypes(definition.ComponentTypesMask))
+                        if (chunk.ContainsAllTypes(definition.ComponentTypesMask))
                         {
                             for (uint e = 0; e < chunk.Entities.Count; e++)
                             {
@@ -1076,7 +1082,7 @@ namespace Simulation
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
-            EntityDescription slot = Slots[entity - 1];
+            EntitySlot slot = Slots[entity - 1];
             if (slot.childCount > 0)
             {
                 return slot.children.AsSpan<uint>();
@@ -1102,7 +1108,7 @@ namespace Simulation
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
-            ref EntityDescription slot = ref Slots[entity - 1];
+            ref EntitySlot slot = ref Slots[entity - 1];
             if (slot.referenceCount == 0)
             {
                 slot.references = new(4);
@@ -1126,7 +1132,7 @@ namespace Simulation
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
             UnsafeWorld.ThrowIfReferenceIsMissing(value, entity, reference);
 
-            ref EntityDescription slot = ref Slots[entity - 1];
+            ref EntitySlot slot = ref Slots[entity - 1];
             slot.references[reference.value - 1] = referencedEntity;
         }
 
@@ -1139,7 +1145,7 @@ namespace Simulation
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
-            ref EntityDescription slot = ref Slots[entity - 1];
+            ref EntitySlot slot = ref Slots[entity - 1];
             return slot.referenceCount > 0 && slot.references.Contains(referencedEntity);
         }
 
@@ -1152,7 +1158,7 @@ namespace Simulation
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
-            ref EntityDescription slot = ref Slots[entity - 1];
+            ref EntitySlot slot = ref Slots[entity - 1];
             return reference.value > 0 && reference.value <= slot.referenceCount;
         }
 
@@ -1160,7 +1166,7 @@ namespace Simulation
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
-            ref EntityDescription slot = ref Slots[entity - 1];
+            ref EntitySlot slot = ref Slots[entity - 1];
             return slot.referenceCount;
         }
 
@@ -1169,7 +1175,7 @@ namespace Simulation
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
             UnsafeWorld.ThrowIfReferenceIsMissing(value, entity, reference);
 
-            ref EntityDescription slot = ref Slots[entity - 1];
+            ref EntitySlot slot = ref Slots[entity - 1];
             return slot.references[reference.value - 1];
         }
 
@@ -1178,7 +1184,7 @@ namespace Simulation
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
             UnsafeWorld.ThrowIfReferenceIsMissing(value, entity, referencedEntity);
 
-            ref EntityDescription slot = ref Slots[entity - 1];
+            ref EntitySlot slot = ref Slots[entity - 1];
             uint index = slot.references.IndexOf(referencedEntity);
             return new(index + 1);
         }
@@ -1187,7 +1193,7 @@ namespace Simulation
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
-            ref EntityDescription slot = ref Slots[entity - 1];
+            ref EntitySlot slot = ref Slots[entity - 1];
             uint index = position.value - 1;
             if (index < slot.referenceCount)
             {
@@ -1206,7 +1212,7 @@ namespace Simulation
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
             UnsafeWorld.ThrowIfReferenceIsMissing(value, entity, reference);
 
-            ref EntityDescription slot = ref Slots[entity - 1];
+            ref EntitySlot slot = ref Slots[entity - 1];
             slot.references.RemoveAt(reference.value - 1);
             slot.referenceCount--;
 
@@ -1219,19 +1225,32 @@ namespace Simulation
         /// <summary>
         /// Retrieves the types of all arrays on this entity.
         /// </summary>
-        public readonly USpan<ArrayType> GetArrayTypes(uint entity)
+        public readonly byte CopyArrayTypesTo(uint entity, USpan<ArrayType> buffer)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
-            EntityDescription slot = Slots[entity - 1];
-            if (slot.arrayCount > 0)
+            EntitySlot slot = Slots[entity - 1];
+            byte count = 0;
+            for (byte a = 0; a < BitSet.Capacity; a++)
             {
-                return slot.arrayTypes.AsSpan();
+                if (slot.arrayTypes.Contains(a))
+                {
+                    buffer[count++] = new(a);
+                }
             }
-            else
-            {
-                return default;
-            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// Retrieves the types of all arrays on this entity.
+        /// </summary>
+        public readonly BitSet GetArrayTypesMask(uint entity)
+        {
+            UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
+
+            EntitySlot slot = Slots[entity - 1];
+            return slot.arrayTypes;
         }
 
         /// <summary>
@@ -1508,7 +1527,7 @@ namespace Simulation
         public readonly ComponentChunk GetComponentChunk(uint entity)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
-            EntityDescription slot = Slots[entity - 1];
+            EntitySlot slot = Slots[entity - 1];
             return ComponentChunks[slot.chunkKey];
         }
 
@@ -1603,21 +1622,18 @@ namespace Simulation
         {
             Dictionary<int, ComponentChunk> chunks = ComponentChunks;
             Definition definition = default(T).Definition;
-            USpan<ArrayType> arrayTypes = stackalloc ArrayType[definition.arrayTypeCount];
-            definition.CopyArrayTypes(arrayTypes);
             uint count = 0;
-            if (arrayTypes.Length > 0)
+            if (definition.arrayTypeCount > 0)
             {
                 foreach (int hash in chunks.Keys)
                 {
                     ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsTypes(definition.ComponentTypesMask))
+                    if (chunk.ContainsAllTypes(definition.ComponentTypesMask))
                     {
                         for (uint e = 0; e < chunk.Entities.Count; e++)
                         {
                             uint entity = chunk.Entities[e];
-                            USpan<ArrayType> entityArrays = GetArrayTypes(entity);
-                            if (ContainsArrays(arrayTypes, entityArrays))
+                            if (definition.ArrayTypesMask.ContainsAll(GetArrayTypesMask(entity)))
                             {
                                 if (onlyEnabled)
                                 {
@@ -1642,7 +1658,7 @@ namespace Simulation
                     foreach (int hash in chunks.Keys)
                     {
                         ComponentChunk chunk = chunks[hash];
-                        if (chunk.ContainsTypes(definition.ComponentTypesMask))
+                        if (chunk.ContainsAllTypes(definition.ComponentTypesMask))
                         {
                             count += chunk.Entities.Count;
                         }
@@ -1653,7 +1669,7 @@ namespace Simulation
                     foreach (int hash in chunks.Keys)
                     {
                         ComponentChunk chunk = chunks[hash];
-                        if (chunk.ContainsTypes(definition.ComponentTypesMask))
+                        if (chunk.ContainsAllTypes(definition.ComponentTypesMask))
                         {
                             for (uint e = 0; e < chunk.Entities.Count; e++)
                             {
@@ -1668,19 +1684,6 @@ namespace Simulation
                 }
             }
 
-            static bool ContainsArrays(USpan<ArrayType> arrayTypes, USpan<ArrayType> entityArrays)
-            {
-                for (uint i = 0; i < arrayTypes.Length; i++)
-                {
-                    if (!entityArrays.Contains(arrayTypes[i]))
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-
             return count;
         }
 
@@ -1693,7 +1696,7 @@ namespace Simulation
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, sourceEntity);
 
-            EntityDescription sourceSlot = Slots[sourceEntity - 1];
+            EntitySlot sourceSlot = Slots[sourceEntity - 1];
             ComponentChunk sourceChunk = ComponentChunks[sourceSlot.chunkKey];
             BitSet sourceTypeMask = sourceChunk.TypesMask;
             uint sourceIndex = sourceChunk.Entities.IndexOf(sourceEntity);
@@ -1721,23 +1724,28 @@ namespace Simulation
         /// </summary>
         public readonly void CopyArraysTo(uint sourceEntity, World destinationWorld, uint destinationEntity)
         {
-            foreach (ArrayType sourceArrayType in GetArrayTypes(sourceEntity))
+            BitSet arrayTypesMask = GetArrayTypesMask(sourceEntity);
+            for (byte a = 0; a < BitSet.Capacity; a++)
             {
-                void* sourceArray = UnsafeWorld.GetArray(value, sourceEntity, sourceArrayType, out uint sourceLength);
-                void* destinationArray;
-                if (!destinationWorld.ContainsArray(destinationEntity, sourceArrayType))
+                if (arrayTypesMask.Contains(a))
                 {
-                    destinationArray = UnsafeWorld.CreateArray(destinationWorld.value, destinationEntity, sourceArrayType, sourceLength);
-                }
-                else
-                {
-                    destinationArray = UnsafeWorld.ResizeArray(destinationWorld.value, destinationEntity, sourceArrayType, sourceLength);
-                }
+                    ArrayType sourceArrayType = new(a);
+                    void* sourceArray = UnsafeWorld.GetArray(value, sourceEntity, sourceArrayType, out uint sourceLength);
+                    void* destinationArray;
+                    if (!destinationWorld.ContainsArray(destinationEntity, sourceArrayType))
+                    {
+                        destinationArray = UnsafeWorld.CreateArray(destinationWorld.value, destinationEntity, sourceArrayType, sourceLength);
+                    }
+                    else
+                    {
+                        destinationArray = UnsafeWorld.ResizeArray(destinationWorld.value, destinationEntity, sourceArrayType, sourceLength);
+                    }
 
-                uint elementSize = sourceArrayType.Size;
-                USpan<byte> sourceBytes = new(sourceArray, sourceLength * elementSize);
-                USpan<byte> destinationBytes = new(destinationArray, sourceLength * elementSize);
-                sourceBytes.CopyTo(destinationBytes);
+                    uint elementSize = sourceArrayType.Size;
+                    USpan<byte> sourceBytes = new(sourceArray, sourceLength * elementSize);
+                    USpan<byte> destinationBytes = new(destinationArray, sourceLength * elementSize);
+                    sourceBytes.CopyTo(destinationBytes);
+                }
             }
         }
 
@@ -1768,7 +1776,7 @@ namespace Simulation
             foreach (int hash in chunks.Keys)
             {
                 ComponentChunk chunk = chunks[hash];
-                if (chunk.ContainsTypes(componentTypesMask))
+                if (chunk.ContainsAllTypes(componentTypesMask))
                 {
                     if (!onlyEnabled)
                     {
@@ -1985,7 +1993,7 @@ namespace Simulation
             foreach (int hash in chunks.Keys)
             {
                 ComponentChunk chunk = chunks[hash];
-                if (chunk.ContainsTypes(componentTypesMask))
+                if (chunk.ContainsAllTypes(componentTypesMask))
                 {
                     for (uint e = 0; e < chunk.Entities.Count; e++)
                     {
@@ -2046,7 +2054,7 @@ namespace Simulation
             foreach (int hash in chunks.Keys)
             {
                 ComponentChunk chunk = chunks[hash];
-                if (chunk.ContainsTypes(componentTypesMask))
+                if (chunk.ContainsAllTypes(componentTypesMask))
                 {
                     List<uint> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
@@ -2082,7 +2090,7 @@ namespace Simulation
             foreach (int hash in chunks.Keys)
             {
                 ComponentChunk chunk = chunks[hash];
-                if (chunk.ContainsTypes(componentTypesMask))
+                if (chunk.ContainsAllTypes(componentTypesMask))
                 {
                     List<uint> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
@@ -2121,7 +2129,7 @@ namespace Simulation
             foreach (int hash in chunks.Keys)
             {
                 ComponentChunk chunk = chunks[hash];
-                if (chunk.ContainsTypes(componentTypesMask))
+                if (chunk.ContainsAllTypes(componentTypesMask))
                 {
                     List<uint> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
