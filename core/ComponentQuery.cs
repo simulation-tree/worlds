@@ -39,7 +39,7 @@ namespace Simulation
             results.Dispose();
         }
 
-        public void Update(World world, bool onlyEnabled = false)
+        public readonly void Update(World world, bool onlyEnabled = false)
         {
             results.Clear(world.MaxEntityValue);
             Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
@@ -169,7 +169,7 @@ namespace Simulation
             results.Dispose();
         }
 
-        public void Update(World world, bool onlyEnabled = false)
+        public readonly void Update(World world, bool onlyEnabled = false)
         {
             results.Clear(world.MaxEntityValue);
             Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
@@ -301,7 +301,7 @@ namespace Simulation
             results.Dispose();
         }
 
-        public void Update(World world, bool onlyEnabled = false)
+        public readonly void Update(World world, bool onlyEnabled = false)
         {
             results.Clear(world.MaxEntityValue);
             Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
@@ -438,7 +438,7 @@ namespace Simulation
             results.Dispose();
         }
 
-        public void Update(World world, bool onlyEnabled = false)
+        public readonly void Update(World world, bool onlyEnabled = false)
         {
             results.Clear(world.MaxEntityValue);
             Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
@@ -580,7 +580,7 @@ namespace Simulation
             results.Dispose();
         }
 
-        public void Update(World world, bool onlyEnabled = false)
+        public readonly void Update(World world, bool onlyEnabled = false)
         {
             results.Clear(world.MaxEntityValue);
             Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
