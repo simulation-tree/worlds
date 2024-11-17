@@ -27,7 +27,7 @@ namespace Simulation.Tests
             base.CleanUp();
         }
 
-        protected async Task Simulate(CancellationToken cancellation)
+        protected async Task Simulate(World world, CancellationToken cancellation)
         {
             TimeSpan delta = TimeSpan.FromSeconds(0.1f);
             Simulator.Update(delta);

@@ -72,7 +72,7 @@ namespace Generator
 
             //start type
             AppendIndentation();
-            builder.Append("public static class ");
+            builder.Append("public static partial class ");
             builder.Append(TypeName);
             builder.AppendLine();
 
@@ -112,6 +112,8 @@ namespace Generator
                                                 AppendComponentTypeRegistration(fullTypeName);
                                             }
                                         }
+
+                                        continue;
                                     }
                                 }
                                 else if (methodName == "AddArrayType" || methodName == "AddArrayTypes")
@@ -127,6 +129,8 @@ namespace Generator
                                                 AppendArrayTypeRegistration(fullTypeName);
                                             }
                                         }
+
+                                        continue;
                                     }
                                 }
                             }
@@ -201,7 +205,6 @@ namespace Generator
                             }
                         }
 
-                        /*
                         AppendIndentation();
                         builder.Append("//");
                         builder.Append(containingNamespace);
@@ -239,7 +242,6 @@ namespace Generator
 
                         builder.Append(')');
                         builder.AppendLine();
-                        */
                     }
                 }
             }
