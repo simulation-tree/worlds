@@ -1,296 +1,221 @@
 ﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Diagnostics;
+using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Text;
-using System.Threading;
 
-namespace Generator
+namespace Simulation.Generator
 {
-    public class Input
-    {
-        public readonly InvocationExpressionSyntax invocation;
-        public readonly IMethodSymbol methodSymbol;
-        public readonly SemanticModel semanticModel;
-
-        public Input(InvocationExpressionSyntax invocation, IMethodSymbol methodSymbol, SemanticModel semanticModel)
-        {
-            this.invocation = invocation;
-            this.methodSymbol = methodSymbol;
-            this.semanticModel = semanticModel;
-        }
-    }
-
     [Generator(LanguageNames.CSharp)]
     public class TypeGenerator : IIncrementalGenerator
     {
+        private static readonly SourceBuilder source = new();
+        private static readonly SourceBuilder console = new();
+        private const string TypeName = "TypeTable";
+
         void IIncrementalGenerator.Initialize(IncrementalGeneratorInitializationContext context)
         {
-            IncrementalValuesProvider<Input?> invocations = context.SyntaxProvider.CreateSyntaxProvider(Predicate, Transform);
-            IncrementalValueProvider<(ImmutableArray<Input?>, AnalyzerConfigOptionsProvider)> provider = invocations.Collect().Combine(context.AnalyzerConfigOptionsProvider);
-            context.RegisterSourceOutput(provider, Generate);
+            context.RegisterSourceOutput(context.CompilationProvider, Generate);
         }
 
-        private static bool Predicate(SyntaxNode node, CancellationToken token)
+        private static void Generate(SourceProductionContext context, Compilation compilation)
         {
-            return node.IsKind(SyntaxKind.InvocationExpression);
+            context.AddSource($"{TypeName}.generated.cs", Generate(compilation));
         }
 
-        private static Input? Transform(GeneratorSyntaxContext context, CancellationToken token)
+        public static string Generate(Compilation compilation)
         {
-            if (context.Node is InvocationExpressionSyntax invocation)
+            compilation = AppendReferencedSyntaxTrees(compilation);
+
+            source.Clear();
+            source.AppendLine("namespace Simulation");
+            source.BeginGroup();
             {
-                SymbolInfo symbolInfo = context.SemanticModel.GetSymbolInfo(invocation);
-                if (symbolInfo.Symbol is IMethodSymbol methodSymbol)
+                source.AppendLine($"public static partial class {TypeName}");
+                source.BeginGroup();
                 {
-                    return new(invocation, methodSymbol, context.SemanticModel);
+                    HashSet<string> componentTypeNames = [];
+                    HashSet<string> arrayTypeNames = [];
+                    source.AppendLine("/*");
+                    try
+                    {
+                        SymbolsMap symbols = CollectSymbols(compilation);
+                        foreach (SyntaxTree syntaxTree in compilation.SyntaxTrees)
+                        {
+                            SemanticModel semanticModel = compilation.GetSemanticModel(syntaxTree);
+                            SyntaxNode root = syntaxTree.GetRoot();
+
+                            InvocationsWalker invocationsWalker = new(semanticModel);
+                            invocationsWalker.Visit(root);
+
+                            TypeUsagesWalker walker = new(semanticModel, invocationsWalker.invocations, symbols, source);
+                            walker.Visit(root);
+
+                            componentTypeNames.UnionWith(walker.componentTypeNames);
+                            arrayTypeNames.UnionWith(walker.arrayTypeNames);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        source.AppendLine(e.Message);
+                        source.AppendLine(e.StackTrace);
+                    }
+                    source.AppendLine("*/");
+                    source.AppendLine($"static {TypeName}()");
+                    source.BeginGroup();
+                    {
+                        //foreach (string line in console.Lines)
+                        //{
+                        //    string sanitizedLine = line.Replace('\\', '/');
+                        //    source.AppendLine($"System.Console.WriteLine(\"{sanitizedLine}\");");
+                        //}
+
+                        foreach (string componentTypeName in componentTypeNames)
+                        {
+                            AppendComponentTypeRegistration(componentTypeName);
+                        }
+
+                        foreach (string arrayTypeName in arrayTypeNames)
+                        {
+                            AppendArrayTypeRegistration(arrayTypeName);
+                        }
+                    }
+                    source.EndGroup();
+                }
+                source.EndGroup();
+            }
+            source.EndGroup();
+            return source.ToString();
+        }
+
+        private static Compilation AppendReferencedSyntaxTrees(Compilation compilation)
+        {
+            HashSet<SyntaxTree> added = [];
+            foreach (MetadataReference assemblyReference in compilation.References)
+            {
+                if (compilation.GetAssemblyOrModuleSymbol(assemblyReference) is IAssemblySymbol assemblySymbol)
+                {
+                    console.AppendLine($"checking reference {assemblyReference.Display}");
+                    Stack<ISymbol> stack = new();
+                    stack.Push(assemblySymbol.GlobalNamespace);
+                    while (stack.Count > 0)
+                    {
+                        ISymbol current = stack.Pop();
+                        if (current is INamespaceSymbol namespaceSymbol)
+                        {
+                            foreach (ISymbol member in namespaceSymbol.GetNamespaceMembers())
+                            {
+                                stack.Push(member);
+                            }
+
+                            foreach (ISymbol member in namespaceSymbol.GetTypeMembers())
+                            {
+                                stack.Push(member);
+                            }
+                        }
+                        else if (current is ITypeSymbol typeSymbol)
+                        {
+                            foreach (ISymbol member in typeSymbol.GetMembers())
+                            {
+                                stack.Push(member);
+                            }
+
+                            foreach (SyntaxReference declarationReference in typeSymbol.DeclaringSyntaxReferences)
+                            {
+                                SyntaxNode declaration = declarationReference.GetSyntax();
+                                SyntaxTree tree = declaration.SyntaxTree;
+                                if (added.Add(tree))
+                                {
+                                    console.AppendLine($"{tree.FilePath}");
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    console.AppendLine($"assembly {assemblyReference.Display} not found");
                 }
             }
 
-            return null;
+            console.AppendLine($"{added.Count} trees added");
+            return compilation.AddSyntaxTrees(added);
         }
 
-        private static void Generate(SourceProductionContext context, (ImmutableArray<Input?> inputs, AnalyzerConfigOptionsProvider options) input)
+        private static SymbolsMap CollectSymbols(Compilation compilation)
         {
-            (ImmutableArray<Input?> inputs, AnalyzerConfigOptionsProvider options) = input;
-            const string TypeName = "TypeTable";
-            int indentation = 0;
-            StringBuilder builder = new();
-
-            //start namespace
-            AppendIndentation();
-            builder.Append("namespace Simulation");
-            builder.AppendLine();
-
-            AppendIndentation();
-            builder.Append('{');
-            builder.AppendLine();
-
-            indentation++;
-
-            //start type
-            AppendIndentation();
-            builder.Append("public static partial class ");
-            builder.Append(TypeName);
-            builder.AppendLine();
-
-            AppendIndentation();
-            builder.Append('{');
-            builder.AppendLine();
-
-            indentation++;
-
-            //field declarations
-            HashSet<ITypeSymbol> componentTypes = [];
-            HashSet<ITypeSymbol> arrayTypes = [];
-            foreach (Input? invocation in inputs)
+            SymbolsMap symbols = new();
+            foreach (MetadataReference assemblyReference in compilation.References)
             {
-                if (invocation is not null)
+                if (compilation.GetAssemblyOrModuleSymbol(assemblyReference) is IAssemblySymbol assemblySymbol)
                 {
-                    SymbolInfo symbolInfo = invocation.semanticModel.GetSymbolInfo(invocation.invocation);
-                    if (symbolInfo.Symbol is IMethodSymbol methodSymbol)
+                    Stack<ISymbol> stack = new();
+                    stack.Push(assemblySymbol.GlobalNamespace);
+                    while (stack.Count > 0)
                     {
-                        string containingNamespace = methodSymbol.ContainingType.ContainingNamespace.ToString();
-                        string containingTypeName = methodSymbol.ContainingType.Name.ToString();
-                        string methodName = methodSymbol.Name;
-                        if (containingNamespace == "Simulation")
+                        ISymbol current = stack.Pop();
+                        if (current is INamespaceSymbol namespaceSymbol)
                         {
-                            if (containingTypeName == "Definition")
+                            foreach (ISymbol member in namespaceSymbol.GetNamespaceMembers())
                             {
-                                if (methodName == "AddComponentType" || methodName == "AddComponentTypes")
-                                {
-                                    if (methodSymbol.Arity > 0)
-                                    {
-                                        foreach (ITypeSymbol type in methodSymbol.TypeArguments)
-                                        {
-                                            if (type.TypeKind == TypeKind.TypeParameter) continue;
-                                            if (componentTypes.Add(type))
-                                            {
-                                                string fullTypeName = type.ToDisplayString();
-                                                AppendComponentTypeRegistration(fullTypeName);
-                                            }
-                                        }
-
-                                        continue;
-                                    }
-                                }
-                                else if (methodName == "AddArrayType" || methodName == "AddArrayTypes")
-                                {
-                                    if (methodSymbol.Arity > 0)
-                                    {
-                                        foreach (ITypeSymbol type in methodSymbol.TypeArguments)
-                                        {
-                                            if (type.TypeKind == TypeKind.TypeParameter) continue;
-                                            if (arrayTypes.Add(type))
-                                            {
-                                                string fullTypeName = type.ToDisplayString();
-                                                AppendArrayTypeRegistration(fullTypeName);
-                                            }
-                                        }
-
-                                        continue;
-                                    }
-                                }
+                                stack.Push(member);
                             }
-                            else if (containingTypeName == "Entity" || containingTypeName == "World" || containingTypeName == "Operation" || containingTypeName == "Instruction")
+
+                            foreach (ISymbol member in namespaceSymbol.GetTypeMembers())
                             {
-                                if (methodName == "AddComponent" || methodName == "GetComponent" || methodName == "SetComponent" || methodName == "RemoveComponent" || methodName == "ContainsComponent" || methodName == "ContainsAnyComponent" || methodName == "Fill" || methodName == "ForEach")
-                                {
-                                    if (methodSymbol.Arity == 1)
-                                    {
-                                        ITypeSymbol genericType = methodSymbol.TypeArguments[0];
-                                        if (genericType.TypeKind == TypeKind.TypeParameter) continue;
-                                        if (componentTypes.Add(genericType))
-                                        {
-                                            string fullTypeName = genericType.ToDisplayString();
-                                            AppendComponentTypeRegistration(fullTypeName);
-                                        }
-
-                                        continue;
-                                    }
-                                }
-                                else if (methodName == "GetArray" || methodName == "CreateArray" || methodName == "DestroyArray" || methodName == "ContainsArray" || methodName == "SetArrayElement" || methodName == "SetArrayElements" || methodName == "GetArrayLength" || methodName == "ResizeArray")
-                                {
-                                    if (methodSymbol.Arity == 1)
-                                    {
-                                        ITypeSymbol genericType = methodSymbol.TypeArguments[0];
-                                        if (genericType.TypeKind == TypeKind.TypeParameter) continue;
-                                        if (arrayTypes.Add(genericType))
-                                        {
-                                            string fullTypeName = genericType.ToDisplayString();
-                                            AppendArrayTypeRegistration(fullTypeName);
-                                        }
-
-                                        continue;
-                                    }
-                                }
-                            }
-                            else if (containingTypeName == "ComponentType")
-                            {
-                                if (methodName == "Get")
-                                {
-                                    if (methodSymbol.Arity == 1)
-                                    {
-                                        ITypeSymbol genericType = methodSymbol.TypeArguments[0];
-                                        if (genericType.TypeKind == TypeKind.TypeParameter) continue;
-                                        if (componentTypes.Add(genericType))
-                                        {
-                                            string fullTypeName = genericType.ToDisplayString();
-                                            AppendComponentTypeRegistration(fullTypeName);
-                                        }
-
-                                        continue;
-                                    }
-                                }
-                            }
-                            else if (containingTypeName == "ArrayType")
-                            {
-                                if (methodName == "Get")
-                                {
-                                    if (methodSymbol.Arity == 1)
-                                    {
-                                        ITypeSymbol genericType = methodSymbol.TypeArguments[0];
-                                        if (genericType.TypeKind == TypeKind.TypeParameter) continue;
-                                        if (arrayTypes.Add(genericType))
-                                        {
-                                            string fullTypeName = genericType.ToDisplayString();
-                                            AppendArrayTypeRegistration(fullTypeName);
-                                        }
-
-                                        continue;
-                                    }
-                                }
+                                stack.Push(member);
                             }
                         }
-
-                        AppendIndentation();
-                        builder.Append("//");
-                        builder.Append(containingNamespace);
-                        builder.Append('.');
-                        builder.Append(containingTypeName);
-                        builder.Append('.');
-                        builder.Append(methodName);
-                        if (methodSymbol.Arity > 0)
+                        else if (current is ITypeSymbol typeSymbol)
                         {
-                            builder.Append('<');
-                            foreach (ITypeSymbol type in methodSymbol.TypeArguments)
+                            foreach (ISymbol member in typeSymbol.GetMembers())
                             {
-                                builder.Append(type.ToDisplayString());
-                                builder.Append(", ");
+                                stack.Push(member);
                             }
 
-                            builder.Append('>');
-                        }
-
-                        builder.Append('(');
-
-                        //get method declaration from invocation
-                        var e = invocation.invocation.Expression;
-                        if (e is MemberAccessExpressionSyntax memberAccess)
-                        {
-                            foreach (SyntaxNode child in memberAccess.DescendantNodes())
+                            foreach (SyntaxReference declarationReference in typeSymbol.DeclaringSyntaxReferences)
                             {
-                                builder.Append(child.ToString());
-                                builder.Append(" (");
-                                builder.Append(child.GetType());
-                                builder.Append(")");
-                                builder.Append(", ");
+                                SyntaxNode declaration = declarationReference.GetSyntax();
+                                symbols.Add(declaration, typeSymbol);
                             }
                         }
-
-                        builder.Append(')');
-                        builder.AppendLine();
+                        else if (current is IMethodSymbol methodSymbol)
+                        {
+                            foreach (SyntaxReference declaration in methodSymbol.DeclaringSyntaxReferences)
+                            {
+                                SyntaxNode node = declaration.GetSyntax();
+                                symbols.Add(node, methodSymbol);
+                            }
+                        }
+                        else if (current is IFieldSymbol fieldSymbol)
+                        {
+                            foreach (SyntaxReference declaration in fieldSymbol.DeclaringSyntaxReferences)
+                            {
+                                SyntaxNode node = declaration.GetSyntax();
+                                symbols.Add(node, fieldSymbol);
+                            }
+                        }
+                        else if (current is IPropertySymbol propertySymbol)
+                        {
+                            foreach (SyntaxReference declaration in propertySymbol.DeclaringSyntaxReferences)
+                            {
+                                SyntaxNode node = declaration.GetSyntax();
+                                symbols.Add(node, propertySymbol);
+                            }
+                        }
                     }
                 }
             }
 
-            indentation--;
+            return symbols;
+        }
 
-            //finish type
-            AppendIndentation();
-            builder.Append('}');
-            builder.AppendLine();
+        private static void AppendComponentTypeRegistration(string fullTypeName)
+        {
+            source.AppendLine($"ComponentType.Register<{fullTypeName}>();");
+        }
 
-            indentation--;
-
-            //finish namespace
-            AppendIndentation();
-            builder.Append('}');
-            builder.AppendLine();
-
-            context.AddSource($"{TypeName}.generated.cs", builder.ToString());
-
-            void AppendIndentation()
-            {
-                for (int i = 0; i < indentation; i++)
-                {
-                    builder.Append("    ");
-                }
-            }
-
-            void AppendComponentTypeRegistration(string fullTypeName)
-            {
-                AppendIndentation();
-                builder.Append("public static readonly ComponentType @component_");
-                builder.Append(fullTypeName.Replace(".", "_"));
-                builder.Append(" = ComponentType.Register<");
-                builder.Append(fullTypeName);
-                builder.Append(">();");
-                builder.AppendLine();
-            }
-
-            void AppendArrayTypeRegistration(string fullTypeName)
-            {
-                AppendIndentation();
-                builder.Append("public static readonly ArrayType @array_");
-                builder.Append(fullTypeName.Replace(".", "_"));
-                builder.Append(" = ArrayType.Register<");
-                builder.Append(fullTypeName);
-                builder.Append(">();");
-                builder.AppendLine();
-            }
+        private static void AppendArrayTypeRegistration(string fullTypeName)
+        {
+            source.AppendLine($"ArrayType.Register<{fullTypeName}>();");
         }
     }
 }

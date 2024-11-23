@@ -14,14 +14,6 @@ namespace Simulation
     /// </summary>
     public unsafe struct World : IDisposable, IEquatable<World>, ISerializable
     {
-        static World()
-        {
-            ComponentType.Register<World>();
-            ComponentType.Register<IsProgram>();
-            ComponentType.Register<ProgramState>();
-            ComponentType.Register<ProgramAllocation>();
-        }
-
         internal UnsafeWorld* value;
 
         public readonly nint Address => (nint)value;

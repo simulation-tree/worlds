@@ -7,7 +7,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\core\Simulation.Core.csproj" />
 		<ProjectReference Include="..\generator\Simulation.Generator.csproj" />
 	</ItemGroup>
 	
