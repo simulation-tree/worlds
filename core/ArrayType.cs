@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using Unmanaged;
 
 namespace Simulation
@@ -12,11 +11,6 @@ namespace Simulation
         private static readonly List<Type> systemTypes = new();
         private static readonly List<ushort> sizes = new();
         private static readonly List<ArrayType> all = new();
-
-        static ArrayType()
-        {
-            RuntimeHelpers.RunClassConstructor(typeof(World).TypeHandle);
-        }
 
         public static IReadOnlyList<ArrayType> All => all;
 

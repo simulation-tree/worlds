@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.InteropServices;
+#if NET
+using System.Runtime.Intrinsics;
+#endif
 using Unmanaged;
 
 namespace Simulation
@@ -8,11 +12,27 @@ namespace Simulation
     /// <summary>
     /// Represents a 256 bit mask.
     /// </summary>
+    [StructLayout(LayoutKind.Explicit)]
     public unsafe struct BitSet : IEquatable<BitSet>
     {
         public const byte Capacity = byte.MaxValue;
 
-        private fixed ulong data[4];
+#if NET
+        [FieldOffset(0)]
+        private Vector256<ulong> data;
+#endif
+
+        [FieldOffset(0)]
+        private ulong a;
+
+        [FieldOffset(8)]
+        private ulong b;
+
+        [FieldOffset(16)]
+        private ulong c;
+
+        [FieldOffset(24)]
+        private ulong d;
 
         /// <summary>
         /// Amount of bits set to 1.
@@ -21,48 +41,58 @@ namespace Simulation
         {
             get
             {
-                byte amount = 0;
-                fixed (ulong* ptr = data)
+                unchecked
                 {
-                    for (int i = 0; i < 4; i++)
+                    int count = 0;
+#if NET
+                    count += BitOperations.PopCount(a);
+                    count += BitOperations.PopCount(b);
+                    count += BitOperations.PopCount(c);
+                    count += BitOperations.PopCount(d);
+#else
+                    for (int index = 0; index < Capacity; index++)
                     {
-                        amount += (byte)BitOperations.PopCount(ptr[i]);
+                        if (Contains((byte)index))
+                        {
+                            count++;
+                        }
                     }
+#endif
+                    return (byte)count;
                 }
-
-                return amount;
             }
         }
 
+        public readonly ulong A => a;
+        public readonly ulong B => b;
+        public readonly ulong C => c;
+        public readonly ulong D => d;
+
         public BitSet(params byte[] values)
         {
+            a = default;
+            b = default;
+            c = default;
+            d = default;
             ThrowIfOutOfRange((uint)values.Length);
-
-            fixed (ulong* ptr = data)
+            for (uint i = 0; i < values.Length; i++)
             {
-                for (int i = 0; i < values.Length; i++)
-                {
-                    byte index = values[i];
-                    int ulongIndex = index / 64;
-                    int bitPosition = index % 64;
-                    ptr[ulongIndex] |= 1UL << bitPosition;
-                }
+                byte index = values[i];
+                Set(index);
             }
         }
 
         public BitSet(USpan<byte> values)
         {
+            a = default;
+            b = default;
+            c = default;
+            d = default;
             ThrowIfOutOfRange(values.Length);
-
-            fixed (ulong* ptr = data)
+            for (uint i = 0; i < values.Length; i++)
             {
-                for (uint i = 0; i < values.Length; i++)
-                {
-                    byte index = values[i];
-                    int ulongIndex = index / 64;
-                    int bitPosition = index % 64;
-                    ptr[ulongIndex] |= 1UL << bitPosition;
-                }
+                byte index = values[i];
+                Set(index);
             }
         }
 
@@ -96,11 +126,20 @@ namespace Simulation
         /// </summary>
         public void Set(byte index)
         {
-            int ulongIndex = index / 64;
-            int bitPosition = index % 64;
-            fixed (ulong* ptr = data)
+            switch (index)
             {
-                ptr[ulongIndex] |= 1UL << bitPosition;
+                case < 64:
+                    a |= 1UL << index;
+                    break;
+                case < 128:
+                    b |= 1UL << (index - 64);
+                    break;
+                case < 192:
+                    c |= 1UL << (index - 128);
+                    break;
+                default:
+                    d |= 1UL << (index - 192);
+                    break;
             }
         }
 
@@ -109,13 +148,10 @@ namespace Simulation
         /// </summary>
         public void Clear()
         {
-            fixed (ulong* ptr = data)
-            {
-                ptr[0] = 0;
-                ptr[1] = 0;
-                ptr[2] = 0;
-                ptr[3] = 0;
-            }
+            a = 0;
+            b = 0;
+            c = 0;
+            d = 0;
         }
 
         /// <summary>
@@ -123,11 +159,20 @@ namespace Simulation
         /// </summary>
         public void Clear(byte index)
         {
-            int ulongIndex = index / 64;
-            int bitPosition = index % 64;
-            fixed (ulong* ptr = data)
+            switch (index)
             {
-                ptr[ulongIndex] &= ~(1UL << bitPosition);
+                case < 64:
+                    a &= ~(1UL << index);
+                    break;
+                case < 128:
+                    b &= ~(1UL << (index - 64));
+                    break;
+                case < 192:
+                    c &= ~(1UL << (index - 128));
+                    break;
+                default:
+                    d &= ~(1UL << (index - 192));
+                    break;
             }
         }
 
@@ -136,13 +181,13 @@ namespace Simulation
         /// </summary>
         public readonly bool Contains(byte index)
         {
-            int ulongIndex = index / 64;
-            int bitPosition = index % 64;
-
-            fixed (ulong* ptr = data)
+            return index switch
             {
-                return (ptr[ulongIndex] & (1UL << bitPosition)) != 0;
-            }
+                < 64 => (a & (1UL << index)) != 0,
+                < 128 => (b & (1UL << (index - 64))) != 0,
+                < 192 => (c & (1UL << (index - 128))) != 0,
+                _ => (d & (1UL << (index - 192))) != 0,
+            };
         }
 
         /// <summary>
@@ -150,19 +195,29 @@ namespace Simulation
         /// </summary>
         public readonly bool ContainsAll(BitSet other)
         {
-            fixed (ulong* ptr = data)
-            {
-                ulong* otherPtr = other.data;
-                for (int i = 0; i < 4; i++)
-                {
-                    if ((ptr[i] & otherPtr[i]) != otherPtr[i])
-                    {
-                        return false;
-                    }
-                }
-            }
+#if NET
+            return (data & other.data) == other.data;
+#else
+            return (a & other.a) == other.a &&
+                   (b & other.b) == other.b &&
+                   (c & other.c) == other.c &&
+                   (d & other.d) == other.d;
+#endif
+        }
 
-            return true;
+        /// <summary>
+        /// Checks if this bit set contains any of the bits of the <paramref name="other"/> bit set.
+        /// </summary>
+        public readonly bool ContainsAny(BitSet other)
+        {
+#if NET
+            return !(data & other.data).Equals(default);
+#else
+            return (a & other.a) != 0 ||
+                   (b & other.b) != 0 ||
+                   (c & other.c) != 0 ||
+                   (d & other.d) != 0;
+#endif
         }
 
         /// <inheritdoc/>
@@ -170,11 +225,8 @@ namespace Simulation
         {
             unchecked
             {
-                int hash = (int)((data[0] >> 32) ^ data[0]);
-                hash = (hash * 397) ^ (int)((data[1] >> 32) ^ data[1]);
-                hash = (hash * 397) ^ (int)((data[2] >> 32) ^ data[2]);
-                hash = (hash * 397) ^ (int)((data[3] >> 32) ^ data[3]);
-                return hash;
+                ulong hash = a ^ b ^ c ^ d;
+                return (int)hash ^ (int)(hash >> 32);
             }
         }
 
@@ -187,7 +239,11 @@ namespace Simulation
         /// <inheritdoc/>
         public readonly bool Equals(BitSet other)
         {
-            return data[0] == other.data[0] && data[1] == other.data[1] && data[2] == other.data[2] && data[3] == other.data[3];
+#if NET
+            return data == other.data;
+#else
+            return a == other.a && b == other.b && c == other.c && d == other.d;
+#endif
         }
 
         [Conditional("DEBUG")]

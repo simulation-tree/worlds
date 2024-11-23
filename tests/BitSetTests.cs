@@ -1,4 +1,8 @@
-﻿namespace Simulation.Tests
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+
+namespace Simulation.Tests
 {
     public class BitSetTests
     {
@@ -70,6 +74,50 @@
             BitSet b = new();
 
             Assert.That(a.ContainsAll(b), Is.True);
+        }
+
+        [Test]
+        public void BenchmarkHashCode()
+        {
+            Stopwatch stopwatch = new();
+            List<long> elapsedTicks = new();
+            Perform(32, () =>
+            {
+                stopwatch.Restart();
+                for (int i = 0; i < 1000; i++)
+                {
+                    BitSet a = new();
+                    a.Set(3);
+                    a.Set(4);
+                    a.Set(5);
+                    a.Set(6);
+                    int hashCode = a.GetHashCode();
+                }
+
+                stopwatch.Stop();
+                elapsedTicks.Add(stopwatch.ElapsedTicks);
+            });
+
+            Console.WriteLine($"GetHashCode(): {GetElapsedTicksAverage()}");
+
+            void Perform(int times, Action action)
+            {
+                for (int i = 0; i < times; i++)
+                {
+                    action();
+                }
+            }
+
+            long GetElapsedTicksAverage()
+            {
+                long totalTicks = 0;
+                foreach (long ticks in elapsedTicks)
+                {
+                    totalTicks += ticks;
+                }
+
+                return totalTicks / elapsedTicks.Count;
+            }
         }
     }
 }

@@ -15,7 +15,7 @@ namespace Simulation.Functions
 #else
         private readonly delegate*<SystemContainer, World, Allocation, void> value;
 
-        public FinalizeFunction(delegate*<SystemContainer, World, Allocation, void> value)
+        public HandleFunction(delegate*<SystemContainer, World, Allocation, void> value)
         {
             this.value = value;
         }

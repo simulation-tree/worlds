@@ -49,7 +49,11 @@ namespace Simulation
         public readonly uint ToString(USpan<char> buffer)
         {
             string name = Type.Name;
-            name.CopyTo(buffer.AsSystemSpan());
+            for (uint i = 0; i < name.Length; i++)
+            {
+                buffer[i] = name[(int)i];
+            }
+
             return (uint)name.Length;
         }
 

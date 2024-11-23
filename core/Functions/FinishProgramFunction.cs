@@ -16,7 +16,7 @@ namespace Programs
 #else
         private readonly delegate*<Simulator, Allocation, World, uint, void> function;
 
-        public FinishFunction(delegate*<Simulator, Allocation, World, uint, void> function)
+        public FinishProgramFunction(delegate*<Simulator, Allocation, World, uint, void> function)
         {
             this.function = function;
         }

@@ -14,7 +14,7 @@ namespace Simulation.Functions
 #else
         private readonly delegate*<SystemContainer, World, TimeSpan, void> value;
 
-        public UpdateFunction(delegate*<SystemContainer, World, TimeSpan, void> value)
+        public IterateFunction(delegate*<SystemContainer, World, TimeSpan, void> value)
         {
             this.value = value;
         }

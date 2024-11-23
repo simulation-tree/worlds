@@ -10,11 +10,13 @@ namespace Simulation.Unsafe
     {
         private List<uint> entities;
         private Array<nint> componentArrays;
+        private readonly Array<byte> typeIndices;
         private readonly BitSet typeMask;
 
-        private UnsafeComponentChunk(List<uint> entities, BitSet componentTypesMask, Array<nint> componentArrays)
+        private UnsafeComponentChunk(BitSet componentTypesMask, Array<nint> componentArrays, Array<byte> typeIndices)
         {
-            this.entities = entities;
+            this.entities = new(4);
+            this.typeIndices = typeIndices;
             this.componentArrays = componentArrays;
             this.typeMask = componentTypesMask;
         }
@@ -23,19 +25,21 @@ namespace Simulation.Unsafe
         {
             Array<nint> componentArrays = new(BitSet.Capacity);
             USpan<ComponentType> componentTypes = stackalloc ComponentType[BitSet.Capacity];
+            USpan<byte> typeIndices = stackalloc byte[BitSet.Capacity];
+            byte typeCount = 0;
             for (byte i = 0; i < BitSet.Capacity; i++)
             {
                 if (componentTypesMask.Contains(i))
                 {
                     ComponentType componentType = new(i);
                     componentArrays[i] = (nint)UnsafeList.Allocate(4, componentType.Size);
+                    typeIndices[typeCount++] = i;
                 }
             }
 
-            List<uint> entities = new(4);
             int key = componentTypesMask.GetHashCode();
             UnsafeComponentChunk* chunk = Allocations.Allocate<UnsafeComponentChunk>();
-            chunk[0] = new(entities, componentTypesMask, componentArrays);
+            chunk[0] = new(componentTypesMask, componentArrays, new(typeIndices.Slice(0, typeCount)));
             return chunk;
         }
 
@@ -44,16 +48,16 @@ namespace Simulation.Unsafe
             Allocations.ThrowIfNull(chunk);
 
             chunk->entities.Dispose();
-            for (byte i = 0; i < BitSet.Capacity; i++)
+            uint typeCount = chunk->typeIndices.Length;
+            for (byte i = 0; i < typeCount; i++)
             {
-                if (chunk->typeMask.Contains(i))
-                {
-                    UnsafeList* components = (UnsafeList*)chunk->componentArrays[i];
-                    UnsafeList.Free(ref components);
-                }
+                byte typeIndex = chunk->typeIndices[i];
+                UnsafeList* components = (UnsafeList*)chunk->componentArrays[typeIndex];
+                UnsafeList.Free(ref components);
             }
 
             chunk->componentArrays.Dispose();
+            chunk->typeIndices.Dispose();
             Allocations.Free(ref chunk);
         }
 
@@ -76,13 +80,12 @@ namespace Simulation.Unsafe
             Allocations.ThrowIfNull(chunk);
 
             chunk->entities.Add(entity);
-            for (byte i = 0; i < BitSet.Capacity; i++)
+            uint typeCount = chunk->typeIndices.Length;
+            for (byte i = 0; i < typeCount; i++)
             {
-                if (chunk->typeMask.Contains(i))
-                {
-                    UnsafeList* list = (UnsafeList*)chunk->componentArrays[i];
-                    UnsafeList.AddDefault(list);
-                }
+                byte typeIndex = chunk->typeIndices[i];
+                UnsafeList* list = (UnsafeList*)chunk->componentArrays[typeIndex];
+                UnsafeList.AddDefault(list);
             }
 
             return chunk->entities.Count - 1;
@@ -94,13 +97,12 @@ namespace Simulation.Unsafe
 
             uint index = chunk->entities.IndexOf(entity);
             chunk->entities.RemoveAtBySwapping(index);
-            for (byte i = 0; i < BitSet.Capacity; i++)
+            uint typeCount = chunk->typeIndices.Length;
+            for (byte i = 0; i < typeCount; i++)
             {
-                if (chunk->typeMask.Contains(i))
-                {
-                    UnsafeList* list = (UnsafeList*)chunk->componentArrays[i];
-                    UnsafeList.RemoveAtBySwapping(list, index);
-                }
+                byte typeIndex = chunk->typeIndices[i];
+                UnsafeList* list = (UnsafeList*)chunk->componentArrays[typeIndex];
+                UnsafeList.RemoveAtBySwapping(list, index);
             }
         }
 

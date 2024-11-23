@@ -2,7 +2,8 @@
     "name": "Simulation",
     "rootNamespace": "Simulation",
     "references": [
-        "GUID:21cb637cc1e869c469489b37581b0535"
+        "GUID:e442c6948205ebc42a3de523d6b5290d",
+        "GUID:e3523b465bd539342b65c0eae0b4c695"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -93,7 +93,9 @@ namespace Simulation
         public static ComponentQuery<T1> Create()
         {
             List<Result> results = new(1);
-            return new(results, new BitSet([ComponentType.Get<T1>()]));
+            BitSet set = new();
+            set.Set(ComponentType.Get<T1>());
+            return new(results, set);
         }
 
         public readonly struct Result
@@ -225,7 +227,10 @@ namespace Simulation
         public static ComponentQuery<T1, T2> Create()
         {
             List<Result> results = new(1);
-            return new(results, new BitSet([ComponentType.Get<T1>(), ComponentType.Get<T2>()]));
+            BitSet set = new();
+            set.Set(ComponentType.Get<T1>());
+            set.Set(ComponentType.Get<T2>());
+            return new(results, set);
         }
 
         public readonly struct Result
@@ -359,7 +364,11 @@ namespace Simulation
         public static ComponentQuery<T1, T2, T3> Create()
         {
             List<Result> results = new(1);
-            return new(results, new BitSet([ComponentType.Get<T1>(), ComponentType.Get<T2>(), ComponentType.Get<T3>()]));
+            BitSet set = new();
+            set.Set(ComponentType.Get<T1>());
+            set.Set(ComponentType.Get<T2>());
+            set.Set(ComponentType.Get<T3>());
+            return new(results, set);
         }
 
         public readonly struct Result
@@ -498,7 +507,12 @@ namespace Simulation
         public static ComponentQuery<T1, T2, T3, T4> Create()
         {
             List<Result> results = new(1);
-            return new(results, new BitSet([ComponentType.Get<T1>(), ComponentType.Get<T2>(), ComponentType.Get<T3>(), ComponentType.Get<T4>()]));
+            BitSet set = new();
+            set.Set(ComponentType.Get<T1>());
+            set.Set(ComponentType.Get<T2>());
+            set.Set(ComponentType.Get<T3>());
+            set.Set(ComponentType.Get<T4>());
+            return new(results, set);
         }
 
         public readonly struct Result
@@ -642,7 +656,13 @@ namespace Simulation
         public static ComponentQuery<T1, T2, T3, T4, T5> Create()
         {
             List<Result> results = new(1);
-            return new(results, new BitSet([ComponentType.Get<T1>(), ComponentType.Get<T2>(), ComponentType.Get<T3>(), ComponentType.Get<T4>(), ComponentType.Get<T5>()]));
+            BitSet set = new();
+            set.Set(ComponentType.Get<T1>());
+            set.Set(ComponentType.Get<T2>());
+            set.Set(ComponentType.Get<T3>());
+            set.Set(ComponentType.Get<T4>());
+            set.Set(ComponentType.Get<T5>());
+            return new(results, set);
         }
 
         public readonly struct Result

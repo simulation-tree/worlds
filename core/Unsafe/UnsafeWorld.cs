@@ -419,23 +419,23 @@ namespace Simulation.Unsafe
         /// Initializes the given entity value into existence assuming 
         /// its not already present.
         /// </summary>
-        public static void InitializeEntity(UnsafeWorld* world, Definition definition, uint entity)
+        public static void InitializeEntity(UnsafeWorld* world, Definition definition, uint newEntity)
         {
             Allocations.ThrowIfNull(world);
-            ThrowIfEntityIsAlreadyPresent(world, entity);
+            ThrowIfEntityIsAlreadyPresent(world, newEntity);
 
             List<EntitySlot> slots = GetEntitySlots(world);
             List<uint> freeEntities = GetFreeEntities(world);
 
             //make sure islands of free entities dont exist
-            while (entity > slots.Count + 1)
+            while (newEntity > slots.Count + 1)
             {
                 EntitySlot freeSlot = new(slots.Count + 1);
                 slots.Add(freeSlot);
                 freeEntities.Add(freeSlot.entity);
             }
 
-            if (!freeEntities.TryRemoveBySwapping(entity))
+            if (!freeEntities.TryRemoveBySwapping(newEntity))
             {
                 slots.Add(new());
             }
@@ -445,8 +445,8 @@ namespace Simulation.Unsafe
             }
 
             int componentsKey = definition.ComponentTypesMask.GetHashCode();
-            ref EntitySlot slot = ref slots[entity - 1];
-            slot.entity = entity;
+            ref EntitySlot slot = ref slots[newEntity - 1];
+            slot.entity = newEntity;
             slot.chunkKey = componentsKey;
             slot.state = EntitySlot.State.Enabled;
 
@@ -475,11 +475,11 @@ namespace Simulation.Unsafe
                 }
             }
 
-            chunk.AddEntity(entity);
-            TraceCreation(world, entity);
+            chunk.AddEntity(newEntity);
+            TraceCreation(world, newEntity);
 
             //finally
-            NotifyCreation(new(world), entity);
+            NotifyCreation(new(world), newEntity);
         }
 
         [Conditional("DEBUG")]

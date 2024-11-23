@@ -16,7 +16,7 @@ namespace Programs
 #else
         private readonly delegate*<Simulator, Allocation, World, TimeSpan, uint> function;
 
-        public UpdateFunction(delegate*<Simulator, Allocation, World, TimeSpan, uint> function)
+        public UpdateProgramFunction(delegate*<Simulator, Allocation, World, TimeSpan, uint> function)
         {
             this.function = function;
         }
