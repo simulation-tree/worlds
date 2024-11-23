@@ -84,11 +84,12 @@ void Do()
 {
     //only downside here is having to read a lot of code, and communicating it
     Dictionary<uint, ComponentChunk> chunks = world.ComponentChunks;
+    ComponentType type = ComponentType.Get<MyComponent>();
     for (int i = 0; i < chunks.Count; i++)
     {
         int key = chunks.Keys[i];
         ComponentChunk chunk = chunks[key];
-        if (chunk.ContainsTypes(typesSpan))
+        if (chunk.ContainsType(type))
         {
             List<uint> entities = chunk.Entities;
             for (uint e = 0; e < entities.Count; e++)
