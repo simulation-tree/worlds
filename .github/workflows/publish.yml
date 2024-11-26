@@ -43,6 +43,9 @@ jobs:
       - name: Build Generator
         run: dotnet build "${{ github.event.repository.name }}/generator" -c Release /p:Version=${VERSION}
       
+      - name: Build Source
+        run: dotnet build "${{ github.event.repository.name }}/source" -c Release /p:Version=${VERSION}
+
       - name: Test
         run: dotnet test "${{ github.event.repository.name }}/tests" -c Release
 
@@ -51,6 +54,9 @@ jobs:
 
       - name: Pack Generator
         run: dotnet pack "${{ github.event.repository.name }}/generator" -c Release /p:Version=${VERSION} --no-build --output .
+
+      - name: Pack Source
+        run: dotnet pack "${{ github.event.repository.name }}/source" -c Release /p:Version=${VERSION} --no-build --output .
 
       - name: Add source
         run: dotnet nuget add source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --name github --username ${{ github.repository_owner }} --password ${{ github.token }} --store-password-in-clear-text
@@ -62,5 +68,10 @@ jobs:
 
       - name: Push Generator
         run: dotnet nuget push Simulation.Generator.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
+        env:
+          NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
+
+      - name: Push Source
+        run: dotnet nuget push Simulation.Source.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
         env:
           NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
