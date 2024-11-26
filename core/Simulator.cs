@@ -93,12 +93,22 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Updates all systems forward, then all programs.
+        /// Updates all systems then all programs forward by
+        /// <paramref name="delta"/> amount of time.
         /// </summary>
         public readonly void Update(TimeSpan delta)
         {
             UpdateSystems(delta);
             UpdatePrograms(delta);
+        }
+
+        /// <summary>
+        /// Updates all systems then all programs without advancing their time.
+        /// </summary>
+        public readonly void Update()
+        {
+            UpdateSystems(TimeSpan.Zero);
+            UpdatePrograms(TimeSpan.Zero);
         }
 
         /// <summary>

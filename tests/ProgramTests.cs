@@ -2,22 +2,25 @@
 using System;
 using System.Runtime.InteropServices;
 using Unmanaged;
+using Unmanaged.Tests;
 
 namespace Simulation.Tests
 {
-    public class ProgramTests : SimulatorTests
+    public class ProgramTests : UnmanagedTests
     {
         [Test]
         public void SimpleProgram()
         {
-            Program program = Program.Create<Calculator>(World);
+            using World world = new();
+            using Simulator simulator = new(world);
+            Program program = Program.Create<Calculator>(world);
 
             Assert.That(program.State, Is.EqualTo(ProgramState.Uninitialized));
 
             uint returnCode;
             do
             {
-                Simulator.Update(TimeSpan.Zero);
+                simulator.Update();
 
                 ref Calculator calculator = ref program.Read<Calculator>();
                 Console.WriteLine(calculator.value);
@@ -32,16 +35,18 @@ namespace Simulation.Tests
         [Test]
         public void ExitEarly()
         {
-            Program program = Program.Create<Calculator>(World);
+            using World world = new();
+            using Simulator simulator = new(world);
+            Program program = Program.Create<Calculator>(world);
 
             Assert.That(program.State, Is.EqualTo(ProgramState.Uninitialized));
 
-            Simulator.Update(TimeSpan.Zero); //to invoke the initializer and update
+            simulator.Update(); //to invoke the initializer and update
             ref Calculator calculator = ref program.Read<Calculator>();
 
             Assert.That(calculator.state.ToString(), Is.EqualTo("Running2"));
             program.Dispose();
-            Simulator.Update(TimeSpan.Zero); //to invoke the finisher
+            simulator.Update(); //to invoke the finisher
 
             Assert.That(calculator.value, Is.EqualTo(2));
             Assert.That(calculator.state.ToString(), Is.EqualTo("Finished0"));

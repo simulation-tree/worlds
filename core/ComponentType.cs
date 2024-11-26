@@ -25,7 +25,7 @@ namespace Simulation
         [Obsolete("Default constructor not supported", true)]
         public ComponentType()
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         internal ComponentType(byte value)
@@ -35,13 +35,24 @@ namespace Simulation
 
         public readonly override string ToString()
         {
-            return SystemType.ToString();
+            USpan<char> buffer = stackalloc char[256];
+            uint length = ToString(buffer);
+            return buffer.Slice(0, length).ToString();
         }
 
         public readonly uint ToString(USpan<char> buffer)
         {
+            USpan<char> namespac = Namespace;
             USpan<char> name = Name;
-            return name.CopyTo(buffer);
+            uint length = 0;
+            if (namespac.Length > 0)
+            {
+                length += namespac.CopyTo(buffer);
+                buffer[length++] = '.';
+            }
+
+            length += name.CopyTo(buffer.Slice(length));
+            return length;
         }
 
         public readonly override bool Equals(object? obj)
@@ -78,7 +89,12 @@ namespace Simulation
         public static ComponentType Get<T>() where T : unmanaged
         {
             ThrowIfTypeDoesntExist<T>();
-            return systemTypeToType[typeof(T)];
+            return TypeCache<T>.type;
+        }
+
+        internal static class TypeCache<T> where T : unmanaged
+        {
+            internal static readonly ComponentType type = systemTypeToType[typeof(T)];
         }
 
         [Conditional("DEBUG")]
