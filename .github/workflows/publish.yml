@@ -72,6 +72,6 @@ jobs:
           NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
 
       - name: Push Source
-        run: dotnet nuget push Simulation.Source.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
+        run: dotnet nuget push Simulation.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
         env:
           NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
