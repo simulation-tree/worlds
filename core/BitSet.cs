@@ -15,11 +15,14 @@ namespace Simulation
     [StructLayout(LayoutKind.Explicit)]
     public unsafe struct BitSet : IEquatable<BitSet>
     {
+        /// <summary>
+        /// Maximum amount of bits in the bit set.
+        /// </summary>
         public const byte Capacity = byte.MaxValue;
 
 #if NET
         [FieldOffset(0)]
-        private Vector256<ulong> data;
+        private readonly Vector256<ulong> data;
 #endif
 
         [FieldOffset(0)]
@@ -63,39 +66,41 @@ namespace Simulation
             }
         }
 
-        public readonly ulong A => a;
-        public readonly ulong B => b;
-        public readonly ulong C => c;
-        public readonly ulong D => d;
-
-        public BitSet(params byte[] values)
+        /// <summary>
+        /// Creates a bit set with 1s set at positions in <paramref name="positions"/>.
+        /// </summary>
+        public BitSet(params byte[] positions)
         {
             a = default;
             b = default;
             c = default;
             d = default;
-            ThrowIfOutOfRange((uint)values.Length);
-            for (uint i = 0; i < values.Length; i++)
+            ThrowIfOutOfRange((uint)positions.Length);
+            for (uint i = 0; i < positions.Length; i++)
             {
-                byte index = values[i];
+                byte index = positions[i];
                 Set(index);
             }
         }
 
-        public BitSet(USpan<byte> values)
+        /// <summary>
+        /// Creates a bit set with 1s set at positions in <paramref name="positions"/>.
+        /// </summary>
+        public BitSet(USpan<byte> positions)
         {
             a = default;
             b = default;
             c = default;
             d = default;
-            ThrowIfOutOfRange(values.Length);
-            for (uint i = 0; i < values.Length; i++)
+            ThrowIfOutOfRange(positions.Length);
+            for (uint i = 0; i < positions.Length; i++)
             {
-                byte index = values[i];
+                byte index = positions[i];
                 Set(index);
             }
         }
 
+        /// <inheritdoc/>
         public readonly override string ToString()
         {
             USpan<char> buffer = stackalloc char[Capacity];
@@ -103,6 +108,9 @@ namespace Simulation
             return buffer.ToString();
         }
 
+        /// <summary>
+        /// Builds a string representation of this bit set.
+        /// </summary>
         public readonly uint ToString(USpan<char> buffer)
         {
             uint count = 0;

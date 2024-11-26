@@ -6,6 +6,9 @@ using Unmanaged;
 
 namespace Simulation.Unsafe
 {
+    /// <summary>
+    /// Opaque pointer implementation of a <see cref="World"/>.
+    /// </summary>
     public unsafe struct UnsafeWorld
     {
 #if DEBUG
@@ -13,17 +16,28 @@ namespace Simulation.Unsafe
 #endif
 
         /// <summary>
-        /// Invoked after any entity is created in any world.
+        /// Invoked after any entity is created.
         /// </summary>
         public static event EntityCreatedCallback EntityCreated = delegate { };
 
         /// <summary>
-        /// Invoked after any entity is destroyed from any world.
+        /// Invoked after any entity is destroyed.
         /// </summary>
         public static event EntityDestroyedCallback EntityDestroyed = delegate { };
 
+        /// <summary>
+        /// Invoked after any entity's parent is changed.
+        /// </summary>
         public static event EntityParentChangedCallback EntityParentChanged = delegate { };
+
+        /// <summary>
+        /// Invoked after any component is added to any entity.
+        /// </summary>
         public static event ComponentAddedCallback ComponentAdded = delegate { };
+
+        /// <summary>
+        /// Invoked after any component is removed from any entity.
+        /// </summary>
         public static event ComponentRemovedCallback ComponentRemoved = delegate { };
 
         private UnsafeList* slots;
@@ -37,6 +51,11 @@ namespace Simulation.Unsafe
             this.components = components;
         }
 
+        /// <summary>
+        /// Throws an <see cref="NullReferenceException"/> if the given <paramref name="entity"/> is missing.
+        /// </summary>
+        /// <exception cref="InvalidOperationException"></exception>
+        /// <exception cref="NullReferenceException"></exception>
         [Conditional("DEBUG")]
         public static void ThrowIfEntityIsMissing(UnsafeWorld* world, uint entity)
         {
@@ -59,6 +78,10 @@ namespace Simulation.Unsafe
             }
         }
 
+        /// <summary>
+        /// Throws an <see cref="NullReferenceException"/> if the given <paramref name="reference"/> is missing.
+        /// </summary>
+        /// <exception cref="NullReferenceException"></exception>
         [Conditional("DEBUG")]
         public static void ThrowIfReferenceIsMissing(UnsafeWorld* world, uint entity, rint reference)
         {
@@ -69,6 +92,11 @@ namespace Simulation.Unsafe
             }
         }
 
+        /// <summary>
+        /// Throws an <see cref="NullReferenceException"/> if the given <paramref name="referencedEntity"/> is not 
+        /// referenced by <paramref name="entity"/>.
+        /// </summary>
+        /// <exception cref="NullReferenceException"></exception>
         [Conditional("DEBUG")]
         public static void ThrowIfReferenceIsMissing(UnsafeWorld* world, uint entity, uint referencedEntity)
         {
@@ -82,6 +110,10 @@ namespace Simulation.Unsafe
             }
         }
 
+        /// <summary>
+        /// Throws an <see cref="InvalidOperationException"/> if the given <paramref name="entity"/> is already present.
+        /// </summary>
+        /// <exception cref="InvalidOperationException"></exception>
         [Conditional("DEBUG")]
         public static void ThrowIfEntityIsAlreadyPresent(UnsafeWorld* world, uint entity)
         {
@@ -102,50 +134,71 @@ namespace Simulation.Unsafe
             }
         }
 
+        /// <summary>
+        /// Throws an <see cref="InvalidOperationException"/> if the given <paramref name="componentType"/> is missing from <paramref name="entity"/>.
+        /// </summary>
+        /// <exception cref="NullReferenceException"></exception>
         [Conditional("DEBUG")]
-        public static void ThrowIfComponentMissing(UnsafeWorld* world, uint entity, ComponentType type)
+        public static void ThrowIfComponentMissing(UnsafeWorld* world, uint entity, ComponentType componentType)
         {
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
             Dictionary<int, ComponentChunk> components = GetComponentChunks(world);
             ComponentChunk chunk = components[slot.chunkKey];
-            if (!chunk.ContainsType(type))
+            if (!chunk.ContainsType(componentType))
             {
-                throw new NullReferenceException($"Component `{type}` not found on `{entity}`");
+                throw new NullReferenceException($"Component `{componentType}` not found on `{entity}`");
             }
         }
 
+        /// <summary>
+        /// Throws an <see cref="InvalidOperationException"/> if the given <paramref name="componentType"/> is already present on <paramref name="entity"/>.
+        /// </summary>
+        /// <exception cref="InvalidOperationException"></exception>
         [Conditional("DEBUG")]
-        public static void ThrowIfComponentAlreadyPresent(UnsafeWorld* world, uint entity, ComponentType type)
+        public static void ThrowIfComponentAlreadyPresent(UnsafeWorld* world, uint entity, ComponentType componentType)
         {
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
             Dictionary<int, ComponentChunk> components = GetComponentChunks(world);
             ComponentChunk chunk = components[slot.chunkKey];
-            if (chunk.ContainsType(type))
+            if (chunk.ContainsType(componentType))
             {
-                throw new InvalidOperationException($"Component `{type}` already present on `{entity}`");
+                throw new InvalidOperationException($"Component `{componentType}` already present on `{entity}`");
             }
         }
 
+        /// <summary>
+        /// Throws an <see cref="NullReferenceException"/> if the given <paramref name="entity"/> is missing
+        /// the given <paramref name="arrayType"/>.
+        /// </summary>
+        /// <exception cref="NullReferenceException"></exception>
         [Conditional("DEBUG")]
-        public static void ThrowIfArrayIsMissing(UnsafeWorld* world, uint entity, ArrayType type)
+        public static void ThrowIfArrayIsMissing(UnsafeWorld* world, uint entity, ArrayType arrayType)
         {
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
-            if (!slot.arrayTypes.Contains(type))
+            if (!slot.arrayTypes.Contains(arrayType))
             {
-                throw new NullReferenceException($"Array of type `{type}` not found on entity `{entity}`");
+                throw new NullReferenceException($"Array of type `{arrayType}` not found on entity `{entity}`");
             }
         }
 
+        /// <summary>
+        /// Throws an <see cref="InvalidOperationException"/> if the given <paramref name="entity"/> already
+        /// has the given <paramref name="arrayType"/>.
+        /// </summary>
+        /// <exception cref="InvalidOperationException"></exception>
         [Conditional("DEBUG")]
-        public static void ThrowIfArrayIsAlreadyPresent(UnsafeWorld* world, uint entity, ArrayType type)
+        public static void ThrowIfArrayIsAlreadyPresent(UnsafeWorld* world, uint entity, ArrayType arrayType)
         {
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
-            if (slot.arrayTypes.Contains(type))
+            if (slot.arrayTypes.Contains(arrayType))
             {
-                throw new InvalidOperationException($"Array of type `{type}` already present on `{entity}`");
+                throw new InvalidOperationException($"Array of type `{arrayType}` already present on `{entity}`");
             }
         }
 
+        /// <summary>
+        /// Retrieves entity slots list.
+        /// </summary>
         public static List<EntitySlot> GetEntitySlots(UnsafeWorld* world)
         {
             Allocations.ThrowIfNull(world);
@@ -153,6 +206,9 @@ namespace Simulation.Unsafe
             return new(world->slots);
         }
 
+        /// <summary>
+        /// Retrieves free entities list.
+        /// </summary>
         public static List<uint> GetFreeEntities(UnsafeWorld* world)
         {
             Allocations.ThrowIfNull(world);
@@ -160,6 +216,9 @@ namespace Simulation.Unsafe
             return new(world->freeEntities);
         }
 
+        /// <summary>
+        /// Retrieves component chunks dictionary.
+        /// </summary>
         public static Dictionary<int, ComponentChunk> GetComponentChunks(UnsafeWorld* world)
         {
             Allocations.ThrowIfNull(world);
@@ -167,6 +226,9 @@ namespace Simulation.Unsafe
             return new(world->components);
         }
 
+        /// <summary>
+        /// Allocates a new <see cref="UnsafeWorld"/> instance.
+        /// </summary>
         public static UnsafeWorld* Allocate()
         {
             UnsafeList* slots = UnsafeList.Allocate<EntitySlot>(4);
@@ -184,6 +246,9 @@ namespace Simulation.Unsafe
             return world;
         }
 
+        /// <summary>
+        /// Frees the given <paramref name="world"/> instance.
+        /// </summary>
         public static void Free(ref UnsafeWorld* world)
         {
             Allocations.ThrowIfNull(world);
@@ -195,6 +260,9 @@ namespace Simulation.Unsafe
             Allocations.Free(ref world);
         }
 
+        /// <summary>
+        /// Clears all entities from the given <paramref name="world"/>.
+        /// </summary>
         public static void ClearEntities(UnsafeWorld* world)
         {
             Allocations.ThrowIfNull(world);
@@ -255,6 +323,9 @@ namespace Simulation.Unsafe
             UnsafeList.Clear(world->freeEntities);
         }
 
+        /// <summary>
+        /// Destroys the given <paramref name="world"/> instance.
+        /// </summary>
         public static void DestroyEntity(UnsafeWorld* world, uint entity, bool destroyChildren = true)
         {
             Allocations.ThrowIfNull(world);
@@ -325,6 +396,9 @@ namespace Simulation.Unsafe
             NotifyDestruction(new(world), entity);
         }
 
+        /// <summary>
+        /// Retrieves the parent of the given <paramref name="entity"/>.
+        /// </summary>
         public static uint GetParent(UnsafeWorld* world, uint entity)
         {
             Allocations.ThrowIfNull(world);
@@ -334,6 +408,9 @@ namespace Simulation.Unsafe
             return slot.parent;
         }
 
+        /// <summary>
+        /// Assigns the given <paramref name="parent"/> to the given <paramref name="entity"/>.
+        /// </summary>
         public static bool SetParent(UnsafeWorld* world, uint entity, uint parent)
         {
             Allocations.ThrowIfNull(world);
@@ -374,27 +451,35 @@ namespace Simulation.Unsafe
 
             if (parent == default || !ContainsEntity(world, parent))
             {
-                slot.parent = default;
-                NotifyParentChange(new(world), entity, default);
+                if (slot.parent != default)
+                {
+                    slot.parent = default;
+                    NotifyParentChange(new(world), entity, default);
+                }
+
                 return false;
             }
             else
             {
-                slot.parent = parent;
-                ref EntitySlot newParentSlot = ref UnsafeList.GetRef<EntitySlot>(world->slots, parent - 1);
-                if (newParentSlot.childCount == 0)
+                if (slot.parent != parent)
                 {
-                    newParentSlot.children = new(1);
+                    slot.parent = parent;
+                    ref EntitySlot newParentSlot = ref UnsafeList.GetRef<EntitySlot>(world->slots, parent - 1);
+                    if (newParentSlot.childCount == 0)
+                    {
+                        newParentSlot.children = new(1);
+                    }
+
+                    newParentSlot.children.Add(entity);
+                    newParentSlot.childCount++;
+                    if (newParentSlot.state == EntitySlot.State.Disabled || newParentSlot.state == EntitySlot.State.EnabledButDisabledDueToAncestor)
+                    {
+                        slot.state = EntitySlot.State.EnabledButDisabledDueToAncestor;
+                    }
+
+                    NotifyParentChange(new(world), entity, parent);
                 }
 
-                newParentSlot.children.Add(entity);
-                newParentSlot.childCount++;
-                if (newParentSlot.state == EntitySlot.State.Disabled || newParentSlot.state == EntitySlot.State.EnabledButDisabledDueToAncestor)
-                {
-                    slot.state = EntitySlot.State.EnabledButDisabledDueToAncestor;
-                }
-
-                NotifyParentChange(new(world), entity, parent);
                 return true;
             }
         }
@@ -506,6 +591,9 @@ namespace Simulation.Unsafe
 #endif
         }
 
+        /// <summary>
+        /// Checks if the given <paramref name="world"/> contains the given <paramref name="entity"/>.
+        /// </summary>
         public static bool ContainsEntity(UnsafeWorld* world, uint entity)
         {
             Allocations.ThrowIfNull(world);
@@ -520,6 +608,9 @@ namespace Simulation.Unsafe
             return slot.entity == entity;
         }
 
+        /// <summary>
+        /// Creates an array of the given <paramref name="arrayType"/> for the given <paramref name="entity"/>.
+        /// </summary>
         public static void* CreateArray(UnsafeWorld* world, uint entity, ArrayType arrayType, uint length)
         {
             Allocations.ThrowIfNull(world);
@@ -540,6 +631,9 @@ namespace Simulation.Unsafe
             return slot.arrays[arrayType];
         }
 
+        /// <summary>
+        /// Checks if the given <paramref name="entity"/> contains an array of the given <paramref name="arrayType"/>.
+        /// </summary>
         public static bool ContainsArray(UnsafeWorld* world, uint entity, ArrayType arrayType)
         {
             Allocations.ThrowIfNull(world);
@@ -549,6 +643,9 @@ namespace Simulation.Unsafe
             return slot.arrayTypes.Contains(arrayType);
         }
 
+        /// <summary>
+        /// Retrieves the array of the given <paramref name="arrayType"/> for the given <paramref name="entity"/>.
+        /// </summary>
         public static void* GetArray(UnsafeWorld* world, uint entity, ArrayType arrayType, out uint length)
         {
             Allocations.ThrowIfNull(world);
@@ -560,6 +657,9 @@ namespace Simulation.Unsafe
             return slot.arrays[arrayType];
         }
 
+        /// <summary>
+        /// Retrieves the length of the array of the given <paramref name="arrayType"/> for the given <paramref name="entity"/>.
+        /// </summary>
         public static uint GetArrayLength(UnsafeWorld* world, uint entity, ArrayType arrayType)
         {
             Allocations.ThrowIfNull(world);
@@ -570,6 +670,9 @@ namespace Simulation.Unsafe
             return slot.arrayLengths[arrayType];
         }
 
+        /// <summary>
+        /// Resizes the array of the given <paramref name="arrayType"/> for the given <paramref name="entity"/>.
+        /// </summary>
         public static void* ResizeArray(UnsafeWorld* world, uint entity, ArrayType arrayType, uint newLength)
         {
             Allocations.ThrowIfNull(world);
@@ -583,6 +686,9 @@ namespace Simulation.Unsafe
             return array;
         }
 
+        /// <summary>
+        /// Destroys the array of the given <paramref name="arrayType"/> for the given <paramref name="entity"/>.
+        /// </summary>
         public static void DestroyArray(UnsafeWorld* world, uint entity, ArrayType arrayType)
         {
             Allocations.ThrowIfNull(world);
@@ -601,6 +707,9 @@ namespace Simulation.Unsafe
             }
         }
 
+        /// <summary>
+        /// Adds a new component of the given <paramref name="componentType"/> to the given <paramref name="entity"/>.
+        /// </summary>
         public static USpan<byte> AddComponent(UnsafeWorld* world, uint entity, ComponentType componentType)
         {
             Allocations.ThrowIfNull(world);
@@ -626,6 +735,9 @@ namespace Simulation.Unsafe
             return destinationChunk.GetComponentBytes(index, componentType);
         }
 
+        /// <summary>
+        /// Adds a new component of the given <typeparamref name="T"/> type to the given <paramref name="entity"/>.
+        /// </summary>
         public static ref T AddComponent<T>(UnsafeWorld* world, uint entity) where T : unmanaged
         {
             Allocations.ThrowIfNull(world);
@@ -653,35 +765,44 @@ namespace Simulation.Unsafe
             return ref destinationChunk.GetComponentRef<T>(index);
         }
 
-        public static void SetComponentBytes(UnsafeWorld* world, uint entity, ComponentType type, USpan<byte> bytes)
+        /// <summary>
+        /// Assigns the given <paramref name="bytes"/> to the component of the given <paramref name="componentType"/> on the given <paramref name="entity"/>.
+        /// </summary>
+        public static void SetComponentBytes(UnsafeWorld* world, uint entity, ComponentType componentType, USpan<byte> bytes)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
-            ThrowIfComponentMissing(world, entity, type);
+            ThrowIfComponentMissing(world, entity, componentType);
 
             Dictionary<int, ComponentChunk> components = GetComponentChunks(world);
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
             ComponentChunk chunk = components[slot.chunkKey];
-            chunk.SetComponentBytes(entity, type, bytes);
+            chunk.SetComponentBytes(entity, componentType, bytes);
         }
 
+        /// <summary>
+        /// Removes the component of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
+        /// </summary>
         public static void RemoveComponent<T>(UnsafeWorld* world, uint entity) where T : unmanaged
         {
             RemoveComponent(world, entity, ComponentType.Get<T>());
         }
 
-        public static void RemoveComponent(UnsafeWorld* world, uint entity, ComponentType type)
+        /// <summary>
+        /// Removes the component of the given <paramref name="componentType"/> from the given <paramref name="entity"/>.
+        /// </summary>
+        public static void RemoveComponent(UnsafeWorld* world, uint entity, ComponentType componentType)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
-            ThrowIfComponentMissing(world, entity, type);
+            ThrowIfComponentMissing(world, entity, componentType);
 
             Dictionary<int, ComponentChunk> components = GetComponentChunks(world);
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
             int previousChunkKey = slot.chunkKey;
             ComponentChunk previousChunk = components[previousChunkKey];
             BitSet newComponentTypes = previousChunk.TypesMask;
-            newComponentTypes.Clear(type);
+            newComponentTypes.Clear(componentType);
             int newChunkKey = newComponentTypes.GetHashCode();
             slot.chunkKey = newChunkKey;
 
@@ -692,10 +813,13 @@ namespace Simulation.Unsafe
             }
 
             previousChunk.MoveEntity(entity, destinationChunk);
-            NotifyComponentRemoved(new(world), entity, type);
+            NotifyComponentRemoved(new(world), entity, componentType);
         }
 
-        public static bool ContainsComponent(UnsafeWorld* world, uint entity, ComponentType type)
+        /// <summary>
+        /// Checks if the given <paramref name="entity"/> contains a component of the given <paramref name="componentType"/>.
+        /// </summary>
+        public static bool ContainsComponent(UnsafeWorld* world, uint entity, ComponentType componentType)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
@@ -704,9 +828,12 @@ namespace Simulation.Unsafe
             Dictionary<int, ComponentChunk> components = GetComponentChunks(world);
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, index);
             ComponentChunk chunk = components[slot.chunkKey];
-            return chunk.ContainsType(type);
+            return chunk.ContainsType(componentType);
         }
 
+        /// <summary>
+        /// Retrieves the component of the given <typeparamref name="T"/> type from <paramref name="entity"/>.
+        /// </summary>
         public static ref T GetComponentRef<T>(UnsafeWorld* world, uint entity) where T : unmanaged
         {
             Allocations.ThrowIfNull(world);
@@ -722,17 +849,20 @@ namespace Simulation.Unsafe
             return ref chunk.GetComponentRef<T>(index);
         }
 
-        public static USpan<byte> GetComponentBytes(UnsafeWorld* world, uint entity, ComponentType type)
+        /// <summary>
+        /// Retrieves the bytes of the component of the given <paramref name="componentType"/> from <paramref name="entity"/>.
+        /// </summary>
+        public static USpan<byte> GetComponentBytes(UnsafeWorld* world, uint entity, ComponentType componentType)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
-            ThrowIfComponentMissing(world, entity, type);
+            ThrowIfComponentMissing(world, entity, componentType);
 
             Dictionary<int, ComponentChunk> components = GetComponentChunks(world);
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
             ComponentChunk chunk = components[slot.chunkKey];
             uint index = chunk.Entities.IndexOf(entity);
-            return chunk.GetComponentBytes(index, type);
+            return chunk.GetComponentBytes(index, componentType);
         }
 
         internal static void NotifyCreation(World world, uint entity)

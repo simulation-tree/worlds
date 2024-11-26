@@ -8,32 +8,68 @@ using Unmanaged;
 
 namespace Simulation
 {
+    /// <summary>
+    /// A simulator that manages systems and programs.
+    /// </summary>
     public unsafe struct Simulator : IDisposable
     {
         private UnsafeSimulator* value;
 
+        /// <summary>
+        /// The world that this simulator was created in.
+        /// </summary>
         public readonly World World => UnsafeSimulator.GetWorld(value);
+
+        /// <summary>
+        /// Checks if this simulator is disposed.
+        /// </summary>
         public readonly bool IsDisposed => value is null;
+
+        /// <summary>
+        /// Native address of this simulator.
+        /// </summary>
         public readonly nint Address => (nint)value;
+
+        /// <summary>
+        /// Count of systems added in this simulator.
+        /// </summary>
         public readonly uint SystemCount => UnsafeSimulator.GetSystems(value).Length;
+
+        /// <summary>
+        /// All known programs.
+        /// </summary>
         public readonly USpan<ProgramContainer> Programs => UnsafeSimulator.GetKnownPrograms(value).AsSpan();
 
+#if NET
+        /// <summary>
+        /// Not supported.
+        /// </summary>
         [Obsolete("Default constructor not supported", true)]
         public Simulator()
         {
             throw new NotImplementedException();
         }
+#endif
 
+        /// <summary>
+        /// Initializes an existing simulator from the given <paramref name="address"/>.
+        /// </summary>
         public Simulator(nint address)
         {
             value = (UnsafeSimulator*)address;
         }
 
+        /// <summary>
+        /// Creates a new simulator with the given <paramref name="world"/>.
+        /// </summary>
         public Simulator(World world)
         {
             value = UnsafeSimulator.Allocate(world);
         }
 
+        /// <summary>
+        /// Finalizes programs, disposes systems and the simulator itself.
+        /// </summary>
         public void Dispose()
         {
             InitializeSystems();
@@ -275,12 +311,18 @@ namespace Simulation
             return UnsafeSimulator.AddSystem<T>(value);
         }
 
+        /// <summary>
+        /// Removes a system from the simulator.
+        /// </summary>
         public readonly void RemoveSystem<T>() where T : unmanaged, ISystem
         {
             ThrowIfSystemIsMissing<T>();
             UnsafeSimulator.RemoveSystem<T>(value);
         }
 
+        /// <summary>
+        /// Checks if the given system type <typeparamref name="T"/> is registered in the simulator.
+        /// </summary>
         public readonly bool ContainsSystem<T>() where T : unmanaged, ISystem
         {
             nint systemType = RuntimeTypeHandle.ToIntPtr(typeof(T).TypeHandle);
@@ -297,6 +339,13 @@ namespace Simulation
             return false;
         }
 
+        /// <summary>
+        /// Retrieves the system container of the given <typeparamref name="T"/>.
+        /// <para>
+        /// May throw an <see cref="NullReferenceException"/> if the system is not registered.
+        /// </para>
+        /// </summary>
+        /// <exception cref="NullReferenceException"></exception>
         public readonly SystemContainer<T> GetSystem<T>() where T : unmanaged, ISystem
         {
             nint systemType = RuntimeTypeHandle.ToIntPtr(typeof(T).TypeHandle);
@@ -310,9 +359,13 @@ namespace Simulation
                 }
             }
 
-            throw new InvalidOperationException($"System `{typeof(T)}` is not registered in the simulator");
+            throw new NullReferenceException($"System `{typeof(T)}` is not registered in the simulator");
         }
 
+        /// <summary>
+        /// Throws an <see cref="InvalidOperationException"/> if the given <typeparamref name="T"/> has already been registered.
+        /// </summary>
+        /// <exception cref="InvalidOperationException"></exception>
         [Conditional("DEBUG")]
         public readonly void ThrowIfSystemIsMissing<T>() where T : unmanaged, ISystem
         {

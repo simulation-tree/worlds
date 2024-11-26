@@ -19,16 +19,19 @@ namespace Simulation
             this.value = value;
         }
 
+        /// <inheritdoc/>
         public readonly override bool Equals(object? obj)
         {
             return obj is rint rint && Equals(rint);
         }
 
+        /// <inheritdoc/>
         public readonly bool Equals(rint other)
         {
             return value == other.value;
         }
 
+        /// <inheritdoc/>
         public unsafe readonly override string ToString()
         {
             USpan<char> buffer = stackalloc char[8];
@@ -36,31 +39,39 @@ namespace Simulation
             return buffer.Slice(0, length).ToString();
         }
 
+        /// <summary>
+        /// Builds a string representation of this <see cref="rint"/> value.
+        /// </summary>
         public readonly uint ToString(USpan<char> buffer)
         {
             return value.ToString(buffer);
         }
 
+        /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
             return HashCode.Combine(value);
         }
 
+        /// <inheritdoc/>
         public static bool operator ==(rint left, rint right)
         {
             return left.Equals(right);
         }
 
+        /// <inheritdoc/>
         public static bool operator !=(rint left, rint right)
         {
             return !(left == right);
         }
 
+        /// <inheritdoc/>
         public static explicit operator uint(rint value)
         {
             return value.value;
         }
 
+        /// <inheritdoc/>
         public static explicit operator rint(uint value)
         {
             return new rint(value);

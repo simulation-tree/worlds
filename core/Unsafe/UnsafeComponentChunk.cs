@@ -6,6 +6,9 @@ using Unmanaged;
 
 namespace Simulation.Unsafe
 {
+    /// <summary>
+    /// Opaque pointer implementation of a <see cref="ComponentChunk"/>.
+    /// </summary>
     public unsafe struct UnsafeComponentChunk
     {
         private List<uint> entities;
@@ -21,6 +24,9 @@ namespace Simulation.Unsafe
             this.typeMask = componentTypesMask;
         }
 
+        /// <summary>
+        /// Allocates a new <see cref="UnsafeComponentChunk"/> with the given <paramref name="componentTypesMask"/>.
+        /// </summary>
         public static UnsafeComponentChunk* Allocate(BitSet componentTypesMask)
         {
             Array<nint> componentArrays = new(BitSet.Capacity);
@@ -43,6 +49,9 @@ namespace Simulation.Unsafe
             return chunk;
         }
 
+        /// <summary>
+        /// Frees the given <paramref name="chunk"/>.
+        /// </summary>
         public static void Free(ref UnsafeComponentChunk* chunk)
         {
             Allocations.ThrowIfNull(chunk);
@@ -61,6 +70,9 @@ namespace Simulation.Unsafe
             Allocations.Free(ref chunk);
         }
 
+        /// <summary>
+        /// Retrieves the list of entities stored.
+        /// </summary>
         public static List<uint> GetEntities(UnsafeComponentChunk* chunk)
         {
             Allocations.ThrowIfNull(chunk);
@@ -68,6 +80,9 @@ namespace Simulation.Unsafe
             return chunk->entities;
         }
 
+        /// <summary>
+        /// Retrieves the <see cref="BitSet"/> representing the types of components in the chunk.
+        /// </summary>
         public static BitSet GetTypesMask(UnsafeComponentChunk* chunk)
         {
             Allocations.ThrowIfNull(chunk);
@@ -75,6 +90,9 @@ namespace Simulation.Unsafe
             return chunk->typeMask;
         }
 
+        /// <summary>
+        /// Adds a new entity to the chunk.
+        /// </summary>
         public static uint Add(UnsafeComponentChunk* chunk, uint entity)
         {
             Allocations.ThrowIfNull(chunk);
@@ -91,6 +109,9 @@ namespace Simulation.Unsafe
             return chunk->entities.Count - 1;
         }
 
+        /// <summary>
+        /// Removes the <paramref name="entity"/> from the chunk.
+        /// </summary>
         public static void Remove(UnsafeComponentChunk* chunk, uint entity)
         {
             Allocations.ThrowIfNull(chunk);
@@ -106,6 +127,10 @@ namespace Simulation.Unsafe
             }
         }
 
+        /// <summary>
+        /// Moves the <paramref name="entity"/> and all of its components to the <paramref name="destination"/> chunk.
+        /// </summary>
+        /// <returns>New local index in the <paramref name="destination"/> chunk.</returns>
         public static uint Move(UnsafeComponentChunk* source, uint entity, UnsafeComponentChunk* destination)
         {
             Allocations.ThrowIfNull(source);
@@ -144,20 +169,23 @@ namespace Simulation.Unsafe
             return newIndex;
         }
 
-        public static UnsafeList* GetComponents(UnsafeComponentChunk* chunk, ComponentType type)
+        /// <summary>
+        /// Retrieves a list of components of the given <paramref name="componentType"/>.
+        /// </summary>
+        public static UnsafeList* GetComponents(UnsafeComponentChunk* chunk, ComponentType componentType)
         {
             Allocations.ThrowIfNull(chunk);
-            ThrowIfComponentTypeIsMissing(chunk, type);
+            ThrowIfComponentTypeIsMissing(chunk, componentType);
 
-            return (UnsafeList*)chunk->componentArrays[type];
+            return (UnsafeList*)chunk->componentArrays[componentType];
         }
 
         [Conditional("DEBUG")]
-        private static void ThrowIfComponentTypeIsMissing(UnsafeComponentChunk* chunk, ComponentType type)
+        private static void ThrowIfComponentTypeIsMissing(UnsafeComponentChunk* chunk, ComponentType componentType)
         {
-            if (!chunk->typeMask.Contains(type))
+            if (!chunk->typeMask.Contains(componentType))
             {
-                throw new ArgumentException($"Component type `{type}` is missing from the chunk");
+                throw new ArgumentException($"Component type `{componentType}` is missing from the chunk");
             }
         }
     }

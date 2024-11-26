@@ -8,13 +8,28 @@ namespace Simulation
     /// </summary>
     public struct Instruction : IDisposable, ISerializable, IEquatable<Instruction>
     {
+        /// <summary>
+        /// The type of this instruction.
+        /// </summary>
         public readonly Type type;
+
         private readonly ulong a;
         private readonly ulong b;
         private readonly ulong c;
 
+        /// <summary>
+        /// First parameter of the instruction.
+        /// </summary>
         public readonly ulong A => a;
+
+        /// <summary>
+        /// Second parameter of the instruction.
+        /// </summary>
         public readonly ulong B => b;
+
+        /// <summary>
+        /// Third parameter of the instruction.
+        /// </summary>
         public readonly ulong C => c;
 
         private Instruction(Type operation, ulong a, ulong b, ulong c)
@@ -25,6 +40,7 @@ namespace Simulation
             this.c = c;
         }
 
+        /// <inheritdoc/>
         public unsafe readonly void Dispose()
         {
             if (type == Type.AddComponent || type == Type.SetComponent || type == Type.CreateArray || type == Type.SetArrayElement)
@@ -34,6 +50,7 @@ namespace Simulation
             }
         }
 
+        /// <inheritdoc/>
         public unsafe readonly override string ToString()
         {
             USpan<char> buffer = stackalloc char[256];
@@ -41,6 +58,9 @@ namespace Simulation
             return buffer.Slice(0, length).ToString();
         }
 
+        /// <summary>
+        /// Builds a string representation of this instruction.
+        /// </summary>
         public unsafe readonly uint ToString(USpan<char> buffer)
         {
             uint length = 0;
@@ -413,6 +433,9 @@ namespace Simulation
             return new(Type.DestroyEntities, start, count, 0);
         }
 
+        /// <summary>
+        /// Empty the entity selection.
+        /// </summary>
         public static Instruction ClearSelection()
         {
             return new(Type.ClearSelection, 0, 0, 0);
@@ -454,6 +477,9 @@ namespace Simulation
             return new(Type.SetParent, 0, relativeOffset, 0);
         }
 
+        /// <summary>
+        /// Adds a reference to the <paramref name="entity"/> for all selected entities.
+        /// </summary>
         public static Instruction AddReference(uint entity)
         {
             return new(Type.AddReference, 1, entity, 0);
@@ -468,6 +494,9 @@ namespace Simulation
             return new(Type.AddReference, 0, relativeOffset, 0);
         }
 
+        /// <summary>
+        /// Removes the local <paramref name="reference"/> from selected entities.
+        /// </summary>
         public static Instruction RemoveReference(rint reference)
         {
             return new(Type.RemoveReference, reference.value, 0, 0);
@@ -481,29 +510,47 @@ namespace Simulation
             return AddComponent(component, out _);
         }
 
+        /// <summary>
+        /// Adds the given component to all entities inside the selection.
+        /// <para>
+        /// <paramref name="allocation"/> will contain the memory of the component.
+        /// </para>
+        /// </summary>
         public static Instruction AddComponent<T>(T component, out Allocation allocation) where T : unmanaged
         {
             allocation = Allocation.Create(component);
             return new(Type.AddComponent, ComponentType.Get<T>().value, (ulong)allocation.Address, 0);
         }
 
+        /// <summary>
+        /// Adds the given component to all entities inside the selection.
+        /// </summary>
         public static Instruction AddComponent(ComponentType componentType)
         {
             Allocation allocation = Allocation.Create(componentType.Size);
             return new(Type.AddComponent, componentType.value, (ulong)allocation.Address, 0);
         }
 
+        /// <summary>
+        /// Adds the given component to all entities inside the selection.
+        /// </summary>
         public static Instruction AddComponent(ComponentType componentType, USpan<byte> componentData)
         {
             Allocation allocation = Allocation.Create(componentData);
             return new(Type.AddComponent, componentType.value, (ulong)allocation.Address, 0);
         }
 
+        /// <summary>
+        /// Removes the component of the given type from the selected entities.
+        /// </summary>
         public static Instruction RemoveComponent<T>() where T : unmanaged
         {
             return RemoveComponent(ComponentType.Get<T>());
         }
 
+        /// <summary>
+        /// Removes the component of the given type from the selected entities.
+        /// </summary>
         public static Instruction RemoveComponent(ComponentType componentType)
         {
             return new(Type.RemoveComponent, componentType.value, 0, 0);
@@ -518,6 +565,9 @@ namespace Simulation
             return new(Type.SetComponent, ComponentType.Get<T>().value, (ulong)allocation.Address, 0);
         }
 
+        /// <summary>
+        /// Modifies the component of the given type on the selected entities.
+        /// </summary>
         public static Instruction SetComponent(ComponentType componentType, USpan<byte> componentData)
         {
             Allocation allocation = Allocation.Create(componentData);
@@ -532,28 +582,43 @@ namespace Simulation
             return CreateArray(ArrayType.Get<T>(), length);
         }
 
+        /// <summary>
+        /// Creates an array of the specified type and length for the selected entities.
+        /// </summary>
         public static Instruction CreateArray(ArrayType arrayType, uint length)
         {
             Allocation allocaton = new(arrayType.Size * length);
             return new(Type.CreateArray, arrayType.value, (ulong)(nint)allocaton, length);
         }
 
+        /// <summary>
+        /// Creates an array of the specified type and length for the selected entities.
+        /// </summary>
         public unsafe static Instruction CreateArray<T>(USpan<T> values) where T : unmanaged
         {
             Allocation allocation = Allocation.Create(values);
             return new(Type.CreateArray, ArrayType.Get<T>().value, (ulong)(nint)allocation, (uint)values.Length);
         }
 
+        /// <summary>
+        /// Destroys the array of the specified type for the selected entities.
+        /// </summary>
         public static Instruction DestroyArray<T>() where T : unmanaged
         {
             return DestroyArray(ArrayType.Get<T>());
         }
 
-        public static Instruction DestroyArray(ArrayType elementType)
+        /// <summary>
+        /// Destroys the array of the specified type for the selected entities.
+        /// </summary>
+        public static Instruction DestroyArray(ArrayType arrayType)
         {
-            return new(Type.DestroyArray, elementType.value, 0, 0);
+            return new(Type.DestroyArray, arrayType.value, 0, 0);
         }
 
+        /// <summary>
+        /// Sets the element at the given index in the array of the specified type.
+        /// </summary>
         public unsafe static Instruction SetArrayElement<T>(uint index, T element) where T : unmanaged
         {
             Allocation allocation = new(sizeof(uint) + TypeInfo<T>.size);
@@ -562,6 +627,9 @@ namespace Simulation
             return new(Type.SetArrayElement, ArrayType.Get<T>().value, (ulong)(nint)allocation, index);
         }
 
+        /// <summary>
+        /// Sets the element at the given index in the array of the specified type.
+        /// </summary>
         public unsafe static Instruction SetArrayElement<T>(uint index, USpan<T> elements) where T : unmanaged
         {
             Allocation allocation = new(sizeof(uint) + (TypeInfo<T>.size * elements.Length));
@@ -570,11 +638,17 @@ namespace Simulation
             return new(Type.SetArrayElement, ArrayType.Get<T>().value, (ulong)(nint)allocation, index);
         }
 
+        /// <summary>
+        /// Resizes the array of the specified type to the new length.
+        /// </summary>
         public static Instruction ResizeArray<T>(uint newLength) where T : unmanaged
         {
             return ResizeArray(ArrayType.Get<T>(), newLength);
         }
 
+        /// <summary>
+        /// Resizes the array of the specified type to the new length.
+        /// </summary>
         public static Instruction ResizeArray(ArrayType arrayType, uint newLength)
         {
             return new(Type.ResizeArray, arrayType.value, newLength, 0);
@@ -597,51 +671,109 @@ namespace Simulation
             this = new(operation, a, b, c);
         }
 
+        /// <inheritdoc/>
         public readonly override bool Equals(object? obj)
         {
             return obj is Instruction command && Equals(command);
         }
 
+        /// <inheritdoc/>
         public readonly bool Equals(Instruction other)
         {
             return type == other.type && a == other.a && b == other.b && c == other.c;
         }
 
+        /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
             return HashCode.Combine(type, a, b, c);
         }
 
+        /// <inheritdoc/>
         public static bool operator ==(Instruction left, Instruction right)
         {
             return left.Equals(right);
         }
 
+        /// <inheritdoc/>
         public static bool operator !=(Instruction left, Instruction right)
         {
             return !(left == right);
         }
 
+        /// <summary>
+        /// Identifier for the type of instruction.
+        /// </summary>
         public enum Type : byte
         {
+            /// <summary>
+            /// Creates entities.
+            /// </summary>
             CreateEntity,
+
+            /// <summary>
+            /// Destroys entities.
+            /// </summary>
             DestroyEntities,
 
+            /// <summary>
+            /// Clears selection.
+            /// </summary>
             ClearSelection,
+
+            /// <summary>
+            /// Selects entities.
+            /// </summary>
             SelectEntity,
 
+            /// <summary>
+            /// Assigns parents.
+            /// </summary>
             SetParent,
 
+            /// <summary>
+            /// Adds components.
+            /// </summary>
             AddComponent,
+
+            /// <summary>
+            /// Removes components.
+            /// </summary>
             RemoveComponent,
+
+            /// <summary>
+            /// Modifies components.
+            /// </summary>
             SetComponent,
 
+            /// <summary>
+            /// Creates arrays.
+            /// </summary>
             CreateArray,
+
+            /// <summary>
+            /// Destroys arrays.
+            /// </summary>
             DestroyArray,
+            
+            /// <summary>
+            /// Resizes arrays.
+            /// </summary>
             ResizeArray,
+
+            /// <summary>
+            /// Modifies elements in arrays.
+            /// </summary>
             SetArrayElement,
 
+            /// <summary>
+            /// Adds references.
+            /// </summary>
             AddReference,
+
+            /// <summary>
+            /// Removes references.
+            /// </summary>
             RemoveReference
         }
     }

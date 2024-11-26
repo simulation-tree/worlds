@@ -5,6 +5,9 @@ using Unmanaged;
 
 namespace Simulation
 {
+    /// <summary>
+    /// Represents an unmanaged component type usable with entities.
+    /// </summary>
     public readonly struct ComponentType : IEquatable<ComponentType>
     {
         private static readonly Dictionary<Type, ComponentType> systemTypeToType = new();
@@ -12,16 +15,44 @@ namespace Simulation
         private static readonly List<ushort> sizes = new();
         private static readonly List<ComponentType> all = new();
 
+        /// <summary>
+        /// All registered component types.
+        /// </summary>
         public static IReadOnlyList<ComponentType> All => all;
 
+        /// <summary>
+        /// Index of the component type within a <see cref="BitSet"/>.
+        /// </summary>
         public readonly byte value;
 
+        /// <summary>
+        /// Underlying <see cref="Type"/> that this component type represents.
+        /// </summary>
         public readonly Type SystemType => systemTypes[value];
+
+        /// <summary>
+        /// Name of the component type.
+        /// </summary>
         public readonly USpan<char> Name => SystemType.Name.AsUSpan();
+
+        /// <summary>
+        /// Full name of the component type in the format `{Namespace}.{Name}`.
+        /// </summary>
         public readonly USpan<char> FullName => (SystemType.FullName ?? string.Empty).AsUSpan();
+
+        /// <summary>
+        /// Namespace of the component type.
+        /// </summary>
         public readonly USpan<char> Namespace => (SystemType.Namespace ?? string.Empty).AsUSpan();
+
+        /// <summary>
+        /// Byte size of the component type.
+        /// </summary>
         public readonly ushort Size => sizes[value];
 
+        /// <summary>
+        /// Not supported.
+        /// </summary>
         [Obsolete("Default constructor not supported", true)]
         public ComponentType()
         {
@@ -33,6 +64,7 @@ namespace Simulation
             this.value = value;
         }
 
+        /// <inheritdoc/>
         public readonly override string ToString()
         {
             USpan<char> buffer = stackalloc char[256];
@@ -40,6 +72,9 @@ namespace Simulation
             return buffer.Slice(0, length).ToString();
         }
 
+        /// <summary>
+        /// Builds a string representation of this component type.
+        /// </summary>
         public readonly uint ToString(USpan<char> buffer)
         {
             USpan<char> namespac = Namespace;
@@ -55,21 +90,27 @@ namespace Simulation
             return length;
         }
 
+        /// <inheritdoc/>
         public readonly override bool Equals(object? obj)
         {
             return obj is Type type && Equals(type);
         }
 
+        /// <inheritdoc/>
         public readonly bool Equals(ComponentType other)
         {
             return value == other.value;
         }
 
+        /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
             return value.GetHashCode();
         }
 
+        /// <summary>
+        /// Registers or retrieves a component type for the given system type.
+        /// </summary>
         public static ComponentType Register<T>() where T : unmanaged
         {
             Type systemType = typeof(T);
@@ -86,6 +127,9 @@ namespace Simulation
             return type;
         }
 
+        /// <summary>
+        /// Retrieves a component type for the given system type.
+        /// </summary>
         public static ComponentType Get<T>() where T : unmanaged
         {
             ThrowIfTypeDoesntExist<T>();
@@ -97,6 +141,10 @@ namespace Simulation
             internal static readonly ComponentType type = systemTypeToType[typeof(T)];
         }
 
+        /// <summary>
+        /// Throws an <see cref="InvalidOperationException"/> if the given <typeparamref name="T"/> has already been registered.
+        /// </summary>
+        /// <exception cref="InvalidOperationException"></exception>
         [Conditional("DEBUG")]
         public static void ThrowIfTypeAlreadyExists<T>() where T : unmanaged
         {
@@ -106,6 +154,10 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Throws an <see cref="NullReferenceException"/> if the given <typeparamref name="T"/> is not registered.
+        /// </summary>
+        /// <exception cref="NullReferenceException"></exception>
         [Conditional("DEBUG")]
         public static void ThrowIfTypeDoesntExist<T>() where T : unmanaged
         {
@@ -115,16 +167,19 @@ namespace Simulation
             }
         }
 
+        /// <inheritdoc/>
         public static bool operator ==(ComponentType left, ComponentType right)
         {
             return left.Equals(right);
         }
 
+        /// <inheritdoc/>
         public static bool operator !=(ComponentType left, ComponentType right)
         {
             return !(left == right);
         }
 
+        /// <inheritdoc/>
         public static implicit operator byte(ComponentType type)
         {
             return type.value;

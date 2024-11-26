@@ -2,11 +2,10 @@
 using System;
 using System.Runtime.InteropServices;
 using Unmanaged;
-using Unmanaged.Tests;
 
 namespace Simulation.Tests
 {
-    public class ProgramTests : UnmanagedTests
+    public class ProgramTests : SimulationTests
     {
         [Test]
         public void SimpleProgram()

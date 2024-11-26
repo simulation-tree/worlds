@@ -3,23 +3,32 @@ using System;
 
 namespace Simulation
 {
-    public struct DefinitionQuery : IDisposable, IQuery
+    /// <summary>
+    /// Query object for finding entities with a specific <see cref="Definition"/>.
+    /// </summary>
+    public readonly struct DefinitionQuery : IDisposable, IQuery
     {
         private readonly List<uint> results;
         private readonly BitSet componentTypes;
         private readonly BitSet arrayTypes;
-        private World world;
 
         /// <summary>
         /// All entities found after updating.
         /// </summary>
         public readonly uint Count => results.Count;
+
+        /// <summary>
+        /// Gets the entity at the specified <paramref name="index"/>.
+        /// </summary>
         public readonly uint this[uint index] => results[index];
 
         readonly nint IQuery.Results => results.StartAddress;
         readonly uint IQuery.ResultSize => sizeof(uint);
 
 #if NET
+        /// <summary>
+        /// Not supported.
+        /// </summary>
         [Obsolete("Default constructor not available", true)]
         public DefinitionQuery()
         {
@@ -27,6 +36,9 @@ namespace Simulation
         }
 #endif
 
+        /// <summary>
+        /// Creates a new query object for finding entities with the given <paramref name="definition"/>.
+        /// </summary>
         public DefinitionQuery(Definition definition)
         {
             results = new(1);
@@ -34,14 +46,17 @@ namespace Simulation
             arrayTypes = definition.ArrayTypesMask;
         }
 
+        /// <inheritdoc/>
         public readonly void Dispose()
         {
             results.Dispose();
         }
 
-        public void Update(World world, bool onlyEnabled = false)
+        /// <summary>
+        /// Updates the query with the given <paramref name="world"/>.
+        /// </summary>
+        public readonly void Update(World world, bool onlyEnabled = false)
         {
-            this.world = world;
             results.Clear(world.MaxEntityValue);
             Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
             if (!onlyEnabled)
@@ -126,16 +141,25 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Gets an enumerator for the query.
+        /// </summary>
         public readonly Enumerator GetEnumerator()
         {
             return new(this);
         }
 
+        /// <summary>
+        /// Enumerator for <see cref="DefinitionQuery"/>.
+        /// </summary>
         public ref struct Enumerator
         {
             private readonly DefinitionQuery query;
             private uint index;
 
+            /// <summary>
+            /// Gets the current entity.
+            /// </summary>
             public readonly uint Current => query[index - 1];
 
             internal Enumerator(DefinitionQuery query)
@@ -144,6 +168,9 @@ namespace Simulation
                 index = 0;
             }
 
+            /// <summary>
+            /// Moves to the next entity.
+            /// </summary>
             public bool MoveNext()
             {
                 return ++index <= query.Count;

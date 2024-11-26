@@ -4,9 +4,33 @@
 		<TargetFramework>net9.0</TargetFramework>
 		<IncludeBuildOutput>false</IncludeBuildOutput>
 		<IncludeContentInPack>true</IncludeContentInPack>
+		<Title>Simulation</Title>
+		<Company>game-simulations</Company>
+		<Authors>popcron</Authors>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<RepositoryUrl>https://github.com/game-simulations/simulation</RepositoryUrl>
+		<Description>Logic upon data</Description>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+	  <IsAotCompatible>True</IsAotCompatible>
+	  <IsTrimmable>True</IsTrimmable>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+	  <IsAotCompatible>True</IsAotCompatible>
+	  <IsTrimmable>True</IsTrimmable>
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Include="..\..\collections\README.md">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\core\Simulation.Core.csproj" />
 		<ProjectReference Include="..\generator\Simulation.Generator.csproj" />
 	</ItemGroup>
 	

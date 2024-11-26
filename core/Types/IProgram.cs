@@ -1,5 +1,8 @@
 ﻿namespace Programs
 {
+    /// <summary>
+    /// Describes a program.
+    /// </summary>
     public interface IProgram
     {
         /// <summary>

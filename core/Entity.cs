@@ -7,18 +7,37 @@ using Unmanaged;
 
 namespace Simulation
 {
+    /// <summary>
+    /// Represents an entity in the simulation relative to a <see cref="World"/>.
+    /// </summary>
     [DebuggerTypeProxy(typeof(EntityDebugView))]
     public readonly struct Entity : IEntity, IEquatable<Entity>
     {
+        /// <summary>
+        /// The entity's unique identifier.
+        /// </summary>
         public readonly uint value;
+
+        /// <summary>
+        /// The world this entity belongs to.
+        /// </summary>
         public readonly World world;
 
+        /// <summary>
+        /// Is this entity enabled?
+        /// </summary>
         public readonly bool IsEnabled
         {
             get => world.IsEnabled(value);
             set => world.SetEnabled(this.value, value);
         }
 
+        /// <summary>
+        /// Parent entity of this entity.
+        /// <para>
+        /// May be <c>default</c> if no parent is set.
+        /// </para>
+        /// </summary>
         public readonly Entity Parent
         {
             get
@@ -36,6 +55,9 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Children entities of this entity.
+        /// </summary>
         public readonly USpan<uint> Children
         {
             get
@@ -51,30 +73,46 @@ namespace Simulation
         readonly Definition IEntity.Definition => new();
 
 #if NET
-        [Obsolete("Default constructor not available", true)]
+        /// <summary>
+        /// Not suported.
+        /// </summary>
+        [Obsolete("Default constructor not supported", true)]
         public Entity()
         {
-            throw new NotSupportedException("Default constructor not available");
+            throw new NotSupportedException();
         }
 #endif
 
+        /// <summary>
+        /// Initializes an existing value with the given <paramref name="existingEntity"/>.
+        /// </summary>
         public Entity(World world, uint existingEntity)
         {
             this.value = existingEntity;
             this.world = world;
         }
 
+        /// <summary>
+        /// Creates a new entity in the given <paramref name="world"/>.
+        /// </summary>
         public Entity(World world)
         {
             this.world = world;
             value = world.CreateEntity();
         }
 
+        /// <summary>
+        /// Destroys the entity.
+        /// </summary>
         public readonly void Dispose()
         {
             world.DestroyEntity(value);
         }
 
+        /// <summary>
+        /// Throws an <see cref="InvalidOperationException"/> if the entity is destroyed.
+        /// </summary>
+        /// <exception cref="InvalidOperationException"></exception>
         [Conditional("DEBUG")]
         public readonly void ThrowIfDestroyed()
         {
@@ -84,6 +122,7 @@ namespace Simulation
             }
         }
 
+        /// <inheritdoc/>
         public unsafe readonly override string ToString()
         {
             USpan<char> buffer = stackalloc char[32];
@@ -91,6 +130,9 @@ namespace Simulation
             return buffer.Slice(0, length).ToString();
         }
 
+        /// <summary>
+        /// Builds a string representation of this entity.
+        /// </summary>
         public readonly uint ToString(USpan<char> buffer)
         {
             uint length = 0;
@@ -112,6 +154,9 @@ namespace Simulation
             return length;
         }
 
+        /// <summary>
+        /// Retrieves an array of type <typeparamref name="T"/> on this entity.
+        /// </summary>
         public readonly USpan<T> GetArray<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
@@ -119,6 +164,9 @@ namespace Simulation
             return world.GetArray<T>(value);
         }
 
+        /// <summary>
+        /// Retrieves an element at <paramref name="index"/> from the array of type <typeparamref name="T"/> on this entity.
+        /// </summary>
         public readonly ref T GetArrayElementRef<T>(uint index) where T : unmanaged
         {
             ThrowIfDestroyed();
@@ -126,6 +174,9 @@ namespace Simulation
             return ref world.GetArrayElementRef<T>(value, index);
         }
 
+        /// <summary>
+        /// Retrieves the length of the array of type <typeparamref name="T"/> on this entity.
+        /// </summary>
         public readonly uint GetArrayLength<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
@@ -133,6 +184,9 @@ namespace Simulation
             return world.GetArrayLength<T>(value);
         }
 
+        /// <summary>
+        /// Copies all <see cref="ArrayType"/>s this entity has to the given <paramref name="buffer"/>.
+        /// </summary>
         public readonly byte CopyArrayTypesTo(USpan<ArrayType> buffer)
         {
             ThrowIfDestroyed();
@@ -140,12 +194,29 @@ namespace Simulation
             return world.CopyArrayTypesTo(value, buffer);
         }
 
+        /// <summary>
+        /// Checks if this entity has an array of type <typeparamref name="T"/>.
+        /// </summary>
         public readonly bool ContainsArray<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
+
             return world.ContainsArray<T>(value);
         }
 
+        /// <summary>
+        /// Checks if this entity has an array of the given <paramref name="arrayType"/>.
+        /// </summary>
+        public readonly bool ContainsArray(ArrayType arrayType)
+        {
+            ThrowIfDestroyed();
+
+            return world.ContainsArray(value, arrayType);
+        }
+
+        /// <summary>
+        /// Destroys the array of type <typeparamref name="T"/> on this entity.
+        /// </summary>
         public readonly void DestroyArray<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
@@ -163,6 +234,9 @@ namespace Simulation
             return world.CreateArray<T>(value, length);
         }
 
+        /// <summary>
+        /// Creates a new array of type <typeparamref name="T"/> with the given <paramref name="values"/>.
+        /// </summary>
         public readonly void CreateArray<T>(USpan<T> values) where T : unmanaged
         {
             ThrowIfDestroyed();
@@ -170,6 +244,10 @@ namespace Simulation
             world.CreateArray(value, values);
         }
 
+        /// <summary>
+        /// Resizes the array of type <typeparamref name="T"/> to the given <paramref name="newLength"/>.
+        /// </summary>
+        /// <returns>Newly resized array.</returns>
         public readonly USpan<T> ResizeArray<T>(uint newLength) where T : unmanaged
         {
             ThrowIfDestroyed();
@@ -177,6 +255,9 @@ namespace Simulation
             return world.ResizeArray<T>(value, newLength);
         }
 
+        /// <summary>
+        /// Attempts to retrieve an array of type <typeparamref name="T"/> on this entity.
+        /// </summary>
         public readonly bool TryGetArray<T>(out USpan<T> values) where T : unmanaged
         {
             ThrowIfDestroyed();
@@ -193,6 +274,9 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Attempts to retrieve the parent of this entity.
+        /// </summary>
         public readonly bool TryGetParent(out uint parent)
         {
             ThrowIfDestroyed();
@@ -201,6 +285,9 @@ namespace Simulation
             return parent != default;
         }
 
+        /// <summary>
+        /// Checks if this entity has a component of type <typeparamref name="T"/>.
+        /// </summary>
         public readonly bool ContainsComponent<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
@@ -208,6 +295,9 @@ namespace Simulation
             return world.ContainsComponent<T>(value);
         }
 
+        /// <summary>
+        /// Checks if this entity has a component of the given <paramref name="componentType"/>.
+        /// </summary>
         public readonly bool ContainsComponent(ComponentType componentType)
         {
             ThrowIfDestroyed();
@@ -215,6 +305,9 @@ namespace Simulation
             return world.ContainsComponent(value, componentType);
         }
 
+        /// <summary>
+        /// Copies all <see cref="ComponentType"/>s this entity has to the given <paramref name="buffer"/>.
+        /// </summary>
         public readonly byte CopyComponentTypesTo(USpan<ComponentType> buffer)
         {
             ThrowIfDestroyed();
@@ -222,6 +315,9 @@ namespace Simulation
             return world.CopyComponentTypesTo(value, buffer);
         }
 
+        /// <summary>
+        /// Checks if this entity has a component of type <typeparamref name="T"/>.
+        /// </summary>
         public readonly T GetComponent<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
@@ -229,6 +325,9 @@ namespace Simulation
             return world.GetComponent<T>(value);
         }
 
+        /// <summary>
+        /// Retrieves a reference for the component of type <typeparamref name="T"/>.
+        /// </summary>
         public readonly ref T GetComponentRef<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
@@ -236,6 +335,10 @@ namespace Simulation
             return ref world.GetComponentRef<T>(value);
         }
 
+        /// <summary>
+        /// Adds a new component of type <typeparamref name="T"/> to the entity.
+        /// </summary>
+        /// <returns>Reference to the added component.</returns>
         public readonly ref T AddComponentRef<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
@@ -243,6 +346,10 @@ namespace Simulation
             return ref world.AddComponentRef<T>(value);
         }
 
+        /// <summary>
+        /// Attempts to retrieve a reference for the component of type <typeparamref name="T"/>.
+        /// </summary>
+        /// <returns>Reference to the found component if <paramref name="contains"/> is <c>true</c>.</returns>
         public readonly ref T TryGetComponentRef<T>(out bool contains) where T : unmanaged
         {
             ThrowIfDestroyed();
@@ -250,6 +357,10 @@ namespace Simulation
             return ref world.TryGetComponentRef<T>(value, out contains);
         }
 
+        /// <summary>
+        /// Attempts to retrieve a reference for the component of type <typeparamref name="T"/>.
+        /// </summary>
+        /// <returns><c>true</c> if found.</returns>
         public readonly bool TryGetComponent<T>(out T component) where T : unmanaged
         {
             ThrowIfDestroyed();
@@ -267,6 +378,9 @@ namespace Simulation
             return world.GetComponent(value, defaultValue);
         }
 
+        /// <summary>
+        /// Retrieves the bytes of this entity's component of type <paramref name="componentType"/>.
+        /// </summary>
         public readonly USpan<byte> GetComponentBytes(ComponentType componentType)
         {
             ThrowIfDestroyed();
@@ -276,9 +390,6 @@ namespace Simulation
 
         /// <summary>
         /// Assigns the given value to the entity's component of type <typeparamref name="T"/>.
-        /// <para>
-        /// In debug, may throw an <see cref="Exception"/> if the entity is missing, or the component is missing.
-        /// </para>
         /// </summary>
         public readonly void SetComponent<T>(T component) where T : unmanaged
         {
@@ -288,7 +399,7 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Adds a new uninitialized <typeparamref name="T"/> component to the entity.
+        /// Adds a new <typeparamref name="T"/> component to the entity.
         /// </summary>
         public readonly void AddComponent<T>() where T : unmanaged
         {
@@ -308,7 +419,7 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Adds a new component of the given type with uninitialized data.
+        /// Adds a new component of the given <paramref name="componentType"/>.
         /// </summary>
         public readonly void AddComponent(ComponentType componentType)
         {
@@ -317,6 +428,9 @@ namespace Simulation
             world.AddComponent(value, componentType);
         }
 
+        /// <summary>
+        /// Removes the component of type <typeparamref name="T"/> from the entity.
+        /// </summary>
         public readonly void RemoveComponent<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
@@ -324,6 +438,9 @@ namespace Simulation
             world.RemoveComponent<T>(value);
         }
 
+        /// <summary>
+        /// Removes the component of the given <paramref name="componentType"/> from the entity.
+        /// </summary>
         public readonly void RemoveComponent(ComponentType componentType)
         {
             ThrowIfDestroyed();
@@ -331,6 +448,9 @@ namespace Simulation
             world.RemoveComponent(value, componentType);
         }
 
+        /// <summary>
+        /// Removes the component of type <typeparamref name="T"/> from the entity.
+        /// </summary>
         public readonly void RemoveComponent<T>(out T removedComponent) where T : unmanaged
         {
             ThrowIfDestroyed();
@@ -339,6 +459,9 @@ namespace Simulation
             world.RemoveComponent<T>(value);
         }
 
+        /// <summary>
+        /// Adds a local reference to the <paramref name="otherEntity"/>.
+        /// </summary>
         public readonly rint AddReference(uint otherEntity)
         {
             ThrowIfDestroyed();
@@ -346,6 +469,9 @@ namespace Simulation
             return world.AddReference(value, otherEntity);
         }
 
+        /// <summary>
+        /// Adds a local reference to the <paramref name="otherEntity"/>.
+        /// </summary>
         public readonly rint AddReference<T>(T otherEntity) where T : unmanaged, IEntity
         {
             ThrowIfDestroyed();
@@ -353,6 +479,9 @@ namespace Simulation
             return AddReference(otherEntity.Value);
         }
 
+        /// <summary>
+        /// Retrieves the entity from the given local <paramref name="reference"/>.
+        /// </summary>
         public readonly uint GetReference(rint reference)
         {
             ThrowIfDestroyed();
@@ -360,6 +489,9 @@ namespace Simulation
             return world.GetReference(value, reference);
         }
 
+        /// <summary>
+        /// Retrieves the entity from the given local <paramref name="reference"/>.
+        /// </summary>
         public readonly T GetReference<T>(rint reference) where T : unmanaged, IEntity
         {
             ThrowIfDestroyed();
@@ -367,6 +499,9 @@ namespace Simulation
             return new Entity(world, GetReference(reference)).As<T>();
         }
 
+        /// <summary>
+        /// Retrieves how many references this entity has.
+        /// </summary>
         public readonly uint GetReferenceCount()
         {
             ThrowIfDestroyed();
@@ -375,7 +510,7 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Reassigns an existing reference to a different entity.
+        /// Reassigns an existing local reference to the <paramref name="otherEntity"/>.
         /// </summary>
         public readonly void SetReference(rint reference, uint otherEntity)
         {
@@ -385,7 +520,7 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Reassigns an existing reference to a different entity.
+        /// Reassigns an existing local reference to the <paramref name="otherEntity"/>.
         /// </summary>
         public readonly void SetReference<T>(rint reference, T otherEntity) where T : unmanaged, IEntity
         {
@@ -394,6 +529,9 @@ namespace Simulation
             SetReference(reference, otherEntity.Value);
         }
 
+        /// <summary>
+        /// Checks if this entity contains the given local <paramref name="reference"/>.
+        /// </summary>
         public readonly bool ContainsReference(rint reference)
         {
             ThrowIfDestroyed();
@@ -401,6 +539,9 @@ namespace Simulation
             return world.ContainsReference(value, reference);
         }
 
+        /// <summary>
+        /// Attempts to retrieve an entity from the given local <paramref name="reference"/>.
+        /// </summary>
         public readonly bool TryGetReference(rint reference, out uint otherEntity)
         {
             ThrowIfDestroyed();
@@ -408,6 +549,10 @@ namespace Simulation
             return world.TryGetReference(value, reference, out otherEntity);
         }
 
+        /// <summary>
+        /// Attempts to retrieve an entity from the given local <paramref name="reference"/>.
+        /// </summary>
+        /// <returns><c>true</c> if reference is found.</returns>
         public readonly bool TryGetReference<T>(rint reference, out T otherEntity) where T : unmanaged, IEntity
         {
             ThrowIfDestroyed();
@@ -437,31 +582,36 @@ namespace Simulation
 
         /// <summary>
         /// Adds missing components and arrays that qualify the entity
-        /// to be of type <typeparamref name="T"/>.
+        /// to be what <see cref="Definition"/> of type <typeparamref name="T"/> argues.
         /// </summary>
         public readonly T Become<T>() where T : unmanaged, IEntity
         {
-            Definition definition = default(T).Definition;
-            this.Become(definition);
+            this.Become(Definition.Get<T>());
             return As<T>();
         }
 
+        /// <summary>
+        /// Checks if this entity complies with the <see cref="Definition"/> of type <typeparamref name="T"/>.
+        /// </summary>
         public readonly bool Is<T>() where T : unmanaged, IEntity
         {
             Definition definition = default(T).Definition;
             return this.Is(definition);
         }
 
+        /// <inheritdoc/>
         public readonly override bool Equals(object? obj)
         {
             return obj is Entity entity && Equals(entity);
         }
 
+        /// <inheritdoc/>
         public readonly bool Equals(Entity other)
         {
             return value == other.value && world.Equals(other.world);
         }
 
+        /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
             return HashCode.Combine(value, world);
@@ -513,11 +663,13 @@ namespace Simulation
             throw new Exception($"The type `{type}` does not align with the `{nameof(Entity)}` type");
         }
 
+        /// <inheritdoc/>
         public static bool operator ==(Entity left, Entity right)
         {
             return left.Equals(right);
         }
 
+        /// <inheritdoc/>
         public static bool operator !=(Entity left, Entity right)
         {
             return !(left == right);

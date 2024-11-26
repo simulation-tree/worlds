@@ -18,6 +18,9 @@ namespace Simulation
         /// </summary>
         public readonly uint Length => list.Read<uint>();
 
+        /// <summary>
+        /// Indexer for accessing each <see cref="Instruction"/>.
+        /// </summary>
         public unsafe readonly Instruction this[uint index]
         {
             get
@@ -28,7 +31,11 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Checks if this operation has been disposed.
+        /// </summary>
         public readonly bool IsDisposed => list.IsDisposed;
+
 #if NET
         /// <summary>
         /// Creates a new empty operation for writing world instructions into.
@@ -60,17 +67,24 @@ namespace Simulation
         public readonly void Dispose()
         {
             ThrowIfDisposed();
+
             ClearInstructions();
             list.Dispose();
         }
 
+        /// <summary>
+        /// Retrieves all instructions as a span.
+        /// </summary>
+        /// <returns></returns>
         public readonly USpan<Instruction> AsSpan()
         {
             ThrowIfDisposed();
+
             uint start = sizeof(uint) + sizeof(uint);
             return new USpan<Instruction>((nint)(list.Address + start), Length);
         }
 
+        /// <inheritdoc/>
         public readonly override string ToString()
         {
             USpan<char> buffer = stackalloc char[64];
@@ -78,6 +92,9 @@ namespace Simulation
             return buffer.Slice(0, length).ToString();
         }
 
+        /// <summary>
+        /// Builds a string representation of this <see cref="Operation"/>.
+        /// </summary>
         public readonly uint ToString(USpan<char> buffer)
         {
             uint thisLength = Length;
@@ -162,6 +179,13 @@ namespace Simulation
             throw new InvalidOperationException("Entity selection is empty, unable to proceed");
         }
 
+        /// <summary>
+        /// Fills the given <paramref name="selection"/> list with selected entities.
+        /// <para>
+        /// IDs referring to created entities are local and start from 1. Use the overload
+        /// with the <see cref="World"/> parameter to get the actual entity IDs.
+        /// </para>
+        /// </summary>
         public readonly void ReadSelection(List<uint> selection)
         {
             ThrowIfDisposed();
@@ -203,6 +227,9 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Reads the selection from this operation and fills the given list with the selected entities.
+        /// </summary>
         public readonly void ReadSelection(World world, List<uint> selection)
         {
             ThrowIfDisposed();
@@ -333,7 +360,7 @@ namespace Simulation
 
         /// <summary>
         /// Assigns the given parent of all selected entities to the
-        /// given existing entity.
+        /// given <paramref name="parent"/>.
         /// </summary>
         public void SetParent(uint parent)
         {
@@ -341,6 +368,9 @@ namespace Simulation
             AddInstruction(Instruction.SetParent(parent));
         }
 
+        /// <summary>
+        /// Assigns the parent of every selected entity to the given <paramref name="parent"/>.
+        /// </summary>
         public void SetParent<T>(T parent) where T : unmanaged, IEntity
         {
             SetParent(parent.GetEntityValue());
@@ -424,6 +454,9 @@ namespace Simulation
             AddInstruction(Instruction.CreateArray<T>(length));
         }
 
+        /// <summary>
+        /// Creates a new array for every selected entities containing the given <paramref name="values"/>.
+        /// </summary>
         public void CreateArray<T>(USpan<T> values) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
@@ -457,13 +490,19 @@ namespace Simulation
             AddInstruction(Instruction.SetArrayElement(index, elements));
         }
 
+        /// <summary>
+        /// Resizes the array for every selected entity.
+        /// </summary>
         public void ResizeArray<T>(uint newLength) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.ResizeArray<T>(newLength));
         }
 
-        private unsafe void AddInstruction(Instruction instruction)
+        /// <summary>
+        /// Adds a new given <paramref name="instruction"/> to the operation.
+        /// </summary>
+        public unsafe void AddInstruction(Instruction instruction)
         {
             uint length = list.Read<uint>(sizeof(uint) * 0);
             uint capacity = list.Read<uint>(sizeof(uint) * 1);
@@ -479,6 +518,9 @@ namespace Simulation
             list.Write(start + (TypeInfo<Instruction>.size * length), instruction);
         }
 
+        /// <summary>
+        /// Removes the instruction at the given <paramref name="index"/>.
+        /// </summary>
         public readonly unsafe void RemoveInstructionAt(uint index)
         {
             ThrowIfOutOfRange(index);
@@ -495,6 +537,9 @@ namespace Simulation
             list.Write(sizeof(uint) * 0, length - 1);
         }
 
+        /// <summary>
+        /// Creates a new empty operation for writing world instructions into.
+        /// </summary>
         public unsafe static Operation Create(uint initialCapacity = 1)
         {
             uint size = sizeof(uint) + sizeof(uint) + (TypeInfo<Instruction>.size * initialCapacity);
@@ -504,6 +549,9 @@ namespace Simulation
             return new Operation(list);
         }
 
+        /// <summary>
+        /// An entity local to the operation.
+        /// </summary>
         public readonly struct SelectedEntity
         {
             private readonly Operation operation;
@@ -513,6 +561,9 @@ namespace Simulation
                 this.operation = operation;
             }
 
+            /// <summary>
+            /// Submits an instruction to add the given <paramref name="component"/> to this entity.
+            /// </summary>
             public void AddComponent<T>(T component) where T : unmanaged
             {
                 operation.AddComponent(component);

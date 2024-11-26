@@ -9,6 +9,9 @@ using Unmanaged;
 
 namespace Simulation
 {
+    /// <summary>
+    /// Opaque pointer implementation of a <see cref="Simulator"/>.
+    /// </summary>
     public unsafe struct UnsafeSimulator
     {
         private World world;
@@ -16,6 +19,9 @@ namespace Simulation
         private List<ProgramContainer> knownPrograms;
         private ComponentQuery<IsProgram, ProgramState> programQuery;
 
+        /// <summary>
+        /// Allocates a new <see cref="UnsafeSimulator"/> instance.
+        /// </summary>
         public static UnsafeSimulator* Allocate(World world)
         {
             UnsafeSimulator* simulator = Allocations.Allocate<UnsafeSimulator>();
@@ -26,6 +32,9 @@ namespace Simulation
             return simulator;
         }
 
+        /// <summary>
+        /// Frees the memory used by a <see cref="UnsafeSimulator"/>.
+        /// </summary>
         public static void Free(ref UnsafeSimulator* simulator)
         {
             Allocations.ThrowIfNull(simulator);
@@ -36,6 +45,9 @@ namespace Simulation
             Allocations.Free(ref simulator);
         }
 
+        /// <summary>
+        /// Retrieves the <see cref="World"/> that a <see cref="UnsafeSimulator"/> operates in.
+        /// </summary>
         public static World GetWorld(UnsafeSimulator* simulator)
         {
             Allocations.ThrowIfNull(simulator);
@@ -43,6 +55,9 @@ namespace Simulation
             return simulator->world;
         }
 
+        /// <summary>
+        /// Retrieves the systems added to a <see cref="UnsafeSimulator"/>.
+        /// </summary>
         public static USpan<SystemContainer> GetSystems(UnsafeSimulator* simulator)
         {
             Allocations.ThrowIfNull(simulator);
@@ -50,6 +65,9 @@ namespace Simulation
             return simulator->systems.AsSpan();
         }
 
+        /// <summary>
+        /// Retrieves the known programs in a <see cref="UnsafeSimulator"/>.
+        /// </summary>
         public static ref List<ProgramContainer> GetKnownPrograms(UnsafeSimulator* simulator)
         {
             Allocations.ThrowIfNull(simulator);
@@ -57,6 +75,9 @@ namespace Simulation
             return ref simulator->knownPrograms;
         }
 
+        /// <summary>
+        /// Retrieves the query for programs in a <see cref="UnsafeSimulator"/>.
+        /// </summary>
         public static ref ComponentQuery<IsProgram, ProgramState> GetProgramQuery(UnsafeSimulator* simulator)
         {
             Allocations.ThrowIfNull(simulator);
@@ -64,6 +85,9 @@ namespace Simulation
             return ref simulator->programQuery;
         }
 
+        /// <summary>
+        /// Retrieves the number of systems in a <see cref="UnsafeSimulator"/>.
+        /// </summary>
         public static uint GetSystemCount(UnsafeSimulator* simulator)
         {
             Allocations.ThrowIfNull(simulator);
@@ -71,6 +95,10 @@ namespace Simulation
             return simulator->systems.Count;
         }
 
+        /// <summary>
+        /// Adds a system of type <typeparamref name="T"/> to a <see cref="UnsafeSimulator"/>.
+        /// </summary>
+        /// <exception cref="InvalidOperationException"></exception>
         public static SystemContainer<T> AddSystem<T>(UnsafeSimulator* simulator) where T : unmanaged, ISystem
         {
             Allocations.ThrowIfNull(simulator);
@@ -112,6 +140,9 @@ namespace Simulation
             return genericContainer;
         }
 
+        /// <summary>
+        /// Removes a system of type <typeparamref name="T"/> from a <see cref="UnsafeSimulator"/>.
+        /// </summary>
         public static void RemoveSystem<T>(UnsafeSimulator* simulator) where T : unmanaged, ISystem
         {
             Allocations.ThrowIfNull(simulator);

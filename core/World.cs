@@ -14,6 +14,9 @@ namespace Simulation
     {
         internal UnsafeWorld* value;
 
+        /// <summary>
+        /// Native address of the world.
+        /// </summary>
         public readonly nint Address => (nint)value;
 
         /// <summary>
@@ -28,9 +31,24 @@ namespace Simulation
         /// </summary>
         public readonly uint MaxEntityValue => Slots.Count;
 
+        /// <summary>
+        /// Checks if the world has been disposed.
+        /// </summary>
         public readonly bool IsDisposed => value is null;
+
+        /// <summary>
+        /// All entity slots in the world.
+        /// </summary>
         public readonly List<EntitySlot> Slots => UnsafeWorld.GetEntitySlots(value);
+
+        /// <summary>
+        /// All previously used entities that are now free.
+        /// </summary>
         public readonly List<uint> Free => UnsafeWorld.GetFreeEntities(value);
+
+        /// <summary>
+        /// All component chunks in the world.
+        /// </summary>
         public readonly Dictionary<int, ComponentChunk> ComponentChunks => UnsafeWorld.GetComponentChunks(value);
 
         /// <summary>
@@ -53,14 +71,17 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Indexer for accessing entities by their index.
+        /// </summary>
         public readonly uint this[uint index]
         {
             get
             {
                 uint i = 0;
-                for (uint j = 0; j < Slots.Count; j++)
+                for (uint s = 0; s < Slots.Count; s++)
                 {
-                    EntitySlot description = Slots[j];
+                    EntitySlot description = Slots[s];
                     if (!Free.Contains(description.entity))
                     {
                         if (i == index)
@@ -72,7 +93,7 @@ namespace Simulation
                     }
                 }
 
-                throw new IndexOutOfRangeException();
+                throw new IndexOutOfRangeException($"Index {index} is out of range");
             }
         }
 
@@ -85,11 +106,18 @@ namespace Simulation
             value = UnsafeWorld.Allocate();
         }
 #endif
+
+        /// <summary>
+        /// Initializes an existing world from the given address.
+        /// </summary>
         public World(nint existingAddress)
         {
             value = (UnsafeWorld*)existingAddress;
         }
 
+        /// <summary>
+        /// Initializes an existing world from the given pointer.
+        /// </summary>
         public World(UnsafeWorld* value)
         {
             this.value = value;
@@ -111,6 +139,7 @@ namespace Simulation
             UnsafeWorld.ClearEntities(value);
         }
 
+        /// <inheritdoc/>
         public readonly override string ToString()
         {
             if (value == default)
@@ -121,11 +150,15 @@ namespace Simulation
             return $"World {Address} (count: {Count})";
         }
 
+        /// <summary>
+        /// Checks if the given world is equal to this world.
+        /// </summary>
         public readonly override bool Equals(object? obj)
         {
             return obj is World world && Equals(world);
         }
 
+        /// <inheritdoc/>
         public readonly bool Equals(World other)
         {
             if (IsDisposed && other.IsDisposed)
@@ -140,6 +173,7 @@ namespace Simulation
             return Address == other.Address;
         }
 
+        /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
             if (value is null)
@@ -147,7 +181,7 @@ namespace Simulation
                 return 0;
             }
 
-            return value->GetHashCode();
+            return ((nint)value).GetHashCode();
         }
 
         readonly void ISerializable.Write(BinaryWriter writer)
@@ -263,11 +297,17 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Contains delegates for resolving component and array types during serialization.
+        /// </summary>
         public static class SerializationContext
         {
             private static GetComponentTypeDelegate? getComponentType;
             private static GetArrayTypeDelegate? getArrayType;
 
+            /// <summary>
+            /// Delegate for resolving component types during serialization.
+            /// </summary>
             public static GetComponentTypeDelegate GetComponentType
             {
                 get
@@ -285,6 +325,9 @@ namespace Simulation
                 }
             }
 
+            /// <summary>
+            /// Delegate for resolving array types during serialization.
+            /// </summary>
             public static GetArrayTypeDelegate GetArrayType
             {
                 get
@@ -301,7 +344,10 @@ namespace Simulation
                 }
             }
 
+            /// <inheritdoc/>
             public delegate ComponentType GetComponentTypeDelegate(USpan<char> fullTypeName);
+
+            /// <inheritdoc/>
             public delegate ArrayType GetArrayTypeDelegate(USpan<char> fullTypeName);
         }
 
@@ -675,6 +721,9 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Performs all given <paramref name="instructions"/>.
+        /// </summary>
         public readonly void Perform(USpan<Instruction> instructions)
         {
             using List<uint> selection = new(4);
@@ -685,18 +734,24 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Performs all given <paramref name="instructions"/>.
+        /// </summary>
         public readonly void Perform(List<Instruction> instructions)
         {
             Perform(instructions.AsSpan());
         }
 
+        /// <summary>
+        /// Performs all given <paramref name="instructions"/>.
+        /// </summary>
         public readonly void Perform(Array<Instruction> instructions)
         {
             Perform(instructions.AsSpan());
         }
 
         /// <summary>
-        /// Performs all instructions in the given operation.
+        /// Performs all instructions in the given <paramref name="operation"/>.
         /// </summary>
         public readonly void Perform(Operation operation)
         {
@@ -711,13 +766,16 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Destroys the given entity assuming it exists.
+        /// Destroys the given <paramref name="entity"/> assuming it exists.
         /// </summary>
         public readonly void DestroyEntity(uint entity, bool destroyChildren = true)
         {
             UnsafeWorld.DestroyEntity(value, entity, destroyChildren);
         }
 
+        /// <summary>
+        /// Copies component types from the given <paramref name="entity"/> to the destination <paramref name="buffer"/>.
+        /// </summary>
         public readonly byte CopyComponentTypesTo(uint entity, USpan<ComponentType> buffer)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
@@ -728,7 +786,7 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Checks if the entity is enabled with respect
+        /// Checks if the given <paramref name="entity"/> is enabled with respect
         /// to ancestor entities.
         /// </summary>
         public readonly bool IsEnabled(uint entity)
@@ -751,6 +809,9 @@ namespace Simulation
             return slot.state == EntitySlot.State.Enabled || slot.state == EntitySlot.State.EnabledButDisabledDueToAncestor;
         }
 
+        /// <summary>
+        /// Assigns the enabled state of the given <paramref name="entity"/>.
+        /// </summary>
         public readonly void SetEnabled(uint entity, bool state)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
@@ -878,16 +939,25 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Attempts to retrieve the first found component of type <typeparamref name="T"/>.
+        /// </summary>
         public readonly bool TryGetFirstComponent<T>(out T found) where T : unmanaged
         {
             return TryGetFirstComponent(out _, out found);
         }
 
+        /// <summary>
+        /// Attempts to retrieve the first entity found with a component of type <typeparamref name="T"/>.
+        /// </summary>
         public readonly bool TryGetFirstEntityWithComponent<T>(out uint entity) where T : unmanaged
         {
             return TryGetFirstComponent<T>(out entity, out _);
         }
 
+        /// <summary>
+        /// Attempts to retrieve the first found entity and component of type <typeparamref name="T"/>.
+        /// </summary>
         public readonly bool TryGetFirstComponent<T>(out uint entity, out T component) where T : unmanaged
         {
             foreach (uint e in GetAll(ComponentType.Get<T>()))
@@ -902,6 +972,13 @@ namespace Simulation
             return false;
         }
 
+        /// <summary>
+        /// Retrieves the first found entity and component of type <typeparamref name="T"/>.
+        /// <para>
+        /// May throw a <see cref="NullReferenceException"/> if no entity with the component is found.
+        /// </para>
+        /// </summary>
+        /// <exception cref="NullReferenceException"></exception>"
         public readonly T GetFirstComponent<T>() where T : unmanaged
         {
             foreach (uint e in GetAll(ComponentType.Get<T>()))
@@ -912,6 +989,13 @@ namespace Simulation
             throw new NullReferenceException($"No entity with component of type `{typeof(T)}` found");
         }
 
+        /// <summary>
+        /// Retrieves the first found entity and component of type <typeparamref name="T"/>.
+        /// <para>
+        /// May throw a <see cref="NullReferenceException"/> if no entity with the component is found.
+        /// </para>
+        /// </summary>
+        /// <exception cref="NullReferenceException"></exception>
         public readonly T GetFirstComponent<T>(out uint entity) where T : unmanaged
         {
             foreach (uint e in GetAll(ComponentType.Get<T>()))
@@ -923,6 +1007,13 @@ namespace Simulation
             throw new NullReferenceException($"No entity with component of type `{typeof(T)}` found");
         }
 
+        /// <summary>
+        /// Retrieves a reference to the first found component of type <typeparamref name="T"/>.
+        /// <para>
+        /// May throw a <see cref="NullReferenceException"/> if no entity with the component is found.
+        /// </para>
+        /// </summary>
+        /// <exception cref="NullReferenceException"></exception>
         public readonly ref T GetFirstComponentRef<T>() where T : unmanaged
         {
             foreach (uint e in GetAll(ComponentType.Get<T>()))
@@ -941,6 +1032,9 @@ namespace Simulation
             return CreateEntity(default);
         }
 
+        /// <summary>
+        /// Creates a new entity with the given <paramref name="definition"/>.
+        /// </summary>
         public readonly uint CreateEntity(Definition definition)
         {
             uint entity = GetNextEntity();
@@ -948,6 +1042,9 @@ namespace Simulation
             return entity;
         }
 
+        /// <summary>
+        /// Creates a new entity with the given <typeparamref name="T1"/> component.
+        /// </summary>
         public readonly uint CreateEntity<T1>(T1 component1) where T1 : unmanaged
         {
             uint entity = GetNextEntity();
@@ -957,6 +1054,9 @@ namespace Simulation
             return entity;
         }
 
+        /// <summary>
+        /// Creates a new entity with the given <typeparamref name="T1"/> and <typeparamref name="T2"/> components.
+        /// </summary>
         public readonly uint CreateEntity<T1, T2>(T1 component1, T2 component2) where T1 : unmanaged where T2 : unmanaged
         {
             uint entity = GetNextEntity();
@@ -967,6 +1067,9 @@ namespace Simulation
             return entity;
         }
 
+        /// <summary>
+        /// Creates a new entity with the given <typeparamref name="T1"/>, <typeparamref name="T2"/> and <typeparamref name="T3"/> components.
+        /// </summary>
         public readonly uint CreateEntity<T1, T2, T3>(T1 component1, T2 component2, T3 component3) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
             uint entity = GetNextEntity();
@@ -978,6 +1081,9 @@ namespace Simulation
             return entity;
         }
 
+        /// <summary>
+        /// Creates a new entity with the given <typeparamref name="T1"/>, <typeparamref name="T2"/>, <typeparamref name="T3"/> and <typeparamref name="T4"/> components.
+        /// </summary>
         public readonly uint CreateEntity<T1, T2, T3, T4>(T1 component1, T2 component2, T3 component3, T4 component4) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
             uint entity = GetNextEntity();
@@ -990,6 +1096,9 @@ namespace Simulation
             return entity;
         }
 
+        /// <summary>
+        /// Creates a new entity with the given <typeparamref name="T1"/>, <typeparamref name="T2"/>, <typeparamref name="T3"/>, <typeparamref name="T4"/> and <typeparamref name="T5"/> components.
+        /// </summary>
         public readonly uint CreateEntity<T1, T2, T3, T4, T5>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
             uint entity = GetNextEntity();
@@ -1003,6 +1112,9 @@ namespace Simulation
             return entity;
         }
 
+        /// <summary>
+        /// Creates a new entity with the given <typeparamref name="T1"/>, <typeparamref name="T2"/>, <typeparamref name="T3"/>, <typeparamref name="T4"/>, <typeparamref name="T5"/> and <typeparamref name="T6"/> components.
+        /// </summary>
         public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
             uint entity = GetNextEntity();
@@ -1027,7 +1139,10 @@ namespace Simulation
 
         /// <summary>
         /// Creates an entity with the given value assuming its 
-        /// not already in use (otherwise an <see cref="Exception"/> will be thrown).
+        /// not already in use.
+        /// <para>
+        /// May throw <see cref="Exception"/> if the entity is already in use.
+        /// </para>
         /// </summary>
         public readonly void InitializeEntity(Definition definition, uint newEntity)
         {
@@ -1035,13 +1150,16 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Checks if the entity exists and is valid in this world.
+        /// Checks if the given <paramref name="entity"/> exists and is valid in this world.
         /// </summary>
         public readonly bool ContainsEntity(uint entity)
         {
             return UnsafeWorld.ContainsEntity(value, entity);
         }
 
+        /// <summary>
+        /// Checks if the <paramref name="entity"/> exists and is valid in this world.
+        /// </summary>
         public readonly bool ContainsEntity<T>(T entity) where T : unmanaged, IEntity
         {
             return ContainsEntity(entity.Value);
@@ -1057,7 +1175,7 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Assigns a new parent.
+        /// Assigns the given <paramref name="parent"/> entity to the given <paramref name="entity"/>.
         /// </summary>
         /// <returns><c>true</c> if the given parent entity was found and assigned successfuly.</returns>
         public readonly bool SetParent(uint entity, uint parent)
@@ -1066,7 +1184,7 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Retreives all children of the given entity.
+        /// Retreives all children of the <paramref name="entity"/> entity.
         /// </summary>
         public readonly USpan<uint> GetChildren(uint entity)
         {
@@ -1083,6 +1201,9 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Retrieves the number of children the given <paramref name="entity"/> has.
+        /// </summary>
         public readonly uint GetChildCount(uint entity)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
@@ -1109,6 +1230,9 @@ namespace Simulation
             return new(slot.referenceCount);
         }
 
+        /// <summary>
+        /// Adds a new reference to the given entity.
+        /// </summary>
         public readonly rint AddReference<T>(uint entity, T referencedEntity) where T : unmanaged, IEntity
         {
             return AddReference(entity, referencedEntity.Value);
@@ -1126,11 +1250,17 @@ namespace Simulation
             slot.references[reference.value - 1] = referencedEntity;
         }
 
+        /// <summary>
+        /// Assigns a new entity to an existing reference.
+        /// </summary>
         public readonly void SetReference<T>(uint entity, rint reference, T referencedEntity) where T : unmanaged, IEntity
         {
             SetReference(entity, reference, referencedEntity.Value);
         }
 
+        /// <summary>
+        /// Checks if the given entity contains a reference to the given referenced entity.
+        /// </summary>
         public readonly bool ContainsReference(uint entity, uint referencedEntity)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
@@ -1139,11 +1269,17 @@ namespace Simulation
             return slot.referenceCount > 0 && slot.references.Contains(referencedEntity);
         }
 
+        /// <summary>
+        /// Checks if the given entity contains a reference to the given referenced entity.
+        /// </summary>
         public readonly bool ContainsReference<T>(uint entity, T referencedEntity) where T : unmanaged, IEntity
         {
             return ContainsReference(entity, referencedEntity.Value);
         }
 
+        /// <summary>
+        /// Checks if the given entity contains the given local <paramref name="reference"/>.
+        /// </summary>
         public readonly bool ContainsReference(uint entity, rint reference)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
@@ -1152,6 +1288,9 @@ namespace Simulation
             return reference.value > 0 && reference.value <= slot.referenceCount;
         }
 
+        /// <summary>
+        /// Retrieves the number of references the given <paramref name="entity"/> has.
+        /// </summary>
         public readonly uint GetReferenceCount(uint entity)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
@@ -1160,6 +1299,9 @@ namespace Simulation
             return slot.referenceCount;
         }
 
+        /// <summary>
+        /// Retrieves the referenced entity at the given <paramref name="reference"/> index on <paramref name="entity"/>.
+        /// </summary>
         public readonly uint GetReference(uint entity, rint reference)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
@@ -1169,6 +1311,9 @@ namespace Simulation
             return slot.references[reference.value - 1];
         }
 
+        /// <summary>
+        /// Retrieves the local reference that points to the given <paramref name="referencedEntity"/> on <paramref name="entity"/>.
+        /// </summary>
         public readonly rint GetReference(uint entity, uint referencedEntity)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
@@ -1179,6 +1324,9 @@ namespace Simulation
             return new(index + 1);
         }
 
+        /// <summary>
+        /// Attempts to retrieve the referenced entity at the given <paramref name="position"/> on <paramref name="entity"/>.
+        /// </summary>
         public readonly bool TryGetReference(uint entity, rint position, out uint referencedEntity)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
@@ -1197,6 +1345,9 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Removes the reference at the given <paramref name="reference"/> index on <paramref name="entity"/>.
+        /// </summary>
         public readonly void RemoveReference(uint entity, rint reference)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
@@ -1244,7 +1395,7 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Creates a new uninitialized array with the given length and type.
+        /// Creates a new uninitialized array with the given <paramref name="length"/> and <paramref name="arrayType"/>.
         /// </summary>
         public readonly Allocation CreateArray(uint entity, ArrayType arrayType, uint length = 0)
         {
@@ -1252,7 +1403,7 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Creates a new uninitialized array on this entity.
+        /// Creates a new uninitialized array on this <paramref name="entity"/>.
         /// </summary>
         public readonly USpan<T> CreateArray<T>(uint entity, uint length = 0) where T : unmanaged
         {
@@ -1269,18 +1420,24 @@ namespace Simulation
             values.CopyTo(array);
         }
 
+        /// <summary>
+        /// Checks if the given <paramref name="entity"/> contains an array of type <typeparamref name="T"/>.
+        /// </summary>
         public readonly bool ContainsArray<T>(uint entity) where T : unmanaged
         {
             return ContainsArray(entity, ArrayType.Get<T>());
         }
 
+        /// <summary>
+        /// Checks if the given <paramref name="entity"/> contains an array of the given <paramref name="arrayType"/>.
+        /// </summary>
         public readonly bool ContainsArray(uint entity, ArrayType arrayType)
         {
             return UnsafeWorld.ContainsArray(value, entity, arrayType);
         }
 
         /// <summary>
-        /// Retrieves the array of type <typeparamref name="T"/> on the given entity.
+        /// Retrieves the array of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
         /// </summary>
         public readonly USpan<T> GetArray<T>(uint entity) where T : unmanaged
         {
@@ -1288,22 +1445,34 @@ namespace Simulation
             return new USpan<T>(array, length);
         }
 
+        /// <summary>
+        /// Retrieves the array of the given <paramref name="arrayType"/> from the given <paramref name="entity"/>.
+        /// </summary>
         public readonly Allocation GetArray(uint entity, ArrayType arrayType, out uint length)
         {
             return new(UnsafeWorld.GetArray(value, entity, arrayType, out length));
         }
 
+        /// <summary>
+        /// Retrieves the array of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
+        /// </summary>
         public readonly USpan<T> ResizeArray<T>(uint entity, uint newLength) where T : unmanaged
         {
             void* array = UnsafeWorld.ResizeArray(value, entity, ArrayType.Get<T>(), newLength);
             return new USpan<T>(array, newLength);
         }
 
+        /// <summary>
+        /// Resizes the array of type <paramref name="arrayType"/> on the given <paramref name="entity"/>.
+        /// </summary>
         public readonly Allocation ResizeArray(uint entity, ArrayType arrayType, uint newLength)
         {
             return new(UnsafeWorld.ResizeArray(value, entity, arrayType, newLength));
         }
 
+        /// <summary>
+        /// Attempts to retrieve an array of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
+        /// </summary>
         public readonly bool TryGetArray<T>(uint entity, out USpan<T> array) where T : unmanaged
         {
             if (ContainsArray<T>(entity))
@@ -1340,16 +1509,25 @@ namespace Simulation
             return UnsafeWorld.GetArrayLength(value, entity, ArrayType.Get<T>());
         }
 
+        /// <summary>
+        /// Destroys the array of type <typeparamref name="T"/> on the given <paramref name="entity"/>.
+        /// </summary>
         public readonly void DestroyArray<T>(uint entity) where T : unmanaged
         {
             DestroyArray(entity, ArrayType.Get<T>());
         }
 
+        /// <summary>
+        /// Destroys the array of the given <paramref name="arrayType"/> on the given <paramref name="entity"/>.
+        /// </summary>
         public readonly void DestroyArray(uint entity, ArrayType arrayType)
         {
             UnsafeWorld.DestroyArray(value, entity, arrayType);
         }
 
+        /// <summary>
+        /// Adds a new <typeparamref name="T"/> component to the given <paramref name="entity"/>.
+        /// </summary>
         public readonly void AddComponent<T>(uint entity, T component) where T : unmanaged
         {
             ComponentType type = ComponentType.Get<T>();
@@ -1359,7 +1537,7 @@ namespace Simulation
         }
 
         /// <summary>
-        /// Adds a new component of the given type with uninitialized data.
+        /// Adds a new component of type <typeparamref name="T"/> to the given <paramref name="entity"/>.
         /// </summary>
         public readonly void AddComponent<T>(uint entity) where T : unmanaged
         {
@@ -1377,6 +1555,10 @@ namespace Simulation
             UnsafeWorld.NotifyComponentAdded(this, entity, componentType);
         }
 
+        /// <summary>
+        /// Adds a new component of the given <paramref name="componentType"/> with <paramref name="componentData"/> bytes
+        /// to <paramref name="entity"/>.
+        /// </summary>
         public readonly void AddComponent(uint entity, ComponentType componentType, USpan<byte> componentData)
         {
             USpan<byte> bytes = UnsafeWorld.AddComponent(value, entity, componentType);
@@ -1393,18 +1575,24 @@ namespace Simulation
             return ref GetComponentRef<T>(entity);
         }
 
+        /// <summary>
+        /// Removes the component of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
+        /// </summary>
         public readonly void RemoveComponent<T>(uint entity) where T : unmanaged
         {
             UnsafeWorld.RemoveComponent<T>(value, entity);
         }
 
+        /// <summary>
+        /// Removes the component of the given <paramref name="componentType"/> from the given <paramref name="entity"/>.
+        /// </summary>
         public readonly void RemoveComponent(uint entity, ComponentType componentType)
         {
             UnsafeWorld.RemoveComponent(value, entity, componentType);
         }
 
         /// <summary>
-        /// Checks <c>true</c> if any entity in this world contains a component
+        /// Checks if any entity in this world contains a component
         /// of type <typeparamref name="T"/>.
         /// </summary>
         public readonly bool ContainsAnyComponent<T>() where T : unmanaged
@@ -1426,16 +1614,25 @@ namespace Simulation
             return false;
         }
 
+        /// <summary>
+        /// Checks if the given <paramref name="entity"/> contains a component of type <typeparamref name="T"/>.
+        /// </summary>
         public readonly bool ContainsComponent<T>(uint entity) where T : unmanaged
         {
             return ContainsComponent(entity, ComponentType.Get<T>());
         }
 
-        public readonly bool ContainsComponent(uint entity, ComponentType type)
+        /// <summary>
+        /// Checks if the given <paramref name="entity"/> contains a component of <paramref name="componentType"/>.
+        /// </summary>
+        public readonly bool ContainsComponent(uint entity, ComponentType componentType)
         {
-            return UnsafeWorld.ContainsComponent(value, entity, type);
+            return UnsafeWorld.ContainsComponent(value, entity, componentType);
         }
 
+        /// <summary>
+        /// Retrieves a reference to the component of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
+        /// </summary>
         public readonly ref T GetComponentRef<T>(uint entity) where T : unmanaged
         {
             return ref UnsafeWorld.GetComponentRef<T>(value, entity);
@@ -1457,6 +1654,9 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Retrieves the component of the given type <typeparamref name="T"/> from the given <paramref name="entity"/>.
+        /// </summary>
         public readonly T GetComponent<T>(uint entity) where T : unmanaged
         {
             return GetComponentRef<T>(entity);
@@ -1470,6 +1670,9 @@ namespace Simulation
             return UnsafeWorld.GetComponentBytes(value, entity, type);
         }
 
+        /// <summary>
+        /// Attempts to retrieve the component of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
+        /// </summary>
         public readonly bool TryGetComponent<T>(uint entity, out T found) where T : unmanaged
         {
             if (ContainsComponent<T>(entity))
@@ -1484,6 +1687,10 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Attempts to retrieve a reference to the component of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
+        /// </summary>
+        /// <returns><c>true</c> if the component is found.</returns>
         public readonly ref T TryGetComponentRef<T>(uint entity, out bool contains) where T : unmanaged
         {
             if (ContainsComponent<T>(entity))
@@ -1499,12 +1706,18 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Assigns the given <paramref name="component"/> to the given <paramref name="entity"/>.
+        /// </summary>
         public readonly void SetComponent<T>(uint entity, T component) where T : unmanaged
         {
             ref T existing = ref GetComponentRef<T>(entity);
             existing = component;
         }
 
+        /// <summary>
+        /// Assigns the given <paramref name="componentData"/> to the given <paramref name="entity"/>.
+        /// </summary>
         public readonly void SetComponent(uint entity, ComponentType componentType, USpan<byte> componentData)
         {
             USpan<byte> bytes = GetComponentBytes(entity, componentType);
@@ -1543,6 +1756,9 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Checks if this world contains a chunk with the given <paramref name="componentTypes"/>.
+        /// </summary>
         public readonly bool ContainsComponentChunk(USpan<ComponentType> componentTypes)
         {
             BitSet bitSet = new();
@@ -1555,6 +1771,9 @@ namespace Simulation
             return ComponentChunks.ContainsKey(key);
         }
 
+        /// <summary>
+        /// Attempts to retrieve the component chunk that is all of the <paramref name="componentTypes"/>.
+        /// </summary>
         public readonly bool TryGetComponentChunk(USpan<ComponentType> componentTypes, out ComponentChunk chunk)
         {
             BitSet bitSet = new();
@@ -1576,13 +1795,16 @@ namespace Simulation
             return CountEntitiesWithComponent(type, onlyEnabled);
         }
 
-        public readonly uint CountEntitiesWithComponent(ComponentType type, bool onlyEnabled = false)
+        /// <summary>
+        /// Counts how many entities there are with component of the given <paramref name="componentType"/>.
+        /// </summary>
+        public readonly uint CountEntitiesWithComponent(ComponentType componentType, bool onlyEnabled = false)
         {
             uint count = 0;
             foreach (int hash in ComponentChunks.Keys)
             {
                 ComponentChunk chunk = ComponentChunks[hash];
-                if (chunk.ContainsType(type))
+                if (chunk.ContainsType(componentType))
                 {
                     if (!onlyEnabled)
                     {
@@ -1787,6 +2009,9 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Fills the given <paramref name="list"/> with all components of type <typeparamref name="T"/>.
+        /// </summary>
         public readonly void Fill<T>(List<T> list, bool onlyEnabled = false) where T : unmanaged
         {
             ComponentType type = ComponentType.Get<T>();
@@ -1815,6 +2040,10 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Fills the given <paramref name="entities"/> list with all entities that contain
+        /// a component of type <typeparamref name="T"/>.
+        /// </summary>
         public readonly void Fill<T>(List<uint> entities, bool onlyEnabled = false) where T : unmanaged
         {
             ComponentType type = ComponentType.Get<T>();
@@ -1843,6 +2072,9 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Fills <paramref name="components"/> and <paramref name="entities"/>.
+        /// </summary>
         public readonly void Fill<T>(List<T> components, List<uint> entities, bool onlyEnabled = false) where T : unmanaged
         {
             ComponentType type = ComponentType.Get<T>();
@@ -1873,6 +2105,10 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Fills the given <paramref name="entities"/> list with all entities that have
+        /// a component of type <paramref name="componentType"/>.
+        /// </summary>
         public readonly void Fill(ComponentType componentType, List<uint> entities, bool onlyEnabled = false)
         {
             Dictionary<int, ComponentChunk> chunks = ComponentChunks;
@@ -1931,11 +2167,18 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Iterates over all entities that contain the given component type.
+        /// </summary>
         public readonly IEnumerableUInt GetAll<T>(bool onlyEnabled = false) where T : unmanaged
         {
             return GetAll(ComponentType.Get<T>(), onlyEnabled);
         }
 
+        /// <summary>
+        /// Finds all entities that contain all of the given component types and
+        /// invokes the callback for every entity found.
+        /// </summary>
         public readonly void ForEach<T>(QueryCallback callback, bool onlyEnabled = false) where T : unmanaged
         {
             ComponentType componentType = ComponentType.Get<T>();
@@ -1967,9 +2210,6 @@ namespace Simulation
         /// <summary>
         /// Finds all entities that contain all of the given component types
         /// and invokes the callback for every entity found.
-        /// <para>
-        /// Destroying entities inside the callback is not recommended.
-        /// </para>
         /// </summary>
         public readonly void ForEach(USpan<ComponentType> componentTypes, QueryCallback callback, bool onlyEnabled = false)
         {
@@ -2004,6 +2244,10 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Finds all entities that contain all of the given component types
+        /// and invokes the callback for every entity found.
+        /// </summary>
         public readonly void ForEach<T>(QueryCallback<T> callback, bool onlyEnabled = false) where T : unmanaged
         {
             ComponentType componentType = ComponentType.Get<T>();
@@ -2035,6 +2279,10 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Finds all entities that contain all of the given component types
+        /// and invokes the callback for every entity found.
+        /// </summary>
         public readonly void ForEach<T1, T2>(QueryCallback<T1, T2> callback, bool onlyEnabled = false) where T1 : unmanaged where T2 : unmanaged
         {
             BitSet componentTypesMask = new();
@@ -2070,6 +2318,10 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Finds all entities that contain all of the given component types
+        /// and invokes the callback for every entity found.
+        /// </summary>
         public readonly void ForEach<T1, T2, T3>(QueryCallback<T1, T2, T3> callback, bool onlyEnabled = false) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
             BitSet componentTypesMask = new();
@@ -2108,6 +2360,10 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Finds all entities that contain all of the given component types
+        /// and invokes the callback for every entity found.
+        /// </summary>
         public readonly void ForEach<T1, T2, T3, T4>(QueryCallback<T1, T2, T3, T4> callback, bool onlyEnabled = false) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
             BitSet componentTypesMask = new();
@@ -2149,31 +2405,74 @@ namespace Simulation
             }
         }
 
+        /// <summary>
+        /// Creates a new world.
+        /// </summary>
         public static World Create()
         {
             return new(UnsafeWorld.Allocate());
         }
 
+        /// <inheritdoc/>
         public static bool operator ==(World left, World right)
         {
             return left.Equals(right);
         }
 
+        /// <inheritdoc/>
         public static bool operator !=(World left, World right)
         {
             return !(left == right);
         }
     }
 
+    /// <summary>
+    /// Delegate for entities.
+    /// </summary>
     public delegate void QueryCallback(in uint id);
+
+    /// <summary>
+    /// Delegate  for entities with a reference to <typeparamref name="T1"/> components.
+    /// </summary>
     public delegate void QueryCallback<T1>(in uint id, ref T1 t1) where T1 : unmanaged;
+
+    /// <summary>
+    /// Delegate  for entities with references to <typeparamref name="T1"/> and <typeparamref name="T2"/> components.
+    /// </summary>
     public delegate void QueryCallback<T1, T2>(in uint id, ref T1 t1, ref T2 t2) where T1 : unmanaged where T2 : unmanaged;
+
+    /// <summary>
+    /// Delegate  for entities with references to <typeparamref name="T1"/>, <typeparamref name="T2"/> and <typeparamref name="T3"/> components.
+    /// </summary>
     public delegate void QueryCallback<T1, T2, T3>(in uint id, ref T1 t1, ref T2 t2, ref T3 t3) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged;
+
+    /// <summary>
+    /// Delegate for entities with references to <typeparamref name="T1"/>, <typeparamref name="T2"/>, <typeparamref name="T3"/> and <typeparamref name="T4"/> components.
+    /// </summary>
     public delegate void QueryCallback<T1, T2, T3, T4>(in uint id, ref T1 t1, ref T2 t2, ref T3 t3, ref T4 t4) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged;
 
+    /// <summary>
+    /// Delegate for when an entity is created.
+    /// </summary>
     public delegate void EntityCreatedCallback(World world, uint entity);
+
+    /// <summary>
+    /// Delegate for when an entity is destroyed.
+    /// </summary>
     public delegate void EntityDestroyedCallback(World world, uint entity);
+
+    /// <summary>
+    /// Delegate for when an entity is enabled or disabled.
+    /// </summary>
     public delegate void EntityParentChangedCallback(World world, uint entity, uint parent);
+
+    /// <summary>
+    /// Delegate for when a component is added to an entity.
+    /// </summary>
     public delegate void ComponentAddedCallback(World world, uint entity, ComponentType componentType);
+
+    /// <summary>
+    /// Delegate for when a component is removed from an entity.
+    /// </summary>
     public delegate void ComponentRemovedCallback(World world, uint entity, ComponentType componentType);
 }
