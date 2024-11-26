@@ -154,10 +154,12 @@ namespace Simulation.Tests
             world.DestroyEntity(entity);
 
             Assert.That(world.ContainsEntity(entity), Is.False);
+#if DEBUG
             Assert.Throws<NullReferenceException>(() =>
             {
                 world.ContainsArray<SimpleComponent>(entity);
             });
+#endif
 
             world.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));

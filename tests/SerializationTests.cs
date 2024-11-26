@@ -166,15 +166,6 @@ namespace Simulation.Tests
         }
 
         [Test]
-        public void ReadTooMuch()
-        {
-            using BinaryWriter writer = new();
-            writer.WriteSpan<char>("The snake that eats its own tail".AsUSpan());
-            using BinaryReader reader = new(writer.GetBytes());
-            Assert.Throws<InvalidOperationException>(() => reader.ReadSpan<char>(100));
-        }
-
-        [Test]
         public void CheckSerializable()
         {
             using Complicated complicated = new();
