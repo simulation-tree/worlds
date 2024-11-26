@@ -1,0 +1,66 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.2
+        with:
+          path: ${{ github.event.repository.name }}
+
+      - name: Checkout `unmanaged`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/unmanaged
+          token: ${{ secrets.PAT }}
+          path: unmanaged
+
+      - name: Checkout `collections`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/collections
+          token: ${{ secrets.PAT }}
+          path: collections
+      
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Set VERSION variable from tag
+        run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
+      
+      - name: Build Core
+        run: dotnet build "${{ github.event.repository.name }}/core" -c Release /p:Version=${VERSION}
+
+      - name: Build Generator
+        run: dotnet build "${{ github.event.repository.name }}/generator" -c Release /p:Version=${VERSION}
+      
+      - name: Test
+        run: dotnet test "${{ github.event.repository.name }}/tests" -c Release
+
+      - name: Pack Core
+        run: dotnet pack "${{ github.event.repository.name }}/core" -c Release /p:Version=${VERSION} --no-build --output .
+
+      - name: Pack Generator
+        run: dotnet pack "${{ github.event.repository.name }}/generator" -c Release /p:Version=${VERSION} --no-build --output .
+
+      - name: Add source
+        run: dotnet nuget add source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --name github --username ${{ github.repository_owner }} --password ${{ github.token }} --store-password-in-clear-text
+      
+      - name: Push Core
+        run: dotnet nuget push Simulation.Core.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
+        env:
+          NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
+
+      - name: Push Generator
+        run: dotnet nuget push Simulation.Generator.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
+        env:
+          NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
