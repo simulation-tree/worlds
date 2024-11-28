@@ -12,7 +12,11 @@
     <description>Core library of the simulation project</description>
   </metadata>
   <files>
-      <file src="**/*.cs" target="contentFiles/cs/net9.0/Simulation.Core/"/>
-      <file src="**/*.cs" target="content/cs/net9.0/Simulation.Core/"/>
+      <file src="*.cs" target="contentFiles/cs/net9.0/Simulation.Core/"/>
+      <file src="**/Unsafe/*.cs" target="contentFiles/cs/net9.0/Simulation.Core/"/>
+      <file src="**/Types/*.cs" target="contentFiles/cs/net9.0/Simulation.Core/"/>
+      <file src="**/Functions/*.cs" target="contentFiles/cs/net9.0/Simulation.Core/"/>
+      <file src="**/Extensions/*.cs" target="contentFiles/cs/net9.0/Simulation.Core/"/>
+      <file src="**/Components/*.cs" target="contentFiles/cs/net9.0/Simulation.Core/"/>
   </files>
 </package>
