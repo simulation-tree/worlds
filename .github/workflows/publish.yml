@@ -39,7 +39,7 @@ jobs:
 
       - name: Update version property
         run: |
-          sed -i "s|<version>.*</version>|<version>${VERSION}</version>|g" package.nuspec
+          sed -i "s|<version>.*</version>|<version>${VERSION}</version>|g" "${{ github.event.repository.name }}/core/package.nuspec"
       
       - name: Build Core
         run: dotnet build "${{ github.event.repository.name }}/core" -c Release /p:Version=${VERSION}
