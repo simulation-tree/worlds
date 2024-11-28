@@ -39,10 +39,7 @@ jobs:
 
       - name: Update version property
         run: |
-          sed -i "s|<version>.*</version>|<version>${VERSION}</version>|g" "${{ github.event.repository.name }}/core/package.nuspec"
-      
-      - name: Build Core
-        run: dotnet build "${{ github.event.repository.name }}/core" -c Release /p:Version=${VERSION}
+          sed -i "s|<version>.*</version>|<version>${VERSION}</version>|g" "${{ github.event.repository.name }}/source/package.nuspec"
 
       - name: Build Generator
         run: dotnet build "${{ github.event.repository.name }}/generator" -c Release /p:Version=${VERSION}
@@ -53,9 +50,6 @@ jobs:
       - name: Test
         run: dotnet test "${{ github.event.repository.name }}/tests" -c Release
 
-      - name: Pack Core
-        run: dotnet pack "${{ github.event.repository.name }}/core" -c Release /p:Version=${VERSION} --no-build --output .
-
       - name: Pack Generator
         run: dotnet pack "${{ github.event.repository.name }}/generator" -c Release /p:Version=${VERSION} --no-build --output .
 
@@ -65,11 +59,6 @@ jobs:
       - name: Add source
         run: dotnet nuget add source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --name github --username ${{ github.repository_owner }} --password ${{ github.token }} --store-password-in-clear-text
       
-      - name: Push Core
-        run: dotnet nuget push Simulation.Core.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
-        env:
-          NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
-
       - name: Push Generator
         run: dotnet nuget push Simulation.Generator.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
         env:
