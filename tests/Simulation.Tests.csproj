@@ -28,7 +28,7 @@
 		<ProjectReference Include="..\..\collections\source\Collections.csproj" />
 		<ProjectReference Include="..\..\unmanaged\source\Unmanaged.csproj" />
 		<ProjectReference Include="..\..\unmanaged\tests\Unmanaged.Tests.csproj" />
-		<ProjectReference Include="..\core\Simulation.Core.csproj" />
+		<ProjectReference Include="..\source\Simulation.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
