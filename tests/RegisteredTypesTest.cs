@@ -1,11 +1,9 @@
 ﻿using Collections;
-using Programs;
-using Programs.Components;
 using Unmanaged;
 
-namespace Simulation.Tests
+namespace Worlds.Tests
 {
-    public class RegisteredTypesTest : SimulationTests
+    public class RegisteredTypesTest : WorldTests
     {
         [Test]
         public void CheckIfAllAreRegistered()
@@ -16,8 +14,6 @@ namespace Simulation.Tests
             componentTypes.Add(ComponentType.Get<double>());
             componentTypes.Add(ComponentType.Get<char>());
             componentTypes.Add(ComponentType.Get<World>());
-            componentTypes.Add(ComponentType.Get<IsProgram>());
-            componentTypes.Add(ComponentType.Get<ProgramState>());
             componentTypes.Add(ComponentType.Get<byte>());
             componentTypes.Add(ComponentType.Get<SimpleComponent>());
             componentTypes.Add(ComponentType.Get<Another>());
@@ -35,7 +31,6 @@ namespace Simulation.Tests
             componentTypes.Add(ComponentType.Get<EntityReferenceTests.ReferencedEntity>());
             componentTypes.Add(ComponentType.Get<short>());
             componentTypes.Add(ComponentType.Get<ushort>());
-            componentTypes.Add(ComponentType.Get<ProgramAllocation>());
 
             using List<ArrayType> arrayTypes = new();
             arrayTypes.Add(ArrayType.Get<byte>());

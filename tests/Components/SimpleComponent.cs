@@ -1,6 +1,6 @@
 ﻿using Unmanaged;
 
-namespace Simulation.Tests
+namespace Worlds.Tests
 {
     public struct SimpleComponent
     {

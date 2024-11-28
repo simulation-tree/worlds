@@ -1,8 +1,9 @@
 ﻿using Collections;
 using System;
 using Unmanaged;
+using Worlds;
 
-namespace Simulation
+namespace Worlds
 {
     //todo: make a generator of queries
     /// <summary>

@@ -1,6 +1,6 @@
 {
-    "name": "com.popcron.simulation",
-    "displayName": "Simulation",
+    "name": "com.popcron.worlds",
+    "displayName": "Worlds",
     "version": "1.0.0",
     "author": {
         "name": "popcron"

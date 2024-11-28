@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Unmanaged;
 
-namespace Simulation
+namespace Worlds
 {
     /// <summary>
     /// Represents an unmanaged array type usable with entities.

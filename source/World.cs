@@ -1,11 +1,11 @@
 ﻿using Collections;
-using Simulation.Unsafe;
 using System;
 using System.Diagnostics;
 using Unmanaged;
+using Worlds.Unsafe;
 using IEnumerableUInt = System.Collections.Generic.IEnumerable<uint>;
 
-namespace Simulation
+namespace Worlds
 {
     /// <summary>
     /// Contains arbitrary data sorted into groups of entities for processing.
@@ -572,7 +572,7 @@ namespace Simulation
                 if (isRelative)
                 {
                     uint relativeOffset = (uint)instruction.B;
-                    uint entity = entities[(entities.Count - 1) - relativeOffset];
+                    uint entity = entities[entities.Count - 1 - relativeOffset];
                     selection.Add(entity);
                 }
                 else
@@ -587,7 +587,7 @@ namespace Simulation
                 if (isRelative)
                 {
                     uint relativeOffset = (uint)instruction.B;
-                    uint parent = entities[(entities.Count - 1) - relativeOffset];
+                    uint parent = entities[entities.Count - 1 - relativeOffset];
                     for (uint i = 0; i < selection.Count; i++)
                     {
                         uint entity = selection[i];
@@ -610,7 +610,7 @@ namespace Simulation
                 if (isRelative)
                 {
                     uint relativeOffset = (uint)instruction.B;
-                    uint referencedEntity = entities[(entities.Count - 1) - relativeOffset];
+                    uint referencedEntity = entities[entities.Count - 1 - relativeOffset];
                     for (uint i = 0; i < selection.Count; i++)
                     {
                         uint entity = selection[i];

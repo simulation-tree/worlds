@@ -1,7 +1,7 @@
 ﻿using Collections;
 using Unmanaged;
 
-namespace Simulation.Unsafe
+namespace Worlds
 {
     /// <summary>
     /// Describes a slot where an entity may or may not be stored.

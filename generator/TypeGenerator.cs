@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Simulation.Generator
+namespace Worlds.Generator
 {
     [Generator(LanguageNames.CSharp)]
     public class TypeGenerator : IIncrementalGenerator
@@ -10,6 +10,7 @@ namespace Simulation.Generator
         private static readonly SourceBuilder source = new();
         private static readonly SourceBuilder console = new();
         private const string TypeName = "TypeTable";
+        private const string Namespace = "Worlds";
 
         void IIncrementalGenerator.Initialize(IncrementalGeneratorInitializationContext context)
         {
@@ -26,7 +27,7 @@ namespace Simulation.Generator
             compilation = AppendReferencedSyntaxTrees(compilation);
 
             source.Clear();
-            source.AppendLine("namespace Simulation");
+            source.AppendLine($"namespace {Namespace}");
             source.BeginGroup();
             {
                 source.AppendLine($"public static partial class {TypeName}");

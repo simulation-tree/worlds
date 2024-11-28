@@ -3,9 +3,9 @@ using System;
 using System.Linq;
 using Unmanaged;
 
-namespace Simulation.Tests
+namespace Worlds.Tests
 {
-    public class SerializationTests : SimulationTests
+    public class SerializationTests : WorldTests
     {
         [Test]
         public void SaveWorld()

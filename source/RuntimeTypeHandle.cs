@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Simulation
+namespace System
 {
     public readonly struct RuntimeTypeHandle : IEquatable<RuntimeTypeHandle>
     {

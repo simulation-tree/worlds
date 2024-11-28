@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Simulation
+namespace Worlds
 {
     /// <summary>
     /// Describes a type of entity.

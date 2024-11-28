@@ -3,7 +3,7 @@ using System;
 using System.Diagnostics;
 using Unmanaged;
 
-namespace Simulation
+namespace Worlds
 {
     /// <summary>
     /// Series of world instructions to perform all in one go.
@@ -27,7 +27,7 @@ namespace Simulation
             {
                 ThrowIfOutOfRange(index);
                 uint start = sizeof(uint) + sizeof(uint);
-                return list.Read<Instruction>(start + (TypeInfo<Instruction>.size * index));
+                return list.Read<Instruction>(start + TypeInfo<Instruction>.size * index);
             }
         }
 
@@ -50,7 +50,7 @@ namespace Simulation
         public unsafe Operation(uint initialCapacity = 0)
         {
             uint start = sizeof(uint) + sizeof(uint);
-            uint size = start + (TypeInfo<Instruction>.size * initialCapacity);
+            uint size = start + TypeInfo<Instruction>.size * initialCapacity;
             list = new(size);
             list.Write(sizeof(uint) * 0, 0);
             list.Write(sizeof(uint) * 1, initialCapacity);
@@ -215,7 +215,7 @@ namespace Simulation
                     if (isRelative)
                     {
                         uint relativeOffset = (uint)instruction.B;
-                        uint entity = created[(created.Count - 1) - relativeOffset];
+                        uint entity = created[created.Count - 1 - relativeOffset];
                         selection.Add(entity);
                     }
                     else
@@ -259,7 +259,7 @@ namespace Simulation
                     if (isRelative)
                     {
                         uint relativeOffset = (uint)instruction.B;
-                        uint entity = created[(created.Count - 1) - relativeOffset];
+                        uint entity = created[created.Count - 1 - relativeOffset];
                         selection.Add(entity);
                     }
                     else
@@ -460,7 +460,7 @@ namespace Simulation
         public void CreateArray<T>(USpan<T> values) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
-            AddInstruction(Instruction.CreateArray<T>(values));
+            AddInstruction(Instruction.CreateArray(values));
         }
 
         /// <summary>
@@ -510,12 +510,12 @@ namespace Simulation
             if (length == capacity)
             {
                 capacity = Math.Max(capacity * 2, 4);
-                Allocation.Resize(ref list, start + (TypeInfo<Instruction>.size * capacity));
+                Allocation.Resize(ref list, start + TypeInfo<Instruction>.size * capacity);
                 list.Write(sizeof(uint) * 1, capacity);
             }
 
             list.Write(sizeof(uint) * 0, length + 1);
-            list.Write(start + (TypeInfo<Instruction>.size * length), instruction);
+            list.Write(start + TypeInfo<Instruction>.size * length, instruction);
         }
 
         /// <summary>
@@ -531,7 +531,7 @@ namespace Simulation
             for (uint i = index; i < length - 1; i++)
             {
                 Instruction instruction = this[i + 1];
-                list.Write(start + (TypeInfo<Instruction>.size * i), instruction);
+                list.Write(start + TypeInfo<Instruction>.size * i, instruction);
             }
 
             list.Write(sizeof(uint) * 0, length - 1);
@@ -542,7 +542,7 @@ namespace Simulation
         /// </summary>
         public unsafe static Operation Create(uint initialCapacity = 1)
         {
-            uint size = sizeof(uint) + sizeof(uint) + (TypeInfo<Instruction>.size * initialCapacity);
+            uint size = sizeof(uint) + sizeof(uint) + TypeInfo<Instruction>.size * initialCapacity;
             Allocation list = new(size);
             list.Write(sizeof(uint) * 0, 0);
             list.Write(sizeof(uint) * 1, initialCapacity);

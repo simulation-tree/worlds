@@ -1,10 +1,10 @@
 ﻿using Collections;
 using Collections.Unsafe;
-using Simulation.Unsafe;
 using System;
 using Unmanaged;
+using Worlds.Unsafe;
 
-namespace Simulation
+namespace Worlds
 {
     /// <summary>
     /// Stores components of entities with the same types.

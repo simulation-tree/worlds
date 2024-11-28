@@ -3,7 +3,7 @@
 using System;
 using Unmanaged;
 
-namespace Simulation
+namespace Worlds
 {
     /// <summary>
     /// A <see cref="uint"/> type that refers to a reference local to its entity.

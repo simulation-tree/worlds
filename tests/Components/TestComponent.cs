@@ -1,4 +1,4 @@
-﻿namespace Simulation.Tests
+﻿namespace Worlds.Tests
 {
     public struct TestComponent
     {

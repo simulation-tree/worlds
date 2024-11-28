@@ -1,7 +1,7 @@
 ﻿using System;
 using Unmanaged;
 
-namespace Simulation
+namespace Worlds
 {
     /// <summary>
     /// Contains information about an entity type.

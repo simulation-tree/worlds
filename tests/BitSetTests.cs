@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace Simulation.Tests
+namespace Worlds.Tests
 {
     public class BitSetTests
     {

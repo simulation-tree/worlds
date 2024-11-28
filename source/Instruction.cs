@@ -1,7 +1,7 @@
 ﻿using System;
 using Unmanaged;
 
-namespace Simulation
+namespace Worlds
 {
     /// <summary>
     /// Contains an instruction for working with <see cref="World"/>s.
@@ -34,7 +34,7 @@ namespace Simulation
 
         private Instruction(Type operation, ulong a, ulong b, ulong c)
         {
-            this.type = operation;
+            type = operation;
             this.a = a;
             this.b = b;
             this.c = c;
@@ -597,7 +597,7 @@ namespace Simulation
         public unsafe static Instruction CreateArray<T>(USpan<T> values) where T : unmanaged
         {
             Allocation allocation = Allocation.Create(values);
-            return new(Type.CreateArray, ArrayType.Get<T>().value, (ulong)(nint)allocation, (uint)values.Length);
+            return new(Type.CreateArray, ArrayType.Get<T>().value, (ulong)(nint)allocation, values.Length);
         }
 
         /// <summary>
@@ -632,7 +632,7 @@ namespace Simulation
         /// </summary>
         public unsafe static Instruction SetArrayElement<T>(uint index, USpan<T> elements) where T : unmanaged
         {
-            Allocation allocation = new(sizeof(uint) + (TypeInfo<T>.size * elements.Length));
+            Allocation allocation = new(sizeof(uint) + TypeInfo<T>.size * elements.Length);
             allocation.Write(0, elements.Length);
             allocation.Write(sizeof(uint), elements);
             return new(Type.SetArrayElement, ArrayType.Get<T>().value, (ulong)(nint)allocation, index);
@@ -755,7 +755,7 @@ namespace Simulation
             /// Destroys arrays.
             /// </summary>
             DestroyArray,
-            
+
             /// <summary>
             /// Resizes arrays.
             /// </summary>

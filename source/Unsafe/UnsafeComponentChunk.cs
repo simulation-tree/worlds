@@ -4,7 +4,7 @@ using System;
 using System.Diagnostics;
 using Unmanaged;
 
-namespace Simulation.Unsafe
+namespace Worlds.Unsafe
 {
     /// <summary>
     /// Opaque pointer implementation of a <see cref="ComponentChunk"/>.
@@ -18,10 +18,10 @@ namespace Simulation.Unsafe
 
         private UnsafeComponentChunk(BitSet componentTypesMask, Array<nint> componentArrays, Array<byte> typeIndices)
         {
-            this.entities = new(4);
+            entities = new(4);
             this.typeIndices = typeIndices;
             this.componentArrays = componentArrays;
-            this.typeMask = componentTypesMask;
+            typeMask = componentTypesMask;
         }
 
         /// <summary>

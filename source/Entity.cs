@@ -1,11 +1,11 @@
-﻿using Simulation.Unsafe;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using Unmanaged;
+using Worlds.Unsafe;
 
-namespace Simulation
+namespace Worlds
 {
     /// <summary>
     /// Represents an entity in the simulation relative to a <see cref="World"/>.
@@ -88,7 +88,7 @@ namespace Simulation
         /// </summary>
         public Entity(World world, uint existingEntity)
         {
-            this.value = existingEntity;
+            value = existingEntity;
             this.world = world;
         }
 

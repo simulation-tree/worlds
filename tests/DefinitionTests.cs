@@ -1,10 +1,8 @@
-﻿using Programs;
-using Programs.Components;
-using Unmanaged;
+﻿using Unmanaged;
 
-namespace Simulation.Tests
+namespace Worlds.Tests
 {
-    public class DefinitionTests : SimulationTests
+    public class DefinitionTests : WorldTests
     {
         [Test]
         public void CompareEquality()
@@ -39,8 +37,8 @@ namespace Simulation.Tests
         [Test]
         public void CompareHashCodeCase1()
         {
-            BitSet a = new([ComponentType.Get<World>(), ComponentType.Get<IsProgram>(), ComponentType.Get<ProgramState>()]);
-            BitSet b = new([ComponentType.Get<IsProgram>(), ComponentType.Get<ProgramState>()]);
+            BitSet a = new([ComponentType.Get<World>(), ComponentType.Get<byte>(), ComponentType.Get<float>()]);
+            BitSet b = new([ComponentType.Get<byte>(), ComponentType.Get<float>()]);
             Assert.That(a, Is.Not.EqualTo(b));
         }
 

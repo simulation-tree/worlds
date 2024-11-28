@@ -1,7 +1,7 @@
 ﻿using Collections;
 using System;
 
-namespace Simulation
+namespace Worlds
 {
     /// <summary>
     /// Query object for finding entities with a specific <see cref="Definition"/>.

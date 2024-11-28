@@ -1,6 +1,6 @@
-﻿namespace Simulation.Tests
+﻿namespace Worlds.Tests
 {
-    public class EntityReferenceTests : SimulationTests
+    public class EntityReferenceTests : WorldTests
     {
         [Test]
         public void ReferenceAnotherEntity()

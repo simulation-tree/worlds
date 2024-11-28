@@ -1,4 +1,4 @@
-﻿namespace Simulation
+﻿namespace Worlds
 {
     /// <summary>
     /// Extensions for <see cref="IQuery"/> types.

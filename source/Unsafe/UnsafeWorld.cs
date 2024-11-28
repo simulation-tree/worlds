@@ -4,7 +4,7 @@ using System;
 using System.Diagnostics;
 using Unmanaged;
 
-namespace Simulation.Unsafe
+namespace Worlds.Unsafe
 {
     /// <summary>
     /// Opaque pointer implementation of a <see cref="World"/>.

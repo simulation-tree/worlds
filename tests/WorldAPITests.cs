@@ -1,9 +1,9 @@
 ﻿using System;
 using Unmanaged;
 
-namespace Simulation.Tests
+namespace Worlds.Tests
 {
-    public class WorldTests : SimulationTests
+    public class WorldAPITests : WorldTests
     {
         [Test]
         public void CreateAndDisposeWorld()

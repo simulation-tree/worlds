@@ -2,9 +2,9 @@
 using System.Runtime.InteropServices;
 using Unmanaged;
 
-namespace Simulation.Tests
+namespace Worlds.Tests
 {
-    public unsafe class ComponentChunkTests : SimulationTests
+    public unsafe class ComponentChunkTests : WorldTests
     {
         [Test]
         public void AddEntityNoComponents()

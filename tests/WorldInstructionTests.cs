@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Unmanaged;
 
-namespace Simulation.Tests
+namespace Worlds.Tests
 {
-    public class WorldInstructionTests : SimulationTests
+    public class WorldInstructionTests : WorldTests
     {
         [Test]
         public void CreateOneEntity()

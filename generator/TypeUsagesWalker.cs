@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Simulation.Generator
+namespace Worlds.Generator
 {
     public class TypeUsagesWalker : CSharpSyntaxWalker
     {

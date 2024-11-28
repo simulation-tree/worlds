@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Unmanaged;
 
-namespace Simulation
+namespace Worlds
 {
     /// <summary>
     /// Extensions for <see cref="IEntity"/> types.
@@ -161,7 +161,7 @@ namespace Simulation
         /// </summary>
         public static bool Is<T>(this T entity) where T : unmanaged, IEntity
         {
-            return Is(entity, entity.Definition);
+            return entity.Is(entity.Definition);
         }
 
         /// <summary>
@@ -197,7 +197,7 @@ namespace Simulation
         /// <summary>
         /// Awaits <paramref name="action"/> until this entity is complies with this entity's <see cref="Definition"/>.
         /// </summary>
-        public static async Task UntilCompliant<T>(this T entity, Simulate action, CancellationToken cancellation = default) where T : unmanaged, IEntity
+        public static async Task UntilCompliant<T>(this T entity, Update action, CancellationToken cancellation = default) where T : unmanaged, IEntity
         {
             World world = entity.World;
             Definition definition = entity.Definition;

@@ -1,19 +1,25 @@
-# Simulation
-Library for implementing logic acting on data stored as _components_ and _arrays_, where both can be found through _entities_.
-Entities themselves are stored in _worlds_, which can be serialized, deserialized and appended to other worlds at runtime.
+# Worlds
+Library for implementing efficient storage of data as _components_ and _arrays_, where both can be found through _entities_.
+Entities themselves are stored within these _worlds_, which can be serialized, deserialized, and appended to other worlds at runtime.
 
 ### Initializing
-To use this library, a source generated `TypeTable` must be invoked to register all component and array types:
+To use this library, all of the component and array types that will be used, must be registered:
+```cs
+private static void Main()
+{
+    ComponentType.Register<MyComponent>();
+    ComponentType.Register<IsPlayer>();
+    ArrayType.Register<char>();
+}
+```
+
+This can be automated by relying on the type table generator, and calling its static constructor:
 ```cs
 private static void Main()
 {
     RuntimeHelpers.RunClassConstructor(typeof(TypeTable).TypeHandle);
-    Console.WriteLine($"Component types: {ComponentType.All.Count}");
-    Console.WriteLine($"Array types: {ArrayType.All.Count}");
 }
 ```
-
-> If you'd like, registration of types can be done manually with the `Register<T>()` method in `ComponentType` and `ArrayType`.
 
 ### Storing values in components
 ```cs
@@ -197,129 +203,6 @@ uint anotherEntity = world.CreateEntity();
 world.AddComponent(anotherEntity, new IsPlayer("unnamed"));
 Player anotherPlayer = new Entity(world, anotherEntity).As<Player>();
 ```
-
-### Simulators, programs, and systems
-`Simulator` instances contain systems, and run through `Program` entities.
-Each of these programs gets its own world instance created separate from the simulator.
-And every system added to the simulator will be initialized, updated and finalized with
-both the simulator, and every program world:
-```cs
-uint returnCode;
-using (World world = new())
-{
-    using (Simulator simulator = new(world))
-    {
-        simulator.AddSystem<ExampleSystem>();
-        using (Program program = Program.Create<ExampleProgram>(world))
-        {
-            DateTime lastTime = DateTime.UtcNow;
-            do
-            {
-                DateTime now = DateTime.UtcNow;
-                TimeSpan delta = now - lastTime;
-                lastTime = now;
-
-                simulator.Update(delta);
-            }
-            while (!program.IsFinished(out returnCode));
-        }
-
-        simulator.RemoveSystem<ExampleSystem>();
-    }
-}
-
-return (int)returnCode;
-```
-
-Each program's update function is expected to return a code, where 0 meaning
-it should continue forward and any other value means exit:
-```cs
-public unsafe readonly struct ExampleProgram : IProgram
-{
-    private readonly DateTime startTime;
-
-    readonly StartFunction IProgram.Start => new(&Start);
-    readonly UpdateFunction IProgram.Update => new(&Update);
-    readonly FinishFunction IProgram.Finish => new(&Finish);
-
-    private ExampleProgram(DateTime startTime) 
-    {
-        this.startTime = startTime;
-    }
-
-    [UnmanagedCallersOnly]
-    private static void Start(Simulator simulator, Allocation allocation, World world)
-    {
-        allocation.Write(new ExampleProgram(DateTime.UtcNow));
-    }
-
-    [UnmanagedCallersOnly]
-    private static uint Update(Simulator simulator, Allocation allocation, World world, TimeSpan delta)
-    {
-        ref ExampleProgram program = ref allocation.Read<ExampleProgram>();
-        if (DateTime.UtcNow - program.startTime > TimeSpan.FromSeconds(5))
-        {
-            return 1;
-        }
-
-        return 0;
-    }
-
-    [UnmanagedCallersOnly]
-    private static void Finish(Simulator simulator, Allocation allocation, World world, uint returnCode)
-    {
-        ref ExampleProgram program = ref allocation.Read<ExampleProgram>();
-    }
-}
-```
-> The size of the allocation that is given is the size of this program type. In this example,
-the start function is intentionally overwriting the value in order to respect the read only field.
-
-> Program allocations are still accessible through the simulator after they have finished.
-
-Each system that is added to the simulator is given access to the simulator itself,
-and either the simulator world, or some program world:
-```cs
-public unsafe readonly struct ExampleSystem : ISystem
-{
-    readonly InitializeFunction ISystem.Initialize => new(&Initialize);
-    readonly IterateFunction ISystem.Iterate => new(&Iterate);
-    readonly FinalizeFunction ISystem.Finalize => new(&Finalize);
-
-    [UnmanagedCallersOnly]
-    private static void Initialize(SystemContainer container, World world)
-    {
-        if (container.World == world)
-        {
-            ref SimpleSystem system = ref container.Read<SimpleSystem>();
-            Entity firstEntity = new(world);
-            firstEntity.AddComponent(0u);
-        }
-    }
-
-    [UnmanagedCallersOnly]
-    private static void Iterate(SystemContainer container, World world, TimeSpan delta)
-    {
-        if (container.World == world)
-        {
-            ref uint firstEntityValue = ref world.GetComponentRef<uint>(1);
-            firstEntityValue++;
-        }
-    }
-
-    [UnmanagedCallersOnly]
-    private static void Finalize(SystemContainer container, World world)
-    {
-        if (container.World == world)
-        {
-            ref uint firstEntityValue = ref world.GetComponentRef<uint>(1);
-            firstEntityValue *= 10;
-        }
-    }
-}
-```
-> Checking if the system's world is the given world is a way to run these functions
-only once within a simulator.
 
 ### Serialization and deserialization
 Serializing a world to bytes is simple:

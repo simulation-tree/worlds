@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
-		<RootNamespace>Simulation.Tests</RootNamespace>
+		<RootNamespace>Worlds.Tests</RootNamespace>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<IsPackable>false</IsPackable>
@@ -28,7 +28,7 @@
 		<ProjectReference Include="..\..\collections\source\Collections.csproj" />
 		<ProjectReference Include="..\..\unmanaged\source\Unmanaged.csproj" />
 		<ProjectReference Include="..\..\unmanaged\tests\Unmanaged.Tests.csproj" />
-		<ProjectReference Include="..\source\Simulation.csproj" />
+		<ProjectReference Include="..\source\Worlds.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

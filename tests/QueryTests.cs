@@ -4,9 +4,9 @@ using System.Diagnostics;
 using System.Linq;
 using Unmanaged;
 
-namespace Simulation.Tests
+namespace Worlds.Tests
 {
-    public class QueryTests : SimulationTests
+    public class QueryTests : WorldTests
     {
         [Test]
         public void FindComponents()

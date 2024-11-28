@@ -1,7 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using System.Collections.Generic;
 
-namespace Simulation.Generator
+namespace Worlds.Generator
 {
     public class SymbolsMap
     {

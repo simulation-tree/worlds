@@ -1,11 +1,9 @@
-﻿using Programs;
-using Programs.Components;
-using Unmanaged;
+﻿using Unmanaged;
 using Unmanaged.Tests;
 
-namespace Simulation.Tests
+namespace Worlds.Tests
 {
-    public abstract class SimulationTests : UnmanagedTests
+    public abstract class WorldTests : UnmanagedTests
     {
         protected override void SetUp()
         {
@@ -15,8 +13,6 @@ namespace Simulation.Tests
             ComponentType.Register<double>();
             ComponentType.Register<char>();
             ComponentType.Register<World>();
-            ComponentType.Register<IsProgram>();
-            ComponentType.Register<ProgramState>();
             ComponentType.Register<byte>();
             ComponentType.Register<SimpleComponent>();
             ComponentType.Register<Another>();
@@ -34,7 +30,6 @@ namespace Simulation.Tests
             ComponentType.Register<EntityReferenceTests.ReferencedEntity>();
             ComponentType.Register<short>();
             ComponentType.Register<ushort>();
-            ComponentType.Register<ProgramAllocation>();
             ArrayType.Register<byte>();
             ArrayType.Register<float>();
             ArrayType.Register<double>();
