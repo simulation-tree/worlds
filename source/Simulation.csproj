@@ -13,8 +13,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\collections\source\Collections.csproj" />
-    <ProjectReference Include="..\..\unmanaged\source\Unmanaged.csproj" />
+    <PackageReference Include="Unmanaged" Version="0.0.5" />
+    <PackageReference Include="Unmanaged.Collections" Version="0.0.3" />
   </ItemGroup>
 
 </Project>

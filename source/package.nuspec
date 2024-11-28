@@ -13,5 +13,10 @@
   </metadata>
   <files>
       <file src="*.cs" target="contentFiles/cs/net9.0/Simulation/"/>
+      <file src="**/Components/*.cs" target="contentFiles/cs/net9.0/Simulation/"/>
+      <file src="**/Extensions/*.cs" target="contentFiles/cs/net9.0/Simulation/"/>
+      <file src="**/Functions/*.cs" target="contentFiles/cs/net9.0/Simulation/"/>
+      <file src="**/Types/*.cs" target="contentFiles/cs/net9.0/Simulation/"/>
+      <file src="**/Unsafe/*.cs" target="contentFiles/cs/net9.0/Simulation/"/>
   </files>
 </package>
