@@ -14,6 +14,5 @@
   <files>
       <file src="**/*.cs" target="contentFiles/cs/net9.0/Simulation.Core/"/>
       <file src="**/*.cs" target="content/cs/net9.0/Simulation.Core/"/>
-      <file src="Simulation.Core.props" target="build/Simulation.Core.props" />
   </files>
 </package>
