@@ -13,15 +13,15 @@ namespace Worlds.Tests
             World world = new();
             uint a = world.CreateEntity();
             world.AddComponent(a, new Fruit(42));
-            world.AddComponent(a, new Apple("Hello, World!"));
+            world.AddComponent(a, new Cherry("Hello, World!"));
             uint temporary = world.CreateEntity();
             uint b = world.CreateEntity();
             world.AddComponent(b, new Fruit(43));
             uint c = world.CreateEntity();
-            world.AddComponent(c, new Apple("Goodbye, World!"));
+            world.AddComponent(c, new Cherry("Goodbye, World!"));
             world.DestroyEntity(temporary);
             uint list = world.CreateEntity();
-            world.CreateArray<char>(list, "Well hello there list".AsUSpan());
+            world.CreateArray(list, "Well hello there list".AsUSpan().As<Character>());
 
             System.Collections.Generic.List<uint> oldEntities = world.Entities.ToList();
             System.Collections.Generic.List<(uint, Apple)> apples = new();
@@ -47,15 +47,19 @@ namespace Worlds.Tests
                 {
                     return ComponentType.Get<Apple>();
                 }
+                else if (fullTypeName.SequenceEqual(typeof(Cherry).FullName.AsSpan()))
+                {
+                    return ComponentType.Get<Cherry>();
+                }
 
                 throw new Exception($"Unknown type {fullTypeName.ToString()}");
             };
 
             World.SerializationContext.GetArrayType = (fullTypeName) =>
             {
-                if (fullTypeName.SequenceEqual(typeof(char).FullName.AsSpan()))
+                if (fullTypeName.SequenceEqual(typeof(Character).FullName.AsSpan()))
                 {
-                    return ArrayType.Get<char>();
+                    return ArrayType.Get<Character>();
                 }
 
                 throw new Exception($"Unknown type {fullTypeName.ToString()}");
@@ -71,8 +75,8 @@ namespace Worlds.Tests
 
             Assert.That(newEntities, Is.EquivalentTo(oldEntities));
             Assert.That(newApples, Is.EquivalentTo(apples));
-            Assert.That(loadedWorld.ContainsArray<char>(list), Is.True);
-            Assert.That(loadedWorld.GetArray<char>(list).ToArray(), Is.EqualTo("Well hello there list"));
+            Assert.That(loadedWorld.ContainsArray<Character>(list), Is.True);
+            Assert.That(loadedWorld.GetArray<Character>(list).As<char>().ToArray(), Is.EqualTo("Well hello there list"));
         }
 
         [Test]
@@ -81,7 +85,7 @@ namespace Worlds.Tests
             using World prefabWorld = new();
             uint a = prefabWorld.CreateEntity();
             prefabWorld.AddComponent(a, new Fruit(42));
-            prefabWorld.AddComponent(a, new Apple("Hello, World!"));
+            prefabWorld.AddComponent(a, new Cherry("Hello, World!"));
             prefabWorld.AddComponent(a, new Prefab());
 
             using BinaryWriter writer = new();
@@ -92,7 +96,7 @@ namespace Worlds.Tests
             world.AddComponent(b, new Fruit(43));
 
             uint c = world.CreateEntity();
-            world.AddComponent(c, new Apple("Goodbye, World!"));
+            world.AddComponent(c, new Cherry("Goodbye, World!"));
 
             World.SerializationContext.GetComponentType = (fullTypeName) =>
             {
@@ -108,8 +112,12 @@ namespace Worlds.Tests
                 {
                     return ComponentType.Get<Apple>();
                 }
+                else if (fullTypeName.SequenceEqual(typeof(Cherry).FullName.AsSpan()))
+                {
+                    return ComponentType.Get<Cherry>();
+                }
 
-                throw new Exception($"Unknown type {fullTypeName.ToString()}");
+                throw new Exception($"Unknown serialized component type {fullTypeName.ToString()}");
             };
 
             using BinaryReader reader = new(writer);
@@ -120,12 +128,7 @@ namespace Worlds.Tests
             Assert.That(prefabEntity, Is.Not.EqualTo((uint)0));
             Assert.That(world.ContainsEntity(prefabEntity), Is.True);
             Assert.That(world.GetComponent<Fruit>(prefabEntity).data, Is.EqualTo(42));
-            Assert.That(world.GetComponent<Apple>(prefabEntity).data.ToString(), Is.EqualTo("Hello, World!"));
-        }
-
-        public struct Prefab
-        {
-
+            Assert.That(world.GetComponent<Cherry>(prefabEntity).stones.ToString(), Is.EqualTo("Hello, World!"));
         }
 
         [Test]
@@ -139,7 +142,7 @@ namespace Worlds.Tests
                 new(-10),
             ];
 
-            Big big = new(32, new Apple("apple"), fruits);
+            Big big = new(32, new Cherry("apple"), fruits);
             using BinaryWriter writer = new();
             writer.WriteValue(big);
             using BinaryReader reader = new(writer.GetBytes());
@@ -387,10 +390,10 @@ namespace Worlds.Tests
             }
         }
 
-        public readonly struct Big(int a, Apple apple, USpan<Fruit> fruits) : IDisposable, IEquatable<Big>
+        public readonly struct Big(int a, Cherry apple, USpan<Fruit> fruits) : IDisposable, IEquatable<Big>
         {
             public readonly int a = a;
-            public readonly Apple apple = apple;
+            public readonly Cherry apple = apple;
             public readonly List<Fruit> fruits = new(fruits);
 
             public void Dispose()
@@ -405,7 +408,7 @@ namespace Worlds.Tests
 
             public bool Equals(Big other)
             {
-                return a == other.a && fruits.Equals(other.fruits) && apple.data == other.apple.data;
+                return a == other.a && fruits.Equals(other.fruits) && apple.stones == other.apple.stones;
             }
 
             public override int GetHashCode()
@@ -419,76 +422,6 @@ namespace Worlds.Tests
             }
 
             public static bool operator !=(Big left, Big right)
-            {
-                return !(left == right);
-            }
-        }
-
-        public readonly struct Fruit : IEquatable<Fruit>
-        {
-            public readonly int data;
-
-            public Fruit(int data)
-            {
-                this.data = data;
-            }
-
-            public override bool Equals(object? obj)
-            {
-                return obj is Fruit fruit && Equals(fruit);
-            }
-
-            public bool Equals(Fruit other)
-            {
-                return data == other.data;
-            }
-
-            public override int GetHashCode()
-            {
-                return HashCode.Combine(data);
-            }
-
-            public static bool operator ==(Fruit left, Fruit right)
-            {
-                return left.Equals(right);
-            }
-
-            public static bool operator !=(Fruit left, Fruit right)
-            {
-                return !(left == right);
-            }
-        }
-
-        public readonly struct Apple : IEquatable<Apple>
-        {
-            public readonly FixedString data;
-
-            public Apple(FixedString data)
-            {
-                this.data = data;
-            }
-
-            public override bool Equals(object? obj)
-            {
-                return obj is Apple apple && Equals(apple);
-            }
-
-            public bool Equals(Apple other)
-            {
-                return data.Equals(other.data);
-            }
-
-            public override int GetHashCode()
-            {
-                return HashCode.Combine(data);
-            }
-
-            public static bool operator ==(Apple left, Apple right)
-            {
-                return left.Equals(right);
-            }
-
-            public static bool operator !=(Apple left, Apple right)
             {
                 return !(left == right);
             }

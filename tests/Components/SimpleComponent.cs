@@ -2,6 +2,8 @@
 
 namespace Worlds.Tests
 {
+    [Component]
+    [Array]
     public struct SimpleComponent
     {
         public FixedString data;

@@ -1,5 +1,4 @@
 ﻿using Collections;
-using System.Runtime.InteropServices;
 using Unmanaged;
 
 namespace Worlds.Tests
@@ -10,10 +9,9 @@ namespace Worlds.Tests
         public void AddEntityNoComponents()
         {
             ComponentChunk chunk = new();
-            uint entity = new Union(7).entity;
-            chunk.AddEntity(entity);
+            chunk.AddEntity(7);
             Assert.That(chunk.Entities, Has.Count.EqualTo(1));
-            Assert.That(chunk.Entities[0], Is.EqualTo(entity));
+            Assert.That(chunk.Entities[0], Is.EqualTo(7));
             chunk.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }
@@ -21,21 +19,21 @@ namespace Worlds.Tests
         [Test]
         public void AddEntityWithComponents()
         {
-            ComponentChunk chunk = new([ComponentType.Get<int>(), ComponentType.Get<float>()]);
-            uint entity = new Union(7).entity;
+            ComponentChunk chunk = new([ComponentType.Get<Integer>(), ComponentType.Get<Float>()]);
+            uint entity = 7;
             uint index = chunk.AddEntity(entity);
-            ref int intComponent = ref chunk.GetComponentRef<int>(index);
-            ref float floatComponent = ref chunk.GetComponentRef<float>(index);
+            ref Integer intComponent = ref chunk.GetComponentRef<Integer>(index);
+            ref Float floatComponent = ref chunk.GetComponentRef<Float>(index);
             intComponent = 42;
             floatComponent = 3.14f;
             Assert.That(chunk.Entities, Has.Count.EqualTo(1));
             Assert.That(chunk.Entities[0], Is.EqualTo(entity));
-            List<int> intComponents = chunk.GetComponents<int>();
-            List<float> floatComponents = chunk.GetComponents<float>();
+            List<Integer> intComponents = chunk.GetComponents<Integer>();
+            List<Float> floatComponents = chunk.GetComponents<Float>();
             Assert.That(intComponents, Has.Count.EqualTo(1));
-            Assert.That(intComponents[0], Is.EqualTo(42));
+            Assert.That(intComponents[0], Is.EqualTo((Integer)42));
             Assert.That(floatComponents, Has.Count.EqualTo(1));
-            Assert.That(floatComponents[0], Is.EqualTo(3.14f));
+            Assert.That(floatComponents[0], Is.EqualTo((Float)3.14f));
             chunk.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }
@@ -43,17 +41,17 @@ namespace Worlds.Tests
         [Test]
         public void RemovingEntity()
         {
-            ComponentChunk chunk = new([ComponentType.Get<int>(), ComponentType.Get<float>()]);
-            uint entity = new Union(7).entity;
+            ComponentChunk chunk = new([ComponentType.Get<Integer>(), ComponentType.Get<Float>()]);
+            uint entity = 7;
             uint index = chunk.AddEntity(entity);
-            ref int intComponent = ref chunk.GetComponentRef<int>(index);
-            ref float floatComponent = ref chunk.GetComponentRef<float>(index);
+            ref Integer intComponent = ref chunk.GetComponentRef<Integer>(index);
+            ref Float floatComponent = ref chunk.GetComponentRef<Float>(index);
             intComponent = 42;
             floatComponent = 3.14f;
             chunk.RemoveEntity(entity);
             Assert.That(chunk.Entities, Is.Empty);
-            List<int> intComponents = chunk.GetComponents<int>();
-            List<float> floatComponents = chunk.GetComponents<float>();
+            List<Integer> intComponents = chunk.GetComponents<Integer>();
+            List<Float> floatComponents = chunk.GetComponents<Float>();
             Assert.That(intComponents, Is.Empty);
             Assert.That(floatComponents, Is.Empty);
             chunk.Dispose();
@@ -64,33 +62,33 @@ namespace Worlds.Tests
         public void MovingEntity()
         {
             ComponentChunk chunkA = new([]);
-            uint entity = new Union(7).entity;
+            uint entity = 7;
             uint oldIndex = chunkA.AddEntity(entity);
 
-            ComponentChunk chunkB = new([ComponentType.Get<int>()]);
+            ComponentChunk chunkB = new([ComponentType.Get<Integer>()]);
             uint newIndex = chunkA.MoveEntity(entity, chunkB);
-            ref int intComponent = ref chunkB.GetComponentRef<int>(newIndex);
+            ref Integer intComponent = ref chunkB.GetComponentRef<Integer>(newIndex);
             intComponent = 42;
 
             Assert.That(chunkA.Entities, Is.Empty);
             Assert.That(chunkB.Entities, Has.Count.EqualTo(1));
             Assert.That(chunkB.Entities[0], Is.EqualTo(entity));
-            List<int> intComponents = chunkB.GetComponents<int>();
+            List<Integer> intComponents = chunkB.GetComponents<Integer>();
             Assert.That(intComponents, Has.Count.EqualTo(1));
-            Assert.That(intComponents[0], Is.EqualTo(42));
+            Assert.That(intComponents[0], Is.EqualTo((Integer)42));
 
-            ComponentChunk chunkC = new([ComponentType.Get<float>(), ComponentType.Get<int>()]);
+            ComponentChunk chunkC = new([ComponentType.Get<Float>(), ComponentType.Get<Integer>()]);
             uint newerIndex = chunkB.MoveEntity(entity, chunkC);
-            ref float floatComponent = ref chunkC.GetComponentRef<float>(newerIndex);
+            ref Float floatComponent = ref chunkC.GetComponentRef<Float>(newerIndex);
             floatComponent = 3.14f;
 
-            Assert.That(chunkB.GetComponents<int>(), Is.Empty);
+            Assert.That(chunkB.GetComponents<Integer>(), Is.Empty);
             Assert.That(chunkB.Entities, Is.Empty);
             Assert.That(chunkC.Entities, Has.Count.EqualTo(1));
             Assert.That(chunkC.Entities[0], Is.EqualTo(entity));
-            List<float> floatComponents = chunkC.GetComponents<float>();
+            List<Float> floatComponents = chunkC.GetComponents<Float>();
             Assert.That(floatComponents, Has.Count.EqualTo(1));
-            Assert.That(floatComponents[0], Is.EqualTo(3.14f));
+            Assert.That(floatComponents[0], Is.EqualTo((Float)3.14f));
 
             chunkA.Dispose();
             chunkB.Dispose();
@@ -101,28 +99,13 @@ namespace Worlds.Tests
         [Test]
         public void HashTypes()
         {
-            ComponentChunk chunkA = new([ComponentType.Get<int>(), ComponentType.Get<float>()]);
-            ComponentChunk chunkB = new([ComponentType.Get<float>(), ComponentType.Get<int>()]);
+            ComponentChunk chunkA = new([ComponentType.Get<Integer>(), ComponentType.Get<Float>()]);
+            ComponentChunk chunkB = new([ComponentType.Get<Float>(), ComponentType.Get<Integer>()]);
             int hashA = chunkA.TypesMask.GetHashCode();
             int hashB = chunkB.TypesMask.GetHashCode();
             Assert.That(hashA, Is.EqualTo(hashB));
             chunkA.Dispose();
             chunkB.Dispose();
-        }
-
-        [StructLayout(LayoutKind.Explicit)]
-        public readonly struct Union
-        {
-            [FieldOffset(0)]
-            public readonly uint value;
-
-            [FieldOffset(0)]
-            public readonly uint entity;
-
-            public Union(uint value)
-            {
-                this.value = value;
-            }
         }
     }
 }

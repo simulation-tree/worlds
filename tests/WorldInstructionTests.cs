@@ -77,10 +77,10 @@ namespace Worlds.Tests
             operation.CreateEntity();
             operation.SetParentToPreviouslyCreatedEntity(2);
             operation.AddComponent(new TestComponent(6));
-            operation.CreateArray<char>(3);
-            operation.SetArrayElement(0, 'a');
-            operation.SetArrayElement(1, 'b');
-            operation.SetArrayElement(2, 'c');
+            operation.CreateArray<Character>(3);
+            operation.SetArrayElement(0, (Character)'a');
+            operation.SetArrayElement(1, (Character)'b');
+            operation.SetArrayElement(2, (Character)'c');
 
             using World world = new();
             world.Perform(operation);
@@ -92,7 +92,7 @@ namespace Worlds.Tests
             Assert.That(world.GetComponent<TestComponent>(firstEntity).value, Is.EqualTo(4));
             Assert.That(world.GetComponent<TestComponent>(secondEntity).value, Is.EqualTo(5));
             Assert.That(world.GetComponent<TestComponent>(thirdEntity).value, Is.EqualTo(6));
-            Assert.That(world.GetArray<char>(thirdEntity).ToString(), Is.EqualTo("abc"));
+            Assert.That(world.GetArray<Character>(thirdEntity).As<char>().ToString(), Is.EqualTo("abc"));
             Assert.That(world.GetParent(firstEntity), Is.EqualTo(default(uint)));
             Assert.That(world.GetParent(secondEntity), Is.EqualTo(default(uint)));
             Assert.That(world.GetParent(thirdEntity), Is.EqualTo(firstEntity));
@@ -132,15 +132,15 @@ namespace Worlds.Tests
             string testString = "this is not an abacus";
             using Operation operation = new();
             operation.CreateEntity();
-            operation.CreateArray<char>((uint)testString.Length);
-            operation.SetArrayElements(0, testString.AsUSpan());
+            operation.CreateArray<Character>((uint)testString.Length);
+            operation.SetArrayElements(0, testString.AsUSpan().As<Character>());
 
             using World world = new();
             world.Perform(operation);
 
             uint entity = world.Entities.First();
-            USpan<char> list = world.GetArray<char>(entity);
-            Assert.That(list.ToString(), Is.EqualTo(testString));
+            USpan<Character> list = world.GetArray<Character>(entity);
+            Assert.That(list.As<char>().ToString(), Is.EqualTo(testString));
         }
 
         [Test]
@@ -148,29 +148,29 @@ namespace Worlds.Tests
         {
             Operation operation = new();
             operation.CreateEntity();
-            operation.CreateArray<char>(4);
-            operation.SetArrayElement(0, 'a');
+            operation.CreateArray<Character>(4);
+            operation.SetArrayElement(0, (Character)'a');
 
             using World world = new();
             world.Perform(operation);
 
             uint entity = world.Entities.First();
-            Assert.That(world.ContainsArray<char>(entity), Is.True);
+            Assert.That(world.ContainsArray<Character>(entity), Is.True);
 
-            USpan<char> list = world.GetArray<char>(entity);
-            Assert.That(list[0], Is.EqualTo('a'));
-            Assert.That(world.GetArrayLength<char>(entity), Is.EqualTo(4));
+            USpan<Character> list = world.GetArray<Character>(entity);
+            Assert.That((char)list[0], Is.EqualTo('a'));
+            Assert.That(world.GetArrayLength<Character>(entity), Is.EqualTo(4));
 
             operation.ClearInstructions();
             operation.SelectEntity(entity);
-            operation.SetArrayElement(1, 'b');
-            operation.SetArrayElement(2, 'c');
+            operation.SetArrayElement(1, (Character)'b');
+            operation.SetArrayElement(2, (Character)'c');
 
             world.Perform(operation);
-            list = world.GetArray<char>(entity);
-            Assert.That(list[0], Is.EqualTo('a'));
-            Assert.That(list[1], Is.EqualTo('b'));
-            Assert.That(list[2], Is.EqualTo('c'));
+            list = world.GetArray<Character>(entity);
+            Assert.That((char)list[0], Is.EqualTo('a'));
+            Assert.That((char)list[1], Is.EqualTo('b'));
+            Assert.That((char)list[2], Is.EqualTo('c'));
 
             operation.Dispose();
         }
@@ -180,22 +180,22 @@ namespace Worlds.Tests
         {
             using Operation operation = new();
             operation.CreateEntity();
-            operation.CreateArray<char>(MemoryExtensions.AsSpan("abcd"));
+            operation.CreateArray("abcd".AsUSpan().As<Character>());
 
             using World world = new();
             world.Perform(operation);
 
             uint entity = world.Entities.First();
-            Assert.That(world.ContainsArray<char>(entity), Is.True);
-            Assert.That(world.GetArrayLength<char>(entity), Is.EqualTo(4));
+            Assert.That(world.ContainsArray<Character>(entity), Is.True);
+            Assert.That(world.GetArrayLength<Character>(entity), Is.EqualTo(4));
 
             operation.ClearInstructions();
             operation.SelectEntity(entity);
-            operation.ResizeArray<char>(8);
+            operation.ResizeArray<Character>(8);
 
             world.Perform(operation);
 
-            Assert.That(world.GetArrayLength<char>(entity), Is.EqualTo(8));
+            Assert.That(world.GetArrayLength<Character>(entity), Is.EqualTo(8));
         }
 
         [Test]

@@ -7,20 +7,20 @@ namespace Worlds.Tests
         [Test]
         public void CompareEquality()
         {
-            Definition a = new([ComponentType.Get<float>()], [ArrayType.Get<byte>()]);
-            Definition b = new([ComponentType.Get<float>()], [ArrayType.Get<byte>()]);
+            Definition a = new([ComponentType.Get<Float>()], [ArrayType.Get<Byte>()]);
+            Definition b = new([ComponentType.Get<Float>()], [ArrayType.Get<Byte>()]);
 
             Assert.That(a, Is.EqualTo(b));
 
-            a = a.AddComponentType<int>();
-            a = a.AddComponentType<double>();
-            a = a.AddComponentType<char>();
+            a = a.AddComponentType<Integer>();
+            a = a.AddComponentType<Double>();
+            a = a.AddComponentType<Character>();
 
             Assert.That(a, Is.Not.EqualTo(b));
 
-            b = b.AddComponentType<double>();
-            b = b.AddComponentType<char>();
-            b = b.AddComponentType<int>();
+            b = b.AddComponentType<Double>();
+            b = b.AddComponentType<Character>();
+            b = b.AddComponentType<Integer>();
 
             Assert.That(a, Is.EqualTo(b));
         }
@@ -28,17 +28,9 @@ namespace Worlds.Tests
         [Test]
         public void NotEqual()
         {
-            Definition a = new([ComponentType.Get<float>()], [ArrayType.Get<byte>()]);
-            Definition b = new([ComponentType.Get<float>()], [ArrayType.Get<float>()]);
+            Definition a = new([ComponentType.Get<Float>()], [ArrayType.Get<Byte>()]);
+            Definition b = new([ComponentType.Get<Float>()], [ArrayType.Get<Float>()]);
 
-            Assert.That(a, Is.Not.EqualTo(b));
-        }
-
-        [Test]
-        public void CompareHashCodeCase1()
-        {
-            BitSet a = new([ComponentType.Get<World>(), ComponentType.Get<byte>(), ComponentType.Get<float>()]);
-            BitSet b = new([ComponentType.Get<byte>(), ComponentType.Get<float>()]);
             Assert.That(a, Is.Not.EqualTo(b));
         }
 
@@ -46,10 +38,10 @@ namespace Worlds.Tests
         public void AddingAndIndexing()
         {
             Definition a = new();
-            a = a.AddComponentType<int>();
-            a = a.AddArrayType<double>();
-            a = a.AddComponentType<char>();
-            a = a.AddArrayType<float>();
+            a = a.AddComponentType<Integer>();
+            a = a.AddArrayType<Double>();
+            a = a.AddComponentType<Character>();
+            a = a.AddArrayType<Float>();
 
             Assert.That(a.componentTypeCount, Is.EqualTo(2));
             Assert.That(a.arrayTypeCount, Is.EqualTo(2));
@@ -57,22 +49,22 @@ namespace Worlds.Tests
             USpan<ArrayType> arrayTypes = stackalloc ArrayType[a.arrayTypeCount];
             a.CopyComponentTypesTo(componentTypes);
             a.CopyArrayTypesTo(arrayTypes);
-            Assert.That(componentTypes.Contains(ComponentType.Get<int>()), Is.True);
-            Assert.That(componentTypes.Contains(ComponentType.Get<char>()), Is.True);
-            Assert.That(arrayTypes.Contains(ArrayType.Get<double>()), Is.True);
-            Assert.That(arrayTypes.Contains(ArrayType.Get<float>()), Is.True);
+            Assert.That(componentTypes.Contains(ComponentType.Get<Integer>()), Is.True);
+            Assert.That(componentTypes.Contains(ComponentType.Get<Character>()), Is.True);
+            Assert.That(arrayTypes.Contains(ArrayType.Get<Double>()), Is.True);
+            Assert.That(arrayTypes.Contains(ArrayType.Get<Float>()), Is.True);
         }
 
         [Test]
         public void CreateDefinitionFromMany()
         {
-            Definition definition = new Definition().AddComponentTypes<int, char, double, float>();
+            Definition definition = new Definition().AddComponentTypes<Integer, Character, Double, Float>();
             Assert.That(definition.componentTypeCount, Is.EqualTo(4));
             Assert.That(definition.arrayTypeCount, Is.EqualTo(0));
-            Assert.That(definition.ContainsComponent<int>(), Is.True);
-            Assert.That(definition.ContainsComponent<char>(), Is.True);
-            Assert.That(definition.ContainsComponent<double>(), Is.True);
-            Assert.That(definition.ContainsComponent<float>(), Is.True);
+            Assert.That(definition.ContainsComponent<Integer>(), Is.True);
+            Assert.That(definition.ContainsComponent<Character>(), Is.True);
+            Assert.That(definition.ContainsComponent<Double>(), Is.True);
+            Assert.That(definition.ContainsComponent<Float>(), Is.True);
         }
 
         [Test]
@@ -81,21 +73,21 @@ namespace Worlds.Tests
             using World world = new();
 
             uint entityA = world.CreateEntity();
-            world.AddComponent(entityA, (byte)1);
-            world.AddComponent(entityA, (float)1);
-            world.CreateArray(entityA, "Hello".AsUSpan());
+            world.AddComponent(entityA, (Byte)1);
+            world.AddComponent(entityA, (Float)1);
+            world.CreateArray(entityA, "Hello".AsUSpan().As<Character>());
 
             uint entityB = world.CreateEntity();
-            world.AddComponent(entityB, (byte)2);
+            world.AddComponent(entityB, (Byte)2);
 
-            Definition byteComponent = new([ComponentType.Get<byte>()], []);
-            Definition charArray = new([], [ArrayType.Get<char>()]);
+            Definition ByteDataComponent = new([ComponentType.Get<Byte>()], []);
+            Definition charArray = new([], [ArrayType.Get<Character>()]);
 
-            using DefinitionQuery byteQuery = new(byteComponent);
-            byteQuery.Update(world);
-            Assert.That(byteQuery.Count, Is.EqualTo(2));
-            Assert.That(byteQuery[0], Is.EqualTo(entityB));
-            Assert.That(byteQuery[1], Is.EqualTo(entityA));
+            using DefinitionQuery ByteDataQuery = new(ByteDataComponent);
+            ByteDataQuery.Update(world);
+            Assert.That(ByteDataQuery.Count, Is.EqualTo(2));
+            Assert.That(ByteDataQuery[0], Is.EqualTo(entityB));
+            Assert.That(ByteDataQuery[1], Is.EqualTo(entityA));
 
             using DefinitionQuery charQuery = new(charArray);
             charQuery.Update(world);
@@ -106,11 +98,11 @@ namespace Worlds.Tests
         [Test]
         public void ContainsComponentTypes()
         {
-            Definition definition = new([ComponentType.Get<byte>(), ComponentType.Get<float>()], [ArrayType.Get<char>()]);
-            Assert.That(definition.ContainsComponent<byte>(), Is.True);
-            Assert.That(definition.ContainsComponent<float>(), Is.True);
-            Assert.That(definition.ContainsComponent<char>(), Is.False);
-            Assert.That(definition.ContainsArray<char>(), Is.True);
+            Definition definition = new([ComponentType.Get<Byte>(), ComponentType.Get<Float>()], [ArrayType.Get<Character>()]);
+            Assert.That(definition.ContainsComponent<Byte>(), Is.True);
+            Assert.That(definition.ContainsComponent<Float>(), Is.True);
+            Assert.That(definition.ContainsComponent<Character>(), Is.False);
+            Assert.That(definition.ContainsArray<Character>(), Is.True);
         }
 
         [Test]
@@ -118,14 +110,14 @@ namespace Worlds.Tests
         {
             using World world = new();
 
-            Definition definition = new([ComponentType.Get<byte>(), ComponentType.Get<float>()], [ArrayType.Get<char>()]);
+            Definition definition = new([ComponentType.Get<Byte>(), ComponentType.Get<Float>()], [ArrayType.Get<Character>()]);
             uint entity = world.CreateEntity(definition);
-            byte defaultByte = world.GetComponent<byte>(entity);
-            float defaultFloat = world.GetComponent<float>(entity);
-            USpan<char> defaultCharArray = world.GetArray<char>(entity);
+            Byte defaultByte = world.GetComponent<Byte>(entity);
+            Float defaultFloat = world.GetComponent<Float>(entity);
+            USpan<Character> defaultCharArray = world.GetArray<Character>(entity);
 
-            Assert.That(defaultByte, Is.EqualTo(default(byte)));
-            Assert.That(defaultFloat, Is.EqualTo(default(float)));
+            Assert.That(defaultByte, Is.EqualTo(default(Byte)));
+            Assert.That(defaultFloat, Is.EqualTo(default(Float)));
             Assert.That(defaultCharArray.Length, Is.EqualTo(0));
         }
 
@@ -134,25 +126,25 @@ namespace Worlds.Tests
         {
             using World world = new();
 
-            Definition definitionA = new([ComponentType.Get<byte>(), ComponentType.Get<float>()], [ArrayType.Get<char>()]);
+            Definition definitionA = new([ComponentType.Get<Byte>(), ComponentType.Get<Float>()], [ArrayType.Get<Character>()]);
 
             Entity entity = new(world);
             entity.Become(definitionA);
 
-            Assert.That(entity.ContainsComponent<byte>(), Is.True);
-            Assert.That(entity.ContainsComponent<float>(), Is.True);
-            Assert.That(entity.ContainsArray<char>(), Is.True);
-            Assert.That(entity.ContainsArray<byte>(), Is.False);
-            Assert.That(entity.ContainsComponent<char>(), Is.False);
-            Assert.That(entity.GetComponent<byte>(), Is.EqualTo(default(byte)));
-            Assert.That(entity.GetComponent<float>(), Is.EqualTo(default(float)));
-            Assert.That(entity.GetArray<char>().Length, Is.EqualTo(0));
+            Assert.That(entity.ContainsComponent<Byte>(), Is.True);
+            Assert.That(entity.ContainsComponent<Float>(), Is.True);
+            Assert.That(entity.ContainsArray<Character>(), Is.True);
+            Assert.That(entity.ContainsArray<Byte>(), Is.False);
+            Assert.That(entity.ContainsComponent<Character>(), Is.False);
+            Assert.That(entity.GetComponent<Byte>(), Is.EqualTo(default(Byte)));
+            Assert.That(entity.GetComponent<Float>(), Is.EqualTo(default(Float)));
+            Assert.That(entity.GetArray<Character>().Length, Is.EqualTo(0));
 
-            Definition definitionB = new([], [ArrayType.Get<byte>()]);
+            Definition definitionB = new([], [ArrayType.Get<Byte>()]);
 
             entity.Become(definitionB);
 
-            Assert.That(entity.ContainsArray<byte>(), Is.True);
+            Assert.That(entity.ContainsArray<Byte>(), Is.True);
         }
 
         [Test]
@@ -161,15 +153,15 @@ namespace Worlds.Tests
             using World world = new();
 
             Entity entityA = new(world);
-            entityA.AddComponent<byte>();
-            entityA.AddComponent<float>();
+            entityA.AddComponent<Byte>();
+            entityA.AddComponent<Float>();
 
             Entity entityB = new(world);
-            entityB.AddComponent<byte>();
-            entityB.AddComponent<float>();
-            entityB.CreateArray<char>();
+            entityB.AddComponent<Byte>();
+            entityB.AddComponent<Float>();
+            entityB.CreateArray<Character>();
 
-            Definition definition = new([ComponentType.Get<byte>(), ComponentType.Get<float>()], [ArrayType.Get<char>()]);
+            Definition definition = new([ComponentType.Get<Byte>(), ComponentType.Get<Float>()], [ArrayType.Get<Character>()]);
 
             Assert.That(entityA.Is(definition), Is.False);
             Assert.That(entityB.Is(definition), Is.True);

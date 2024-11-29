@@ -233,7 +233,7 @@ namespace Worlds.Tests
                 if (rng.NextBool())
                 {
                     uint length = rng.NextUInt(1, 10);
-                    USpan<char> array = world.CreateArray<char>(entity, length);
+                    USpan<Character> array = world.CreateArray<Character>(entity, length);
                     for (uint j = 0; j < length; j++)
                     {
                         array[j] = (char)rng.NextInt('a', 'z');
@@ -267,13 +267,13 @@ namespace Worlds.Tests
             uint entity = world.CreateEntity();
             world.AddComponent(entity, new SimpleComponent("apple"));
             world.AddComponent(entity, new Another(5));
-            USpan<char> array = world.CreateArray<char>(entity, 5);
+            USpan<Character> array = world.CreateArray<Character>(entity, 5);
             array[0] = 'a';
             array[1] = 'b';
             array[2] = 'c';
             array[3] = 'd';
             array[4] = 'e';
-            USpan<uint> data = world.CreateArray<uint>(entity, 3);
+            USpan<Integer> data = world.CreateArray<Integer>(entity, 3);
             data[0] = 1337;
             data[1] = 666;
             data[2] = 500513;
@@ -284,18 +284,18 @@ namespace Worlds.Tests
             Assert.That(world.ContainsComponent<Another>(clone), Is.True);
             Assert.That(world.GetComponent<SimpleComponent>(clone).data, Is.EqualTo(new FixedString("apple")));
             Assert.That(world.GetComponent<Another>(clone).data, Is.EqualTo(5));
-            USpan<char> cloneArray = world.GetArray<char>(clone);
+            USpan<Character> cloneArray = world.GetArray<Character>(clone);
             Assert.That(cloneArray.Length, Is.EqualTo(5));
-            Assert.That(cloneArray[0], Is.EqualTo('a'));
-            Assert.That(cloneArray[1], Is.EqualTo('b'));
-            Assert.That(cloneArray[2], Is.EqualTo('c'));
-            Assert.That(cloneArray[3], Is.EqualTo('d'));
-            Assert.That(cloneArray[4], Is.EqualTo('e'));
-            USpan<uint> cloneData = world.GetArray<uint>(clone);
+            Assert.That((char)cloneArray[0], Is.EqualTo('a'));
+            Assert.That((char)cloneArray[1], Is.EqualTo('b'));
+            Assert.That((char)cloneArray[2], Is.EqualTo('c'));
+            Assert.That((char)cloneArray[3], Is.EqualTo('d'));
+            Assert.That((char)cloneArray[4], Is.EqualTo('e'));
+            USpan<Integer> cloneData = world.GetArray<Integer>(clone);
             Assert.That(cloneData.Length, Is.EqualTo(3));
-            Assert.That(cloneData[0], Is.EqualTo(1337));
-            Assert.That(cloneData[1], Is.EqualTo(666));
-            Assert.That(cloneData[2], Is.EqualTo(500513));
+            Assert.That((int)cloneData[0], Is.EqualTo(1337));
+            Assert.That((int)cloneData[1], Is.EqualTo(666));
+            Assert.That((int)cloneData[2], Is.EqualTo(500513));
         }
     }
 }

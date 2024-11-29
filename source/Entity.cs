@@ -24,15 +24,6 @@ namespace Worlds
         public readonly World world;
 
         /// <summary>
-        /// Is this entity enabled?
-        /// </summary>
-        public readonly bool IsEnabled
-        {
-            get => world.IsEnabled(value);
-            set => world.SetEnabled(this.value, value);
-        }
-
-        /// <summary>
         /// Parent entity of this entity.
         /// <para>
         /// May be <c>default</c> if no parent is set.

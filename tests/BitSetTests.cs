@@ -4,7 +4,7 @@ using System.Diagnostics;
 
 namespace Worlds.Tests
 {
-    public class BitSetTests
+    public class BitSetTests : WorldTests
     {
         [Test]
         public void SetThenCheckIfContains()
@@ -118,6 +118,14 @@ namespace Worlds.Tests
 
                 return totalTicks / elapsedTicks.Count;
             }
+        }
+
+        [Test]
+        public void CompareHashCodeCase1()
+        {
+            BitSet a = new([ComponentType.Get<Double>(), ComponentType.Get<Byte>(), ComponentType.Get<Float>()]);
+            BitSet b = new([ComponentType.Get<Byte>(), ComponentType.Get<Float>()]);
+            Assert.That(a, Is.Not.EqualTo(b));
         }
     }
 }

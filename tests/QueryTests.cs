@@ -322,30 +322,5 @@ namespace Worlds.Tests
             stopwatch.Stop();
             Console.WriteLine($"Manual iteration took {stopwatch.ElapsedTicks}t");
         }
-
-        public struct Apple
-        {
-            public byte bites;
-        }
-
-        public struct Berry
-        {
-            public byte hearts;
-
-            public Berry(byte hearts)
-            {
-                this.hearts = hearts;
-            }
-        }
-
-        public struct Cherry
-        {
-            public FixedString stones;
-
-            public Cherry(FixedString stones)
-            {
-                this.stones = stones;
-            }
-        }
     }
 }

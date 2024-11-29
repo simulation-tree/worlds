@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
-using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics;
 
 namespace Worlds.Generator
 {
@@ -8,7 +9,7 @@ namespace Worlds.Generator
     public class TypeGenerator : IIncrementalGenerator
     {
         private static readonly SourceBuilder source = new();
-        private static readonly SourceBuilder console = new();
+        private static readonly SourceBuilder debug = new();
         private const string TypeName = "TypeTable";
         private const string Namespace = "Worlds";
 
@@ -24,8 +25,6 @@ namespace Worlds.Generator
 
         public static string Generate(Compilation compilation)
         {
-            compilation = AppendReferencedSyntaxTrees(compilation);
-
             source.Clear();
             source.AppendLine($"namespace {Namespace}");
             source.BeginGroup();
@@ -33,50 +32,26 @@ namespace Worlds.Generator
                 source.AppendLine($"public static partial class {TypeName}");
                 source.BeginGroup();
                 {
-                    HashSet<string> componentTypeNames = [];
-                    HashSet<string> arrayTypeNames = [];
-                    source.AppendLine("/*");
-                    try
-                    {
-                        SymbolsMap symbols = CollectSymbols(compilation);
-                        foreach (SyntaxTree syntaxTree in compilation.SyntaxTrees)
-                        {
-                            SemanticModel semanticModel = compilation.GetSemanticModel(syntaxTree);
-                            SyntaxNode root = syntaxTree.GetRoot();
-
-                            InvocationsWalker invocationsWalker = new(semanticModel);
-                            invocationsWalker.Visit(root);
-
-                            TypeUsagesWalker walker = new(semanticModel, invocationsWalker.invocations, symbols, source);
-                            walker.Visit(root);
-
-                            componentTypeNames.UnionWith(walker.componentTypeNames);
-                            arrayTypeNames.UnionWith(walker.arrayTypeNames);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        source.AppendLine(e.Message);
-                        source.AppendLine(e.StackTrace);
-                    }
-                    source.AppendLine("*/");
                     source.AppendLine($"static {TypeName}()");
                     source.BeginGroup();
                     {
-                        //foreach (string line in console.Lines)
+                        HashSet<ITypeSymbol> componentTypes = [];
+                        HashSet<ITypeSymbol> arrayTypes = [];
+                        CollectTypeSymbols(compilation, componentTypes, arrayTypes);
+
+                        //foreach (string line in debug.Lines)
                         //{
-                        //    string sanitizedLine = line.Replace('\\', '/');
-                        //    source.AppendLine($"System.Console.WriteLine(\"{sanitizedLine}\");");
+                        //    source.AppendLine($"//{line}");
                         //}
 
-                        foreach (string componentTypeName in componentTypeNames)
+                        foreach (ITypeSymbol componentType in componentTypes)
                         {
-                            AppendComponentTypeRegistration(componentTypeName);
+                            AppendComponentTypeRegistration(componentType);
                         }
 
-                        foreach (string arrayTypeName in arrayTypeNames)
+                        foreach (ITypeSymbol arrayType in arrayTypes)
                         {
-                            AppendArrayTypeRegistration(arrayTypeName);
+                            AppendArrayTypeRegistration(arrayType);
                         }
                     }
                     source.EndGroup();
@@ -87,14 +62,37 @@ namespace Worlds.Generator
             return source.ToString();
         }
 
-        private static Compilation AppendReferencedSyntaxTrees(Compilation compilation)
+        private static void CollectTypeSymbols(Compilation compilation, HashSet<ITypeSymbol> componentTypes, HashSet<ITypeSymbol> arrayTypes)
         {
-            HashSet<SyntaxTree> added = [];
+            foreach (SyntaxTree tree in compilation.SyntaxTrees)
+            {
+                SemanticModel semanticModel = compilation.GetSemanticModel(tree);
+                TypeDeclarationsWalker walker = new(semanticModel);
+                walker.Visit(tree.GetRoot());
+                debug.AppendLine($"SyntaxTree: {tree.FilePath}");
+                foreach (ITypeSymbol type in walker.types)
+                {
+                    debug.AppendLine($"Type: {type.ToDisplayString()}");
+                    ImmutableArray<AttributeData> attributes = type.GetAttributes();
+                    foreach (AttributeData attribute in attributes)
+                    {
+                        if (attribute.AttributeClass?.ToDisplayString() == "Worlds.ComponentAttribute")
+                        {
+                            componentTypes.Add(type);
+                        }
+                        else if (attribute.AttributeClass?.ToDisplayString() == "Worlds.ArrayAttribute")
+                        {
+                            arrayTypes.Add(type);
+                        }
+                    }
+                }
+            }
+
             foreach (MetadataReference assemblyReference in compilation.References)
             {
                 if (compilation.GetAssemblyOrModuleSymbol(assemblyReference) is IAssemblySymbol assemblySymbol)
                 {
-                    console.AppendLine($"checking reference {assemblyReference.Display}");
+                    debug.AppendLine($"Assembly: {assemblySymbol.Name}");
                     Stack<ISymbol> stack = new();
                     stack.Push(assemblySymbol.GlobalNamespace);
                     while (stack.Count > 0)
@@ -114,109 +112,38 @@ namespace Worlds.Generator
                         }
                         else if (current is ITypeSymbol typeSymbol)
                         {
-                            foreach (ISymbol member in typeSymbol.GetMembers())
+                            debug.AppendLine($"Type: {typeSymbol.ToDisplayString()}");
+                            ImmutableArray<AttributeData> attributes = typeSymbol.GetAttributes();
+                            foreach (AttributeData attribute in attributes)
                             {
-                                stack.Push(member);
-                            }
-
-                            foreach (SyntaxReference declarationReference in typeSymbol.DeclaringSyntaxReferences)
-                            {
-                                SyntaxNode declaration = declarationReference.GetSyntax();
-                                SyntaxTree tree = declaration.SyntaxTree;
-                                if (added.Add(tree))
+                                if (attribute.AttributeClass?.ToDisplayString() == "Worlds.ComponentAttribute")
                                 {
-                                    console.AppendLine($"{tree.FilePath}");
+                                    componentTypes.Add(typeSymbol);
+                                }
+                                else if (attribute.AttributeClass?.ToDisplayString() == "Worlds.ArrayAttribute")
+                                {
+                                    arrayTypes.Add(typeSymbol);
                                 }
                             }
                         }
                     }
                 }
-                else
-                {
-                    console.AppendLine($"assembly {assemblyReference.Display} not found");
-                }
             }
-
-            console.AppendLine($"{added.Count} trees added");
-            return compilation.AddSyntaxTrees(added);
         }
 
-        private static SymbolsMap CollectSymbols(Compilation compilation)
+        private static void AppendComponentTypeRegistration(ITypeSymbol componentType)
         {
-            SymbolsMap symbols = new();
-            foreach (MetadataReference assemblyReference in compilation.References)
-            {
-                if (compilation.GetAssemblyOrModuleSymbol(assemblyReference) is IAssemblySymbol assemblySymbol)
-                {
-                    Stack<ISymbol> stack = new();
-                    stack.Push(assemblySymbol.GlobalNamespace);
-                    while (stack.Count > 0)
-                    {
-                        ISymbol current = stack.Pop();
-                        if (current is INamespaceSymbol namespaceSymbol)
-                        {
-                            foreach (ISymbol member in namespaceSymbol.GetNamespaceMembers())
-                            {
-                                stack.Push(member);
-                            }
-
-                            foreach (ISymbol member in namespaceSymbol.GetTypeMembers())
-                            {
-                                stack.Push(member);
-                            }
-                        }
-                        else if (current is ITypeSymbol typeSymbol)
-                        {
-                            foreach (ISymbol member in typeSymbol.GetMembers())
-                            {
-                                stack.Push(member);
-                            }
-
-                            foreach (SyntaxReference declarationReference in typeSymbol.DeclaringSyntaxReferences)
-                            {
-                                SyntaxNode declaration = declarationReference.GetSyntax();
-                                symbols.Add(declaration, typeSymbol);
-                            }
-                        }
-                        else if (current is IMethodSymbol methodSymbol)
-                        {
-                            foreach (SyntaxReference declaration in methodSymbol.DeclaringSyntaxReferences)
-                            {
-                                SyntaxNode node = declaration.GetSyntax();
-                                symbols.Add(node, methodSymbol);
-                            }
-                        }
-                        else if (current is IFieldSymbol fieldSymbol)
-                        {
-                            foreach (SyntaxReference declaration in fieldSymbol.DeclaringSyntaxReferences)
-                            {
-                                SyntaxNode node = declaration.GetSyntax();
-                                symbols.Add(node, fieldSymbol);
-                            }
-                        }
-                        else if (current is IPropertySymbol propertySymbol)
-                        {
-                            foreach (SyntaxReference declaration in propertySymbol.DeclaringSyntaxReferences)
-                            {
-                                SyntaxNode node = declaration.GetSyntax();
-                                symbols.Add(node, propertySymbol);
-                            }
-                        }
-                    }
-                }
-            }
-
-            return symbols;
+            source.AppendLine($"ComponentType.Register<{GetFullTypeName(componentType)}>();");
         }
 
-        private static void AppendComponentTypeRegistration(string fullTypeName)
+        private static void AppendArrayTypeRegistration(ITypeSymbol arrayType)
         {
-            source.AppendLine($"ComponentType.Register<{fullTypeName}>();");
+            source.AppendLine($"ArrayType.Register<{GetFullTypeName(arrayType)}>();");
         }
 
-        private static void AppendArrayTypeRegistration(string fullTypeName)
+        private static string GetFullTypeName(ITypeSymbol type)
         {
-            source.AppendLine($"ArrayType.Register<{fullTypeName}>();");
+            return type.ToDisplayString();
         }
     }
 }

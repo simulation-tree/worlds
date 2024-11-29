@@ -18,6 +18,22 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Checks if this entity is enabled with respect to its ancestors.
+        /// </summary>
+        public static bool IsEnabled<T>(this T entity) where T : unmanaged, IEntity
+        {
+            return entity.World.IsEnabled(entity.Value);
+        }
+
+        /// <summary>
+        /// Assigns the enabled state of this entity.
+        /// </summary>
+        public static void SetEnabled<T>(this T entity, bool state) where T : unmanaged, IEntity
+        {
+            entity.World.SetEnabled(entity.Value, state);
+        }
+
+        /// <summary>
         /// Retrieves the <see cref="World"/> of this entity.
         /// </summary>
         public static World GetWorld<T>(this T entity) where T : unmanaged, IEntity
@@ -39,14 +55,6 @@ namespace Worlds
         public static Entity AsEntity<T>(this T entity) where T : unmanaged, IEntity
         {
             return new(entity.World, entity.Value);
-        }
-
-        /// <summary>
-        /// Assigns the enabled state of this entity.
-        /// </summary>
-        public static void SetEnabled<T>(this T entity, bool state) where T : unmanaged, IEntity
-        {
-            entity.World.SetEnabled(entity.Value, state);
         }
 
         /// <summary>

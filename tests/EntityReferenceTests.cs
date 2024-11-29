@@ -39,8 +39,8 @@
             uint parent = firstWorld.CreateEntity();
             uint child = firstWorld.CreateEntity();
             firstWorld.SetParent(child, parent);
-            firstWorld.AddComponent(parent, (short)0);
-            firstWorld.AddComponent(child, (ushort)0);
+            firstWorld.AddComponent(parent, (Integer)0);
+            firstWorld.AddComponent(child, (Float)0);
 
             using World secondWorld = new();
             for (uint i = 0; i < 4; i++)
@@ -49,8 +49,8 @@
             }
 
             secondWorld.Append(firstWorld);
-            secondWorld.GetFirstComponent<short>(out parent);
-            secondWorld.GetFirstComponent<ushort>(out child);
+            secondWorld.GetFirstComponent<Integer>(out parent);
+            secondWorld.GetFirstComponent<Float>(out child);
             Assert.That(secondWorld.GetParent(child), Is.EqualTo(parent));
         }
 
@@ -60,21 +60,6 @@
             using World world = new();
             uint entity = world.CreateEntity();
             Assert.That(world.ContainsReference(entity, default(rint)), Is.False);
-        }
-
-        public struct ReferencedEntity
-        {
-
-        }
-
-        public struct ComponentThatReferences
-        {
-            public rint reference;
-
-            public ComponentThatReferences(rint reference)
-            {
-                this.reference = reference;
-            }
         }
     }
 }

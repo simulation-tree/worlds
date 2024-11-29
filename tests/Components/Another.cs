@@ -1,5 +1,6 @@
 ﻿namespace Worlds.Tests
 {
+    [Component]
     public struct Another
     {
         public uint data;
