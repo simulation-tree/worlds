@@ -37,10 +37,6 @@ jobs:
       - name: Set VERSION variable from tag
         run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
 
-      - name: Update version property
-        run: |
-          sed -i "s|<version>.*</version>|<version>${VERSION}</version>|g" "${{ github.event.repository.name }}/source/package.nuspec"
-
       - name: Build Generator
         run: dotnet build "${{ github.event.repository.name }}/generator" -c Release /p:Version=${VERSION}
       

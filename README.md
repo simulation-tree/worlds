@@ -3,7 +3,25 @@ Library for implementing efficient storage of data as _components_ and _arrays_,
 Entities themselves are stored within these _worlds_, which can be serialized, deserialized, and appended to other worlds at runtime.
 
 ### Initializing
-To use this library, all of the component and array types that will be used, must be registered:
+To use this library, all of the component and array types that will be used need to be registered.
+This is done by decorating them with either `[Component]` or `[Array]` (or both), and then calling
+the type table's constructor:
+```cs
+private static void Main()
+{
+    RuntimeHelpers.RunClassConstructor(typeof(TypeTable).TypeHandle);
+    ArrayType.Register<char>();
+}
+
+[Component]
+public struct MyComponent(uint value)
+{
+    public uint value = value;
+}
+```
+
+If the attributes aren't present, or the type table isn't initialized, then each type needs to
+be registered manually:
 ```cs
 private static void Main()
 {
@@ -13,13 +31,7 @@ private static void Main()
 }
 ```
 
-This can be automated by relying on the type table generator, and calling its static constructor:
-```cs
-private static void Main()
-{
-    RuntimeHelpers.RunClassConstructor(typeof(TypeTable).TypeHandle);
-}
-```
+> If a type isn't registered, an exception will be thrown when trying to use it.
 
 ### Storing values in components
 ```cs
@@ -28,11 +40,6 @@ using (World world = new())
     uint entity = world.CreateEntity();
     world.AddComponent(entity, new MyComponent(25));
 }
-
-public struct MyComponent(uint value)
-{
-    public uint value = value;
-}
 ```
 > Only 1 component of each type can be on an entity
 
@@ -40,7 +47,7 @@ public struct MyComponent(uint value)
 Unlike components, arrays offer a way to store multiple of the same type,
 and can be resized:
 ```cs
-Span<char> many = world.CreateArray<char>(entity, "Hello world");
+Span<char> many = world.CreateArray(entity, "Hello world".AsSpan());
 Span<char> moreMany = world.ResizeArray<char>(entity, 5);
 Assert.That(moreMany.ToString(), Is.EqualTo("Hello"));
 ```
@@ -141,7 +148,8 @@ Then when worlds are then appended or loaded, the entities that they are meant t
 shift together as they're added, preserving the relationship.
 
 ```cs
-public struct MyComponent(rint entityReference)
+[Component]
+public struct MyReference(rint entityReference)
 {
     public rint entityReference = entityReference;
 }
@@ -150,11 +158,11 @@ using World dummyWorld = new();
 uint firstEntity = dummyWorld.CreateEntity();
 uint secondEntity = dummyWorld.CreateEntity();
 rint entityReference = dummyWorld.AddReference(firstEntity, secondEntity);
-dummyWorld.AddComponent(firstEntity, new MyComponent(entityReference));
+dummyWorld.AddComponent(firstEntity, new MyReference(entityReference));
 
 //after appending, find the original first entity and its referenced second entity
 world.Append(dummyWorld);
-world.TryGetFirst(out uint oldFirstEntity, out MyComponent component);
+world.TryGetFirst(out uint oldFirstEntity, out MyReference component);
 uint oldSecondEntity = world.GetReference(oldFirstEntity, component.entityReference);
 ```
 
@@ -164,6 +172,7 @@ type is qualified by components present on the entity. For example: if an entity
 contains an `IsPlayer` then its a player entity. This design is supported through the
 `IEntity` interface and its required `Definition` property:
 ```cs
+[Component]
 public struct IsPlayer(FixedString name)
 {
     public FixedString name = name;
@@ -207,6 +216,10 @@ Player anotherPlayer = new Entity(world, anotherEntity).As<Player>();
 ### Serialization and deserialization
 Serializing a world to bytes is simple:
 ```cs
+ComponentType.Register<float>();
+ComponentType.Register<bool>();
+ArrayType.Register<char>();
+
 using World world = new();
 Entity entity = new(world);
 entity.AddComponent(25f);
