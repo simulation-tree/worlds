@@ -12,9 +12,10 @@
     <Title>Simulation</Title>
     <Authors>popcron</Authors>
     <Company>game-simulations</Company>
-    <Description>Logic upon data</Description>
-    <RepositoryUrl>https://github.com/game-simulations/simulation</RepositoryUrl>
+    <Description>Efficient native data storage</Description>
+    <RepositoryUrl>https://github.com/game-simulations/worlds</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>ecs;native</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
