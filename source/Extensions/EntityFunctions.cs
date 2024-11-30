@@ -34,6 +34,33 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves the parent of the given entity, <c>default</c> if none
+        /// is assigned.
+        /// </summary>
+        public static Entity GetParent<T>(this T entity) where T : unmanaged, IEntity
+        {
+            return new(entity.GetWorld(), entity.World.GetParent(entity.Value));
+        }
+
+        /// <summary>
+        /// Assigns the given <paramref name="parent"/> entity to the given <paramref name="entity"/>.
+        /// </summary>
+        /// <returns><c>true</c> if the given parent entity was found and assigned successfuly.</returns>
+        public static void SetParent<T>(this T entity, uint parent) where T : unmanaged, IEntity
+        {
+            entity.World.SetParent(entity.Value, parent);
+        }
+
+        /// <summary>
+        /// Assigns the given <paramref name="parent"/> entity to the given <paramref name="entity"/>.
+        /// </summary>
+        /// <returns><c>true</c> if the given parent entity was found and assigned successfuly.</returns>
+        public static void SetParent<T>(this T entity, Entity parent) where T : unmanaged, IEntity
+        {
+            entity.World.SetParent(entity.Value, parent.GetEntityValue());
+        }
+
+        /// <summary>
         /// Retrieves the <see cref="World"/> of this entity.
         /// </summary>
         public static World GetWorld<T>(this T entity) where T : unmanaged, IEntity
