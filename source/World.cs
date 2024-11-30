@@ -2142,9 +2142,8 @@ namespace Worlds
         public readonly IEnumerableUInt GetAll(ComponentType componentType, bool onlyEnabled = false)
         {
             Dictionary<int, ComponentChunk> chunks = ComponentChunks;
-            for (uint i = 0; i < chunks.Keys.Length; i++)
+            foreach (int hash in chunks.Keys)
             {
-                int hash = chunks.Keys[i];
                 ComponentChunk chunk = chunks[hash];
                 if (chunk.ContainsType(componentType))
                 {

@@ -301,9 +301,8 @@ namespace Worlds.Tests
             Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
             USpan<ComponentType> typesSpan = [ComponentType.Get<Apple>(), ComponentType.Get<Berry>(), ComponentType.Get<Cherry>()];
             stopwatch.Restart();
-            for (uint i = 0; i < chunks.Count; i++)
+            foreach (int key in chunks.Keys)
             {
-                int key = chunks.Keys[i];
                 ComponentChunk chunk = chunks[key];
                 if (chunk.ContainsAllTypes(typesSpan))
                 {

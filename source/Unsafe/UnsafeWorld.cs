@@ -237,7 +237,7 @@ namespace Worlds.Unsafe
 
             ComponentChunk defaultComponentChunk = new(default(BitSet));
             int chunkKey = defaultComponentChunk.TypesMask.GetHashCode();
-            UnsafeDictionary.Add(components, chunkKey, defaultComponentChunk);
+            UnsafeDictionary.TryAdd(components, chunkKey, defaultComponentChunk);
 
             UnsafeWorld* world = Allocations.Allocate<UnsafeWorld>();
             world->slots = slots;
@@ -540,7 +540,7 @@ namespace Worlds.Unsafe
             if (!components.TryGetValue(componentsKey, out ComponentChunk chunk))
             {
                 chunk = new(definition.ComponentTypesMask);
-                components.Add(componentsKey, chunk);
+                components.TryAdd(componentsKey, chunk);
             }
 
             //add arrays
@@ -728,7 +728,7 @@ namespace Worlds.Unsafe
             if (!components.TryGetValue(newChunkKey, out ComponentChunk destinationChunk))
             {
                 destinationChunk = new(newComponentTypes);
-                components.Add(newChunkKey, destinationChunk);
+                components.TryAdd(newChunkKey, destinationChunk);
             }
 
             uint index = previousChunk.MoveEntity(entity, destinationChunk);
@@ -758,7 +758,7 @@ namespace Worlds.Unsafe
             if (!components.TryGetValue(newChunkKey, out ComponentChunk destinationChunk))
             {
                 destinationChunk = new(newComponentTypes);
-                components.Add(newChunkKey, destinationChunk);
+                components.TryAdd(newChunkKey, destinationChunk);
             }
 
             uint index = previousChunk.MoveEntity(entity, destinationChunk);
@@ -809,7 +809,7 @@ namespace Worlds.Unsafe
             if (!components.TryGetValue(newChunkKey, out ComponentChunk destinationChunk))
             {
                 destinationChunk = new(newComponentTypes);
-                components.Add(newChunkKey, destinationChunk);
+                components.TryAdd(newChunkKey, destinationChunk);
             }
 
             previousChunk.MoveEntity(entity, destinationChunk);
