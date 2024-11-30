@@ -332,28 +332,27 @@ namespace Worlds.Unsafe
             ThrowIfEntityIsMissing(world, entity);
 
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
-
-            //destroy or orphan the children
-            if (destroyChildren)
-            {
-                for (uint i = 0; i < slot.childCount; i++)
-                {
-                    uint child = slot.children[i];
-                    DestroyEntity(world, child, true);
-                }
-            }
-            else
-            {
-                for (uint i = 0; i < slot.childCount; i++)
-                {
-                    uint child = slot.children[i];
-                    ref EntitySlot childSlot = ref UnsafeList.GetRef<EntitySlot>(world->slots, child - 1);
-                    childSlot.parent = default;
-                }
-            }
-
             if (slot.childCount > 0)
             {
+                //destroy or orphan the children
+                if (destroyChildren)
+                {
+                    for (uint i = 0; i < slot.childCount; i++)
+                    {
+                        uint child = slot.children[i];
+                        DestroyEntity(world, child, true);
+                    }
+                }
+                else
+                {
+                    for (uint i = 0; i < slot.childCount; i++)
+                    {
+                        uint child = slot.children[i];
+                        ref EntitySlot childSlot = ref UnsafeList.GetRef<EntitySlot>(world->slots, child - 1);
+                        childSlot.parent = default;
+                    }
+                }
+
                 slot.children.Dispose();
                 slot.children = default;
             }
