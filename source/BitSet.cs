@@ -22,7 +22,7 @@ namespace Worlds
 
 #if NET
         [FieldOffset(0)]
-        private readonly Vector256<ulong> data;
+        private Vector256<ulong> data;
 #endif
 
         [FieldOffset(0)]
@@ -134,6 +134,13 @@ namespace Worlds
         /// </summary>
         public void Set(byte index)
         {
+#if NET
+            int longIndex = index / 64;
+            int bitIndex = index % 64;
+            ulong slot = data.GetElement(longIndex);
+            slot |= 1UL << bitIndex;
+            data = data.WithElement(longIndex, slot);
+#else
             switch (index)
             {
                 case < 64:
@@ -149,6 +156,7 @@ namespace Worlds
                     d |= 1UL << index - 192;
                     break;
             }
+#endif
         }
 
         /// <summary>
@@ -167,6 +175,13 @@ namespace Worlds
         /// </summary>
         public void Clear(byte index)
         {
+#if NET
+            int longIndex = index / 64;
+            int bitIndex = index % 64;
+            ulong slot = data.GetElement(longIndex);
+            slot &= ~(1UL << bitIndex);
+            data = data.WithElement(longIndex, slot);
+#else
             switch (index)
             {
                 case < 64:
@@ -182,6 +197,7 @@ namespace Worlds
                     d &= ~(1UL << index - 192);
                     break;
             }
+#endif
         }
 
         /// <summary>
@@ -189,6 +205,11 @@ namespace Worlds
         /// </summary>
         public readonly bool Contains(byte index)
         {
+#if NET
+            int longIndex = index / 64;
+            int bitIndex = index % 64;
+            return (data.GetElement(longIndex) & 1UL << bitIndex) != 0;
+#else
             return index switch
             {
                 < 64 => (a & 1UL << index) != 0,
@@ -196,6 +217,7 @@ namespace Worlds
                 < 192 => (c & 1UL << index - 128) != 0,
                 _ => (d & 1UL << index - 192) != 0,
             };
+#endif
         }
 
         /// <summary>

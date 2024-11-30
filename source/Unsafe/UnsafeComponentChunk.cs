@@ -60,8 +60,8 @@ namespace Worlds.Unsafe
             uint typeCount = chunk->typeIndices.Length;
             for (byte i = 0; i < typeCount; i++)
             {
-                byte typeIndex = chunk->typeIndices[i];
-                UnsafeList* components = (UnsafeList*)chunk->componentArrays[typeIndex];
+                ComponentType componentType = new(chunk->typeIndices[i]);
+                UnsafeList* components = (UnsafeList*)chunk->componentArrays[componentType];
                 UnsafeList.Free(ref components);
             }
 
@@ -101,8 +101,8 @@ namespace Worlds.Unsafe
             uint typeCount = chunk->typeIndices.Length;
             for (byte i = 0; i < typeCount; i++)
             {
-                byte typeIndex = chunk->typeIndices[i];
-                UnsafeList* list = (UnsafeList*)chunk->componentArrays[typeIndex];
+                ComponentType componentType = new(chunk->typeIndices[i]);
+                UnsafeList* list = (UnsafeList*)chunk->componentArrays[componentType];
                 UnsafeList.AddDefault(list);
             }
 
@@ -121,8 +121,8 @@ namespace Worlds.Unsafe
             uint typeCount = chunk->typeIndices.Length;
             for (byte i = 0; i < typeCount; i++)
             {
-                byte typeIndex = chunk->typeIndices[i];
-                UnsafeList* list = (UnsafeList*)chunk->componentArrays[typeIndex];
+                ComponentType componentType = new(chunk->typeIndices[i]);
+                UnsafeList* list = (UnsafeList*)chunk->componentArrays[componentType];
                 UnsafeList.RemoveAtBySwapping(list, index);
             }
         }
@@ -141,29 +141,28 @@ namespace Worlds.Unsafe
             uint newIndex = destination->entities.Count;
             destination->entities.Add(entity);
 
-            //add a default slot into destination, then copy from source
-            for (byte i = 0; i < BitSet.Capacity; i++)
+            //copy from source to destination
+            for (uint i = 0; i < destination->typeIndices.Length; i++)
             {
-                if (destination->typeMask.Contains(i))
+                ComponentType destinationComponentType = new(destination->typeIndices[i]);
+                UnsafeList* destinationList = (UnsafeList*)destination->componentArrays[destinationComponentType];
+                if (source->typeIndices.Contains(destinationComponentType))
                 {
-                    UnsafeList* destinationList = (UnsafeList*)destination->componentArrays[i];
-                    UnsafeList.AddDefault(destinationList);
-
-                    if (source->typeMask.Contains(i))
-                    {
-                        UnsafeList* sourceList = (UnsafeList*)source->componentArrays[i];
-                        UnsafeList.CopyElementTo(sourceList, oldIndex, destinationList, newIndex);
-                        UnsafeList.RemoveAtBySwapping(sourceList, oldIndex);
-                    }
+                    UnsafeList* sourceList = (UnsafeList*)source->componentArrays[destinationComponentType];
+                    UnsafeList.Insert(destinationList, newIndex, UnsafeList.GetElementBytes(sourceList, oldIndex));
                 }
                 else
                 {
-                    if (source->typeMask.Contains(i))
-                    {
-                        UnsafeList* sourceList = (UnsafeList*)source->componentArrays[i];
-                        UnsafeList.RemoveAtBySwapping(sourceList, oldIndex);
-                    }
+                    UnsafeList.AddDefault(destinationList);
                 }
+            }
+
+            //remove from source
+            for (uint i = 0; i < source->typeIndices.Length; i++)
+            {
+                ComponentType sourceComponentType = new(source->typeIndices[i]);
+                UnsafeList* sourceList = (UnsafeList*)source->componentArrays[sourceComponentType];
+                UnsafeList.RemoveAtBySwapping(sourceList, oldIndex);
             }
 
             return newIndex;
