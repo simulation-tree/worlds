@@ -125,6 +125,11 @@ namespace Worlds.Generator
                                     arrayTypes.Add(typeSymbol);
                                 }
                             }
+
+                            foreach (ISymbol member in typeSymbol.GetMembers())
+                            {
+                                stack.Push(member);
+                            }
                         }
                     }
                 }
