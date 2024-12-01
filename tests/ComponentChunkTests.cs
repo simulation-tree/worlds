@@ -22,8 +22,8 @@ namespace Worlds.Tests
             ComponentChunk chunk = new([ComponentType.Get<Integer>(), ComponentType.Get<Float>()]);
             uint entity = 7;
             uint index = chunk.AddEntity(entity);
-            ref Integer intComponent = ref chunk.GetComponentRef<Integer>(index);
-            ref Float floatComponent = ref chunk.GetComponentRef<Float>(index);
+            ref Integer intComponent = ref chunk.GetComponent<Integer>(index);
+            ref Float floatComponent = ref chunk.GetComponent<Float>(index);
             intComponent = 42;
             floatComponent = 3.14f;
             Assert.That(chunk.Entities, Has.Count.EqualTo(1));
@@ -44,8 +44,8 @@ namespace Worlds.Tests
             ComponentChunk chunk = new([ComponentType.Get<Integer>(), ComponentType.Get<Float>()]);
             uint entity = 7;
             uint index = chunk.AddEntity(entity);
-            ref Integer intComponent = ref chunk.GetComponentRef<Integer>(index);
-            ref Float floatComponent = ref chunk.GetComponentRef<Float>(index);
+            ref Integer intComponent = ref chunk.GetComponent<Integer>(index);
+            ref Float floatComponent = ref chunk.GetComponent<Float>(index);
             intComponent = 42;
             floatComponent = 3.14f;
             chunk.RemoveEntity(entity);
@@ -67,7 +67,7 @@ namespace Worlds.Tests
 
             ComponentChunk chunkB = new([ComponentType.Get<Integer>()]);
             uint newIndex = chunkA.MoveEntity(entity, chunkB);
-            ref Integer intComponent = ref chunkB.GetComponentRef<Integer>(newIndex);
+            ref Integer intComponent = ref chunkB.GetComponent<Integer>(newIndex);
             intComponent = 42;
 
             Assert.That(chunkA.Entities, Is.Empty);
@@ -79,7 +79,7 @@ namespace Worlds.Tests
 
             ComponentChunk chunkC = new([ComponentType.Get<Float>(), ComponentType.Get<Integer>()]);
             uint newerIndex = chunkB.MoveEntity(entity, chunkC);
-            ref Float floatComponent = ref chunkC.GetComponentRef<Float>(newerIndex);
+            ref Float floatComponent = ref chunkC.GetComponent<Float>(newerIndex);
             floatComponent = 3.14f;
 
             Assert.That(chunkB.GetComponents<Integer>(), Is.Empty);
@@ -101,8 +101,8 @@ namespace Worlds.Tests
         {
             ComponentChunk chunkA = new([ComponentType.Get<Integer>(), ComponentType.Get<Float>()]);
             ComponentChunk chunkB = new([ComponentType.Get<Float>(), ComponentType.Get<Integer>()]);
-            int hashA = chunkA.TypesMask.GetHashCode();
-            int hashB = chunkB.TypesMask.GetHashCode();
+            int hashA = chunkA.GetHashCode();
+            int hashB = chunkB.GetHashCode();
             Assert.That(hashA, Is.EqualTo(hashB));
             chunkA.Dispose();
             chunkB.Dispose();

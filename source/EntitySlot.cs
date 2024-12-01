@@ -21,7 +21,7 @@ namespace Worlds
         /// <summary>
         /// Hash of the component types and chunk.
         /// </summary>
-        public int chunkKey;
+        public BitSet componentTypes;
 
         /// <summary>
         /// Number of children.

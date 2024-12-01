@@ -519,7 +519,7 @@ namespace Worlds
         public static Instruction AddComponent<T>(T component, out Allocation allocation) where T : unmanaged
         {
             allocation = Allocation.Create(component);
-            return new(Type.AddComponent, ComponentType.Get<T>().value, (ulong)allocation.Address, 0);
+            return new(Type.AddComponent, ComponentType.Get<T>().index, (ulong)allocation.Address, 0);
         }
 
         /// <summary>
@@ -528,7 +528,7 @@ namespace Worlds
         public static Instruction AddComponent(ComponentType componentType)
         {
             Allocation allocation = Allocation.Create(componentType.Size);
-            return new(Type.AddComponent, componentType.value, (ulong)allocation.Address, 0);
+            return new(Type.AddComponent, componentType.index, (ulong)allocation.Address, 0);
         }
 
         /// <summary>
@@ -537,7 +537,7 @@ namespace Worlds
         public static Instruction AddComponent(ComponentType componentType, USpan<byte> componentData)
         {
             Allocation allocation = Allocation.Create(componentData);
-            return new(Type.AddComponent, componentType.value, (ulong)allocation.Address, 0);
+            return new(Type.AddComponent, componentType.index, (ulong)allocation.Address, 0);
         }
 
         /// <summary>
@@ -553,7 +553,7 @@ namespace Worlds
         /// </summary>
         public static Instruction RemoveComponent(ComponentType componentType)
         {
-            return new(Type.RemoveComponent, componentType.value, 0, 0);
+            return new(Type.RemoveComponent, componentType.index, 0, 0);
         }
 
         /// <summary>
@@ -562,7 +562,7 @@ namespace Worlds
         public static Instruction SetComponent<T>(T component) where T : unmanaged
         {
             Allocation allocation = Allocation.Create(component);
-            return new(Type.SetComponent, ComponentType.Get<T>().value, (ulong)allocation.Address, 0);
+            return new(Type.SetComponent, ComponentType.Get<T>().index, (ulong)allocation.Address, 0);
         }
 
         /// <summary>
@@ -571,7 +571,7 @@ namespace Worlds
         public static Instruction SetComponent(ComponentType componentType, USpan<byte> componentData)
         {
             Allocation allocation = Allocation.Create(componentData);
-            return new(Type.SetComponent, componentType.value, (ulong)allocation.Address, 0);
+            return new(Type.SetComponent, componentType.index, (ulong)allocation.Address, 0);
         }
 
         /// <summary>
@@ -588,7 +588,7 @@ namespace Worlds
         public static Instruction CreateArray(ArrayType arrayType, uint length)
         {
             Allocation allocaton = new(arrayType.Size * length);
-            return new(Type.CreateArray, arrayType.value, (ulong)(nint)allocaton, length);
+            return new(Type.CreateArray, arrayType.index, (ulong)(nint)allocaton, length);
         }
 
         /// <summary>
@@ -597,7 +597,7 @@ namespace Worlds
         public unsafe static Instruction CreateArray<T>(USpan<T> values) where T : unmanaged
         {
             Allocation allocation = Allocation.Create(values);
-            return new(Type.CreateArray, ArrayType.Get<T>().value, (ulong)(nint)allocation, values.Length);
+            return new(Type.CreateArray, ArrayType.Get<T>().index, (ulong)(nint)allocation, values.Length);
         }
 
         /// <summary>
@@ -613,7 +613,7 @@ namespace Worlds
         /// </summary>
         public static Instruction DestroyArray(ArrayType arrayType)
         {
-            return new(Type.DestroyArray, arrayType.value, 0, 0);
+            return new(Type.DestroyArray, arrayType.index, 0, 0);
         }
 
         /// <summary>
@@ -624,7 +624,7 @@ namespace Worlds
             Allocation allocation = new(sizeof(uint) + TypeInfo<T>.size);
             allocation.Write(0, 1);
             allocation.Write(sizeof(uint), element);
-            return new(Type.SetArrayElement, ArrayType.Get<T>().value, (ulong)(nint)allocation, index);
+            return new(Type.SetArrayElement, ArrayType.Get<T>().index, (ulong)(nint)allocation, index);
         }
 
         /// <summary>
@@ -635,7 +635,7 @@ namespace Worlds
             Allocation allocation = new(sizeof(uint) + TypeInfo<T>.size * elements.Length);
             allocation.Write(0, elements.Length);
             allocation.Write(sizeof(uint), elements);
-            return new(Type.SetArrayElement, ArrayType.Get<T>().value, (ulong)(nint)allocation, index);
+            return new(Type.SetArrayElement, ArrayType.Get<T>().index, (ulong)(nint)allocation, index);
         }
 
         /// <summary>
@@ -651,7 +651,7 @@ namespace Worlds
         /// </summary>
         public static Instruction ResizeArray(ArrayType arrayType, uint newLength)
         {
-            return new(Type.ResizeArray, arrayType.value, newLength, 0);
+            return new(Type.ResizeArray, arrayType.index, newLength, 0);
         }
 
         readonly void ISerializable.Write(BinaryWriter writer)

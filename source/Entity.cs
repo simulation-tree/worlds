@@ -156,6 +156,26 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves an array of type <paramref name="arrayType"/> on this entity.
+        /// </summary>
+        public readonly Allocation GetArray(ArrayType arrayType)
+        {
+            ThrowIfDestroyed();
+
+            return world.GetArray(value, arrayType, out _);
+        }
+
+        /// <summary>
+        /// Retrieves an array of type <paramref name="arrayType"/> on this entity.
+        /// </summary>
+        public readonly Allocation GetArray(ArrayType arrayType, out uint length)
+        {
+            ThrowIfDestroyed();
+
+            return world.GetArray(value, arrayType, out length);
+        }
+
+        /// <summary>
         /// Retrieves an element at <paramref name="index"/> from the array of type <typeparamref name="T"/> on this entity.
         /// </summary>
         public readonly ref T GetArrayElementRef<T>(uint index) where T : unmanaged
@@ -244,6 +264,17 @@ namespace Worlds
             ThrowIfDestroyed();
 
             return world.ResizeArray<T>(value, newLength);
+        }
+
+        /// <summary>
+        /// Resizes the array of type <paramref name="arrayType"/> to the given <paramref name="newLength"/>.
+        /// </summary>
+        /// <returns>Newly resized array.</returns>
+        public readonly Allocation ResizeArray(ArrayType arrayType, uint newLength)
+        {
+            ThrowIfDestroyed();
+
+            return world.ResizeArray(value, arrayType, newLength);
         }
 
         /// <summary>

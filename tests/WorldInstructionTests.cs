@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Unmanaged;
 
@@ -12,8 +11,8 @@ namespace Worlds.Tests
         {
             using World world = new();
             using Operation operation = new();
-            operation.CreateEntity();
-            operation.AddComponent(new TestComponent(1337));
+            Operation.SelectedEntity newEntity = operation.CreateEntity();
+            newEntity.AddComponent(new TestComponent(1337));
 
             world.Perform(operation);
             uint entity = world.Entities.First();
@@ -162,9 +161,9 @@ namespace Worlds.Tests
             Assert.That(world.GetArrayLength<Character>(entity), Is.EqualTo(4));
 
             operation.ClearInstructions();
-            operation.SelectEntity(entity);
-            operation.SetArrayElement(1, (Character)'b');
-            operation.SetArrayElement(2, (Character)'c');
+            Operation.SelectedEntity selected = operation.SelectEntity(entity);
+            selected.SetArrayElement(1, (Character)'b');
+            selected.SetArrayElement(2, (Character)'c');
 
             world.Perform(operation);
             list = world.GetArray<Character>(entity);
@@ -179,8 +178,8 @@ namespace Worlds.Tests
         public void ResizeExistingArray()
         {
             using Operation operation = new();
-            operation.CreateEntity();
-            operation.CreateArray("abcd".AsUSpan().As<Character>());
+            Operation.SelectedEntity newEntity = operation.CreateEntity();
+            newEntity.CreateArray("abcd".AsUSpan().As<Character>());
 
             using World world = new();
             world.Perform(operation);
@@ -190,8 +189,8 @@ namespace Worlds.Tests
             Assert.That(world.GetArrayLength<Character>(entity), Is.EqualTo(4));
 
             operation.ClearInstructions();
-            operation.SelectEntity(entity);
-            operation.ResizeArray<Character>(8);
+            Operation.SelectedEntity selectedEntity = operation.SelectEntity(entity);
+            selectedEntity.ResizeArray<Character>(8);
 
             world.Perform(operation);
 

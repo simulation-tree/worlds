@@ -37,13 +37,12 @@ namespace Worlds.Unsafe
             {
                 if (componentTypesMask.Contains(i))
                 {
-                    ComponentType componentType = new(i);
+                    ComponentType componentType = ComponentType.All[i];
                     componentArrays[i] = (nint)UnsafeList.Allocate(4, componentType.Size);
                     typeIndices[typeCount++] = i;
                 }
             }
 
-            int key = componentTypesMask.GetHashCode();
             UnsafeComponentChunk* chunk = Allocations.Allocate<UnsafeComponentChunk>();
             chunk[0] = new(componentTypesMask, componentArrays, new(typeIndices.Slice(0, typeCount)));
             return chunk;
@@ -146,7 +145,7 @@ namespace Worlds.Unsafe
             {
                 ComponentType destinationComponentType = new(destination->typeIndices[i]);
                 UnsafeList* destinationList = (UnsafeList*)destination->componentArrays[destinationComponentType];
-                if (source->typeIndices.Contains(destinationComponentType))
+                if (source->typeIndices.Contains(destinationComponentType.index))
                 {
                     UnsafeList* sourceList = (UnsafeList*)source->componentArrays[destinationComponentType];
                     UnsafeList.Insert(destinationList, newIndex, UnsafeList.GetElementBytes(sourceList, oldIndex));

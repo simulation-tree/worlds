@@ -564,9 +564,49 @@ namespace Worlds
             /// <summary>
             /// Submits an instruction to add the given <paramref name="component"/> to this entity.
             /// </summary>
-            public void AddComponent<T>(T component) where T : unmanaged
+            public readonly void AddComponent<T>(T component) where T : unmanaged
             {
                 operation.AddComponent(component);
+            }
+
+            public readonly void SetComponent<T>(T component) where T : unmanaged
+            {
+                operation.SetComponent(component);
+            }
+
+            public readonly void RemoveComponent<T>() where T : unmanaged
+            {
+                operation.RemoveComponent<T>();
+            }
+
+            public readonly void CreateArray<T>(uint length) where T : unmanaged
+            {
+                operation.CreateArray<T>(length);
+            }
+
+            public readonly void CreateArray<T>(USpan<T> values) where T : unmanaged
+            {
+                operation.CreateArray(values);
+            }
+
+            public readonly void DestroyArray<T>() where T : unmanaged
+            {
+                operation.DestroyArray<T>();
+            }
+
+            public readonly void ResizeArray<T>(uint newLength) where T : unmanaged
+            {
+                operation.ResizeArray<T>(newLength);
+            }
+
+            public readonly void SetArrayElement<T>(uint index, T element) where T : unmanaged
+            {
+                operation.SetArrayElement(index, element);
+            }
+
+            public readonly void SetArrayElements<T>(uint index, USpan<T> elements) where T : unmanaged
+            {
+                operation.SetArrayElements(index, elements);
             }
         }
 

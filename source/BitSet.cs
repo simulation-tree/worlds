@@ -250,7 +250,9 @@ namespace Worlds
 #endif
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Retrieves a cheap hashcode prone to collisions.
+        /// </summary>
         public readonly override int GetHashCode()
         {
             unchecked

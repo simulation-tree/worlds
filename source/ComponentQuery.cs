@@ -1,7 +1,6 @@
 ﻿using Collections;
 using System;
 using Unmanaged;
-using Worlds;
 
 namespace Worlds
 {
@@ -55,14 +54,14 @@ namespace Worlds
         public readonly void Update(World world, bool onlyEnabled = false)
         {
             results.Clear(world.MaxEntityValue);
-            Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
+            Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
             if (!onlyEnabled)
             {
-                foreach (int hash in chunks.Keys)
+                foreach (BitSet key in chunks.Keys)
                 {
-                    ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsAllTypes(componentTypes))
+                    if (key.ContainsAll(componentTypes))
                     {
+                        ComponentChunk chunk = chunks[key];
                         List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
@@ -75,11 +74,11 @@ namespace Worlds
             }
             else
             {
-                foreach (int hash in chunks.Keys)
+                foreach (BitSet key in chunks.Keys)
                 {
-                    ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsAllTypes(componentTypes))
+                    if (key.ContainsAll(componentTypes))
                     {
+                        ComponentChunk chunk = chunks[key];
                         List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
@@ -216,14 +215,14 @@ namespace Worlds
         public readonly void Update(World world, bool onlyEnabled = false)
         {
             results.Clear(world.MaxEntityValue);
-            Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
+            Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
             if (!onlyEnabled)
             {
-                foreach (int hash in chunks.Keys)
+                foreach (BitSet key in chunks.Keys)
                 {
-                    ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsAllTypes(componentTypes))
+                    if (key.ContainsAll(componentTypes))
                     {
+                        ComponentChunk chunk = chunks[key];
                         List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
@@ -237,11 +236,11 @@ namespace Worlds
             }
             else
             {
-                foreach (int hash in chunks.Keys)
+                foreach (BitSet key in chunks.Keys)
                 {
-                    ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsAllTypes(componentTypes))
+                    if (key.ContainsAll(componentTypes))
                     {
+                        ComponentChunk chunk = chunks[key];
                         List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
@@ -387,14 +386,14 @@ namespace Worlds
         public readonly void Update(World world, bool onlyEnabled = false)
         {
             results.Clear(world.MaxEntityValue);
-            Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
+            Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
             if (!onlyEnabled)
             {
-                foreach (int hash in chunks.Keys)
+                foreach (BitSet key in chunks.Keys)
                 {
-                    ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsAllTypes(componentTypes))
+                    if (key.ContainsAll(componentTypes))
                     {
+                        ComponentChunk chunk = chunks[key];
                         List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
@@ -409,11 +408,11 @@ namespace Worlds
             }
             else
             {
-                foreach (int hash in chunks.Keys)
+                foreach (BitSet key in chunks.Keys)
                 {
-                    ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsAllTypes(componentTypes))
+                    if (key.ContainsAll(componentTypes))
                     {
+                        ComponentChunk chunk = chunks[key];
                         List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
@@ -568,14 +567,14 @@ namespace Worlds
         public readonly void Update(World world, bool onlyEnabled = false)
         {
             results.Clear(world.MaxEntityValue);
-            Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
+            Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
             if (!onlyEnabled)
             {
-                foreach (int hash in chunks.Keys)
+                foreach (BitSet key in chunks.Keys)
                 {
-                    ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsAllTypes(componentTypes))
+                    if (key.ContainsAll(componentTypes))
                     {
+                        ComponentChunk chunk = chunks[key];
                         List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
@@ -591,11 +590,11 @@ namespace Worlds
             }
             else
             {
-                foreach (int hash in chunks.Keys)
+                foreach (BitSet key in chunks.Keys)
                 {
-                    ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsAllTypes(componentTypes))
+                    if (key.ContainsAll(componentTypes))
                     {
+                        ComponentChunk chunk = chunks[key];
                         List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
@@ -759,14 +758,14 @@ namespace Worlds
         public readonly void Update(World world, bool onlyEnabled = false)
         {
             results.Clear(world.MaxEntityValue);
-            Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
+            Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
             if (!onlyEnabled)
             {
-                foreach (int hash in chunks.Keys)
+                foreach (BitSet key in chunks.Keys)
                 {
-                    ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsAllTypes(componentTypes))
+                    if (key.ContainsAll(componentTypes))
                     {
+                        ComponentChunk chunk = chunks[key];
                         List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
@@ -783,11 +782,11 @@ namespace Worlds
             }
             else
             {
-                foreach (int hash in chunks.Keys)
+                foreach (BitSet key in chunks.Keys)
                 {
-                    ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsAllTypes(componentTypes))
+                    if (key.ContainsAll(componentTypes))
                     {
+                        ComponentChunk chunk = chunks[key];
                         List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {

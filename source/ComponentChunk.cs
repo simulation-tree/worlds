@@ -108,6 +108,11 @@ namespace Worlds
             }
         }
 
+        public readonly override int GetHashCode()
+        {
+            return TypesMask.GetHashCode();
+        }
+
         /// <summary>
         /// Copies the types of components this chunk stores to the given <paramref name="buffer"/>.
         /// </summary>
@@ -119,43 +124,11 @@ namespace Worlds
             {
                 if (typeMask.Contains(i))
                 {
-                    buffer[count++] = new(i);
+                    buffer[count++] = ComponentType.All[i];
                 }
             }
 
             return count;
-        }
-
-        /// <summary>
-        /// Checks if this chunk contains all of the given <paramref name="componentTypes"/>.
-        /// </summary>
-        public readonly bool ContainsAllTypes(BitSet componentTypes)
-        {
-            return TypesMask.ContainsAll(componentTypes);
-        }
-
-        /// <summary>
-        /// Checks if this chunk contains all of the given <paramref name="componentTypes"/>.
-        /// </summary>
-        public readonly bool ContainsAllTypes(USpan<ComponentType> componentTypes)
-        {
-            for (byte i = 0; i < componentTypes.Length; i++)
-            {
-                if (!ContainsType(componentTypes[i]))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Checks if this chunk contains the given <paramref name="componentType"/>
-        /// </summary>
-        public readonly bool ContainsType(ComponentType componentType)
-        {
-            return TypesMask.Contains(componentType);
         }
 
         /// <summary>
@@ -201,10 +174,12 @@ namespace Worlds
         /// <summary>
         /// Retrieves a specific component of the type <typeparamref name="T"/> at <paramref name="index"/>.
         /// </summary>
-        public readonly ref T GetComponentRef<T>(uint index) where T : unmanaged
+        public readonly ref T GetComponent<T>(uint index) where T : unmanaged
         {
-            List<T> components = GetComponents<T>();
-            return ref components[index];
+            ComponentType componentType = ComponentType.Get<T>();
+            UnsafeList* components = GetComponents(componentType);
+            nint address = UnsafeList.GetStartAddress(components);
+            return ref *(T*)(address + index * TypeInfo<T>.size);
         }
 
         /// <summary>
@@ -212,14 +187,14 @@ namespace Worlds
         /// </summary>
         public readonly USpan<byte> GetComponentBytes(uint index, ComponentType type)
         {
-            void* component = GetComponentPointer(index, type);
+            void* component = GetComponent(index, type);
             return new USpan<byte>(component, type.Size);
         }
 
         /// <summary>
         /// Retrieves the pointer for the specific component of the type <paramref name="type"/> at <paramref name="index"/>.
         /// </summary>
-        public readonly void* GetComponentPointer(uint index, ComponentType type)
+        public readonly void* GetComponent(uint index, ComponentType type)
         {
             UnsafeList* components = GetComponents(type);
             nint address = UnsafeList.GetStartAddress(components);
@@ -231,7 +206,10 @@ namespace Worlds
         /// </summary>
         public readonly nint GetComponentAddress<T>(uint index) where T : unmanaged
         {
-            return (nint)GetComponentPointer(index, ComponentType.Get<T>());
+            ComponentType componentType = ComponentType.Get<T>();
+            UnsafeList* components = GetComponents(componentType);
+            nint address = UnsafeList.GetStartAddress(components);
+            return (nint)(address + index * TypeInfo<T>.size);
         }
 
         /// <summary>
@@ -239,7 +217,7 @@ namespace Worlds
         /// </summary>
         public readonly void SetComponentBytes(uint index, ComponentType type, USpan<byte> bytes)
         {
-            void* component = GetComponentPointer(index, type);
+            void* component = GetComponent(index, type);
             bytes.CopyTo(new USpan<byte>(component, bytes.Length));
         }
     }

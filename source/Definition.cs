@@ -38,13 +38,13 @@ namespace Worlds
         {
             foreach (ComponentType type in componentTypes)
             {
-                componentTypesMask.Set(type.value);
+                componentTypesMask.Set(type.index);
                 componentTypeCount++;
             }
 
             foreach (ArrayType type in arrayTypes)
             {
-                arrayTypesMask.Set(type.value);
+                arrayTypesMask.Set(type.index);
                 arrayTypeCount++;
             }
         }
@@ -114,7 +114,7 @@ namespace Worlds
             {
                 if (componentTypesMask.Contains(i))
                 {
-                    buffer[count] = new(i);
+                    buffer[count] = ComponentType.All[i];
                     count++;
                 }
             }
@@ -132,7 +132,7 @@ namespace Worlds
             {
                 if (arrayTypesMask.Contains(i))
                 {
-                    buffer[count] = new(i);
+                    buffer[count] = ArrayType.All[i];
                     count++;
                 }
             }
@@ -163,7 +163,7 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsComponent(ComponentType componentType)
         {
-            return componentTypesMask.Contains(componentType.value);
+            return componentTypesMask.Contains(componentType.index);
         }
 
         /// <summary>
@@ -179,7 +179,7 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsArray(ArrayType arrayType)
         {
-            return arrayTypesMask.Contains(arrayType.value);
+            return arrayTypesMask.Contains(arrayType.index);
         }
 
         /// <summary>
@@ -198,7 +198,7 @@ namespace Worlds
             BitSet componentTypesMask = this.componentTypesMask;
             foreach (ComponentType type in componentTypes)
             {
-                componentTypesMask.Set(type.value);
+                componentTypesMask.Set(type.index);
             }
 
             return new(componentTypesMask, arrayTypesMask);
@@ -212,10 +212,19 @@ namespace Worlds
             BitSet arrayTypesMask = this.arrayTypesMask;
             foreach (ArrayType type in arrayTypes)
             {
-                arrayTypesMask.Set(type.value);
+                arrayTypesMask.Set(type.index);
             }
 
             return new(componentTypesMask, arrayTypesMask);
+        }
+
+        /// <summary>
+        /// Adds the specified <paramref name="arrayType"/> to this definition.
+        /// </summary>
+        public readonly Definition AddComponentType(ComponentType arrayType)
+        {
+            USpan<ComponentType> types = stackalloc ComponentType[1] { arrayType };
+            return AddComponentTypes(types);
         }
 
         /// <summary>
@@ -270,6 +279,15 @@ namespace Worlds
         {
             USpan<ComponentType> types = stackalloc ComponentType[6] { ComponentType.Get<T1>(), ComponentType.Get<T2>(), ComponentType.Get<T3>(), ComponentType.Get<T4>(), ComponentType.Get<T5>(), ComponentType.Get<T6>() };
             return AddComponentTypes(types);
+        }
+
+        /// <summary>
+        /// Adds the specified <paramref name="arrayType"/> to this definition.
+        /// </summary>
+        public readonly Definition AddArrayType(ArrayType arrayType)
+        {
+            USpan<ArrayType> types = stackalloc ArrayType[1] { arrayType };
+            return AddArrayTypes(types);
         }
 
         /// <summary>

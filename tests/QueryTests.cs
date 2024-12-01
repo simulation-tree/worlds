@@ -298,21 +298,21 @@ namespace Worlds.Tests
 
             //benchmarking manually iterating
             results.Clear();
-            Dictionary<int, ComponentChunk> chunks = world.ComponentChunks;
-            USpan<ComponentType> typesSpan = [ComponentType.Get<Apple>(), ComponentType.Get<Berry>(), ComponentType.Get<Cherry>()];
+            Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
+            BitSet typesSpan = new([ComponentType.Get<Apple>(), ComponentType.Get<Berry>(), ComponentType.Get<Cherry>()]);
             stopwatch.Restart();
-            foreach (int key in chunks.Keys)
+            foreach (BitSet key in chunks.Keys)
             {
-                ComponentChunk chunk = chunks[key];
-                if (chunk.ContainsAllTypes(typesSpan))
+                if (key.ContainsAll(typesSpan))
                 {
+                    ComponentChunk chunk = chunks[key];
                     List<uint> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
                         uint entity = entities[e];
-                        ref Apple apple = ref chunk.GetComponentRef<Apple>(e);
-                        ref Berry berry = ref chunk.GetComponentRef<Berry>(e);
-                        ref Cherry cherry = ref chunk.GetComponentRef<Cherry>(e);
+                        ref Apple apple = ref chunk.GetComponent<Apple>(e);
+                        ref Berry berry = ref chunk.GetComponent<Berry>(e);
+                        ref Cherry cherry = ref chunk.GetComponent<Cherry>(e);
                         results.Add((entity, apple, berry, cherry));
                     }
                 }

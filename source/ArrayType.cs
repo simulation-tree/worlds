@@ -12,7 +12,6 @@ namespace Worlds
     {
         private static readonly Dictionary<Type, ArrayType> systemTypeToType = new();
         private static readonly List<Type> systemTypes = new();
-        private static readonly List<ushort> sizes = new();
         private static readonly List<ArrayType> all = new();
 
         /// <summary>
@@ -23,12 +22,27 @@ namespace Worlds
         /// <summary>
         /// Index of the array type within a <see cref="BitSet"/>.
         /// </summary>
-        public readonly byte value;
+        public readonly byte index;
+
+        private readonly ushort size;
+
+        /// <summary>
+        /// Byte size of the array type.
+        /// </summary>
+        public readonly ushort Size
+        {
+            get
+            {
+                ThrowIfSizeIsNull();
+
+                return size;
+            }
+        }
 
         /// <summary>
         /// Underlying <see cref="Type"/> that this array type represents.
         /// </summary>
-        public readonly Type SystemType => systemTypes[value];
+        public readonly Type SystemType => systemTypes[index];
 
         /// <summary>
         /// Name of the array type.
@@ -46,11 +60,6 @@ namespace Worlds
         public readonly USpan<char> Namespace => (SystemType.Namespace ?? string.Empty).AsUSpan();
 
         /// <summary>
-        /// Byte size of the array type.
-        /// </summary>
-        public readonly ushort Size => sizes[value];
-
-        /// <summary>
         /// Not supported.
         /// </summary>
         [Obsolete("Default constructor not supported", true)]
@@ -59,9 +68,25 @@ namespace Worlds
             throw new NotSupportedException();
         }
 
+        internal ArrayType(byte value, ushort size)
+        {
+            this.index = value;
+            this.size = size;
+        }
+
         internal ArrayType(byte value)
         {
-            this.value = value;
+            this.index = value;
+            size = 0;
+        }
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfSizeIsNull()
+        {
+            if (size == default)
+            {
+                throw new NotSupportedException($"Array type `{SystemType}` does not have a size");
+            }
         }
 
         /// <inheritdoc/>
@@ -99,13 +124,13 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly bool Equals(ArrayType other)
         {
-            return value == other.value;
+            return index == other.index;
         }
 
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return value.GetHashCode();
+            return index.GetHashCode();
         }
 
         /// <summary>
@@ -117,10 +142,9 @@ namespace Worlds
             if (!systemTypeToType.TryGetValue(systemType, out ArrayType type))
             {
                 byte index = (byte)systemTypes.Count;
-                type = new(index);
+                type = new(index, (ushort)TypeInfo<T>.size);
                 systemTypeToType.Add(systemType, type);
                 systemTypes.Add(systemType);
-                sizes.Add((ushort)TypeInfo<T>.size);
                 all.Add(type);
             }
 
@@ -182,7 +206,7 @@ namespace Worlds
         /// <inheritdoc/>
         public static implicit operator byte(ArrayType type)
         {
-            return type.value;
+            return type.index;
         }
     }
 }

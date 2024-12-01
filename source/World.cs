@@ -49,7 +49,7 @@ namespace Worlds
         /// <summary>
         /// All component chunks in the world.
         /// </summary>
-        public readonly Dictionary<int, ComponentChunk> ComponentChunks => UnsafeWorld.GetComponentChunks(value);
+        public readonly Dictionary<BitSet, ComponentChunk> ComponentChunks => UnsafeWorld.GetComponentChunks(value);
 
         /// <summary>
         /// All entities that exist in the world.
@@ -187,21 +187,19 @@ namespace Worlds
         readonly void ISerializable.Write(BinaryWriter writer)
         {
             //collect info about all types referenced
-            using List<ComponentType> uniqueComponentTypes = new(4);
-            using List<ArrayType> uniqueArrayTypes = new(4);
-            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
-            foreach (int hash in chunks.Keys)
+            using List<byte> uniqueComponentTypes = new(4);
+            using List<byte> uniqueArrayTypes = new(4);
+            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            foreach (BitSet key in chunks.Keys)
             {
-                ComponentChunk chunk = chunks[hash];
-                BitSet typesMask = chunk.TypesMask;
-                for (byte i = 0; i < BitSet.Capacity; i++)
+                ComponentChunk chunk = chunks[key];
+                for (byte c = 0; c < BitSet.Capacity; c++)
                 {
-                    if (typesMask.Contains(i))
+                    if (key.Contains(c))
                     {
-                        ComponentType componentType = new(i);
-                        if (!uniqueComponentTypes.Contains(componentType))
+                        if (!uniqueComponentTypes.Contains(c))
                         {
-                            uniqueComponentTypes.Add(componentType);
+                            uniqueComponentTypes.Add(c);
                         }
                     }
                 }
@@ -214,10 +212,9 @@ namespace Worlds
                 {
                     if (slot.arrayTypes.Contains(a))
                     {
-                        ArrayType arrayType = new(a);
-                        if (!uniqueArrayTypes.Contains(arrayType))
+                        if (!uniqueArrayTypes.Contains(a))
                         {
-                            uniqueArrayTypes.Add(arrayType);
+                            uniqueArrayTypes.Add(a);
                         }
                     }
                 }
@@ -227,7 +224,7 @@ namespace Worlds
             writer.WriteValue((byte)uniqueComponentTypes.Count);
             for (uint t = 0; t < uniqueComponentTypes.Count; t++)
             {
-                ComponentType type = uniqueComponentTypes[t];
+                ComponentType type = new(uniqueComponentTypes[t]);
                 USpan<char> typeFullName = type.FullName;
                 writer.WriteValue((ushort)typeFullName.Length);
                 writer.WriteSpan(typeFullName);
@@ -236,7 +233,7 @@ namespace Worlds
             writer.WriteValue((byte)uniqueArrayTypes.Count);
             for (uint t = 0; t < uniqueArrayTypes.Count; t++)
             {
-                ArrayType type = uniqueArrayTypes[t];
+                ArrayType type = new(uniqueArrayTypes[t]);
                 USpan<char> typeFullName = type.FullName;
                 writer.WriteValue((ushort)typeFullName.Length);
                 writer.WriteSpan(typeFullName);
@@ -254,15 +251,14 @@ namespace Worlds
                     writer.WriteValue(slot.parent);
 
                     //write components
-                    ComponentChunk chunk = chunks[slot.chunkKey];
-                    writer.WriteValue(chunk.TypesMask.Count);
-                    BitSet typesMask = chunk.TypesMask;
+                    ComponentChunk chunk = chunks[slot.componentTypes];
+                    writer.WriteValue(slot.componentTypes.Count);
                     for (byte c = 0; c < BitSet.Capacity; c++)
                     {
-                        if (typesMask.Contains(c))
+                        if (slot.componentTypes.Contains(c))
                         {
-                            ComponentType componentType = new(c);
-                            writer.WriteValue((byte)uniqueComponentTypes.IndexOf(componentType));
+                            ComponentType componentType = ComponentType.All[c];
+                            writer.WriteValue((byte)uniqueComponentTypes.IndexOf(c));
                             USpan<byte> componentBytes = chunk.GetComponentBytes(chunk.Entities.IndexOf(entity), componentType);
                             writer.WriteSpan(componentBytes);
                         }
@@ -274,13 +270,13 @@ namespace Worlds
                     {
                         if (slot.arrayTypes.Contains(a))
                         {
-                            ArrayType arrayType = new(a);
                             void* array = slot.arrays[a];
                             uint arrayLength = slot.arrayLengths[a];
-                            writer.WriteValue((byte)uniqueArrayTypes.IndexOf(arrayType));
+                            writer.WriteValue((byte)uniqueArrayTypes.IndexOf(a));
                             writer.WriteValue(arrayLength);
                             if (arrayLength > 0)
                             {
+                                ArrayType arrayType = ArrayType.All[a];
                                 writer.WriteSpan(new USpan<byte>(array, arrayLength * arrayType.Size));
                             }
                         }
@@ -355,7 +351,7 @@ namespace Worlds
         {
             value = UnsafeWorld.Allocate();
             byte componentTypeCount = reader.ReadValue<byte>();
-            using Array<ComponentType> uniqueComponentTypes = new(componentTypeCount);
+            using Array<byte> uniqueComponentTypes = new(componentTypeCount);
             for (uint i = 0; i < componentTypeCount; i++)
             {
                 ushort nameLength = reader.ReadValue<ushort>();
@@ -404,7 +400,7 @@ namespace Worlds
                 for (byte c = 0; c < componentCount; c++)
                 {
                     byte typeIndex = reader.ReadValue<byte>();
-                    ComponentType componentType = uniqueComponentTypes[typeIndex];
+                    ComponentType componentType = ComponentType.All[uniqueComponentTypes[typeIndex]];
                     USpan<byte> bytes = UnsafeWorld.AddComponent(value, entity, componentType);
                     reader.ReadSpan<byte>(componentType.Size).CopyTo(bytes);
                     UnsafeWorld.NotifyComponentAdded(this, entity, componentType);
@@ -479,13 +475,13 @@ namespace Worlds
                     entityIndex++;
 
                     //add components
-                    ComponentChunk sourceChunk = sourceWorld.ComponentChunks[sourceSlot.chunkKey];
+                    ComponentChunk sourceChunk = sourceWorld.ComponentChunks[sourceSlot.componentTypes];
                     uint sourceIndex = sourceChunk.Entities.IndexOf(sourceEntity);
                     for (byte c = 0; c < BitSet.Capacity; c++)
                     {
-                        if (sourceChunk.TypesMask.Contains(c))
+                        if (sourceSlot.componentTypes.Contains(c))
                         {
-                            ComponentType componentType = new(c);
+                            ComponentType componentType = ComponentType.All[c];
                             USpan<byte> bytes = UnsafeWorld.AddComponent(value, destinationEntity, componentType);
                             sourceChunk.GetComponentBytes(sourceIndex, componentType).CopyTo(bytes);
                             UnsafeWorld.NotifyComponentAdded(this, destinationEntity, componentType);
@@ -497,7 +493,7 @@ namespace Worlds
                     {
                         if (sourceSlot.arrayTypes.Contains(a))
                         {
-                            ArrayType sourceArrayType = new(a);
+                            ArrayType sourceArrayType = ArrayType.All[a];
                             uint sourceArrayLength = sourceSlot.arrayLengths[a];
                             void* sourceArray = sourceSlot.arrays[a];
                             void* destinationArray = UnsafeWorld.CreateArray(value, destinationEntity, sourceArrayType, sourceArrayLength);
@@ -638,7 +634,7 @@ namespace Worlds
             }
             else if (instruction.type == Instruction.Type.AddComponent)
             {
-                ComponentType componentType = new((byte)instruction.A);
+                ComponentType componentType = ComponentType.All[(byte)instruction.A];
                 Allocation allocation = new((void*)(nint)instruction.B);
                 USpan<byte> componentData = allocation.AsSpan<byte>(0, componentType.Size);
                 for (uint i = 0; i < selection.Count; i++)
@@ -649,7 +645,7 @@ namespace Worlds
             }
             else if (instruction.type == Instruction.Type.RemoveComponent)
             {
-                ComponentType componentType = new((byte)instruction.A);
+                ComponentType componentType = ComponentType.All[(byte)instruction.A];
                 for (uint i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
@@ -658,7 +654,7 @@ namespace Worlds
             }
             else if (instruction.type == Instruction.Type.SetComponent)
             {
-                ComponentType componentType = new((byte)instruction.A);
+                ComponentType componentType = ComponentType.All[(byte)instruction.A];
                 Allocation allocation = new((void*)(nint)instruction.B);
                 USpan<byte> componentBytes = allocation.AsSpan<byte>(0, componentType.Size);
                 for (uint i = 0; i < selection.Count; i++)
@@ -669,7 +665,7 @@ namespace Worlds
             }
             else if (instruction.type == Instruction.Type.CreateArray)
             {
-                ArrayType arrayType = new((byte)instruction.A);
+                ArrayType arrayType = ArrayType.All[(byte)instruction.A];
                 uint arrayTypeSize = arrayType.Size;
                 Allocation allocation = new((void*)(nint)instruction.B);
                 uint count = (uint)instruction.C;
@@ -682,7 +678,7 @@ namespace Worlds
             }
             else if (instruction.type == Instruction.Type.DestroyArray)
             {
-                ArrayType arrayType = new((byte)instruction.A);
+                ArrayType arrayType = ArrayType.All[(byte)instruction.A];
                 for (uint i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
@@ -691,7 +687,7 @@ namespace Worlds
             }
             else if (instruction.type == Instruction.Type.SetArrayElement)
             {
-                ArrayType arrayType = new((byte)instruction.A);
+                ArrayType arrayType = ArrayType.All[(byte)instruction.A];
                 uint arrayTypeSize = arrayType.Size;
                 Allocation allocation = new((void*)(nint)instruction.B);
                 uint elementCount = allocation.Read<uint>();
@@ -707,7 +703,7 @@ namespace Worlds
             }
             else if (instruction.type == Instruction.Type.ResizeArray)
             {
-                ArrayType arrayType = new((byte)instruction.A);
+                ArrayType arrayType = ArrayType.All[(byte)instruction.A];
                 uint newLength = (uint)instruction.B;
                 for (uint i = 0; i < selection.Count; i++)
                 {
@@ -781,7 +777,7 @@ namespace Worlds
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
             EntitySlot slot = Slots[entity - 1];
-            ComponentChunk chunk = ComponentChunks[slot.chunkKey];
+            ComponentChunk chunk = ComponentChunks[slot.componentTypes];
             return chunk.CopyTypesTo(buffer);
         }
 
@@ -848,15 +844,15 @@ namespace Worlds
         {
             Entity.ThrowIfTypeLayoutMismatches<T>();
 
-            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
             Definition definition = default(T).Definition;
             if (definition.arrayTypeCount > 0)
             {
-                foreach (int hash in chunks.Keys)
+                foreach (BitSet key in chunks.Keys)
                 {
-                    ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsAllTypes(definition.ComponentTypesMask))
+                    if (key.ContainsAll(definition.ComponentTypesMask))
                     {
+                        ComponentChunk chunk = chunks[key];
                         for (uint e = 0; e < chunk.Entities.Count; e++)
                         {
                             uint entityValue = chunk.Entities[e];
@@ -884,10 +880,10 @@ namespace Worlds
             {
                 if (!onlyEnabled)
                 {
-                    foreach (int hash in chunks.Keys)
+                    foreach (BitSet key in chunks.Keys)
                     {
-                        ComponentChunk chunk = chunks[hash];
-                        if (chunk.Entities.Count > 0 && chunk.ContainsAllTypes(definition.ComponentTypesMask))
+                        ComponentChunk chunk = chunks[key];
+                        if (chunk.Entities.Count > 0 && key.ContainsAll(definition.ComponentTypesMask))
                         {
                             uint entityValue = chunk.Entities[0];
                             entity = new Entity(this, entityValue).As<T>();
@@ -897,11 +893,11 @@ namespace Worlds
                 }
                 else
                 {
-                    foreach (int hash in chunks.Keys)
+                    foreach (BitSet key in chunks.Keys)
                     {
-                        ComponentChunk chunk = chunks[hash];
-                        if (chunk.ContainsAllTypes(definition.ComponentTypesMask))
+                        if (key.ContainsAll(definition.ComponentTypesMask))
                         {
+                            ComponentChunk chunk = chunks[key];
                             for (uint e = 0; e < chunk.Entities.Count; e++)
                             {
                                 uint entityValue = chunk.Entities[e];
@@ -1597,13 +1593,13 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsAnyComponent<T>() where T : unmanaged
         {
-            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
             ComponentType type = ComponentType.Get<T>();
-            foreach (int hash in chunks.Keys)
+            foreach (BitSet key in chunks.Keys)
             {
-                ComponentChunk chunk = chunks[hash];
-                if (chunk.ContainsType(type))
+                if (key.Contains(type))
                 {
+                    ComponentChunk chunk = chunks[key];
                     if (chunk.Entities.Count > 0)
                     {
                         return true;
@@ -1652,6 +1648,15 @@ namespace Worlds
             {
                 return defaultValue;
             }
+        }
+
+        /// <summary>
+        /// Retrieves the component of the given <paramref name="componentType"/> from the given <paramref name="entity"/>
+        /// as a pointer.
+        /// </summary>
+        public readonly void* GetComponent(uint entity, ComponentType componentType)
+        {
+            return UnsafeWorld.GetComponent(value, entity, componentType);
         }
 
         /// <summary>
@@ -1731,7 +1736,7 @@ namespace Worlds
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
             EntitySlot slot = Slots[entity - 1];
-            return ComponentChunks[slot.chunkKey];
+            return ComponentChunks[slot.componentTypes];
         }
 
         /// <summary>
@@ -1745,8 +1750,7 @@ namespace Worlds
                 bitSet.Set(componentTypes[i]);
             }
 
-            int key = bitSet.GetHashCode();
-            if (ComponentChunks.TryGetValue(key, out ComponentChunk chunk))
+            if (ComponentChunks.TryGetValue(bitSet, out ComponentChunk chunk))
             {
                 return chunk;
             }
@@ -1767,8 +1771,7 @@ namespace Worlds
                 bitSet.Set(componentTypes[i]);
             }
 
-            int key = bitSet.GetHashCode();
-            return ComponentChunks.ContainsKey(key);
+            return ComponentChunks.ContainsKey(bitSet);
         }
 
         /// <summary>
@@ -1782,8 +1785,7 @@ namespace Worlds
                 bitSet.Set(componentTypes[i]);
             }
 
-            int key = bitSet.GetHashCode();
-            return ComponentChunks.TryGetValue(key, out chunk);
+            return ComponentChunks.TryGetValue(bitSet, out chunk);
         }
 
         /// <summary>
@@ -1801,11 +1803,11 @@ namespace Worlds
         public readonly uint CountEntitiesWithComponent(ComponentType componentType, bool onlyEnabled = false)
         {
             uint count = 0;
-            foreach (int hash in ComponentChunks.Keys)
+            foreach (BitSet key in ComponentChunks.Keys)
             {
-                ComponentChunk chunk = ComponentChunks[hash];
-                if (chunk.ContainsType(componentType))
+                if (key.Contains(componentType))
                 {
+                    ComponentChunk chunk = ComponentChunks[key];
                     if (!onlyEnabled)
                     {
                         count += chunk.Entities.Count;
@@ -1832,16 +1834,16 @@ namespace Worlds
         /// </summary>
         public readonly uint CountEntities<T>(bool onlyEnabled = false) where T : unmanaged, IEntity
         {
-            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
             Definition definition = default(T).Definition;
             uint count = 0;
             if (definition.arrayTypeCount > 0)
             {
-                foreach (int hash in chunks.Keys)
+                foreach (BitSet key in chunks.Keys)
                 {
-                    ComponentChunk chunk = chunks[hash];
-                    if (chunk.ContainsAllTypes(definition.ComponentTypesMask))
+                    if (key.ContainsAll(definition.ComponentTypesMask))
                     {
+                        ComponentChunk chunk = chunks[key];
                         for (uint e = 0; e < chunk.Entities.Count; e++)
                         {
                             uint entity = chunk.Entities[e];
@@ -1867,22 +1869,22 @@ namespace Worlds
             {
                 if (!onlyEnabled)
                 {
-                    foreach (int hash in chunks.Keys)
+                    foreach (BitSet key in chunks.Keys)
                     {
-                        ComponentChunk chunk = chunks[hash];
-                        if (chunk.ContainsAllTypes(definition.ComponentTypesMask))
+                        if (key.ContainsAll(definition.ComponentTypesMask))
                         {
+                            ComponentChunk chunk = chunks[key];
                             count += chunk.Entities.Count;
                         }
                     }
                 }
                 else
                 {
-                    foreach (int hash in chunks.Keys)
+                    foreach (BitSet key in chunks.Keys)
                     {
-                        ComponentChunk chunk = chunks[hash];
-                        if (chunk.ContainsAllTypes(definition.ComponentTypesMask))
+                        if (key.ContainsAll(definition.ComponentTypesMask))
                         {
+                            ComponentChunk chunk = chunks[key];
                             for (uint e = 0; e < chunk.Entities.Count; e++)
                             {
                                 uint entity = chunk.Entities[e];
@@ -1909,21 +1911,20 @@ namespace Worlds
             UnsafeWorld.ThrowIfEntityIsMissing(value, sourceEntity);
 
             EntitySlot sourceSlot = Slots[sourceEntity - 1];
-            ComponentChunk sourceChunk = ComponentChunks[sourceSlot.chunkKey];
-            BitSet sourceTypeMask = sourceChunk.TypesMask;
+            ComponentChunk sourceChunk = ComponentChunks[sourceSlot.componentTypes];
             uint sourceIndex = sourceChunk.Entities.IndexOf(sourceEntity);
             for (byte c = 0; c < BitSet.Capacity; c++)
             {
-                if (sourceTypeMask.Contains(c))
+                if (sourceSlot.componentTypes.Contains(c))
                 {
-                    ComponentType type = new(c);
-                    if (!destinationWorld.ContainsComponent(destinationEntity, type))
+                    ComponentType componentType = ComponentType.All[c];
+                    if (!destinationWorld.ContainsComponent(destinationEntity, componentType))
                     {
-                        destinationWorld.AddComponent(destinationEntity, type);
+                        destinationWorld.AddComponent(destinationEntity, componentType);
                     }
 
-                    USpan<byte> sourceBytes = sourceChunk.GetComponentBytes(sourceIndex, type);
-                    USpan<byte> destinationBytes = destinationWorld.GetComponentBytes(destinationEntity, type);
+                    USpan<byte> sourceBytes = sourceChunk.GetComponentBytes(sourceIndex, componentType);
+                    USpan<byte> destinationBytes = destinationWorld.GetComponentBytes(destinationEntity, componentType);
                     sourceBytes.CopyTo(destinationBytes);
                 }
             }
@@ -1941,19 +1942,19 @@ namespace Worlds
             {
                 if (arrayTypesMask.Contains(a))
                 {
-                    ArrayType sourceArrayType = new(a);
-                    void* sourceArray = UnsafeWorld.GetArray(value, sourceEntity, sourceArrayType, out uint sourceLength);
+                    ArrayType arrayType = ArrayType.All[a];
+                    void* sourceArray = UnsafeWorld.GetArray(value, sourceEntity, arrayType, out uint sourceLength);
                     void* destinationArray;
-                    if (!destinationWorld.ContainsArray(destinationEntity, sourceArrayType))
+                    if (!destinationWorld.ContainsArray(destinationEntity, arrayType))
                     {
-                        destinationArray = UnsafeWorld.CreateArray(destinationWorld.value, destinationEntity, sourceArrayType, sourceLength);
+                        destinationArray = UnsafeWorld.CreateArray(destinationWorld.value, destinationEntity, arrayType, sourceLength);
                     }
                     else
                     {
-                        destinationArray = UnsafeWorld.ResizeArray(destinationWorld.value, destinationEntity, sourceArrayType, sourceLength);
+                        destinationArray = UnsafeWorld.ResizeArray(destinationWorld.value, destinationEntity, arrayType, sourceLength);
                     }
 
-                    uint elementSize = sourceArrayType.Size;
+                    uint elementSize = arrayType.Size;
                     USpan<byte> sourceBytes = new(sourceArray, sourceLength * elementSize);
                     USpan<byte> destinationBytes = new(destinationArray, sourceLength * elementSize);
                     sourceBytes.CopyTo(destinationBytes);
@@ -1978,18 +1979,18 @@ namespace Worlds
         /// </summary>
         public readonly void Fill(USpan<ComponentType> componentTypes, List<uint> list, bool onlyEnabled = false)
         {
-            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
             BitSet componentTypesMask = new();
             foreach (ComponentType type in componentTypes)
             {
                 componentTypesMask.Set(type);
             }
 
-            foreach (int hash in chunks.Keys)
+            foreach (BitSet key in chunks.Keys)
             {
-                ComponentChunk chunk = chunks[hash];
-                if (chunk.ContainsAllTypes(componentTypesMask))
+                if (key.ContainsAll(componentTypesMask))
                 {
+                    ComponentChunk chunk = chunks[key];
                     if (!onlyEnabled)
                     {
                         list.AddRange(chunk.Entities);
@@ -2015,12 +2016,12 @@ namespace Worlds
         public readonly void Fill<T>(List<T> list, bool onlyEnabled = false) where T : unmanaged
         {
             ComponentType type = ComponentType.Get<T>();
-            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
-            foreach (int hash in chunks.Keys)
+            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            foreach (BitSet key in chunks.Keys)
             {
-                ComponentChunk chunk = chunks[hash];
-                if (chunk.ContainsType(type))
+                if (key.Contains(type))
                 {
+                    ComponentChunk chunk = chunks[key];
                     if (!onlyEnabled)
                     {
                         list.AddRange(chunk.GetComponents<T>());
@@ -2032,7 +2033,7 @@ namespace Worlds
                             uint entity = chunk.Entities[e];
                             if (IsEnabled(entity))
                             {
-                                list.Add(chunk.GetComponentRef<T>(e));
+                                list.Add(chunk.GetComponent<T>(e));
                             }
                         }
                     }
@@ -2047,12 +2048,12 @@ namespace Worlds
         public readonly void Fill<T>(List<uint> entities, bool onlyEnabled = false) where T : unmanaged
         {
             ComponentType type = ComponentType.Get<T>();
-            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
-            foreach (int hash in chunks.Keys)
+            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            foreach (BitSet key in chunks.Keys)
             {
-                ComponentChunk chunk = chunks[hash];
-                if (chunk.ContainsType(type))
+                if (key.Contains(type))
                 {
+                    ComponentChunk chunk = chunks[key];
                     if (!onlyEnabled)
                     {
                         entities.AddRange(chunk.Entities);
@@ -2078,12 +2079,12 @@ namespace Worlds
         public readonly void Fill<T>(List<T> components, List<uint> entities, bool onlyEnabled = false) where T : unmanaged
         {
             ComponentType type = ComponentType.Get<T>();
-            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
-            foreach (int hash in chunks.Keys)
+            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            foreach (BitSet key in chunks.Keys)
             {
-                ComponentChunk chunk = chunks[hash];
-                if (chunk.ContainsType(type))
+                if (key.Contains(type))
                 {
+                    ComponentChunk chunk = chunks[key];
                     if (!onlyEnabled)
                     {
                         components.AddRange(chunk.GetComponents<T>());
@@ -2096,7 +2097,7 @@ namespace Worlds
                             uint entity = chunk.Entities[e];
                             if (IsEnabled(entity))
                             {
-                                components.Add(chunk.GetComponentRef<T>(e));
+                                components.Add(chunk.GetComponent<T>(e));
                                 entities.Add(entity);
                             }
                         }
@@ -2111,12 +2112,12 @@ namespace Worlds
         /// </summary>
         public readonly void Fill(ComponentType componentType, List<uint> entities, bool onlyEnabled = false)
         {
-            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
-            foreach (int hash in chunks.Keys)
+            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            foreach (BitSet key in chunks.Keys)
             {
-                ComponentChunk chunk = chunks[hash];
-                if (chunk.ContainsType(componentType))
+                if (key.Contains(componentType))
                 {
+                    ComponentChunk chunk = chunks[key];
                     if (!onlyEnabled)
                     {
                         entities.AddRange(chunk.Entities);
@@ -2141,12 +2142,12 @@ namespace Worlds
         /// </summary>
         public readonly IEnumerableUInt GetAll(ComponentType componentType, bool onlyEnabled = false)
         {
-            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
-            foreach (int hash in chunks.Keys)
+            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            foreach (BitSet key in chunks.Keys)
             {
-                ComponentChunk chunk = chunks[hash];
-                if (chunk.ContainsType(componentType))
+                if (key.Contains(componentType))
                 {
+                    ComponentChunk chunk = chunks[key];
                     for (uint e = 0; e < chunk.Entities.Count; e++)
                     {
                         if (!onlyEnabled)
@@ -2181,12 +2182,12 @@ namespace Worlds
         public readonly void ForEach<T>(QueryCallback callback, bool onlyEnabled = false) where T : unmanaged
         {
             ComponentType componentType = ComponentType.Get<T>();
-            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
-            foreach (int hash in chunks.Keys)
+            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            foreach (BitSet key in chunks.Keys)
             {
-                ComponentChunk chunk = chunks[hash];
-                if (chunk.ContainsType(componentType))
+                if (key.Contains(componentType))
                 {
+                    ComponentChunk chunk = chunks[key];
                     for (uint e = 0; e < chunk.Entities.Count; e++)
                     {
                         if (!onlyEnabled)
@@ -2212,18 +2213,18 @@ namespace Worlds
         /// </summary>
         public readonly void ForEach(USpan<ComponentType> componentTypes, QueryCallback callback, bool onlyEnabled = false)
         {
-            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
             BitSet componentTypesMask = new();
             for (uint i = 0; i < componentTypes.Length; i++)
             {
                 componentTypesMask.Set(componentTypes[i]);
             }
 
-            foreach (int hash in chunks.Keys)
+            foreach (BitSet key in chunks.Keys)
             {
-                ComponentChunk chunk = chunks[hash];
-                if (chunk.ContainsAllTypes(componentTypesMask))
+                if (key.ContainsAll(componentTypesMask))
                 {
+                    ComponentChunk chunk = chunks[key];
                     for (uint e = 0; e < chunk.Entities.Count; e++)
                     {
                         if (!onlyEnabled)
@@ -2250,18 +2251,18 @@ namespace Worlds
         public readonly void ForEach<T>(QueryCallback<T> callback, bool onlyEnabled = false) where T : unmanaged
         {
             ComponentType componentType = ComponentType.Get<T>();
-            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
-            foreach (int hash in chunks.Keys)
+            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            foreach (BitSet key in chunks.Keys)
             {
-                ComponentChunk chunk = chunks[hash];
-                if (chunk.ContainsType(componentType))
+                if (key.Contains(componentType))
                 {
+                    ComponentChunk chunk = chunks[key];
                     List<uint> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
                         if (!onlyEnabled)
                         {
-                            ref T t1 = ref chunk.GetComponentRef<T>(e);
+                            ref T t1 = ref chunk.GetComponent<T>(e);
                             callback(entities[e], ref t1);
                         }
                         else
@@ -2269,7 +2270,7 @@ namespace Worlds
                             uint entity = entities[e];
                             if (IsEnabled(entity))
                             {
-                                ref T t1 = ref chunk.GetComponentRef<T>(e);
+                                ref T t1 = ref chunk.GetComponent<T>(e);
                                 callback(entity, ref t1);
                             }
                         }
@@ -2287,19 +2288,19 @@ namespace Worlds
             BitSet componentTypesMask = new();
             componentTypesMask.Set(ComponentType.Get<T1>());
             componentTypesMask.Set(ComponentType.Get<T2>());
-            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
-            foreach (int hash in chunks.Keys)
+            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            foreach (BitSet key in chunks.Keys)
             {
-                ComponentChunk chunk = chunks[hash];
-                if (chunk.ContainsAllTypes(componentTypesMask))
+                if (key.ContainsAll(componentTypesMask))
                 {
+                    ComponentChunk chunk = chunks[key];
                     List<uint> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
                         if (!onlyEnabled)
                         {
-                            ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
-                            ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
+                            ref T1 t1 = ref chunk.GetComponent<T1>(e);
+                            ref T2 t2 = ref chunk.GetComponent<T2>(e);
                             callback(entities[e], ref t1, ref t2);
                         }
                         else
@@ -2307,8 +2308,8 @@ namespace Worlds
                             uint entity = entities[e];
                             if (IsEnabled(entity))
                             {
-                                ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
-                                ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
+                                ref T1 t1 = ref chunk.GetComponent<T1>(e);
+                                ref T2 t2 = ref chunk.GetComponent<T2>(e);
                                 callback(entity, ref t1, ref t2);
                             }
                         }
@@ -2327,20 +2328,20 @@ namespace Worlds
             componentTypesMask.Set(ComponentType.Get<T1>());
             componentTypesMask.Set(ComponentType.Get<T2>());
             componentTypesMask.Set(ComponentType.Get<T3>());
-            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
-            foreach (int hash in chunks.Keys)
+            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            foreach (BitSet key in chunks.Keys)
             {
-                ComponentChunk chunk = chunks[hash];
-                if (chunk.ContainsAllTypes(componentTypesMask))
+                if (key.ContainsAll(componentTypesMask))
                 {
+                    ComponentChunk chunk = chunks[key];
                     List<uint> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
                         if (!onlyEnabled)
                         {
-                            ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
-                            ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
-                            ref T3 t3 = ref chunk.GetComponentRef<T3>(e);
+                            ref T1 t1 = ref chunk.GetComponent<T1>(e);
+                            ref T2 t2 = ref chunk.GetComponent<T2>(e);
+                            ref T3 t3 = ref chunk.GetComponent<T3>(e);
                             callback(entities[e], ref t1, ref t2, ref t3);
                         }
                         else
@@ -2348,9 +2349,9 @@ namespace Worlds
                             uint entity = entities[e];
                             if (IsEnabled(entity))
                             {
-                                ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
-                                ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
-                                ref T3 t3 = ref chunk.GetComponentRef<T3>(e);
+                                ref T1 t1 = ref chunk.GetComponent<T1>(e);
+                                ref T2 t2 = ref chunk.GetComponent<T2>(e);
+                                ref T3 t3 = ref chunk.GetComponent<T3>(e);
                                 callback(entity, ref t1, ref t2, ref t3);
                             }
                         }
@@ -2370,21 +2371,21 @@ namespace Worlds
             componentTypesMask.Set(ComponentType.Get<T2>());
             componentTypesMask.Set(ComponentType.Get<T3>());
             componentTypesMask.Set(ComponentType.Get<T4>());
-            Dictionary<int, ComponentChunk> chunks = ComponentChunks;
-            foreach (int hash in chunks.Keys)
+            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            foreach (BitSet key in chunks.Keys)
             {
-                ComponentChunk chunk = chunks[hash];
-                if (chunk.ContainsAllTypes(componentTypesMask))
+                if (key.ContainsAll(componentTypesMask))
                 {
+                    ComponentChunk chunk = chunks[key];
                     List<uint> entities = chunk.Entities;
                     for (uint e = 0; e < entities.Count; e++)
                     {
                         if (!onlyEnabled)
                         {
-                            ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
-                            ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
-                            ref T3 t3 = ref chunk.GetComponentRef<T3>(e);
-                            ref T4 t4 = ref chunk.GetComponentRef<T4>(e);
+                            ref T1 t1 = ref chunk.GetComponent<T1>(e);
+                            ref T2 t2 = ref chunk.GetComponent<T2>(e);
+                            ref T3 t3 = ref chunk.GetComponent<T3>(e);
+                            ref T4 t4 = ref chunk.GetComponent<T4>(e);
                             callback(entities[e], ref t1, ref t2, ref t3, ref t4);
                         }
                         else
@@ -2392,10 +2393,10 @@ namespace Worlds
                             uint entity = entities[e];
                             if (IsEnabled(entity))
                             {
-                                ref T1 t1 = ref chunk.GetComponentRef<T1>(e);
-                                ref T2 t2 = ref chunk.GetComponentRef<T2>(e);
-                                ref T3 t3 = ref chunk.GetComponentRef<T3>(e);
-                                ref T4 t4 = ref chunk.GetComponentRef<T4>(e);
+                                ref T1 t1 = ref chunk.GetComponent<T1>(e);
+                                ref T2 t2 = ref chunk.GetComponent<T2>(e);
+                                ref T3 t3 = ref chunk.GetComponent<T3>(e);
+                                ref T4 t4 = ref chunk.GetComponent<T4>(e);
                                 callback(entity, ref t1, ref t2, ref t3, ref t4);
                             }
                         }
