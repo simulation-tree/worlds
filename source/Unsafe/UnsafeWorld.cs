@@ -361,6 +361,7 @@ namespace Worlds.Unsafe
                 slot.references = default;
             }
 
+            slot.referenceCount = 0;
             Dictionary<BitSet, ComponentChunk> components = GetComponentChunks(world);
             ComponentChunk chunk = components[slot.componentTypes];
             chunk.RemoveEntity(entity);
