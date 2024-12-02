@@ -753,7 +753,7 @@ namespace Worlds
         {
             using List<uint> selection = new(4);
             using List<uint> entities = new(4);
-            uint length = operation.Length;
+            uint length = operation.Count;
             for (uint i = 0; i < length; i++)
             {
                 Instruction instruction = operation[i];

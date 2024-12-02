@@ -98,6 +98,28 @@ namespace Worlds.Tests
         }
 
         [Test]
+        public void AddInstructionsThenRemove()
+        {
+            using Operation operation = new();
+            operation.SelectEntity(1);
+            operation.AddComponent(new TestComponent(1));
+            operation.ClearSelection();
+            operation.SelectEntity(2);
+            operation.AddComponent(new TestComponent(2));
+
+            Assert.That(operation.Count, Is.EqualTo(5));
+
+            operation.RemoveInstructionAt(2);
+            Assert.That(operation.Count, Is.EqualTo(4));
+
+            USpan<Instruction> instructions = operation.AsSpan();
+            Assert.That(instructions[0].type, Is.EqualTo(Instruction.Type.SelectEntity));
+            Assert.That(instructions[1].type, Is.EqualTo(Instruction.Type.AddComponent));
+            Assert.That(instructions[2].type, Is.EqualTo(Instruction.Type.SelectEntity));
+            Assert.That(instructions[3].type, Is.EqualTo(Instruction.Type.AddComponent));
+        }
+
+        [Test]
         public void SerializeInstructions()
         {
             Instruction a = Instruction.CreateEntity();

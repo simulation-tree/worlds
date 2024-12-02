@@ -9,67 +9,64 @@ namespace Worlds
     /// Series of world instructions to perform all in one go.
     /// </summary>
     [DebuggerTypeProxy(typeof(OperationDebugView))]
-    public struct Operation : IDisposable
+    public unsafe struct Operation : IDisposable
     {
-        private Allocation list;
+        private UnsafeOperation* operation;
 
         /// <summary>
-        /// Amount of contained instructions.
+        /// Amount of instructions stored.
         /// </summary>
-        public readonly uint Length => list.Read<uint>();
+        public readonly uint Count => UnsafeOperation.GetCount(operation);
 
         /// <summary>
         /// Indexer for accessing each <see cref="Instruction"/>.
         /// </summary>
-        public unsafe readonly Instruction this[uint index]
+        public readonly Instruction this[uint index]
         {
             get
             {
                 ThrowIfOutOfRange(index);
-                uint start = sizeof(uint) + sizeof(uint);
-                return list.Read<Instruction>(start + TypeInfo<Instruction>.size * index);
+
+                return UnsafeOperation.GetInstructions(operation)[index];
             }
         }
 
         /// <summary>
         /// Checks if this operation has been disposed.
         /// </summary>
-        public readonly bool IsDisposed => list.IsDisposed;
+        public readonly bool IsDisposed => operation is null;
 
 #if NET
         /// <summary>
         /// Creates a new empty operation for writing world instructions into.
         /// </summary>
-        public unsafe Operation() : this(0)
+        public Operation()
         {
+            operation = UnsafeOperation.Allocate(0);
         }
 #endif
         /// <summary>
         /// Creates a new operation for writing world instructions into.
         /// </summary>
-        public unsafe Operation(uint initialCapacity = 0)
+        public Operation(uint initialCapacity = 0)
         {
-            uint start = sizeof(uint) + sizeof(uint);
-            uint size = start + TypeInfo<Instruction>.size * initialCapacity;
-            list = new(size);
-            list.Write(sizeof(uint) * 0, 0);
-            list.Write(sizeof(uint) * 1, initialCapacity);
+            operation = UnsafeOperation.Allocate(initialCapacity);
         }
 
-        private Operation(Allocation list)
+        internal Operation(UnsafeOperation* operation)
         {
-            this.list = list;
+            this.operation = operation;
         }
 
         /// <summary>
         /// Disposes the contained instructions and the operation container itself.
         /// </summary>
-        public readonly void Dispose()
+        public void Dispose()
         {
-            ThrowIfDisposed();
+            Allocations.ThrowIfNull(operation);
 
             ClearInstructions();
-            list.Dispose();
+            UnsafeOperation.Free(ref operation);
         }
 
         /// <summary>
@@ -78,10 +75,9 @@ namespace Worlds
         /// <returns></returns>
         public readonly USpan<Instruction> AsSpan()
         {
-            ThrowIfDisposed();
+            Allocations.ThrowIfNull(operation);
 
-            uint start = sizeof(uint) + sizeof(uint);
-            return new USpan<Instruction>((nint)(list.Address + start), Length);
+            return UnsafeOperation.GetInstructions(operation);
         }
 
         /// <inheritdoc/>
@@ -97,7 +93,7 @@ namespace Worlds
         /// </summary>
         public readonly uint ToString(USpan<char> buffer)
         {
-            uint thisLength = Length;
+            uint thisLength = Count;
             uint length = 0;
             length += "Operation".AsUSpan().CopyTo(buffer);
             if (thisLength == 0)
@@ -120,18 +116,9 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfDisposed()
-        {
-            if (IsDisposed)
-            {
-                throw new ObjectDisposedException(nameof(Operation));
-            }
-        }
-
-        [Conditional("DEBUG")]
         private readonly void ThrowIfOutOfRange(uint index)
         {
-            if (index >= Length)
+            if (index >= Count)
             {
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
@@ -149,7 +136,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfNoInstructions()
         {
-            if (Length == 0)
+            if (Count == 0)
             {
                 throw new InvalidOperationException("No instructions are present");
             }
@@ -158,7 +145,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfSelectionIsEmpty()
         {
-            uint length = Length;
+            uint length = Count;
             for (uint i = length - 1; i != uint.MaxValue; i--)
             {
                 Instruction instruction = this[i];
@@ -188,9 +175,9 @@ namespace Worlds
         /// </summary>
         public readonly void ReadSelection(List<uint> selection)
         {
-            ThrowIfDisposed();
+            Allocations.ThrowIfNull(operation);
 
-            uint length = Length;
+            uint length = Count;
             using List<uint> created = new(length);
             for (uint i = 0; i < length; i++)
             {
@@ -232,9 +219,9 @@ namespace Worlds
         /// </summary>
         public readonly void ReadSelection(World world, List<uint> selection)
         {
-            ThrowIfDisposed();
+            Allocations.ThrowIfNull(operation);
 
-            uint length = Length;
+            uint length = Count;
             using List<uint> created = new(length);
             for (uint i = 0; i < length; i++)
             {
@@ -276,20 +263,15 @@ namespace Worlds
         /// </summary>
         public readonly void ClearInstructions()
         {
-            ThrowIfDisposed();
-            USpan<Instruction> instructions = AsSpan();
-            for (uint i = 0; i < instructions.Length; i++)
-            {
-                instructions[i].Dispose();
-            }
+            Allocations.ThrowIfNull(operation);
 
-            list.Write(sizeof(uint) * 0, 0);
+            UnsafeOperation.ClearInstructions(operation);
         }
 
         /// <summary>
         /// Creates a new entity and automatically appends it to the selection.
         /// </summary>
-        public SelectedEntity CreateEntity()
+        public readonly SelectedEntity CreateEntity()
         {
             AddInstruction(Instruction.CreateEntity());
             return new(this);
@@ -299,7 +281,7 @@ namespace Worlds
         /// Creates a given amount of entities and automatically appends
         /// them into the selection.
         /// </summary>
-        public void CreateEntities(uint count)
+        public readonly void CreateEntities(uint count)
         {
             ThrowIfNoEntities(count);
             AddInstruction(Instruction.CreateEntity(count));
@@ -308,7 +290,7 @@ namespace Worlds
         /// <summary>
         /// Destroys all entities in the selection.
         /// </summary>
-        public void DestroySelected()
+        public readonly void DestroySelected()
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.DestroySelection());
@@ -317,7 +299,7 @@ namespace Worlds
         /// <summary>
         /// Destroys a range of selected entities, in the order they were added.
         /// </summary>
-        public void DestroySelected(uint start, uint length)
+        public readonly void DestroySelected(uint start, uint length)
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.DestroySelection(start, length));
@@ -326,7 +308,7 @@ namespace Worlds
         /// <summary>
         /// Appends the given entity to the selection.
         /// </summary>
-        public SelectedEntity SelectEntity(uint entity)
+        public readonly SelectedEntity SelectEntity(uint entity)
         {
             AddInstruction(Instruction.SelectEntity(entity));
             return new(this);
@@ -335,7 +317,7 @@ namespace Worlds
         /// <summary>
         /// Appends the given entity to the selection.
         /// </summary>
-        public SelectedEntity SelectEntity<T>(T entity) where T : unmanaged, IEntity
+        public readonly SelectedEntity SelectEntity<T>(T entity) where T : unmanaged, IEntity
         {
             return SelectEntity(entity.GetEntityValue());
         }
@@ -345,7 +327,7 @@ namespace Worlds
         /// to the selections.
         /// <para>Where 0 is the last created entity.</para>
         /// </summary>
-        public void SelectPreviouslyCreatedEntity(uint offset)
+        public readonly void SelectPreviouslyCreatedEntity(uint offset)
         {
             AddInstruction(Instruction.SelectPreviouslyCreatedEntity(offset));
         }
@@ -353,7 +335,7 @@ namespace Worlds
         /// <summary>
         /// Resets the entity selection.
         /// </summary>
-        public void ClearSelection()
+        public readonly void ClearSelection()
         {
             AddInstruction(Instruction.ClearSelection());
         }
@@ -362,7 +344,7 @@ namespace Worlds
         /// Assigns the given parent of all selected entities to the
         /// given <paramref name="parent"/>.
         /// </summary>
-        public void SetParent(uint parent)
+        public readonly void SetParent(uint parent)
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.SetParent(parent));
@@ -371,7 +353,7 @@ namespace Worlds
         /// <summary>
         /// Assigns the parent of every selected entity to the given <paramref name="parent"/>.
         /// </summary>
-        public void SetParent<T>(T parent) where T : unmanaged, IEntity
+        public readonly void SetParent<T>(T parent) where T : unmanaged, IEntity
         {
             SetParent(parent.GetEntityValue());
         }
@@ -381,7 +363,7 @@ namespace Worlds
         /// created <paramref name="offset"/> instructions ago.
         /// <para>Where 0 is the last created entity.</para>
         /// </summary>
-        public void SetParentToPreviouslyCreatedEntity(uint offset)
+        public readonly void SetParentToPreviouslyCreatedEntity(uint offset)
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.SetParentToPreviouslyCreatedEntity(offset));
@@ -391,7 +373,7 @@ namespace Worlds
         /// Adds a reference for every entity in the selection, to
         /// this specific given entity.
         /// </summary>
-        public void AddReference(uint entity)
+        public readonly void AddReference(uint entity)
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.AddReference(entity));
@@ -402,7 +384,7 @@ namespace Worlds
         /// entity that was created <paramref name="offset"/> instructions ago.
         /// <para>Where 0 is the last created entity.</para>
         /// </summary>
-        public void AddReferenceTowardsPreviouslyCreatedEntity(uint offset)
+        public readonly void AddReferenceTowardsPreviouslyCreatedEntity(uint offset)
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.AddReferenceTowardsPreviouslyCreatedEntity(offset));
@@ -411,7 +393,7 @@ namespace Worlds
         /// <summary>
         /// Removes the given reference value from all selected entities.
         /// </summary>
-        public void RemoveReference(rint reference)
+        public readonly void RemoveReference(rint reference)
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.RemoveReference(reference));
@@ -420,7 +402,7 @@ namespace Worlds
         /// <summary>
         /// Adds a new component entry to every entity in the selection.
         /// </summary>
-        public void AddComponent<T>(T component) where T : unmanaged
+        public readonly void AddComponent<T>(T component) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.AddComponent(component));
@@ -430,7 +412,7 @@ namespace Worlds
         /// Assigns the given component value onto every selected entities,
         /// assuming they already contain the component entry.
         /// </summary>
-        public void SetComponent<T>(T component) where T : unmanaged
+        public readonly void SetComponent<T>(T component) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.SetComponent(component));
@@ -439,7 +421,7 @@ namespace Worlds
         /// <summary>
         /// Removes the given component type from all selected entities.
         /// </summary>
-        public void RemoveComponent<T>() where T : unmanaged
+        public readonly void RemoveComponent<T>() where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.RemoveComponent<T>());
@@ -448,7 +430,7 @@ namespace Worlds
         /// <summary>
         /// Creates a new array for every selected entities.
         /// </summary>
-        public void CreateArray<T>(uint length) where T : unmanaged
+        public readonly void CreateArray<T>(uint length) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.CreateArray<T>(length));
@@ -457,7 +439,7 @@ namespace Worlds
         /// <summary>
         /// Creates a new array for every selected entities containing the given <paramref name="values"/>.
         /// </summary>
-        public void CreateArray<T>(USpan<T> values) where T : unmanaged
+        public readonly void CreateArray<T>(USpan<T> values) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.CreateArray(values));
@@ -466,7 +448,7 @@ namespace Worlds
         /// <summary>
         /// Destroys an existing array on selected entities.
         /// </summary>
-        public void DestroyArray<T>() where T : unmanaged
+        public readonly void DestroyArray<T>() where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.DestroyArray<T>());
@@ -475,7 +457,7 @@ namespace Worlds
         /// <summary>
         /// Writes the given value into the array at the given index.
         /// </summary>
-        public void SetArrayElement<T>(uint index, T element) where T : unmanaged
+        public readonly void SetArrayElement<T>(uint index, T element) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.SetArrayElement(index, element));
@@ -484,7 +466,7 @@ namespace Worlds
         /// <summary>
         /// Writes the given span into the array starting from the given index.
         /// </summary>
-        public void SetArrayElements<T>(uint index, USpan<T> elements) where T : unmanaged
+        public readonly void SetArrayElements<T>(uint index, USpan<T> elements) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.SetArrayElement(index, elements));
@@ -493,7 +475,7 @@ namespace Worlds
         /// <summary>
         /// Resizes the array for every selected entity.
         /// </summary>
-        public void ResizeArray<T>(uint newLength) where T : unmanaged
+        public readonly void ResizeArray<T>(uint newLength) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
             AddInstruction(Instruction.ResizeArray<T>(newLength));
@@ -502,51 +484,31 @@ namespace Worlds
         /// <summary>
         /// Adds a new given <paramref name="instruction"/> to the operation.
         /// </summary>
-        public unsafe void AddInstruction(Instruction instruction)
+        public readonly void AddInstruction(Instruction instruction)
         {
-            uint length = list.Read<uint>(sizeof(uint) * 0);
-            uint capacity = list.Read<uint>(sizeof(uint) * 1);
-            uint start = sizeof(uint) + sizeof(uint);
-            if (length == capacity)
-            {
-                capacity = Math.Max(capacity * 2, 4);
-                Allocation.Resize(ref list, start + TypeInfo<Instruction>.size * capacity);
-                list.Write(sizeof(uint) * 1, capacity);
-            }
+            Allocations.ThrowIfNull(operation);
 
-            list.Write(sizeof(uint) * 0, length + 1);
-            list.Write(start + TypeInfo<Instruction>.size * length, instruction);
+            UnsafeOperation.AddInstruction(operation, instruction);
         }
 
         /// <summary>
         /// Removes the instruction at the given <paramref name="index"/>.
         /// </summary>
-        public readonly unsafe void RemoveInstructionAt(uint index)
+        public readonly void RemoveInstructionAt(uint index)
         {
+            Allocations.ThrowIfNull(operation);
             ThrowIfOutOfRange(index);
             ThrowIfNoInstructions();
 
-            uint length = Length;
-            uint start = sizeof(uint) + sizeof(uint);
-            for (uint i = index; i < length - 1; i++)
-            {
-                Instruction instruction = this[i + 1];
-                list.Write(start + TypeInfo<Instruction>.size * i, instruction);
-            }
-
-            list.Write(sizeof(uint) * 0, length - 1);
+            UnsafeOperation.RemoveInstructionAt(operation, index);
         }
 
         /// <summary>
         /// Creates a new empty operation for writing world instructions into.
         /// </summary>
-        public unsafe static Operation Create(uint initialCapacity = 1)
+        public static Operation Create(uint initialCapacity = 1)
         {
-            uint size = sizeof(uint) + sizeof(uint) + TypeInfo<Instruction>.size * initialCapacity;
-            Allocation list = new(size);
-            list.Write(sizeof(uint) * 0, 0);
-            list.Write(sizeof(uint) * 1, initialCapacity);
-            return new Operation(list);
+            return new(initialCapacity);
         }
 
         /// <summary>
@@ -607,6 +569,110 @@ namespace Worlds
             public readonly void SetArrayElements<T>(uint index, USpan<T> elements) where T : unmanaged
             {
                 operation.SetArrayElements(index, elements);
+            }
+        }
+
+        /// <summary>
+        /// Opaque pointer implementation of an <see cref="Operation"/>.
+        /// </summary>
+        internal unsafe struct UnsafeOperation
+        {
+            private uint count;
+            private uint capacity;
+            private Allocation list;
+
+            public static UnsafeOperation* Allocate(uint initialCapacity)
+            {
+                initialCapacity = Allocations.GetNextPowerOf2(Math.Max(1, initialCapacity));
+                UnsafeOperation* operation = (UnsafeOperation*)Allocations.Allocate(TypeInfo<UnsafeOperation>.size);
+                operation->count = 0;
+                operation->capacity = initialCapacity;
+                operation->list = new(TypeInfo<Instruction>.size * initialCapacity);
+                return operation;
+            }
+
+            public static void Free(ref UnsafeOperation* operation)
+            {
+                Allocations.ThrowIfNull(operation);
+
+                operation->list.Dispose();
+                Allocations.Free(ref operation);
+            }
+
+            public static uint GetCount(UnsafeOperation* operation)
+            {
+                Allocations.ThrowIfNull(operation);
+
+                return operation->count;
+            }
+
+            public static uint GetCapacity(UnsafeOperation* operation)
+            {
+                Allocations.ThrowIfNull(operation);
+
+                return operation->capacity;
+            }
+
+            public static USpan<Instruction> GetInstructions(UnsafeOperation* operation)
+            {
+                Allocations.ThrowIfNull(operation);
+
+                return operation->list.AsSpan<Instruction>(0, operation->count);
+            }
+
+            public static void AddInstruction(UnsafeOperation* operation, Instruction instruction)
+            {
+                Allocations.ThrowIfNull(operation);
+
+                uint stride = TypeInfo<Instruction>.size;
+                ref uint count = ref operation->count;
+                uint capacity = operation->capacity;
+                while (count >= capacity)
+                {
+                    capacity *= 2;
+                    Allocation.Resize(ref operation->list, stride * capacity);
+                    operation->capacity = capacity;
+                }
+
+                operation->list.Write(stride * count, instruction);
+                count++;
+            }
+
+            public static void ClearInstructions(UnsafeOperation* operation)
+            {
+                Allocations.ThrowIfNull(operation);
+
+                uint stride = TypeInfo<Instruction>.size;
+                ref uint count = ref operation->count;
+                for (uint i = 0; i < count; i++)
+                {
+                    ref Instruction instruction = ref operation->list.Read<Instruction>(stride * i);
+                    instruction.Dispose();
+                }
+
+                count = 0;
+            }
+
+            public static void RemoveInstructionAt(UnsafeOperation* operation, uint index)
+            {
+                Allocations.ThrowIfNull(operation);
+
+                uint stride = TypeInfo<Instruction>.size;
+                ref Instruction instruction = ref operation->list.Read<Instruction>(stride * index);
+                instruction.Dispose();
+
+                ref uint count = ref operation->count;
+                if (index == operation->capacity - 1)
+                {
+                    //removing last element
+                }
+                else
+                {
+                    //shift elements back
+                    operation->list.CopyTo(operation->list, stride * (index + 1), stride * index, stride * (count - index - 1));
+                }
+
+                count--;
             }
         }
 
