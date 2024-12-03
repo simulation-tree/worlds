@@ -67,11 +67,9 @@ namespace Worlds.Tests
             using Operation operation = new();
             operation.CreateEntity();
             operation.AddComponent(new TestComponent(4));
-            operation.ClearSelection();
 
             operation.CreateEntity();
             operation.AddComponent(new TestComponent(5));
-            operation.ClearSelection();
 
             operation.CreateEntity();
             operation.SetParentToPreviouslyCreatedEntity(2);
@@ -241,12 +239,30 @@ namespace Worlds.Tests
         }
 
         [Test]
+        public void AddOneComponentToSelectedEntity()
+        {
+            using Operation operation = new();
+            Operation.SelectedEntity a = operation.CreateEntity();
+            a.AddComponent(new TestComponent(1));
+
+            Assert.That(operation.Count, Is.EqualTo(2));
+            Assert.That(operation[0].type, Is.EqualTo(Instruction.Type.CreateEntity));
+            Assert.That(operation[1].type, Is.EqualTo(Instruction.Type.AddComponent));
+        }
+
+        [Test]
         public void AddThenRemoveComponents()
         {
             using Operation operation = new();
-            for (uint i = 1; i <= 5; i++)
+            for (uint i = 0; i < 5; i++)
             {
                 operation.CreateEntity();
+            }
+
+            Assert.That(operation.Count, Is.EqualTo(5));
+            for (uint i = 0; i < 5; i++)
+            {
+                operation.SelectPreviouslyCreatedEntity(i);
             }
 
             operation.AddComponent(new TestComponent(1));

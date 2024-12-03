@@ -528,6 +528,7 @@ namespace Worlds
         {
             if (instruction.type == Instruction.Type.CreateEntity)
             {
+                selection.Clear();
                 uint createCount = (uint)instruction.A;
                 for (uint i = 0; i < createCount; i++)
                 {
@@ -569,12 +570,12 @@ namespace Worlds
                 {
                     uint relativeOffset = (uint)instruction.B;
                     uint entity = entities[entities.Count - 1 - relativeOffset];
-                    selection.Add(entity);
+                    selection.TryAdd(entity);
                 }
                 else
                 {
                     uint entity = (uint)instruction.B;
-                    selection.Add(entity);
+                    selection.TryAdd(entity);
                 }
             }
             else if (instruction.type == Instruction.Type.SetParent)

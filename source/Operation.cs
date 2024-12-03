@@ -278,7 +278,7 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Creates a new entity and automatically appends it to the selection.
+        /// Creates a new entity and makes it the selected entity.
         /// </summary>
         public readonly SelectedEntity CreateEntity()
         {
@@ -287,8 +287,8 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Creates a given amount of entities and automatically appends
-        /// them into the selection.
+        /// Creates a given amount of entities and makes that
+        /// the current selection.
         /// </summary>
         public readonly void CreateEntities(uint count)
         {
