@@ -220,6 +220,27 @@ namespace Worlds.Tests
         }
 
         [Test]
+        public void InsertInstructions()
+        {
+            using Operation operation = new();
+            operation.CreateEntity();
+            operation.AddComponent(new TestComponent(1));
+            operation.CreateEntity();
+            operation.InsertInstructionAt(Instruction.AddComponent(new Another(25)), 1);
+
+            Assert.That(operation.Count, Is.EqualTo(4));
+            Assert.That(operation[0].type, Is.EqualTo(Instruction.Type.CreateEntity));
+            Assert.That(operation[1].type, Is.EqualTo(Instruction.Type.AddComponent));
+            Assert.That(operation[2].type, Is.EqualTo(Instruction.Type.AddComponent));
+            Assert.That(operation[3].type, Is.EqualTo(Instruction.Type.CreateEntity));
+
+            operation.InsertInstructionAt(Instruction.RemoveComponent<TestComponent>(), 4);
+
+            Assert.That(operation.Count, Is.EqualTo(5));
+            Assert.That(operation[4].type, Is.EqualTo(Instruction.Type.RemoveComponent));
+        }
+
+        [Test]
         public void AddThenRemoveComponents()
         {
             using Operation operation = new();

@@ -125,6 +125,15 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
+        private readonly void ThrowIfPastRange(uint index)
+        {
+            if (index > Count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+        }
+
+        [Conditional("DEBUG")]
         private static void ThrowIfNoEntities(uint count)
         {
             if (count == 0)
@@ -274,7 +283,7 @@ namespace Worlds
         public readonly SelectedEntity CreateEntity()
         {
             AddInstruction(Instruction.CreateEntity());
-            return new(this);
+            return new(this, Count);
         }
 
         /// <summary>
@@ -311,7 +320,7 @@ namespace Worlds
         public readonly SelectedEntity SelectEntity(uint entity)
         {
             AddInstruction(Instruction.SelectEntity(entity));
-            return new(this);
+            return new(this, Count);
         }
 
         /// <summary>
@@ -491,6 +500,14 @@ namespace Worlds
             UnsafeOperation.AddInstruction(operation, instruction);
         }
 
+        public readonly void InsertInstructionAt(Instruction instruction, uint index)
+        {
+            Allocations.ThrowIfNull(operation);
+            ThrowIfPastRange(index);
+
+            UnsafeOperation.InsertInstructionAt(operation, instruction, index);
+        }
+
         /// <summary>
         /// Removes the instruction at the given <paramref name="index"/>.
         /// </summary>
@@ -514,61 +531,78 @@ namespace Worlds
         /// <summary>
         /// An entity local to the operation.
         /// </summary>
-        public readonly struct SelectedEntity
+        public ref struct SelectedEntity
         {
             private readonly Operation operation;
+            private uint index;
 
-            internal SelectedEntity(Operation operation)
+            internal SelectedEntity(Operation operation, uint index)
             {
                 this.operation = operation;
+                this.index = index;
             }
 
             /// <summary>
             /// Submits an instruction to add the given <paramref name="component"/> to this entity.
             /// </summary>
-            public readonly void AddComponent<T>(T component) where T : unmanaged
+            public void AddComponent<T>(T component) where T : unmanaged
             {
-                operation.AddComponent(component);
+                operation.InsertInstructionAt(Instruction.AddComponent(component), index);
+                index++;
             }
 
-            public readonly void SetComponent<T>(T component) where T : unmanaged
+            public void SetComponent<T>(T component) where T : unmanaged
             {
-                operation.SetComponent(component);
+                operation.InsertInstructionAt(Instruction.SetComponent(component), index);
+                index++;
             }
 
-            public readonly void RemoveComponent<T>() where T : unmanaged
+            public void RemoveComponent<T>() where T : unmanaged
             {
-                operation.RemoveComponent<T>();
+                operation.InsertInstructionAt(Instruction.RemoveComponent<T>(), index);
+                index++;
             }
 
-            public readonly void CreateArray<T>(uint length) where T : unmanaged
+            public void CreateArray<T>(uint length) where T : unmanaged
             {
-                operation.CreateArray<T>(length);
+                operation.InsertInstructionAt(Instruction.CreateArray<T>(length), index);
+                index++;
             }
 
-            public readonly void CreateArray<T>(USpan<T> values) where T : unmanaged
+            public void CreateArray<T>(USpan<T> values) where T : unmanaged
             {
-                operation.CreateArray(values);
+                operation.InsertInstructionAt(Instruction.CreateArray(values), index);
+                index++;
             }
 
-            public readonly void DestroyArray<T>() where T : unmanaged
+            public void DestroyArray<T>() where T : unmanaged
             {
-                operation.DestroyArray<T>();
+                operation.InsertInstructionAt(Instruction.DestroyArray<T>(), index);
+                index++;
             }
 
-            public readonly void ResizeArray<T>(uint newLength) where T : unmanaged
+            public void ResizeArray<T>(uint newLength) where T : unmanaged
             {
-                operation.ResizeArray<T>(newLength);
+                operation.InsertInstructionAt(Instruction.ResizeArray<T>(newLength), index);
+                index++;
             }
 
-            public readonly void SetArrayElement<T>(uint index, T element) where T : unmanaged
+            public void SetArrayElement<T>(uint index, T element) where T : unmanaged
             {
-                operation.SetArrayElement(index, element);
+                operation.InsertInstructionAt(Instruction.SetArrayElement(index, element), this.index);
+                this.index++;
             }
 
-            public readonly void SetArrayElements<T>(uint index, USpan<T> elements) where T : unmanaged
+            public void SetArrayElements<T>(uint index, USpan<T> elements) where T : unmanaged
             {
-                operation.SetArrayElements(index, elements);
+                operation.InsertInstructionAt(Instruction.SetArrayElement(index, elements), this.index);
+                this.index++;
+            }
+
+            public void AddReferenceTowardsPreviouslyCreatedEntity(uint offset)
+            {
+                operation.InsertInstructionAt(Instruction.AddReferenceTowardsPreviouslyCreatedEntity(offset), index);
+                index++;
             }
         }
 
@@ -635,6 +669,33 @@ namespace Worlds
                 }
 
                 operation->list.Write(stride * count, instruction);
+                count++;
+            }
+
+            public static void InsertInstructionAt(UnsafeOperation* operation, Instruction instruction, uint index)
+            {
+                Allocations.ThrowIfNull(operation);
+
+                uint stride = TypeInfo<Instruction>.size;
+                ref uint count = ref operation->count;
+                uint capacity = operation->capacity;
+                while (count >= capacity)
+                {
+                    capacity *= 2;
+                    Allocation.Resize(ref operation->list, stride * capacity);
+                    operation->capacity = capacity;
+                }
+
+                if (index == operation->count)
+                {
+                    operation->list.Write(stride * index, instruction);
+                }
+                else
+                {
+                    operation->list.CopyTo(operation->list, stride * index, stride * (index + 1), stride * (count - index));
+                    operation->list.Write(stride * index, instruction);
+                }
+
                 count++;
             }
 
