@@ -69,24 +69,7 @@ namespace Worlds
         /// <summary>
         /// Creates a bit set with 1s set at positions in <paramref name="positions"/>.
         /// </summary>
-        public BitSet(params byte[] positions)
-        {
-            a = default;
-            b = default;
-            c = default;
-            d = default;
-            ThrowIfOutOfRange((uint)positions.Length);
-            for (uint i = 0; i < positions.Length; i++)
-            {
-                byte index = positions[i];
-                Set(index);
-            }
-        }
-
-        /// <summary>
-        /// Creates a bit set with 1s set at positions in <paramref name="positions"/>.
-        /// </summary>
-        public BitSet(USpan<byte> positions)
+        public BitSet(params USpan<byte> positions)
         {
             a = default;
             b = default;
@@ -132,7 +115,7 @@ namespace Worlds
         /// <summary>
         /// Sets the bit at position <paramref name="index"/> to 1.
         /// </summary>
-        public void Set(byte index)
+        public BitSet Set(byte index)
         {
 #if NET
             int longIndex = index / 64;
@@ -157,23 +140,25 @@ namespace Worlds
                     break;
             }
 #endif
+            return this;
         }
 
         /// <summary>
         /// Resets all bits to 0.
         /// </summary>
-        public void Clear()
+        public BitSet Clear()
         {
             a = 0;
             b = 0;
             c = 0;
             d = 0;
+            return this;
         }
 
         /// <summary>
         /// Sets the bit at position <paramref name="index"/> to 0.
         /// </summary>
-        public void Clear(byte index)
+        public BitSet Clear(byte index)
         {
 #if NET
             int longIndex = index / 64;
@@ -198,6 +183,7 @@ namespace Worlds
                     break;
             }
 #endif
+            return this;
         }
 
         /// <summary>

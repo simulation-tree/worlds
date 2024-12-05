@@ -541,7 +541,7 @@ namespace Worlds.Unsafe
             }
 
             //add arrays
-            if (definition.arrayTypeCount > 0)
+            if (definition.ArrayTypesMask != default)
             {
                 slot.arrayLengths = new(BitSet.Capacity);
                 slot.arrayTypes = definition.ArrayTypesMask;
@@ -823,7 +823,7 @@ namespace Worlds.Unsafe
         /// <summary>
         /// Retrieves the component of the given <typeparamref name="T"/> type from <paramref name="entity"/>.
         /// </summary>
-        public static ref T GetComponentRef<T>(UnsafeWorld* world, uint entity) where T : unmanaged
+        public static ref T GetComponent<T>(UnsafeWorld* world, uint entity) where T : unmanaged
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
@@ -836,22 +836,6 @@ namespace Worlds.Unsafe
             ComponentChunk chunk = components[slot.componentTypes];
             uint index = chunk.Entities.IndexOf(entity);
             return ref chunk.GetComponent<T>(index);
-        }
-
-        /// <summary>
-        /// Retrieves the bytes of the component of the given <paramref name="componentType"/> from <paramref name="entity"/>.
-        /// </summary>
-        public static USpan<byte> GetComponentBytes(UnsafeWorld* world, uint entity, ComponentType componentType)
-        {
-            Allocations.ThrowIfNull(world);
-            ThrowIfEntityIsMissing(world, entity);
-            ThrowIfComponentMissing(world, entity, componentType);
-
-            Dictionary<BitSet, ComponentChunk> components = GetComponentChunks(world);
-            ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
-            ComponentChunk chunk = components[slot.componentTypes];
-            uint index = chunk.Entities.IndexOf(entity);
-            return chunk.GetComponentBytes(index, componentType);
         }
 
         public static void* GetComponent(UnsafeWorld* world, uint entity, ComponentType componentType)

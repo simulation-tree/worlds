@@ -1,8 +1,10 @@
 ﻿using Collections;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using Unmanaged;
 using Worlds.Unsafe;
+using static Collections.Unsafe.UnsafeDictionary;
 using IEnumerableUInt = System.Collections.Generic.IEnumerable<uint>;
 
 namespace Worlds
@@ -777,7 +779,7 @@ namespace Worlds
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
-            EntitySlot slot = Slots[entity - 1];
+            ref EntitySlot slot = ref Slots[entity - 1];
             ComponentChunk chunk = ComponentChunks[slot.componentTypes];
             return chunk.CopyTypesTo(buffer);
         }
@@ -790,7 +792,7 @@ namespace Worlds
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
-            EntitySlot slot = Slots[entity - 1];
+            ref EntitySlot slot = ref Slots[entity - 1];
             return slot.state == EntitySlot.State.Enabled;
         }
 
@@ -802,7 +804,7 @@ namespace Worlds
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
-            EntitySlot slot = Slots[entity - 1];
+            ref EntitySlot slot = ref Slots[entity - 1];
             return slot.state == EntitySlot.State.Enabled || slot.state == EntitySlot.State.EnabledButDisabledDueToAncestor;
         }
 
@@ -847,19 +849,19 @@ namespace Worlds
 
             Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
             Definition definition = default(T).Definition;
-            if (definition.arrayTypeCount > 0)
+            if (definition.ArrayTypesMask != default)
             {
-                foreach (BitSet key in chunks.Keys)
+                if (onlyEnabled)
                 {
-                    if (key.ContainsAll(definition.ComponentTypesMask))
+                    foreach (BitSet key in chunks.Keys)
                     {
-                        ComponentChunk chunk = chunks[key];
-                        for (uint e = 0; e < chunk.Entities.Count; e++)
+                        if (key.ContainsAll(definition.ComponentTypesMask))
                         {
-                            uint entityValue = chunk.Entities[e];
-                            if (definition.ArrayTypesMask.ContainsAll(GetArrayTypesMask(entityValue)))
+                            ComponentChunk chunk = chunks[key];
+                            for (uint e = 0; e < chunk.Entities.Count; e++)
                             {
-                                if (onlyEnabled)
+                                uint entityValue = chunk.Entities[e];
+                                if (definition.ArrayTypesMask.ContainsAll(GetArrayTypesMask(entityValue)))
                                 {
                                     if (IsEnabled(entityValue))
                                     {
@@ -867,7 +869,21 @@ namespace Worlds
                                         return true;
                                     }
                                 }
-                                else
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (BitSet key in chunks.Keys)
+                    {
+                        if (key.ContainsAll(definition.ComponentTypesMask))
+                        {
+                            ComponentChunk chunk = chunks[key];
+                            for (uint e = 0; e < chunk.Entities.Count; e++)
+                            {
+                                uint entityValue = chunk.Entities[e];
+                                if (definition.ArrayTypesMask.ContainsAll(GetArrayTypesMask(entityValue)))
                                 {
                                     entity = new Entity(this, entityValue).As<T>();
                                     return true;
@@ -923,6 +939,7 @@ namespace Worlds
         public readonly T GetFirst<T>(bool onlyEnabled = false) where T : unmanaged, IEntity
         {
             ThrowIfEntityDoesntExist<T>(onlyEnabled);
+
             TryGetFirst(out T entity, onlyEnabled);
             return entity;
         }
@@ -939,34 +956,75 @@ namespace Worlds
         /// <summary>
         /// Attempts to retrieve the first found component of type <typeparamref name="T"/>.
         /// </summary>
-        public readonly bool TryGetFirstComponent<T>(out T found) where T : unmanaged
+        public readonly ref T TryGetFirstComponent<T>(out bool contains) where T : unmanaged
         {
-            return TryGetFirstComponent(out _, out found);
+            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            ComponentType type = ComponentType.Get<T>();
+            foreach (BitSet key in chunks.Keys)
+            {
+                if (key.Contains(type))
+                {
+                    ComponentChunk chunk = chunks[key];
+                    if (chunk.Count > 0)
+                    {
+                        contains = true;
+                        return ref chunk.GetComponent<T>(0);
+                    }
+                }
+            }
+
+            contains = false;
+            return ref *(T*)default(nint);
         }
 
         /// <summary>
         /// Attempts to retrieve the first entity found with a component of type <typeparamref name="T"/>.
         /// </summary>
-        public readonly bool TryGetFirstEntityWithComponent<T>(out uint entity) where T : unmanaged
+        public readonly bool TryGetFirstEntityContainingComponent<T>(out uint entity) where T : unmanaged
         {
-            return TryGetFirstComponent<T>(out entity, out _);
+            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            ComponentType type = ComponentType.Get<T>();
+            foreach (BitSet key in chunks.Keys)
+            {
+                if (key.Contains(type))
+                {
+                    ComponentChunk chunk = chunks[key];
+                    if (chunk.Count > 0)
+                    {
+                        entity = chunk.Entities[0];
+                        return true;
+                    }
+                }
+            }
+
+            entity = default;
+            return false;
         }
 
         /// <summary>
         /// Attempts to retrieve the first found entity and component of type <typeparamref name="T"/>.
         /// </summary>
-        public readonly bool TryGetFirstComponent<T>(out uint entity, out T component) where T : unmanaged
+        public readonly ref T TryGetFirstEntityContainingComponent<T>(out uint entity, out bool contains) where T : unmanaged
         {
-            foreach (uint e in GetAll(ComponentType.Get<T>()))
+            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            ComponentType type = ComponentType.Get<T>();
+            foreach (BitSet key in chunks.Keys)
             {
-                entity = e;
-                component = GetComponentRef<T>(e);
-                return true;
+                if (key.Contains(type))
+                {
+                    ComponentChunk chunk = chunks[key];
+                    if (chunk.Count > 0)
+                    {
+                        entity = chunk.Entities[0];
+                        contains = true;
+                        return ref chunk.GetComponent<T>(0);
+                    }
+                }
             }
 
             entity = default;
-            component = default;
-            return false;
+            contains = false;
+            return ref *(T*)default(nint);
         }
 
         /// <summary>
@@ -976,14 +1034,23 @@ namespace Worlds
         /// </para>
         /// </summary>
         /// <exception cref="NullReferenceException"></exception>"
-        public readonly T GetFirstComponent<T>() where T : unmanaged
+        public readonly ref T GetFirstComponent<T>() where T : unmanaged
         {
-            foreach (uint e in GetAll(ComponentType.Get<T>()))
+            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            ComponentType type = ComponentType.Get<T>();
+            foreach (BitSet key in chunks.Keys)
             {
-                return GetComponent<T>(e);
+                if (key.Contains(type))
+                {
+                    ComponentChunk chunk = chunks[key];
+                    if (chunk.Count > 0)
+                    {
+                        return ref chunk.GetComponent<T>(0);
+                    }
+                }
             }
 
-            throw new NullReferenceException($"No entity with component of type `{typeof(T)}` found");
+            throw new NullReferenceException($"No entity with component of type `{typeof(T)}` was found");
         }
 
         /// <summary>
@@ -993,29 +1060,21 @@ namespace Worlds
         /// </para>
         /// </summary>
         /// <exception cref="NullReferenceException"></exception>
-        public readonly T GetFirstComponent<T>(out uint entity) where T : unmanaged
+        public readonly ref T GetFirstEntityContainingComponent<T>(out uint entity) where T : unmanaged
         {
-            foreach (uint e in GetAll(ComponentType.Get<T>()))
+            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            ComponentType type = ComponentType.Get<T>();
+            foreach (BitSet key in chunks.Keys)
             {
-                entity = e;
-                return GetComponent<T>(e);
-            }
-
-            throw new NullReferenceException($"No entity with component of type `{typeof(T)}` found");
-        }
-
-        /// <summary>
-        /// Retrieves a reference to the first found component of type <typeparamref name="T"/>.
-        /// <para>
-        /// May throw a <see cref="NullReferenceException"/> if no entity with the component is found.
-        /// </para>
-        /// </summary>
-        /// <exception cref="NullReferenceException"></exception>
-        public readonly ref T GetFirstComponentRef<T>() where T : unmanaged
-        {
-            foreach (uint e in GetAll(ComponentType.Get<T>()))
-            {
-                return ref GetComponentRef<T>(e);
+                if (key.Contains(type))
+                {
+                    ComponentChunk chunk = chunks[key];
+                    if (chunk.Count > 0)
+                    {
+                        entity = chunk.Entities[0];
+                        return ref chunk.GetComponent<T>(0);
+                    }
+                }
             }
 
             throw new NullReferenceException($"No entity with component of type `{typeof(T)}` found");
@@ -1187,7 +1246,7 @@ namespace Worlds
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
-            EntitySlot slot = Slots[entity - 1];
+            ref EntitySlot slot = ref Slots[entity - 1];
             if (slot.childCount > 0)
             {
                 return slot.children.AsSpan<uint>();
@@ -1367,7 +1426,7 @@ namespace Worlds
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
-            EntitySlot slot = Slots[entity - 1];
+            ref EntitySlot slot = ref Slots[entity - 1];
             byte count = 0;
             for (byte a = 0; a < BitSet.Capacity; a++)
             {
@@ -1387,7 +1446,7 @@ namespace Worlds
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
-            EntitySlot slot = Slots[entity - 1];
+            ref EntitySlot slot = ref Slots[entity - 1];
             return slot.arrayTypes;
         }
 
@@ -1487,7 +1546,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the element at the index from an existing array on this entity.
         /// </summary>
-        public readonly ref T GetArrayElementRef<T>(uint entity, uint index) where T : unmanaged
+        public readonly ref T GetArrayElement<T>(uint entity, uint index) where T : unmanaged
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
@@ -1525,22 +1584,13 @@ namespace Worlds
         /// <summary>
         /// Adds a new <typeparamref name="T"/> component to the given <paramref name="entity"/>.
         /// </summary>
-        public readonly void AddComponent<T>(uint entity, T component) where T : unmanaged
+        public readonly ref T AddComponent<T>(uint entity, T component) where T : unmanaged
         {
             ComponentType type = ComponentType.Get<T>();
             ref T target = ref UnsafeWorld.AddComponent<T>(value, entity);
             target = component;
             UnsafeWorld.NotifyComponentAdded(this, entity, type);
-        }
-
-        /// <summary>
-        /// Adds a new component of type <typeparamref name="T"/> to the given <paramref name="entity"/>.
-        /// </summary>
-        public readonly void AddComponent<T>(uint entity) where T : unmanaged
-        {
-            ComponentType type = ComponentType.Get<T>();
-            UnsafeWorld.AddComponent(value, entity, type);
-            UnsafeWorld.NotifyComponentAdded(this, entity, type);
+            return ref target;
         }
 
         /// <summary>
@@ -1564,12 +1614,14 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Adds a <c>default</c> component value and returns it by reference.
+        /// Adds a <c>default</c> component to <paramref name="entity"/> and returns it by reference.
         /// </summary>
-        public readonly ref T AddComponentRef<T>(uint entity) where T : unmanaged
+        public readonly ref T AddComponent<T>(uint entity) where T : unmanaged
         {
-            AddComponent<T>(entity, default);
-            return ref GetComponentRef<T>(entity);
+            ComponentType type = ComponentType.Get<T>();
+            ref T newComponent = ref UnsafeWorld.AddComponent<T>(value, entity);
+            UnsafeWorld.NotifyComponentAdded(this, entity, type);
+            return ref newComponent;
         }
 
         /// <summary>
@@ -1630,9 +1682,9 @@ namespace Worlds
         /// <summary>
         /// Retrieves a reference to the component of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
         /// </summary>
-        public readonly ref T GetComponentRef<T>(uint entity) where T : unmanaged
+        public readonly ref T GetComponent<T>(uint entity) where T : unmanaged
         {
-            return ref UnsafeWorld.GetComponentRef<T>(value, entity);
+            return ref UnsafeWorld.GetComponent<T>(value, entity);
         }
 
         /// <summary>
@@ -1643,7 +1695,7 @@ namespace Worlds
         {
             if (ContainsComponent<T>(entity))
             {
-                return GetComponentRef<T>(entity);
+                return GetComponent<T>(entity);
             }
             else
             {
@@ -1661,54 +1713,29 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Retrieves the component of the given type <typeparamref name="T"/> from the given <paramref name="entity"/>.
-        /// </summary>
-        public readonly T GetComponent<T>(uint entity) where T : unmanaged
-        {
-            return GetComponentRef<T>(entity);
-        }
-
-        /// <summary>
         /// Fetches the component from this entity as a span of bytes.
         /// </summary>
-        public readonly USpan<byte> GetComponentBytes(uint entity, ComponentType type)
+        public readonly USpan<byte> GetComponentBytes(uint entity, ComponentType componentType)
         {
-            return UnsafeWorld.GetComponentBytes(value, entity, type);
-        }
-
-        /// <summary>
-        /// Attempts to retrieve the component of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
-        /// </summary>
-        public readonly bool TryGetComponent<T>(uint entity, out T found) where T : unmanaged
-        {
-            if (ContainsComponent<T>(entity))
-            {
-                found = GetComponentRef<T>(entity);
-                return true;
-            }
-            else
-            {
-                found = default;
-                return false;
-            }
+            void* component = UnsafeWorld.GetComponent(value, entity, componentType);
+            return new(component, componentType.Size);
         }
 
         /// <summary>
         /// Attempts to retrieve a reference to the component of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
         /// </summary>
         /// <returns><c>true</c> if the component is found.</returns>
-        public readonly ref T TryGetComponentRef<T>(uint entity, out bool contains) where T : unmanaged
+        public readonly ref T TryGetComponent<T>(uint entity, out bool contains) where T : unmanaged
         {
             if (ContainsComponent<T>(entity))
             {
                 contains = true;
-                return ref GetComponentRef<T>(entity);
+                return ref GetComponent<T>(entity);
             }
             else
             {
                 contains = false;
-                void* nullPointer = null;
-                return ref *(T*)nullPointer;
+                return ref *(T*)default(nint);
             }
         }
 
@@ -1717,7 +1744,7 @@ namespace Worlds
         /// </summary>
         public readonly void SetComponent<T>(uint entity, T component) where T : unmanaged
         {
-            ref T existing = ref GetComponentRef<T>(entity);
+            ref T existing = ref GetComponent<T>(entity);
             existing = component;
         }
 
@@ -1736,7 +1763,8 @@ namespace Worlds
         public readonly ComponentChunk GetComponentChunk(uint entity)
         {
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
-            EntitySlot slot = Slots[entity - 1];
+
+            ref EntitySlot slot = ref Slots[entity - 1];
             return ComponentChunks[slot.componentTypes];
         }
 
@@ -1838,7 +1866,7 @@ namespace Worlds
             Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
             Definition definition = default(T).Definition;
             uint count = 0;
-            if (definition.arrayTypeCount > 0)
+            if (definition.ArrayTypesMask != default)
             {
                 foreach (BitSet key in chunks.Keys)
                 {
@@ -2131,274 +2159,6 @@ namespace Worlds
                             if (IsEnabled(entity))
                             {
                                 entities.Add(entity);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Iterates over all entities that contain the given component type.
-        /// </summary>
-        public readonly IEnumerableUInt GetAll(ComponentType componentType, bool onlyEnabled = false)
-        {
-            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
-            foreach (BitSet key in chunks.Keys)
-            {
-                if (key.Contains(componentType))
-                {
-                    ComponentChunk chunk = chunks[key];
-                    for (uint e = 0; e < chunk.Entities.Count; e++)
-                    {
-                        if (!onlyEnabled)
-                        {
-                            yield return chunk.Entities[e];
-                        }
-                        else
-                        {
-                            uint entity = chunk.Entities[e];
-                            if (IsEnabled(entity))
-                            {
-                                yield return entity;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Iterates over all entities that contain the given component type.
-        /// </summary>
-        public readonly IEnumerableUInt GetAll<T>(bool onlyEnabled = false) where T : unmanaged
-        {
-            return GetAll(ComponentType.Get<T>(), onlyEnabled);
-        }
-
-        /// <summary>
-        /// Finds all entities that contain all of the given component types and
-        /// invokes the callback for every entity found.
-        /// </summary>
-        public readonly void ForEach<T>(QueryCallback callback, bool onlyEnabled = false) where T : unmanaged
-        {
-            ComponentType componentType = ComponentType.Get<T>();
-            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
-            foreach (BitSet key in chunks.Keys)
-            {
-                if (key.Contains(componentType))
-                {
-                    ComponentChunk chunk = chunks[key];
-                    for (uint e = 0; e < chunk.Entities.Count; e++)
-                    {
-                        if (!onlyEnabled)
-                        {
-                            callback(chunk.Entities[e]);
-                        }
-                        else
-                        {
-                            uint entity = chunk.Entities[e];
-                            if (IsEnabled(entity))
-                            {
-                                callback(entity);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Finds all entities that contain all of the given component types
-        /// and invokes the callback for every entity found.
-        /// </summary>
-        public readonly void ForEach(USpan<ComponentType> componentTypes, QueryCallback callback, bool onlyEnabled = false)
-        {
-            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
-            BitSet componentTypesMask = new();
-            for (uint i = 0; i < componentTypes.Length; i++)
-            {
-                componentTypesMask.Set(componentTypes[i]);
-            }
-
-            foreach (BitSet key in chunks.Keys)
-            {
-                if (key.ContainsAll(componentTypesMask))
-                {
-                    ComponentChunk chunk = chunks[key];
-                    for (uint e = 0; e < chunk.Entities.Count; e++)
-                    {
-                        if (!onlyEnabled)
-                        {
-                            callback(chunk.Entities[e]);
-                        }
-                        else
-                        {
-                            uint entity = chunk.Entities[e];
-                            if (IsEnabled(entity))
-                            {
-                                callback(entity);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Finds all entities that contain all of the given component types
-        /// and invokes the callback for every entity found.
-        /// </summary>
-        public readonly void ForEach<T>(QueryCallback<T> callback, bool onlyEnabled = false) where T : unmanaged
-        {
-            ComponentType componentType = ComponentType.Get<T>();
-            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
-            foreach (BitSet key in chunks.Keys)
-            {
-                if (key.Contains(componentType))
-                {
-                    ComponentChunk chunk = chunks[key];
-                    List<uint> entities = chunk.Entities;
-                    for (uint e = 0; e < entities.Count; e++)
-                    {
-                        if (!onlyEnabled)
-                        {
-                            ref T t1 = ref chunk.GetComponent<T>(e);
-                            callback(entities[e], ref t1);
-                        }
-                        else
-                        {
-                            uint entity = entities[e];
-                            if (IsEnabled(entity))
-                            {
-                                ref T t1 = ref chunk.GetComponent<T>(e);
-                                callback(entity, ref t1);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Finds all entities that contain all of the given component types
-        /// and invokes the callback for every entity found.
-        /// </summary>
-        public readonly void ForEach<T1, T2>(QueryCallback<T1, T2> callback, bool onlyEnabled = false) where T1 : unmanaged where T2 : unmanaged
-        {
-            BitSet componentTypesMask = new();
-            componentTypesMask.Set(ComponentType.Get<T1>());
-            componentTypesMask.Set(ComponentType.Get<T2>());
-            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
-            foreach (BitSet key in chunks.Keys)
-            {
-                if (key.ContainsAll(componentTypesMask))
-                {
-                    ComponentChunk chunk = chunks[key];
-                    List<uint> entities = chunk.Entities;
-                    for (uint e = 0; e < entities.Count; e++)
-                    {
-                        if (!onlyEnabled)
-                        {
-                            ref T1 t1 = ref chunk.GetComponent<T1>(e);
-                            ref T2 t2 = ref chunk.GetComponent<T2>(e);
-                            callback(entities[e], ref t1, ref t2);
-                        }
-                        else
-                        {
-                            uint entity = entities[e];
-                            if (IsEnabled(entity))
-                            {
-                                ref T1 t1 = ref chunk.GetComponent<T1>(e);
-                                ref T2 t2 = ref chunk.GetComponent<T2>(e);
-                                callback(entity, ref t1, ref t2);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Finds all entities that contain all of the given component types
-        /// and invokes the callback for every entity found.
-        /// </summary>
-        public readonly void ForEach<T1, T2, T3>(QueryCallback<T1, T2, T3> callback, bool onlyEnabled = false) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
-        {
-            BitSet componentTypesMask = new();
-            componentTypesMask.Set(ComponentType.Get<T1>());
-            componentTypesMask.Set(ComponentType.Get<T2>());
-            componentTypesMask.Set(ComponentType.Get<T3>());
-            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
-            foreach (BitSet key in chunks.Keys)
-            {
-                if (key.ContainsAll(componentTypesMask))
-                {
-                    ComponentChunk chunk = chunks[key];
-                    List<uint> entities = chunk.Entities;
-                    for (uint e = 0; e < entities.Count; e++)
-                    {
-                        if (!onlyEnabled)
-                        {
-                            ref T1 t1 = ref chunk.GetComponent<T1>(e);
-                            ref T2 t2 = ref chunk.GetComponent<T2>(e);
-                            ref T3 t3 = ref chunk.GetComponent<T3>(e);
-                            callback(entities[e], ref t1, ref t2, ref t3);
-                        }
-                        else
-                        {
-                            uint entity = entities[e];
-                            if (IsEnabled(entity))
-                            {
-                                ref T1 t1 = ref chunk.GetComponent<T1>(e);
-                                ref T2 t2 = ref chunk.GetComponent<T2>(e);
-                                ref T3 t3 = ref chunk.GetComponent<T3>(e);
-                                callback(entity, ref t1, ref t2, ref t3);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Finds all entities that contain all of the given component types
-        /// and invokes the callback for every entity found.
-        /// </summary>
-        public readonly void ForEach<T1, T2, T3, T4>(QueryCallback<T1, T2, T3, T4> callback, bool onlyEnabled = false) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
-        {
-            BitSet componentTypesMask = new();
-            componentTypesMask.Set(ComponentType.Get<T1>());
-            componentTypesMask.Set(ComponentType.Get<T2>());
-            componentTypesMask.Set(ComponentType.Get<T3>());
-            componentTypesMask.Set(ComponentType.Get<T4>());
-            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
-            foreach (BitSet key in chunks.Keys)
-            {
-                if (key.ContainsAll(componentTypesMask))
-                {
-                    ComponentChunk chunk = chunks[key];
-                    List<uint> entities = chunk.Entities;
-                    for (uint e = 0; e < entities.Count; e++)
-                    {
-                        if (!onlyEnabled)
-                        {
-                            ref T1 t1 = ref chunk.GetComponent<T1>(e);
-                            ref T2 t2 = ref chunk.GetComponent<T2>(e);
-                            ref T3 t3 = ref chunk.GetComponent<T3>(e);
-                            ref T4 t4 = ref chunk.GetComponent<T4>(e);
-                            callback(entities[e], ref t1, ref t2, ref t3, ref t4);
-                        }
-                        else
-                        {
-                            uint entity = entities[e];
-                            if (IsEnabled(entity))
-                            {
-                                ref T1 t1 = ref chunk.GetComponent<T1>(e);
-                                ref T2 t2 = ref chunk.GetComponent<T2>(e);
-                                ref T3 t3 = ref chunk.GetComponent<T3>(e);
-                                ref T4 t4 = ref chunk.GetComponent<T4>(e);
-                                callback(entity, ref t1, ref t2, ref t3, ref t4);
                             }
                         }
                     }

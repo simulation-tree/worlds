@@ -92,7 +92,7 @@ namespace Worlds.Tests
             Assert.That(world.GetComponent<SimpleComponent>(entity), Is.EqualTo(component1));
             Assert.That(world.GetComponent<Another>(entity), Is.EqualTo(component2));
             world.RemoveComponent<SimpleComponent>(entity);
-            Assert.Throws<NullReferenceException>(() => world.GetComponentRef<SimpleComponent>(entity));
+            Assert.Throws<NullReferenceException>(() => world.GetComponent<SimpleComponent>(entity));
             Assert.That(world.GetComponent<Another>(entity), Is.EqualTo(component2));
         }
 

@@ -2,7 +2,6 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
-using Unmanaged;
 
 namespace Worlds.Tests
 {
@@ -19,38 +18,83 @@ namespace Worlds.Tests
             world.AddComponent(b, new Berry());
             world.AddComponent(c, new Apple());
             world.AddComponent(c, new Berry());
-            using ComponentQuery<Apple> appleQuery = new();
-            using ComponentQuery<Berry> berryQuery = new();
-            appleQuery.Update(world);
-            Assert.That(appleQuery.Count, Is.EqualTo(2));
-            uint appleIndex = 0;
-            for (uint i = 0; i < appleQuery.Count; i++)
+            ComponentQuery<Apple> appleQuery = new(world);
+            ComponentQuery<Berry> berryQuery = new(world);
+            uint foundApples = 0;
+            foreach (var r in appleQuery)
             {
-                var result = appleQuery[i];
-                ref Apple apple = ref result.Component1;
+                ref Apple apple = ref r.component1;
                 Assert.That(apple.bites, Is.EqualTo(0));
-
                 apple.bites += 4;
-                apple.bites += (byte)appleIndex;
-                appleIndex++;
+                apple.bites += (byte)foundApples;
+                foundApples++;
             }
 
+            Assert.That(foundApples, Is.EqualTo(2));
             world.RemoveComponent<Apple>(a);
-            appleQuery.Update(world);
-            Assert.That(appleQuery.Count, Is.EqualTo(1));
-            for (uint i = 0; i < appleQuery.Count; i++)
+            foundApples = 0;
+            foreach (var r in appleQuery)
             {
-                var result = appleQuery[i];
-                ref Apple apple = ref result.Component1;
+                ref Apple apple = ref r.component1;
                 Assert.That(apple.bites, Is.EqualTo(5));
+                foundApples++;
             }
 
-            using ComponentQuery<Apple, Berry> comboQuery = new();
-            comboQuery.Update(world);
-            Assert.That(comboQuery.Count, Is.EqualTo(1));
-            ComponentQuery<Apple, Berry>.Result firstResult = comboQuery[0];
-            Assert.That(firstResult.Component1.bites, Is.EqualTo(5));
-            Assert.That(firstResult.Component2.hearts, Is.EqualTo(0));
+            Assert.That(foundApples, Is.EqualTo(1));
+            ComponentQuery<Apple, Berry> comboQuery = new(world);
+            uint foundCombos = 0;
+            foreach (var r in comboQuery)
+            {
+                Assert.That(r.component1.bites, Is.EqualTo(5));
+                Assert.That(r.component2.hearts, Is.EqualTo(0));
+                foundCombos++;
+            }
+
+            Assert.That(foundCombos, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void QueryWithExclusion()
+        {
+            using World world = new();
+
+            uint a = world.CreateEntity();
+            world.AddComponent(a, new Apple());
+
+            uint b = world.CreateEntity();
+            world.AddComponent(b, new Berry());
+
+            uint c = world.CreateEntity();
+            world.AddComponent(c, new Apple());
+            world.AddComponent(c, new Berry());
+
+            uint d = world.CreateEntity();
+            world.AddComponent(d, new Apple());
+
+            using List<uint> entities = new();
+            EachAppleWithoutBerry each = new(entities);
+            world.ForEach(each);
+
+            Assert.That(entities.Count, Is.EqualTo(2));
+            Assert.That(entities[0], Is.EqualTo(a));
+            Assert.That(entities[1], Is.EqualTo(d));
+        }
+
+        public readonly struct EachAppleWithoutBerry : IForEachEntity<Apple>
+        {
+            private readonly List<uint> entities;
+
+            BitSet IForEach.ExcludeComponentTypes => ComponentType.GetBitSet<Berry>();
+
+            public EachAppleWithoutBerry(List<uint> entities)
+            {
+                this.entities = entities;
+            }
+
+            void IForEachEntity<Apple>.ForEach(in uint entity, ref Apple apple)
+            {
+                entities.Add(entity);
+            }
         }
 
         [Test]
@@ -65,7 +109,7 @@ namespace Worlds.Tests
             world.AddComponent(c, new Cherry("fortune"));
             world.SetEnabled(a, false);
             System.Collections.Generic.List<Cherry> values = [];
-            foreach (uint entity in world.GetAll<Cherry>(true))
+            foreach (uint entity in world.GetAllContaining<Cherry>(true))
             {
                 values.Add(world.GetComponent<Cherry>(entity));
             }
@@ -74,7 +118,7 @@ namespace Worlds.Tests
             Assert.That(values.Contains(new Cherry("pie")), Is.True);
             Assert.That(values.Contains(new Cherry("fortune")), Is.True);
             values.Clear();
-            foreach (uint entity in world.GetAll<Cherry>())
+            foreach (uint entity in world.GetAllContaining<Cherry>())
             {
                 values.Add(world.GetComponent<Cherry>(entity));
             }
@@ -97,7 +141,7 @@ namespace Worlds.Tests
             world.AddComponent(entity2, new Berry(5));
             world.DestroyEntity(entity2);
             System.Collections.Generic.List<(uint, Cherry)> found = new();
-            foreach (uint entity in world.GetAll<Cherry>())
+            foreach (uint entity in world.GetAllContaining<Cherry>())
             {
                 found.Add((entity, world.GetComponent<Cherry>(entity)));
             }
@@ -142,30 +186,65 @@ namespace Worlds.Tests
         }
 
         [Test]
-        public void EnumerateQuery()
+        public void EnumerateQueryResults()
         {
             using World world = new();
+
+            uint first = world.CreateEntity();
+            world.AddComponent(first, new Apple(232));
+
             uint a = world.CreateEntity();
-            uint b = world.CreateEntity();
-            uint c = world.CreateEntity();
             world.AddComponent(a, new Cherry("apple"));
+
+            uint b = world.CreateEntity();
             world.AddComponent(b, new Cherry("pie"));
+
+            uint second = world.CreateEntity();
+            world.AddComponent(second, new Apple(123));
+
+            uint c = world.CreateEntity();
             world.AddComponent(c, new Cherry("fortune"));
-            using ComponentQuery<Cherry> query = new();
-            query.Update(world);
-            Assert.That(query.Count, Is.EqualTo(3));
-            uint count = 0;
-            foreach (var result in query)
+
+            ComponentQuery<Cherry> cherryQuery = new(world);
+            using List<uint> resultEntities = new();
+            using List<Cherry> resultComponents = new();
+            foreach (var r in cherryQuery)
             {
-                ref Cherry cherry = ref result.Component1;
-                cherry.stones = "cherry";
-                count++;
+                resultEntities.Add(r.entity);
+                resultComponents.Add(r.component1);
+
+                r.component1.stones = "cherry";
             }
 
-            Assert.That(count, Is.EqualTo(3));
-            Assert.That(world.GetComponent<Cherry>(a).stones.ToString(), Is.EqualTo("cherry"));
-            Assert.That(world.GetComponent<Cherry>(b).stones.ToString(), Is.EqualTo("cherry"));
-            Assert.That(world.GetComponent<Cherry>(c).stones.ToString(), Is.EqualTo("cherry"));
+            Assert.That(resultEntities.Count, Is.EqualTo(3));
+            Assert.That(resultComponents.Count, Is.EqualTo(3));
+            Assert.That(resultEntities.Contains(a), Is.True);
+            Assert.That(resultEntities.Contains(b), Is.True);
+            Assert.That(resultEntities.Contains(c), Is.True);
+            Assert.That(resultComponents.Contains(new Cherry("apple")), Is.True);
+            Assert.That(resultComponents.Contains(new Cherry("pie")), Is.True);
+            Assert.That(resultComponents.Contains(new Cherry("fortune")), Is.True);
+
+            foreach (var r in cherryQuery)
+            {
+                Assert.That(r.component1.stones.ToString(), Is.EqualTo("cherry"));
+            }
+
+            ComponentQuery<Apple> appleQuery = new(world);
+            using List<uint> appleEntities = new();
+            using List<Apple> appleComponents = new();
+            foreach (var r in appleQuery)
+            {
+                appleEntities.Add(r.entity);
+                appleComponents.Add(r.component1);
+            }
+
+            Assert.That(appleEntities.Count, Is.EqualTo(2));
+            Assert.That(appleComponents.Count, Is.EqualTo(2));
+            Assert.That(appleEntities.Contains(first), Is.True);
+            Assert.That(appleEntities.Contains(second), Is.True);
+            Assert.That(appleComponents.Contains(new Apple(232)), Is.True);
+            Assert.That(appleComponents.Contains(new Apple(123)), Is.True);
         }
 
         [Test]
@@ -187,8 +266,8 @@ namespace Worlds.Tests
             uint entity5 = world.CreateEntity();
             world.AddComponent(entity5, component1);
             world.AddComponent(entity5, another2);
-            System.Collections.Generic.List<uint> simpleComponents = world.GetAll<Cherry>().ToList();
-            System.Collections.Generic.List<uint> anotherComponents = world.GetAll<Berry>().ToList();
+            using List<uint> simpleComponents = new(world.GetAllContaining<Cherry>());
+            using List<uint> anotherComponents = new(world.GetAllContaining<Berry>());
             Assert.That(simpleComponents.Count, Is.EqualTo(3));
             Assert.That(anotherComponents.Count, Is.EqualTo(3));
             Assert.That(simpleComponents.Contains(entity1), Is.True);
@@ -197,30 +276,6 @@ namespace Worlds.Tests
             Assert.That(anotherComponents.Contains(entity3), Is.True);
             Assert.That(anotherComponents.Contains(entity4), Is.True);
             Assert.That(anotherComponents.Contains(entity5), Is.True);
-        }
-
-        [Test]
-        public void IndexOfResult()
-        {
-            using World world = new();
-
-            Definition definition = new([ComponentType.Get<Apple>(), ComponentType.Get<Berry>(), ComponentType.Get<Cherry>()], []);
-            uint entity1 = world.CreateEntity(definition);
-            uint entity2 = world.CreateEntity(definition);
-            uint entity3 = world.CreateEntity(definition);
-            uint entity4 = world.CreateEntity();
-
-            using ComponentQuery<Apple, Berry, Cherry> query = new();
-            query.Update(world);
-
-            Assert.That(query.Count, Is.EqualTo(3));
-            Assert.That(query.TryIndexOf(1, out uint index), Is.True);
-            Assert.That(index, Is.EqualTo(0));
-            Assert.That(query.TryIndexOf(2, out index), Is.True);
-            Assert.That(index, Is.EqualTo(1));
-            Assert.That(query.TryIndexOf(3, out index), Is.True);
-            Assert.That(index, Is.EqualTo(2));
-            Assert.That(query.TryIndexOf(4, out index), Is.False);
         }
 
         [Test]
@@ -252,47 +307,41 @@ namespace Worlds.Tests
             stopwatch.Stop();
             Console.WriteLine($"Creating {count} entities took {stopwatch.ElapsedMilliseconds}ms");
 
-            System.Collections.Generic.List<(uint, Apple, Berry, Cherry)> results = [];
+            using List<(uint, Apple, Berry, Cherry)> results = new();
 
             //benchmark query
-            using ComponentQuery<Apple, Berry, Cherry> query = new();
+            ComponentQuery<Apple, Berry, Cherry> query = new(world);
             stopwatch.Restart();
-            query.Update(world);
+            {
+                foreach (var r in query)
+                {
+                    results.Add((r.entity, r.component1, r.component2, r.component3));
+                }
+            }
             stopwatch.Stop();
             Console.WriteLine($"ComponentQuery took {stopwatch.ElapsedTicks}t");
-            stopwatch.Restart();
-            foreach (var r in query)
-            {
-                results.Add((r.entity, r.Component1, r.Component2, r.Component3));
-            }
-
-            stopwatch.Stop();
-            Console.WriteLine($"    Iterating took {stopwatch.ElapsedTicks}t");
 
             //benchmark definition query
             using DefinitionQuery defQuery = new(new([ComponentType.Get<Apple>(), ComponentType.Get<Berry>(), ComponentType.Get<Cherry>()], []));
             results.Clear();
             stopwatch.Restart();
-            defQuery.Update(world);
+            {
+                defQuery.Update(world);
+                foreach (uint r in defQuery)
+                {
+                    results.Add((r, world.GetComponent<Apple>(r), world.GetComponent<Berry>(r), world.GetComponent<Cherry>(r)));
+                }
+            }
             stopwatch.Stop();
             Console.WriteLine($"DefinitionQuery took {stopwatch.ElapsedTicks}t");
-            stopwatch.Restart();
-            foreach (var r in defQuery)
-            {
-                //results.Add((r.value, r.Component1, r.Component2, r.Component3));
-            }
-
-            stopwatch.Stop();
-            Console.WriteLine($"    Iterating took {stopwatch.ElapsedTicks}t");
 
             //benchmark ForEach
             results.Clear();
+            Each each = new(results);
             stopwatch.Restart();
-            world.ForEach((in uint entity, ref Apple apple, ref Berry berry, ref Cherry cherry) =>
             {
-                results.Add((entity, apple, berry, cherry));
-            });
-
+                world.ForEach(each);
+            }
             stopwatch.Stop();
             Console.WriteLine($"ForEach took {stopwatch.ElapsedTicks}t");
 
@@ -301,25 +350,41 @@ namespace Worlds.Tests
             Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
             BitSet typesSpan = new([ComponentType.Get<Apple>(), ComponentType.Get<Berry>(), ComponentType.Get<Cherry>()]);
             stopwatch.Restart();
-            foreach (BitSet key in chunks.Keys)
             {
-                if (key.ContainsAll(typesSpan))
+                foreach (BitSet key in chunks.Keys)
                 {
-                    ComponentChunk chunk = chunks[key];
-                    List<uint> entities = chunk.Entities;
-                    for (uint e = 0; e < entities.Count; e++)
+                    if (key.ContainsAll(typesSpan))
                     {
-                        uint entity = entities[e];
-                        ref Apple apple = ref chunk.GetComponent<Apple>(e);
-                        ref Berry berry = ref chunk.GetComponent<Berry>(e);
-                        ref Cherry cherry = ref chunk.GetComponent<Cherry>(e);
-                        results.Add((entity, apple, berry, cherry));
+                        ComponentChunk chunk = chunks[key];
+                        List<uint> entities = chunk.Entities;
+                        for (uint e = 0; e < entities.Count; e++)
+                        {
+                            uint entity = entities[e];
+                            ref Apple apple = ref chunk.GetComponent<Apple>(e);
+                            ref Berry berry = ref chunk.GetComponent<Berry>(e);
+                            ref Cherry cherry = ref chunk.GetComponent<Cherry>(e);
+                            results.Add((entity, apple, berry, cherry));
+                        }
                     }
                 }
             }
-
             stopwatch.Stop();
             Console.WriteLine($"Manual iteration took {stopwatch.ElapsedTicks}t");
+        }
+
+        public readonly struct Each : IForEachEntity<Apple, Berry, Cherry>
+        {
+            private readonly List<(uint, Apple, Berry, Cherry)> results;
+
+            public Each(List<(uint, Apple, Berry, Cherry)> results)
+            {
+                this.results = results;
+            }
+
+            void IForEachEntity<Apple, Berry, Cherry>.ForEach(in uint entity, ref Apple apple, ref Berry berry, ref Cherry cherry)
+            {
+                results.Add((entity, apple, berry, cherry));
+            }
         }
     }
 }

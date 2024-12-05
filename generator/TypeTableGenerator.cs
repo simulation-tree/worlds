@@ -1,12 +1,11 @@
 ﻿using Microsoft.CodeAnalysis;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 
 namespace Worlds.Generator
 {
     [Generator(LanguageNames.CSharp)]
-    public class TypeGenerator : IIncrementalGenerator
+    public class TypeTableGenerator : IIncrementalGenerator
     {
         private static readonly SourceBuilder source = new();
         private static readonly SourceBuilder debug = new();

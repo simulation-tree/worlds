@@ -1,9 +1,6 @@
 ﻿namespace Worlds
 {
-    /// <summary>
-    /// Extensions for <see cref="IQuery"/> types.
-    /// </summary>
-    public static class QueryFunctions
+    public static class QueryExtensions
     {
         /// <summary>
         /// Retrieves the index of the <paramref name="entity"/> in this query.

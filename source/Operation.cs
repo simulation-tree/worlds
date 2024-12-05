@@ -293,6 +293,7 @@ namespace Worlds
         public readonly void CreateEntities(uint count)
         {
             ThrowIfNoEntities(count);
+
             AddInstruction(Instruction.CreateEntity(count));
         }
 
@@ -302,6 +303,7 @@ namespace Worlds
         public readonly void DestroySelected()
         {
             ThrowIfSelectionIsEmpty();
+
             AddInstruction(Instruction.DestroySelection());
         }
 
@@ -311,6 +313,7 @@ namespace Worlds
         public readonly void DestroySelected(uint start, uint length)
         {
             ThrowIfSelectionIsEmpty();
+
             AddInstruction(Instruction.DestroySelection(start, length));
         }
 
@@ -356,6 +359,7 @@ namespace Worlds
         public readonly void SetParent(uint parent)
         {
             ThrowIfSelectionIsEmpty();
+
             AddInstruction(Instruction.SetParent(parent));
         }
 
@@ -375,6 +379,7 @@ namespace Worlds
         public readonly void SetParentToPreviouslyCreatedEntity(uint offset)
         {
             ThrowIfSelectionIsEmpty();
+
             AddInstruction(Instruction.SetParentToPreviouslyCreatedEntity(offset));
         }
 
@@ -385,6 +390,7 @@ namespace Worlds
         public readonly void AddReference(uint entity)
         {
             ThrowIfSelectionIsEmpty();
+
             AddInstruction(Instruction.AddReference(entity));
         }
 
@@ -396,6 +402,7 @@ namespace Worlds
         public readonly void AddReferenceTowardsPreviouslyCreatedEntity(uint offset)
         {
             ThrowIfSelectionIsEmpty();
+
             AddInstruction(Instruction.AddReferenceTowardsPreviouslyCreatedEntity(offset));
         }
 
@@ -405,6 +412,7 @@ namespace Worlds
         public readonly void RemoveReference(rint reference)
         {
             ThrowIfSelectionIsEmpty();
+
             AddInstruction(Instruction.RemoveReference(reference));
         }
 
@@ -414,7 +422,15 @@ namespace Worlds
         public readonly void AddComponent<T>(T component) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
+
             AddInstruction(Instruction.AddComponent(component));
+        }
+
+        public readonly void AddComponent<T>() where T : unmanaged
+        {
+            ThrowIfSelectionIsEmpty();
+
+            AddInstruction(Instruction.AddComponent(new T()));
         }
 
         /// <summary>
@@ -424,6 +440,7 @@ namespace Worlds
         public readonly void SetComponent<T>(T component) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
+
             AddInstruction(Instruction.SetComponent(component));
         }
 
@@ -433,6 +450,7 @@ namespace Worlds
         public readonly void RemoveComponent<T>() where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
+
             AddInstruction(Instruction.RemoveComponent<T>());
         }
 
@@ -442,6 +460,7 @@ namespace Worlds
         public readonly void CreateArray<T>(uint length) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
+
             AddInstruction(Instruction.CreateArray<T>(length));
         }
 
@@ -451,6 +470,7 @@ namespace Worlds
         public readonly void CreateArray<T>(USpan<T> values) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
+
             AddInstruction(Instruction.CreateArray(values));
         }
 
@@ -460,6 +480,7 @@ namespace Worlds
         public readonly void DestroyArray<T>() where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
+
             AddInstruction(Instruction.DestroyArray<T>());
         }
 
@@ -469,6 +490,7 @@ namespace Worlds
         public readonly void SetArrayElement<T>(uint index, T element) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
+
             AddInstruction(Instruction.SetArrayElement(index, element));
         }
 
@@ -478,6 +500,7 @@ namespace Worlds
         public readonly void SetArrayElements<T>(uint index, USpan<T> elements) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
+
             AddInstruction(Instruction.SetArrayElement(index, elements));
         }
 
@@ -487,6 +510,7 @@ namespace Worlds
         public readonly void ResizeArray<T>(uint newLength) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
+
             AddInstruction(Instruction.ResizeArray<T>(newLength));
         }
 

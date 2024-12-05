@@ -1,6 +1,5 @@
 ﻿using Collections;
 using System;
-using System.Linq;
 using Unmanaged;
 
 namespace Worlds.Tests
@@ -23,12 +22,12 @@ namespace Worlds.Tests
             uint list = world.CreateEntity();
             world.CreateArray(list, "Well hello there list".AsUSpan().As<Character>());
 
-            System.Collections.Generic.List<uint> oldEntities = world.Entities.ToList();
-            System.Collections.Generic.List<(uint, Apple)> apples = new();
-            world.ForEach((in uint entity, ref Apple apple) =>
+            using List<uint> oldEntities = new(world.Entities);
+            using List<(uint, Apple)> apples = new();
+            foreach (uint entity in world.GetAllContaining<Apple>())
             {
-                apples.Add((entity, apple));
-            });
+                apples.Add((entity, world.GetComponent<Apple>(entity)));
+            }
 
             using BinaryWriter writer = new();
             writer.WriteObject(world);
@@ -66,12 +65,12 @@ namespace Worlds.Tests
             };
 
             using World loadedWorld = reader.ReadObject<World>();
-            System.Collections.Generic.List<uint> newEntities = loadedWorld.Entities.ToList();
-            System.Collections.Generic.List<(uint, Apple)> newApples = new();
-            loadedWorld.ForEach((in uint entity, ref Apple apple) =>
+            using List<uint> newEntities = new(loadedWorld.Entities);
+            using List<(uint, Apple)> newApples = new();
+            foreach (uint entity in loadedWorld.GetAllContaining<Apple>())
             {
-                newApples.Add((entity, apple));
-            });
+                newApples.Add((entity, world.GetComponent<Apple>(entity)));
+            }
 
             Assert.That(newEntities, Is.EquivalentTo(oldEntities));
             Assert.That(newApples, Is.EquivalentTo(apples));
@@ -124,7 +123,7 @@ namespace Worlds.Tests
             using World loadedWorld = reader.ReadObject<World>();
             world.Append(loadedWorld);
 
-            world.TryGetFirstComponent<Prefab>(out uint prefabEntity, out _);
+            world.TryGetFirstEntityContainingComponent<Prefab>(out uint prefabEntity, out _);
             Assert.That(prefabEntity, Is.Not.EqualTo((uint)0));
             Assert.That(world.ContainsEntity(prefabEntity), Is.True);
             Assert.That(world.GetComponent<Fruit>(prefabEntity).data, Is.EqualTo(42));

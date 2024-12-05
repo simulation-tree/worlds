@@ -1,13 +1,9 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Unmanaged;
 
 namespace Worlds
 {
-    /// <summary>
-    /// Extensions for <see cref="IEntity"/> types.
-    /// </summary>
-    public static class EntityFunctions
+    public static class EntityExtensions
     {
         /// <summary>
         /// Checks if this entity has been destroyed in its <see cref="World"/>.
@@ -165,28 +161,30 @@ namespace Worlds
         /// </summary>
         public static void Become<T>(this T entity, Definition definition) where T : unmanaged, IEntity
         {
-            //todo: efficiency: kinda expensive to perform these ops one by one, should instead add all missing at once
             World world = entity.World;
             uint value = entity.Value;
-            USpan<ComponentType> componentTypes = stackalloc ComponentType[definition.componentTypeCount];
-            definition.CopyComponentTypesTo(componentTypes);
-            for (uint i = 0; i < definition.componentTypeCount; i++)
+            ref EntitySlot slot = ref world.Slots[value - 1];
+            if (!slot.componentTypes.ContainsAll(definition.ComponentTypesMask))
             {
-                ComponentType componentType = componentTypes[i];
-                if (!world.ContainsComponent(value, componentType))
+                for (byte c = 0; c < BitSet.Capacity; c++)
                 {
-                    world.AddComponent(value, componentType);
+                    if (definition.ComponentTypesMask.Contains(c) && !slot.componentTypes.Contains(c))
+                    {
+                        ComponentType componentType = ComponentType.All[c];
+                        world.AddComponent(value, componentType);
+                    }
                 }
             }
 
-            USpan<ArrayType> arrayTypes = stackalloc ArrayType[definition.arrayTypeCount];
-            definition.CopyArrayTypesTo(arrayTypes);
-            for (uint i = 0; i < definition.arrayTypeCount; i++)
+            if (!slot.arrayTypes.ContainsAll(definition.ArrayTypesMask))
             {
-                ArrayType arrayType = arrayTypes[i];
-                if (!world.ContainsArray(value, arrayType))
+                for (byte a = 0; a < BitSet.Capacity; a++)
                 {
-                    world.CreateArray(value, arrayType);
+                    if (definition.ArrayTypesMask.Contains(a) && !slot.arrayTypes.Contains(a))
+                    {
+                        ArrayType arrayType = ArrayType.All[a];
+                        world.CreateArray(value, arrayType);
+                    }
                 }
             }
         }
@@ -206,27 +204,8 @@ namespace Worlds
         {
             World world = entity.World;
             uint value = entity.Value;
-            USpan<ComponentType> componentTypes = stackalloc ComponentType[definition.componentTypeCount];
-            definition.CopyComponentTypesTo(componentTypes);
-            for (uint i = 0; i < definition.componentTypeCount; i++)
-            {
-                if (!world.ContainsComponent(value, componentTypes[i]))
-                {
-                    return false;
-                }
-            }
-
-            USpan<ArrayType> arrayTypes = stackalloc ArrayType[definition.arrayTypeCount];
-            definition.CopyArrayTypesTo(arrayTypes);
-            for (uint i = 0; i < definition.arrayTypeCount; i++)
-            {
-                if (!world.ContainsArray(value, arrayTypes[i]))
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            ref EntitySlot slot = ref world.Slots[value - 1];
+            return slot.componentTypes.ContainsAll(definition.ComponentTypesMask) && slot.arrayTypes.ContainsAll(definition.ArrayTypesMask);
         }
 
         /// <summary>

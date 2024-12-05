@@ -43,10 +43,10 @@ namespace Worlds.Tests
             a = a.AddComponentType<Character>();
             a = a.AddArrayType<Float>();
 
-            Assert.That(a.componentTypeCount, Is.EqualTo(2));
-            Assert.That(a.arrayTypeCount, Is.EqualTo(2));
-            USpan<ComponentType> componentTypes = stackalloc ComponentType[a.componentTypeCount];
-            USpan<ArrayType> arrayTypes = stackalloc ArrayType[a.arrayTypeCount];
+            Assert.That(a.ComponentTypesMask.Count, Is.EqualTo(2));
+            Assert.That(a.ArrayTypesMask.Count, Is.EqualTo(2));
+            USpan<ComponentType> componentTypes = stackalloc ComponentType[BitSet.Capacity];
+            USpan<ArrayType> arrayTypes = stackalloc ArrayType[BitSet.Capacity];
             a.CopyComponentTypesTo(componentTypes);
             a.CopyArrayTypesTo(arrayTypes);
             Assert.That(componentTypes.Contains(ComponentType.Get<Integer>()), Is.True);
@@ -59,8 +59,8 @@ namespace Worlds.Tests
         public void CreateDefinitionFromMany()
         {
             Definition definition = new Definition().AddComponentTypes<Integer, Character, Double, Float>();
-            Assert.That(definition.componentTypeCount, Is.EqualTo(4));
-            Assert.That(definition.arrayTypeCount, Is.EqualTo(0));
+            Assert.That(definition.ComponentTypesMask.Count, Is.EqualTo(4));
+            Assert.That(definition.ArrayTypesMask.Count, Is.EqualTo(0));
             Assert.That(definition.ContainsComponent<Integer>(), Is.True);
             Assert.That(definition.ContainsComponent<Character>(), Is.True);
             Assert.That(definition.ContainsComponent<Double>(), Is.True);

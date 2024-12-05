@@ -178,11 +178,11 @@ namespace Worlds
         /// <summary>
         /// Retrieves an element at <paramref name="index"/> from the array of type <typeparamref name="T"/> on this entity.
         /// </summary>
-        public readonly ref T GetArrayElementRef<T>(uint index) where T : unmanaged
+        public readonly ref T GetArrayElement<T>(uint index) where T : unmanaged
         {
             ThrowIfDestroyed();
 
-            return ref world.GetArrayElementRef<T>(value, index);
+            return ref world.GetArrayElement<T>(value, index);
         }
 
         /// <summary>
@@ -338,56 +338,35 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Checks if this entity has a component of type <typeparamref name="T"/>.
-        /// </summary>
-        public readonly T GetComponent<T>() where T : unmanaged
-        {
-            ThrowIfDestroyed();
-
-            return world.GetComponent<T>(value);
-        }
-
-        /// <summary>
         /// Retrieves a reference for the component of type <typeparamref name="T"/>.
         /// </summary>
-        public readonly ref T GetComponentRef<T>() where T : unmanaged
+        public readonly ref T GetComponent<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
 
-            return ref world.GetComponentRef<T>(value);
+            return ref world.GetComponent<T>(value);
         }
 
         /// <summary>
         /// Adds a new component of type <typeparamref name="T"/> to the entity.
         /// </summary>
         /// <returns>Reference to the added component.</returns>
-        public readonly ref T AddComponentRef<T>() where T : unmanaged
+        public readonly ref T AddComponent<T>() where T : unmanaged
         {
             ThrowIfDestroyed();
 
-            return ref world.AddComponentRef<T>(value);
+            return ref world.AddComponent<T>(value);
         }
 
         /// <summary>
         /// Attempts to retrieve a reference for the component of type <typeparamref name="T"/>.
         /// </summary>
         /// <returns>Reference to the found component if <paramref name="contains"/> is <c>true</c>.</returns>
-        public readonly ref T TryGetComponentRef<T>(out bool contains) where T : unmanaged
+        public readonly ref T TryGetComponent<T>(out bool contains) where T : unmanaged
         {
             ThrowIfDestroyed();
 
-            return ref world.TryGetComponentRef<T>(value, out contains);
-        }
-
-        /// <summary>
-        /// Attempts to retrieve a reference for the component of type <typeparamref name="T"/>.
-        /// </summary>
-        /// <returns><c>true</c> if found.</returns>
-        public readonly bool TryGetComponent<T>(out T component) where T : unmanaged
-        {
-            ThrowIfDestroyed();
-
-            return world.TryGetComponent(value, out component);
+            return ref world.TryGetComponent<T>(value, out contains);
         }
 
         /// <summary>
@@ -423,21 +402,11 @@ namespace Worlds
         /// <summary>
         /// Adds a new <typeparamref name="T"/> component to the entity.
         /// </summary>
-        public readonly void AddComponent<T>() where T : unmanaged
+        public readonly ref T AddComponent<T>(T component) where T : unmanaged
         {
             ThrowIfDestroyed();
 
-            world.AddComponent<T>(value);
-        }
-
-        /// <summary>
-        /// Adds a new <typeparamref name="T"/> component to the entity.
-        /// </summary>
-        public readonly void AddComponent<T>(T component) where T : unmanaged
-        {
-            ThrowIfDestroyed();
-
-            world.AddComponent(value, component);
+            return ref world.AddComponent(value, component);
         }
 
         /// <summary>
@@ -477,7 +446,7 @@ namespace Worlds
         {
             ThrowIfDestroyed();
 
-            removedComponent = GetComponentRef<T>();
+            removedComponent = GetComponent<T>();
             world.RemoveComponent<T>(value);
         }
 

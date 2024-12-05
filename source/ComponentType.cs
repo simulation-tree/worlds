@@ -154,15 +154,176 @@ namespace Worlds
         /// <summary>
         /// Retrieves a component type for the given system type.
         /// </summary>
-        public static ComponentType Get<T>() where T : unmanaged
+        public static ComponentType Get<C>() where C : unmanaged
         {
-            ThrowIfTypeDoesntExist<T>();
-            return TypeCache<T>.type;
+            ThrowIfTypeDoesntExist<C>();
+
+            return TypeCache<C>.type;
         }
 
-        internal static class TypeCache<T> where T : unmanaged
+        internal static class TypeCache<C> where C : unmanaged
         {
-            internal static readonly ComponentType type = systemTypeToType[typeof(T)];
+            internal static readonly ComponentType type = systemTypeToType[typeof(C)];
+        }
+
+        public static BitSet GetBitSet<C1>() where C1 : unmanaged
+        {
+            return BitSetCache<C1>.bitSet;
+        }
+
+        public static BitSet GetBitSet<C1, C2>() where C1 : unmanaged where C2 : unmanaged
+        {
+            return BitSetCache<C1, C2>.bitSet;
+        }
+
+        public static BitSet GetBitSet<C1, C2, C3>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged
+        {
+            return BitSetCache<C1, C2, C3>.bitSet;
+        }
+
+        public static BitSet GetBitSet<C1, C2, C3, C4>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged
+        {
+            return BitSetCache<C1, C2, C3, C4>.bitSet;
+        }
+
+        public static BitSet GetBitSet<C1, C2, C3, C4, C5>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged
+        {
+            return BitSetCache<C1, C2, C3, C4, C5>.bitSet;
+        }
+
+        public static BitSet GetBitSet<C1, C2, C3, C4, C5, C6>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged
+        {
+            return BitSetCache<C1, C2, C3, C4, C5, C6>.bitSet;
+        }
+
+        public static BitSet GetBitSet<C1, C2, C3, C4, C5, C6, C7>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged
+        {
+            return BitSetCache<C1, C2, C3, C4, C5, C6, C7>.bitSet;
+        }
+
+        public static BitSet GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged
+        {
+            return BitSetCache<C1, C2, C3, C4, C5, C6, C7, C8>.bitSet;
+        }
+
+        public static BitSet GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged
+        {
+            return BitSetCache<C1, C2, C3, C4, C5, C6, C7, C8, C9>.bitSet;
+        }
+
+        public static BitSet GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged
+        {
+            return BitSetCache<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10>.bitSet;
+        }
+
+        public static BitSet GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged
+        {
+            return BitSetCache<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11>.bitSet;
+        }
+
+        public static BitSet GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged
+        {
+            return BitSetCache<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12>.bitSet;
+        }
+
+        public static BitSet GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged
+        {
+            return BitSetCache<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13>.bitSet;
+        }
+
+        public static BitSet GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged
+        {
+            return BitSetCache<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14>.bitSet;
+        }
+
+        public static BitSet GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged where C15 : unmanaged
+        {
+            return BitSetCache<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15>.bitSet;
+        }
+
+        public static BitSet GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged where C15 : unmanaged where C16 : unmanaged
+        {
+            return BitSetCache<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16>.bitSet;
+        }
+
+        internal static class BitSetCache<C1> where C1 : unmanaged
+        {
+            internal static readonly BitSet bitSet = new(Get<C1>());
+        }
+
+        internal static class BitSetCache<C1, C2> where C1 : unmanaged where C2 : unmanaged
+        {
+            internal static readonly BitSet bitSet = new(Get<C1>(), Get<C2>());
+        }
+
+        internal static class BitSetCache<C1, C2, C3> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged
+        {
+            internal static readonly BitSet bitSet = new(Get<C1>(), Get<C2>(), Get<C3>());
+        }
+
+        internal static class BitSetCache<C1, C2, C3, C4> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged
+        {
+            internal static readonly BitSet bitSet = new(Get<C1>(), Get<C2>(), Get<C3>(), Get<C4>());
+        }
+
+        internal static class BitSetCache<C1, C2, C3, C4, C5> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged
+        {
+            internal static readonly BitSet bitSet = new(Get<C1>(), Get<C2>(), Get<C3>(), Get<C4>(), Get<C5>());
+        }
+
+        internal static class BitSetCache<C1, C2, C3, C4, C5, C6> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged
+        {
+            internal static readonly BitSet bitSet = new(Get<C1>(), Get<C2>(), Get<C3>(), Get<C4>(), Get<C5>(), Get<C6>());
+        }
+
+        internal static class BitSetCache<C1, C2, C3, C4, C5, C6, C7> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged
+        {
+            internal static readonly BitSet bitSet = new(Get<C1>(), Get<C2>(), Get<C3>(), Get<C4>(), Get<C5>(), Get<C6>(), Get<C7>());
+        }
+
+        internal static class BitSetCache<C1, C2, C3, C4, C5, C6, C7, C8> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged
+        {
+            internal static readonly BitSet bitSet = new(Get<C1>(), Get<C2>(), Get<C3>(), Get<C4>(), Get<C5>(), Get<C6>(), Get<C7>(), Get<C8>());
+        }
+
+        internal static class BitSetCache<C1, C2, C3, C4, C5, C6, C7, C8, C9> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged
+        {
+            internal static readonly BitSet bitSet = new(Get<C1>(), Get<C2>(), Get<C3>(), Get<C4>(), Get<C5>(), Get<C6>(), Get<C7>(), Get<C8>(), Get<C9>());
+        }
+
+        internal static class BitSetCache<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged
+        {
+            internal static readonly BitSet bitSet = new(Get<C1>(), Get<C2>(), Get<C3>(), Get<C4>(), Get<C5>(), Get<C6>(), Get<C7>(), Get<C8>(), Get<C9>(), Get<C10>());
+        }
+
+        internal static class BitSetCache<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged
+        {
+            internal static readonly BitSet bitSet = new(Get<C1>(), Get<C2>(), Get<C3>(), Get<C4>(), Get<C5>(), Get<C6>(), Get<C7>(), Get<C8>(), Get<C9>(), Get<C10>(), Get<C11>());
+        }
+
+        internal static class BitSetCache<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged
+        {
+            internal static readonly BitSet bitSet = new(Get<C1>(), Get<C2>(), Get<C3>(), Get<C4>(), Get<C5>(), Get<C6>(), Get<C7>(), Get<C8>(), Get<C9>(), Get<C10>(), Get<C11>(), Get<C12>());
+        }
+
+        internal static class BitSetCache<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged
+        {
+            internal static readonly BitSet bitSet = new(Get<C1>(), Get<C2>(), Get<C3>(), Get<C4>(), Get<C5>(), Get<C6>(), Get<C7>(), Get<C8>(), Get<C9>(), Get<C10>(), Get<C11>(), Get<C12>(), Get<C13>());
+        }
+
+        internal static class BitSetCache<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged
+        {
+            internal static readonly BitSet bitSet = new(Get<C1>(), Get<C2>(), Get<C3>(), Get<C4>(), Get<C5>(), Get<C6>(), Get<C7>(), Get<C8>(), Get<C9>(), Get<C10>(), Get<C11>(), Get<C12>(), Get<C13>(), Get<C14>());
+        }
+
+        internal static class BitSetCache<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged where C15 : unmanaged
+        {
+            internal static readonly BitSet bitSet = new(Get<C1>(), Get<C2>(), Get<C3>(), Get<C4>(), Get<C5>(), Get<C6>(), Get<C7>(), Get<C8>(), Get<C9>(), Get<C10>(), Get<C11>(), Get<C12>(), Get<C13>(), Get<C14>(), Get<C15>());
+        }
+
+        internal static class BitSetCache<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged where C15 : unmanaged where C16 : unmanaged
+        {
+            internal static readonly BitSet bitSet = new(Get<C1>(), Get<C2>(), Get<C3>(), Get<C4>(), Get<C5>(), Get<C6>(), Get<C7>(), Get<C8>(), Get<C9>(), Get<C10>(), Get<C11>(), Get<C12>(), Get<C13>(), Get<C14>(), Get<C15>(), Get<C16>());
         }
 
         /// <summary>
@@ -191,19 +352,16 @@ namespace Worlds
             }
         }
 
-        /// <inheritdoc/>
         public static bool operator ==(ComponentType left, ComponentType right)
         {
             return left.Equals(right);
         }
 
-        /// <inheritdoc/>
         public static bool operator !=(ComponentType left, ComponentType right)
         {
             return !(left == right);
         }
 
-        /// <inheritdoc/>
         public static implicit operator byte(ComponentType type)
         {
             return type.index;

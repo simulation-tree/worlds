@@ -6,18 +6,8 @@ namespace Worlds
     /// <summary>
     /// Contains information about an entity type.
     /// </summary>
-    public unsafe struct Definition : IEquatable<Definition>
+    public struct Definition : IEquatable<Definition>
     {
-        /// <summary>
-        /// Amount of component types in this definition.
-        /// </summary>
-        public readonly byte componentTypeCount;
-
-        /// <summary>
-        /// Amount of array types in this definition.
-        /// </summary>
-        public readonly byte arrayTypeCount;
-
         private BitSet componentTypesMask;
         private BitSet arrayTypesMask;
 
@@ -38,14 +28,12 @@ namespace Worlds
         {
             foreach (ComponentType type in componentTypes)
             {
-                componentTypesMask.Set(type.index);
-                componentTypeCount++;
+                componentTypesMask.Set(type);
             }
 
             foreach (ArrayType type in arrayTypes)
             {
-                arrayTypesMask.Set(type.index);
-                arrayTypeCount++;
+                arrayTypesMask.Set(type);
             }
         }
 
@@ -54,8 +42,6 @@ namespace Worlds
         /// </summary>
         public Definition(BitSet componentTypesMask, BitSet arrayTypesMask)
         {
-            componentTypeCount = componentTypesMask.Count;
-            arrayTypeCount = arrayTypesMask.Count;
             this.componentTypesMask = componentTypesMask;
             this.arrayTypesMask = arrayTypesMask;
         }
@@ -107,6 +93,7 @@ namespace Worlds
         /// <summary>
         /// Copies the component types in this definition to the <paramref name="buffer"/>.
         /// </summary>
+        /// <returns>Amount of component types copied.</returns>
         public readonly byte CopyComponentTypesTo(USpan<ComponentType> buffer)
         {
             byte count = 0;
@@ -125,6 +112,7 @@ namespace Worlds
         /// <summary>
         /// Copies the array types in this definition to the <paramref name="buffer"/>.
         /// </summary>
+        /// <returns>Amount of array types copied.</returns>
         public readonly byte CopyArrayTypesTo(USpan<ArrayType> buffer)
         {
             byte count = 0;
@@ -143,7 +131,7 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return HashCode.Combine(componentTypeCount, arrayTypeCount, componentTypesMask, arrayTypesMask);
+            return HashCode.Combine(componentTypesMask, arrayTypesMask);
         }
 
         /// <inheritdoc/>
@@ -155,7 +143,7 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly bool Equals(Definition other)
         {
-            return other.arrayTypeCount == arrayTypeCount && other.componentTypeCount == componentTypeCount && other.arrayTypesMask == arrayTypesMask && other.componentTypesMask == componentTypesMask;
+            return other.arrayTypesMask == arrayTypesMask && other.componentTypesMask == componentTypesMask;
         }
 
         /// <summary>
@@ -163,7 +151,7 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsComponent(ComponentType componentType)
         {
-            return componentTypesMask.Contains(componentType.index);
+            return componentTypesMask.Contains(componentType);
         }
 
         /// <summary>
@@ -179,7 +167,7 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsArray(ArrayType arrayType)
         {
-            return arrayTypesMask.Contains(arrayType.index);
+            return arrayTypesMask.Contains(arrayType);
         }
 
         /// <summary>
@@ -193,155 +181,183 @@ namespace Worlds
         /// <summary>
         /// Adds the specified <paramref name="componentTypes"/> to this definition.
         /// </summary>
-        public readonly Definition AddComponentTypes(USpan<ComponentType> componentTypes)
+        public Definition AddComponentTypes(USpan<ComponentType> componentTypes)
         {
-            BitSet componentTypesMask = this.componentTypesMask;
             foreach (ComponentType type in componentTypes)
             {
-                componentTypesMask.Set(type.index);
+                componentTypesMask.Set(type);
             }
 
-            return new(componentTypesMask, arrayTypesMask);
+            return this;
         }
 
         /// <summary>
         /// Adds the specified <paramref name="arrayTypes"/> to this definition.
         /// </summary>
-        public readonly Definition AddArrayTypes(USpan<ArrayType> arrayTypes)
+        public Definition AddArrayTypes(USpan<ArrayType> arrayTypes)
         {
-            BitSet arrayTypesMask = this.arrayTypesMask;
             foreach (ArrayType type in arrayTypes)
             {
-                arrayTypesMask.Set(type.index);
+                arrayTypesMask.Set(type);
             }
 
-            return new(componentTypesMask, arrayTypesMask);
+            return this;
         }
 
         /// <summary>
         /// Adds the specified <paramref name="arrayType"/> to this definition.
         /// </summary>
-        public readonly Definition AddComponentType(ComponentType arrayType)
+        public Definition AddComponentType(ComponentType arrayType)
         {
-            USpan<ComponentType> types = stackalloc ComponentType[1] { arrayType };
-            return AddComponentTypes(types);
+            arrayTypesMask.Set(arrayType);
+            return this;
         }
 
         /// <summary>
-        /// Adds the specified <typeparamref name="T"/> component type to this definition.
+        /// Adds the specified <typeparamref name="C1"/> component type to this definition.
         /// </summary>
-        public readonly Definition AddComponentType<T>() where T : unmanaged
+        public Definition AddComponentType<C1>() where C1 : unmanaged
         {
-            USpan<ComponentType> types = stackalloc ComponentType[1] { ComponentType.Get<T>() };
-            return AddComponentTypes(types);
+            componentTypesMask.Set(ComponentType.Get<C1>());
+            return this;
         }
 
         /// <summary>
-        /// Adds the specified <typeparamref name="T1"/> and <typeparamref name="T2"/> component types to this definition.
+        /// Adds the specified <typeparamref name="C1"/> and <typeparamref name="C2"/> component types to this definition.
         /// </summary>
-        public readonly Definition AddComponentTypes<T1, T2>() where T1 : unmanaged where T2 : unmanaged
+        public Definition AddComponentTypes<C1, C2>() where C1 : unmanaged where C2 : unmanaged
         {
-            USpan<ComponentType> types = stackalloc ComponentType[2] { ComponentType.Get<T1>(), ComponentType.Get<T2>() };
-            return AddComponentTypes(types);
+            componentTypesMask.Set(ComponentType.Get<C1>());
+            componentTypesMask.Set(ComponentType.Get<C2>());
+            return this;
         }
 
         /// <summary>
-        /// Adds the specified <typeparamref name="T1"/>, <typeparamref name="T2"/> and <typeparamref name="T3"/> component types to this definition.
+        /// Adds the specified <typeparamref name="C1"/>, <typeparamref name="C2"/> and <typeparamref name="C3"/> component types to this definition.
         /// </summary>
-        public readonly Definition AddComponentTypes<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+        public Definition AddComponentTypes<C1, C2, C3>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged
         {
-            USpan<ComponentType> types = stackalloc ComponentType[3] { ComponentType.Get<T1>(), ComponentType.Get<T2>(), ComponentType.Get<T3>() };
-            return AddComponentTypes(types);
+            componentTypesMask.Set(ComponentType.Get<C1>());
+            componentTypesMask.Set(ComponentType.Get<C2>());
+            componentTypesMask.Set(ComponentType.Get<C3>());
+            return this;
         }
 
         /// <summary>
-        /// Adds the specified <typeparamref name="T1"/>, <typeparamref name="T2"/>, <typeparamref name="T3"/> and <typeparamref name="T4"/> component types to this definition.
+        /// Adds the specified <typeparamref name="C1"/>, <typeparamref name="C2"/>, <typeparamref name="C3"/> and <typeparamref name="C4"/> component types to this definition.
         /// </summary>
-        public readonly Definition AddComponentTypes<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+        public Definition AddComponentTypes<C1, C2, C3, C4>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged
         {
-            USpan<ComponentType> types = stackalloc ComponentType[4] { ComponentType.Get<T1>(), ComponentType.Get<T2>(), ComponentType.Get<T3>(), ComponentType.Get<T4>() };
-            return AddComponentTypes(types);
+            componentTypesMask.Set(ComponentType.Get<C1>());
+            componentTypesMask.Set(ComponentType.Get<C2>());
+            componentTypesMask.Set(ComponentType.Get<C3>());
+            componentTypesMask.Set(ComponentType.Get<C4>());
+            return this;
         }
 
         /// <summary>
-        /// Adds the specified <typeparamref name="T1"/>, <typeparamref name="T2"/>, <typeparamref name="T3"/>, <typeparamref name="T4"/> and <typeparamref name="T5"/> component types to this definition.
+        /// Adds the specified <typeparamref name="C1"/>, <typeparamref name="C2"/>, <typeparamref name="C3"/>, <typeparamref name="C4"/> and <typeparamref name="C5"/> component types to this definition.
         /// </summary>
-        public readonly Definition AddComponentTypes<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
+        public Definition AddComponentTypes<C1, C2, C3, C4, C5>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged
         {
-            USpan<ComponentType> types = stackalloc ComponentType[5] { ComponentType.Get<T1>(), ComponentType.Get<T2>(), ComponentType.Get<T3>(), ComponentType.Get<T4>(), ComponentType.Get<T5>() };
-            return AddComponentTypes(types);
+            componentTypesMask.Set(ComponentType.Get<C1>());
+            componentTypesMask.Set(ComponentType.Get<C2>());
+            componentTypesMask.Set(ComponentType.Get<C3>());
+            componentTypesMask.Set(ComponentType.Get<C4>());
+            componentTypesMask.Set(ComponentType.Get<C5>());
+            return this;
         }
 
         /// <summary>
-        /// Adds the specified <typeparamref name="T1"/>, <typeparamref name="T2"/>, <typeparamref name="T3"/>, <typeparamref name="T4"/>, <typeparamref name="T5"/> and <typeparamref name="T6"/> component types to this definition.
+        /// Adds the specified <typeparamref name="C1"/>, <typeparamref name="C2"/>, <typeparamref name="C3"/>, <typeparamref name="C4"/>, <typeparamref name="C5"/> and <typeparamref name="C6"/> component types to this definition.
         /// </summary>
-        public readonly Definition AddComponentTypes<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
+        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged
         {
-            USpan<ComponentType> types = stackalloc ComponentType[6] { ComponentType.Get<T1>(), ComponentType.Get<T2>(), ComponentType.Get<T3>(), ComponentType.Get<T4>(), ComponentType.Get<T5>(), ComponentType.Get<T6>() };
-            return AddComponentTypes(types);
+            componentTypesMask.Set(ComponentType.Get<C1>());
+            componentTypesMask.Set(ComponentType.Get<C2>());
+            componentTypesMask.Set(ComponentType.Get<C3>());
+            componentTypesMask.Set(ComponentType.Get<C4>());
+            componentTypesMask.Set(ComponentType.Get<C5>());
+            componentTypesMask.Set(ComponentType.Get<C6>());
+            return this;
         }
 
         /// <summary>
         /// Adds the specified <paramref name="arrayType"/> to this definition.
         /// </summary>
-        public readonly Definition AddArrayType(ArrayType arrayType)
+        public Definition AddArrayType(ArrayType arrayType)
         {
-            USpan<ArrayType> types = stackalloc ArrayType[1] { arrayType };
-            return AddArrayTypes(types);
+            arrayTypesMask.Set(arrayType);
+            return this;
         }
 
         /// <summary>
-        /// Adds the specified <typeparamref name="T"/> array type to this definition.
+        /// Adds the specified <typeparamref name="C1"/> array type to this definition.
         /// </summary>
-        public readonly Definition AddArrayType<T>() where T : unmanaged
+        public Definition AddArrayType<C1>() where C1 : unmanaged
         {
-            USpan<ArrayType> types = stackalloc ArrayType[1] { ArrayType.Get<T>() };
-            return AddArrayTypes(types);
+            arrayTypesMask.Set(ArrayType.Get<C1>());
+            return this;
         }
 
         /// <summary>
-        /// Adds the specified <typeparamref name="T1"/> and <typeparamref name="T2"/> array types to this definition.
+        /// Adds the specified <typeparamref name="C1"/> and <typeparamref name="C2"/> array types to this definition.
         /// </summary>
-        public readonly Definition AddArrayTypes<T1, T2>() where T1 : unmanaged where T2 : unmanaged
+        public Definition AddArrayTypes<C1, C2>() where C1 : unmanaged where C2 : unmanaged
         {
-            USpan<ArrayType> types = stackalloc ArrayType[2] { ArrayType.Get<T1>(), ArrayType.Get<T2>() };
-            return AddArrayTypes(types);
+            arrayTypesMask.Set(ArrayType.Get<C1>());
+            arrayTypesMask.Set(ArrayType.Get<C2>());
+            return this;
         }
 
         /// <summary>
-        /// Adds the specified <typeparamref name="T1"/>, <typeparamref name="T2"/> and <typeparamref name="T3"/> array types to this definition.
+        /// Adds the specified <typeparamref name="C1"/>, <typeparamref name="C2"/> and <typeparamref name="C3"/> array types to this definition.
         /// </summary>
-        public readonly Definition AddArrayTypes<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+        public Definition AddArrayTypes<C1, C2, C3>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged
         {
-            USpan<ArrayType> types = stackalloc ArrayType[3] { ArrayType.Get<T1>(), ArrayType.Get<T2>(), ArrayType.Get<T3>() };
-            return AddArrayTypes(types);
+            arrayTypesMask.Set(ArrayType.Get<C1>());
+            arrayTypesMask.Set(ArrayType.Get<C2>());
+            arrayTypesMask.Set(ArrayType.Get<C3>());
+            return this;
         }
 
         /// <summary>
-        /// Adds the specified <typeparamref name="T1"/>, <typeparamref name="T2"/>, <typeparamref name="T3"/> and <typeparamref name="T4"/> array types to this definition.
+        /// Adds the specified <typeparamref name="C1"/>, <typeparamref name="C2"/>, <typeparamref name="C3"/> and <typeparamref name="C4"/> array types to this definition.
         /// </summary>
-        public readonly Definition AddArrayTypes<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+        public Definition AddArrayTypes<C1, C2, C3, C4>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged
         {
-            USpan<ArrayType> types = stackalloc ArrayType[4] { ArrayType.Get<T1>(), ArrayType.Get<T2>(), ArrayType.Get<T3>(), ArrayType.Get<T4>() };
-            return AddArrayTypes(types);
+            arrayTypesMask.Set(ArrayType.Get<C1>());
+            arrayTypesMask.Set(ArrayType.Get<C2>());
+            arrayTypesMask.Set(ArrayType.Get<C3>());
+            arrayTypesMask.Set(ArrayType.Get<C4>());
+            return this;
         }
 
         /// <summary>
-        /// Adds the specified <typeparamref name="T1"/>, <typeparamref name="T2"/>, <typeparamref name="T3"/>, <typeparamref name="T4"/> and <typeparamref name="T5"/> array types to this definition.
+        /// Adds the specified <typeparamref name="C1"/>, <typeparamref name="C2"/>, <typeparamref name="C3"/>, <typeparamref name="C4"/> and <typeparamref name="C5"/> array types to this definition.
         /// </summary>
-        public readonly Definition AddArrayTypes<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
+        public Definition AddArrayTypes<C1, C2, C3, C4, C5>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged
         {
-            USpan<ArrayType> types = stackalloc ArrayType[5] { ArrayType.Get<T1>(), ArrayType.Get<T2>(), ArrayType.Get<T3>(), ArrayType.Get<T4>(), ArrayType.Get<T5>() };
-            return AddArrayTypes(types);
+            arrayTypesMask.Set(ArrayType.Get<C1>());
+            arrayTypesMask.Set(ArrayType.Get<C2>());
+            arrayTypesMask.Set(ArrayType.Get<C3>());
+            arrayTypesMask.Set(ArrayType.Get<C4>());
+            arrayTypesMask.Set(ArrayType.Get<C5>());
+            return this;
         }
 
         /// <summary>
-        /// Adds the specified <typeparamref name="T1"/>, <typeparamref name="T2"/>, <typeparamref name="T3"/>, <typeparamref name="T4"/>, <typeparamref name="T5"/> and <typeparamref name="T6"/> array types to this definition.
+        /// Adds the specified <typeparamref name="C1"/>, <typeparamref name="C2"/>, <typeparamref name="C3"/>, <typeparamref name="C4"/>, <typeparamref name="C5"/> and <typeparamref name="C6"/> array types to this definition.
         /// </summary>
-        public readonly Definition AddArrayTypes<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
+        public Definition AddArrayTypes<C1, C2, C3, C4, C5, C6>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged
         {
-            USpan<ArrayType> types = stackalloc ArrayType[6] { ArrayType.Get<T1>(), ArrayType.Get<T2>(), ArrayType.Get<T3>(), ArrayType.Get<T4>(), ArrayType.Get<T5>(), ArrayType.Get<T6>() };
-            return AddArrayTypes(types);
+            arrayTypesMask.Set(ArrayType.Get<C1>());
+            arrayTypesMask.Set(ArrayType.Get<C2>());
+            arrayTypesMask.Set(ArrayType.Get<C3>());
+            arrayTypesMask.Set(ArrayType.Get<C4>());
+            arrayTypesMask.Set(ArrayType.Get<C5>());
+            arrayTypesMask.Set(ArrayType.Get<C6>());
+            return this;
         }
 
         /// <summary>
@@ -352,13 +368,11 @@ namespace Worlds
             return default(T).Definition;
         }
 
-        /// <inheritdoc/>
         public static bool operator ==(Definition a, Definition b)
         {
             return a.Equals(b);
         }
 
-        /// <inheritdoc/>
         public static bool operator !=(Definition a, Definition b)
         {
             return !a.Equals(b);
