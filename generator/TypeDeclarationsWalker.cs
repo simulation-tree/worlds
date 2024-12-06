@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 
-namespace Worlds.Generator
+namespace Worlds.TypeTableGenerator
 {
     public class TypeDeclarationsWalker : CSharpSyntaxWalker
     {

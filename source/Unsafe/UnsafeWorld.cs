@@ -537,7 +537,7 @@ namespace Worlds.Unsafe
             if (!components.TryGetValue(definition.ComponentTypesMask, out ComponentChunk chunk))
             {
                 chunk = new(definition.ComponentTypesMask);
-                components.TryAdd(definition.ComponentTypesMask, chunk);
+                components.Add(definition.ComponentTypesMask, chunk);
             }
 
             //add arrays
@@ -723,7 +723,7 @@ namespace Worlds.Unsafe
             if (!components.TryGetValue(newComponentTypes, out ComponentChunk destinationChunk))
             {
                 destinationChunk = new(newComponentTypes);
-                components.TryAdd(newComponentTypes, destinationChunk);
+                components.Add(newComponentTypes, destinationChunk);
             }
 
             uint index = previousChunk.MoveEntity(entity, destinationChunk);
@@ -751,7 +751,7 @@ namespace Worlds.Unsafe
             if (!components.TryGetValue(newComponentTypes, out ComponentChunk destinationChunk))
             {
                 destinationChunk = new(newComponentTypes);
-                components.TryAdd(newComponentTypes, destinationChunk);
+                components.Add(newComponentTypes, destinationChunk);
             }
 
             uint index = previousChunk.MoveEntity(entity, destinationChunk);
@@ -800,7 +800,7 @@ namespace Worlds.Unsafe
             if (!components.TryGetValue(newComponentTypes, out ComponentChunk destinationChunk))
             {
                 destinationChunk = new(newComponentTypes);
-                components.TryAdd(newComponentTypes, destinationChunk);
+                components.Add(newComponentTypes, destinationChunk);
             }
 
             previousChunk.MoveEntity(entity, destinationChunk);

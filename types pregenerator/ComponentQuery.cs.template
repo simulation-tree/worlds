@@ -1,11 +1,14 @@
 using Collections;
 using System;
+using System.Runtime.InteropServices;
+using Unmanaged;
 
 namespace Worlds
 {
     public readonly struct {{TypeName}}<{{GenericTypeArguments}}> {{TypeConstraints}}
     {
         private readonly BitSet componentTypes;
+        private readonly BitSet excludedComponentTypes;
         private readonly World world;
 
 #if NET
@@ -16,9 +19,10 @@ namespace Worlds
         }
 #endif
 
-        public {{TypeName}}(World world)
+        public {{TypeName}}(World world, BitSet excludedComponentTypes = default)
         {
             componentTypes = ComponentType.GetBitSet<{{GenericTypeArguments}}>();
+            this.excludedComponentTypes = excludedComponentTypes;
             this.world = world;
         }
 
@@ -28,43 +32,54 @@ namespace Worlds
         public readonly Enumerator GetEnumerator()
         {
             Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
-            return new(componentTypes, chunks);
+            return new(componentTypes, excludedComponentTypes, chunks);
         }
 
-        public ref struct Enumerator
+        public unsafe ref struct Enumerator
         {
             private readonly BitSet componentTypes;
-            private readonly Dictionary<BitSet, ComponentChunk> chunks;
-            private ComponentChunk currentChunk;
+            private readonly BitSet excludedComponentTypes;
+            private readonly void* chunks;
+            private readonly uint chunkCount;
             private uint entityCount;
             private uint entityIndex;
-            private uint currentChunkIndex;
+            private uint chunkIndex;
+            private ComponentChunk chunk;
 
             /// <summary>
             /// Current result.
             /// </summary>
-            public readonly ComponentChunk.Entity<{{GenericTypeArguments}}> Current => currentChunk.GetEntity<{{GenericTypeArguments}}>(entityIndex - 1);
+            public readonly ComponentChunk.Entity<{{GenericTypeArguments}}> Current => chunk.GetEntity<{{GenericTypeArguments}}>(entityIndex - 1);
 
-            internal Enumerator(BitSet componentTypes, Dictionary<BitSet, ComponentChunk> chunks)
+            internal Enumerator(BitSet componentTypes, BitSet excludedComponentTypes, Dictionary<BitSet, ComponentChunk> allChunks)
             {
-                foreach (BitSet key in chunks.Keys)
+                chunkCount = 0;
+                USpan<ComponentChunk> chunksBuffer = stackalloc ComponentChunk[(int)allChunks.Count];
+                foreach (BitSet key in allChunks.Keys)
                 {
-                    if (key.ContainsAll(componentTypes))
+                    if (key.ContainsAll(componentTypes) && !key.ContainsAny(excludedComponentTypes))
                     {
-                        ComponentChunk chunk = chunks[key];
+                        ComponentChunk chunk = allChunks[key];
                         if (chunk.Count > 0)
                         {
-                            currentChunk = chunks[key];
-                            entityCount = currentChunk.Count;
-                            break;
+                            chunksBuffer[chunkCount++] = chunk;
                         }
                     }
-
-                    currentChunkIndex++;
                 }
 
+                this.excludedComponentTypes = excludedComponentTypes;
                 this.componentTypes = componentTypes;
-                this.chunks = chunks;
+                entityIndex = 0;
+                chunkIndex = 0;
+                entityCount = 0;
+                if (chunkCount > 0)
+                {
+                    uint stride = TypeInfo<ComponentChunk>.size;
+                    chunks = NativeMemory.Alloc(chunkCount * stride);
+                    System.Runtime.CompilerServices.Unsafe.CopyBlock(chunks, chunksBuffer.Pointer, stride * chunkCount);
+                    chunk = chunksBuffer[0];
+                    entityCount = chunk.Count;
+                }
             }
 
             /// <summary>
@@ -79,28 +94,26 @@ namespace Worlds
                 }
                 else
                 {
-                    entityIndex = 1;
-                    uint chunkIndex = 0;
-                    foreach (BitSet key in chunks.Keys)
+                    chunkIndex++;
+                    if (chunkIndex < chunkCount)
                     {
-                        if (chunkIndex > currentChunkIndex)
-                        {
-                            if (key.ContainsAll(componentTypes))
-                            {
-                                currentChunkIndex = chunkIndex;
-                                currentChunk = chunks[key];
-                                entityCount = currentChunk.Count;
-                                if (entityCount > 0)
-                                {
-                                    return true;
-                                }
-                            }
-                        }
-
-                        chunkIndex++;
+                        chunk = ((ComponentChunk*)chunks)[chunkIndex];
+                        entityCount = chunk.Count;
+                        entityIndex = 1;
+                        return true;
                     }
+                    else
+                    {
+                        return false;
+                    }
+                }
+            }
 
-                    return false;
+            public readonly void Dispose()
+            {
+                if (chunkCount > 0)
+                {
+                    NativeMemory.Free(chunks);
                 }
             }
         }

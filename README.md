@@ -53,8 +53,7 @@ Assert.That(moreMany.ToString(), Is.EqualTo("Hello"));
 ```
 
 ### Fetching data and querying
-Polling of components, and modifying them can be done through multiple ways.
-The following examples ascend in efficiency:
+Polling of components, and modifying them can be done through a few different ways:
 ```cs
 uint sum;
 
@@ -63,52 +62,32 @@ void Do()
     foreach (uint entity in world.GetAll<MyComponent>())
     {
         //this approach suffers from having to fetch each component individually
-        ref MyComponent component = ref world.GetComponentRef<MyComponent>(entity);
+        ref MyComponent component = ref world.GetComponent<MyComponent>(entity);
         component.value *= 2;
         sum += component.value;
     }
 }
 ```
 
-The next approach is just as simple, but more efficient due to operating in bulk. With `ref`
-access to each wanted component:
-```cs
-uint sum;
-
-void Do()
-{
-    //this approach suffers from causing GC and lambda capture rules
-    uint thisSum = sum;
-    world.ForEach((in uint entity, ref MyComponent component) =>
-    {
-        component.value *= 2;
-        thisSum += component.value;
-    });
-
-    sum = thisSum;
-}
-```
-
-This is the most efficient and manual approach, and doesn't require any extra allocations:
+This approach is the most efficient, but is manual:
 ```cs
 uint sum = 0;
 
 void Do()
 {
-    //only downside here is having to read a lot of code, and communicating it
-    Dictionary<uint, ComponentChunk> chunks = world.ComponentChunks;
+    //only downside here is having to read a lot of code
+    Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
     ComponentType type = ComponentType.Get<MyComponent>();
-    for (int i = 0; i < chunks.Count; i++)
+    foreach (BitSet key in chunks.Keys)
     {
-        int key = chunks.Keys[i];
-        ComponentChunk chunk = chunks[key];
-        if (chunk.ContainsType(type))
+        if (key.ContainsType(type))
         {
+            ComponentChunk chunk = chunks[key];
             List<uint> entities = chunk.Entities;
             for (uint e = 0; e < entities.Count; e++)
             {
                 uint entity = entities[e];
-                ref MyComponent component = ref chunk.GetComponentRef<MyComponent>(e);
+                ref MyComponent component = ref chunk.GetComponent<MyComponent>(e);
                 component.value *= 2;
                 sum += component.value;
             }
@@ -117,21 +96,19 @@ void Do()
 }
 ```
 
-Last is the `ComponentQuery` approach, which buffers found components for later iteration with
-`ref` access to each component. It's `Update` method is used to fill its internals with the
-latest view of the world:
+Last is the `ComponentQuery` approach, relying on a `foreach` statement to iterate over
+found components with `ref` access to each:
 ```cs
 uint sum = 0;
-ComponentQuery<MyComponent> query;
 
 void Do()
 {
-    //compared to most efficient approach, it only suffers from having to create an object
-    query.Update(world);
+    //a little slower than manually iterating, but more readable
+    ComponentQuery<MyComponent> query = new(world);
     foreach (var x in query)
     {
         uint entity = x.entity;
-        ref MyComponent component = ref x.Component1;
+        ref MyComponent component = ref x.component1;
         component.value *= 2;
         sum += component.value;
     }
@@ -182,7 +159,7 @@ public readonly struct Player : IEntity
 {
     public readonly Entity entity;
 
-    public readonly ref FixedString Name => ref entity.GetComponentRef<IsPlayer>().name;
+    public readonly ref FixedString Name => ref entity.GetComponent<IsPlayer>().name;
 
     readonly uint IEntity.Value => entity.value;
     readonly World IEntity.World => entity.world;

@@ -2,15 +2,18 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
-namespace Worlds.Generator
+namespace Worlds.TypeTableGenerator
 {
     [Generator(LanguageNames.CSharp)]
     public class TypeTableGenerator : IIncrementalGenerator
     {
         private static readonly SourceBuilder source = new();
-        private static readonly SourceBuilder debug = new();
         private const string TypeName = "TypeTable";
         private const string Namespace = "Worlds";
+        private const string ComponentAttributeFullName = "Worlds.ComponentAttribute";
+        private const string ArrayAttributeFullName = "Worlds.ArrayAttribute";
+        private const string ComponentTypeName = "ComponentType";
+        private const string ArrayTypeName = "ArrayType";
 
         void IIncrementalGenerator.Initialize(IncrementalGeneratorInitializationContext context)
         {
@@ -28,7 +31,7 @@ namespace Worlds.Generator
             source.AppendLine($"namespace {Namespace}");
             source.BeginGroup();
             {
-                source.AppendLine($"public static partial class {TypeName}");
+                source.AppendLine($"internal static partial class {TypeName}");
                 source.BeginGroup();
                 {
                     source.AppendLine($"static {TypeName}()");
@@ -68,18 +71,16 @@ namespace Worlds.Generator
                 SemanticModel semanticModel = compilation.GetSemanticModel(tree);
                 TypeDeclarationsWalker walker = new(semanticModel);
                 walker.Visit(tree.GetRoot());
-                debug.AppendLine($"SyntaxTree: {tree.FilePath}");
                 foreach (ITypeSymbol type in walker.types)
                 {
-                    debug.AppendLine($"Type: {type.ToDisplayString()}");
                     ImmutableArray<AttributeData> attributes = type.GetAttributes();
                     foreach (AttributeData attribute in attributes)
                     {
-                        if (attribute.AttributeClass?.ToDisplayString() == "Worlds.ComponentAttribute")
+                        if (attribute.AttributeClass?.ToDisplayString() == ComponentAttributeFullName)
                         {
                             componentTypes.Add(type);
                         }
-                        else if (attribute.AttributeClass?.ToDisplayString() == "Worlds.ArrayAttribute")
+                        else if (attribute.AttributeClass?.ToDisplayString() == ArrayAttributeFullName)
                         {
                             arrayTypes.Add(type);
                         }
@@ -91,7 +92,6 @@ namespace Worlds.Generator
             {
                 if (compilation.GetAssemblyOrModuleSymbol(assemblyReference) is IAssemblySymbol assemblySymbol)
                 {
-                    debug.AppendLine($"Assembly: {assemblySymbol.Name}");
                     Stack<ISymbol> stack = new();
                     stack.Push(assemblySymbol.GlobalNamespace);
                     while (stack.Count > 0)
@@ -111,15 +111,14 @@ namespace Worlds.Generator
                         }
                         else if (current is ITypeSymbol typeSymbol)
                         {
-                            debug.AppendLine($"Type: {typeSymbol.ToDisplayString()}");
                             ImmutableArray<AttributeData> attributes = typeSymbol.GetAttributes();
                             foreach (AttributeData attribute in attributes)
                             {
-                                if (attribute.AttributeClass?.ToDisplayString() == "Worlds.ComponentAttribute")
+                                if (attribute.AttributeClass?.ToDisplayString() == ComponentAttributeFullName)
                                 {
                                     componentTypes.Add(typeSymbol);
                                 }
-                                else if (attribute.AttributeClass?.ToDisplayString() == "Worlds.ArrayAttribute")
+                                else if (attribute.AttributeClass?.ToDisplayString() == ArrayAttributeFullName)
                                 {
                                     arrayTypes.Add(typeSymbol);
                                 }
@@ -137,12 +136,12 @@ namespace Worlds.Generator
 
         private static void AppendComponentTypeRegistration(ITypeSymbol componentType)
         {
-            source.AppendLine($"ComponentType.Register<{GetFullTypeName(componentType)}>();");
+            source.AppendLine($"{ComponentTypeName}.Register<{GetFullTypeName(componentType)}>();");
         }
 
         private static void AppendArrayTypeRegistration(ITypeSymbol arrayType)
         {
-            source.AppendLine($"ArrayType.Register<{GetFullTypeName(arrayType)}>();");
+            source.AppendLine($"{ArrayTypeName}.Register<{GetFullTypeName(arrayType)}>();");
         }
 
         private static string GetFullTypeName(ITypeSymbol type)

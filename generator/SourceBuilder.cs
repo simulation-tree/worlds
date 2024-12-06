@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 
-namespace Worlds.Generator
+namespace Worlds.TypeTableGenerator
 {
     public class SourceBuilder
     {
@@ -59,6 +59,11 @@ namespace Worlds.Generator
         {
             AppendIndentation();
             builder.AppendLine(text.ToString());
+        }
+
+        public void AppendLine()
+        {
+            builder.AppendLine();
         }
     }
 }

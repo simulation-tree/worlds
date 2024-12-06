@@ -68,34 +68,6 @@ namespace Worlds.Tests
         }
 
         [Test]
-        public void QueryUsingDefinition()
-        {
-            using World world = new();
-
-            uint entityA = world.CreateEntity();
-            world.AddComponent(entityA, (Byte)1);
-            world.AddComponent(entityA, (Float)1);
-            world.CreateArray(entityA, "Hello".AsUSpan().As<Character>());
-
-            uint entityB = world.CreateEntity();
-            world.AddComponent(entityB, (Byte)2);
-
-            Definition ByteDataComponent = new([ComponentType.Get<Byte>()], []);
-            Definition charArray = new([], [ArrayType.Get<Character>()]);
-
-            using DefinitionQuery ByteDataQuery = new(ByteDataComponent);
-            ByteDataQuery.Update(world);
-            Assert.That(ByteDataQuery.Count, Is.EqualTo(2));
-            Assert.That(ByteDataQuery[0], Is.EqualTo(entityB));
-            Assert.That(ByteDataQuery[1], Is.EqualTo(entityA));
-
-            using DefinitionQuery charQuery = new(charArray);
-            charQuery.Update(world);
-            Assert.That(charQuery.Count, Is.EqualTo(1));
-            Assert.That(charQuery[0], Is.EqualTo(entityA));
-        }
-
-        [Test]
         public void ContainsComponentTypes()
         {
             Definition definition = new([ComponentType.Get<Byte>(), ComponentType.Get<Float>()], [ArrayType.Get<Character>()]);

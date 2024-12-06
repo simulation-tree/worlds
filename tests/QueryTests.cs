@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using static Worlds.Tests.QueryTests;
 
 namespace Worlds.Tests
 {
@@ -72,29 +73,15 @@ namespace Worlds.Tests
             world.AddComponent(d, new Apple());
 
             using List<uint> entities = new();
-            EachAppleWithoutBerry each = new(entities);
-            world.ForEach(each);
+            ComponentQuery<Apple> appleQuery = new(world, ComponentType.GetBitSet<Berry>());
+            foreach (var r in appleQuery)
+            {
+                entities.Add(r.entity);
+            }
 
             Assert.That(entities.Count, Is.EqualTo(2));
             Assert.That(entities[0], Is.EqualTo(a));
             Assert.That(entities[1], Is.EqualTo(d));
-        }
-
-        public readonly struct EachAppleWithoutBerry : IForEachEntity<Apple>
-        {
-            private readonly List<uint> entities;
-
-            BitSet IForEach.ExcludeComponentTypes => ComponentType.GetBitSet<Berry>();
-
-            public EachAppleWithoutBerry(List<uint> entities)
-            {
-                this.entities = entities;
-            }
-
-            void IForEachEntity<Apple>.ForEach(in uint entity, ref Apple apple)
-            {
-                entities.Add(entity);
-            }
         }
 
         [Test]
@@ -281,8 +268,10 @@ namespace Worlds.Tests
         [Test]
         public void BenchmarkMethods()
         {
+            BitSet componentTypes = ComponentType.GetBitSet<Apple, Berry, Cherry>();
+            BitSet otherComponentTypes = ComponentType.GetBitSet<Apple, Berry>();
             using World world = new();
-            uint sampleCount = 512;
+            uint sampleCount = 70000;
             uint count = 0;
             Stopwatch stopwatch = Stopwatch.StartNew();
             for (uint i = 0; i < sampleCount; i++)
@@ -291,12 +280,12 @@ namespace Worlds.Tests
                 {
                     if (i % 3 == 0)
                     {
-                        Definition definition = new([ComponentType.Get<Apple>(), ComponentType.Get<Berry>(), ComponentType.Get<Cherry>()], []);
+                        Definition definition = new(componentTypes, default);
                         world.CreateEntity(definition);
                     }
                     else
                     {
-                        Definition definition = new([ComponentType.Get<Apple>(), ComponentType.Get<Berry>()], []);
+                        Definition definition = new(otherComponentTypes, default);
                         world.CreateEntity(definition);
                     }
 
@@ -305,7 +294,7 @@ namespace Worlds.Tests
             }
 
             stopwatch.Stop();
-            Console.WriteLine($"Creating {count} entities took {stopwatch.ElapsedMilliseconds}ms");
+            Console.WriteLine($"Creating {count} entities took {stopwatch.ElapsedTicks / 10000.0}ms");
 
             using List<(uint, Apple, Berry, Cherry)> results = new();
 
@@ -319,41 +308,16 @@ namespace Worlds.Tests
                 }
             }
             stopwatch.Stop();
-            Console.WriteLine($"ComponentQuery took {stopwatch.ElapsedTicks}t");
-
-            //benchmark definition query
-            using DefinitionQuery defQuery = new(new([ComponentType.Get<Apple>(), ComponentType.Get<Berry>(), ComponentType.Get<Cherry>()], []));
-            results.Clear();
-            stopwatch.Restart();
-            {
-                defQuery.Update(world);
-                foreach (uint r in defQuery)
-                {
-                    results.Add((r, world.GetComponent<Apple>(r), world.GetComponent<Berry>(r), world.GetComponent<Cherry>(r)));
-                }
-            }
-            stopwatch.Stop();
-            Console.WriteLine($"DefinitionQuery took {stopwatch.ElapsedTicks}t");
-
-            //benchmark ForEach
-            results.Clear();
-            Each each = new(results);
-            stopwatch.Restart();
-            {
-                world.ForEach(each);
-            }
-            stopwatch.Stop();
-            Console.WriteLine($"ForEach took {stopwatch.ElapsedTicks}t");
+            Console.WriteLine($"ComponentQuery took {stopwatch.ElapsedTicks / 10000.0}ms");
 
             //benchmarking manually iterating
             results.Clear();
-            Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
-            BitSet typesSpan = new([ComponentType.Get<Apple>(), ComponentType.Get<Berry>(), ComponentType.Get<Cherry>()]);
             stopwatch.Restart();
             {
+                Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
                 foreach (BitSet key in chunks.Keys)
                 {
-                    if (key.ContainsAll(typesSpan))
+                    if (key.ContainsAll(componentTypes))
                     {
                         ComponentChunk chunk = chunks[key];
                         List<uint> entities = chunk.Entities;
@@ -369,22 +333,7 @@ namespace Worlds.Tests
                 }
             }
             stopwatch.Stop();
-            Console.WriteLine($"Manual iteration took {stopwatch.ElapsedTicks}t");
-        }
-
-        public readonly struct Each : IForEachEntity<Apple, Berry, Cherry>
-        {
-            private readonly List<(uint, Apple, Berry, Cherry)> results;
-
-            public Each(List<(uint, Apple, Berry, Cherry)> results)
-            {
-                this.results = results;
-            }
-
-            void IForEachEntity<Apple, Berry, Cherry>.ForEach(in uint entity, ref Apple apple, ref Berry berry, ref Cherry cherry)
-            {
-                results.Add((entity, apple, berry, cherry));
-            }
+            Console.WriteLine($"Manual iteration took {stopwatch.ElapsedTicks / 10000.0}ms");
         }
     }
 }
