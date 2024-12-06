@@ -605,7 +605,7 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return HashCode.Combine(value, world);
+            return ((int)value * 397) ^ world.GetHashCode();
         }
 
         /// <summary>

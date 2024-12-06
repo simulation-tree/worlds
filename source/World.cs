@@ -176,11 +176,6 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            if (value is null)
-            {
-                return 0;
-            }
-
             return ((nint)value).GetHashCode();
         }
 
