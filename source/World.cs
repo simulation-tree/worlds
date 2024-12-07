@@ -26,7 +26,7 @@ namespace Worlds
 
         /// <summary>
         /// The current maximum amount of referrable entities.
-        /// <para>Collections of this size are guaranteed to
+        /// <para>Collections of this size + 1 are guaranteed to
         /// be able to store all entity values/positions.</para>
         /// </summary>
         public readonly uint MaxEntityValue => Slots.Count;
@@ -1176,6 +1176,17 @@ namespace Worlds
             SetComponent(entity, component5);
             SetComponent(entity, component6);
             return entity;
+        }
+
+        /// <summary>
+        /// Creates entities to fill the given <paramref name="buffer"/>.
+        /// </summary>
+        public readonly void CreateEntities(USpan<uint> buffer)
+        {
+            for (uint i = 0; i < buffer.Length; i++)
+            {
+                buffer[i] = CreateEntity();
+            }
         }
 
         /// <summary>

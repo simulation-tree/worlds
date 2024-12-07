@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Collections;
+using System;
 using Unmanaged;
 
 namespace Worlds.Tests
@@ -26,6 +27,22 @@ namespace Worlds.Tests
         {
             World world = default;
             Assert.Throws<NullReferenceException>(() => world.Dispose());
+        }
+
+        [Test]
+        public void MaxEntityIDIsValid()
+        {
+            using World world = new();
+            USpan<uint> entities = stackalloc uint[4];
+            world.CreateEntities(entities);
+            Assert.That(world.MaxEntityValue, Is.EqualTo(entities[3]));
+            Assert.That(world.MaxEntityValue, Is.EqualTo(entities.Length));
+
+            using Array<bool> buffer = new(world.MaxEntityValue + 1);
+            for (uint i = 0; i < entities.Length; i++)
+            {
+                buffer[entities[i]] = true;
+            }
         }
 
         [Test]
