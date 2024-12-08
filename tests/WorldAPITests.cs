@@ -68,6 +68,30 @@ namespace Worlds.Tests
         }
 
         [Test]
+        public void EnumerateRealEntities()
+        {
+            using World world = new();
+            uint a = world.CreateEntity();
+            uint b = world.CreateEntity();
+            uint c = world.CreateEntity();
+            uint d = world.CreateEntity();
+            world.DestroyEntity(b);
+            uint e = world.CreateEntity();
+
+            using List<uint> entities = new();
+            foreach (uint entity in world.Entities)
+            {
+                entities.Add(entity);
+            }
+
+            Assert.That(entities.Count, Is.EqualTo(4));
+            Assert.That(entities, Has.Member(a));
+            Assert.That(entities, Has.Member(c));
+            Assert.That(entities, Has.Member(d));
+            Assert.That(entities, Has.Member(e));
+        }
+
+        [Test]
         public void GetAddedComponent()
         {
             using World world = new();

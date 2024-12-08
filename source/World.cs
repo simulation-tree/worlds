@@ -62,8 +62,8 @@ namespace Worlds
                 List<uint> free = Free;
                 for (uint i = 0; i < slots.Count; i++)
                 {
-                    EntitySlot description = slots[i];
-                    if (!free.Contains(description.entity))
+                    ref EntitySlot description = ref slots[i];
+                    if (!free.Contains(description.entity) && description.entity > 0) //todo: why does this check if its not default?
                     {
                         yield return description.entity;
                     }
