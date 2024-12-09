@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using Unmanaged;
 
 namespace Worlds.Tests
@@ -15,7 +14,7 @@ namespace Worlds.Tests
             newEntity.AddComponent(new TestComponent(1337));
 
             world.Perform(operation);
-            uint entity = world.Entities.First();
+            uint entity = world[0];
             Assert.That(world.ContainsComponent<TestComponent>(entity), Is.True);
             Assert.That(world.GetComponent<TestComponent>(entity).value, Is.EqualTo(1337));
         }
@@ -40,7 +39,7 @@ namespace Worlds.Tests
             world.Perform(operation);
 
             Assert.That(world.Count, Is.EqualTo(1));
-            Assert.That(world.Entities.First(), Is.EqualTo(1));
+            Assert.That(world[0], Is.EqualTo(1));
         }
 
         [Test]
@@ -157,7 +156,7 @@ namespace Worlds.Tests
             using World world = new();
             world.Perform(operation);
 
-            uint entity = world.Entities.First();
+            uint entity = world[0];
             USpan<Character> list = world.GetArray<Character>(entity);
             Assert.That(list.As<char>().ToString(), Is.EqualTo(testString));
         }
@@ -173,7 +172,7 @@ namespace Worlds.Tests
             using World world = new();
             world.Perform(operation);
 
-            uint entity = world.Entities.First();
+            uint entity = world[0];
             Assert.That(world.ContainsArray<Character>(entity), Is.True);
 
             USpan<Character> list = world.GetArray<Character>(entity);
@@ -204,7 +203,7 @@ namespace Worlds.Tests
             using World world = new();
             world.Perform(operation);
 
-            uint entity = world.Entities.First();
+            uint entity = world[0];
             Assert.That(world.ContainsArray<Character>(entity), Is.True);
             Assert.That(world.GetArrayLength<Character>(entity), Is.EqualTo(4));
 
