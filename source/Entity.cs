@@ -671,14 +671,17 @@ namespace Worlds
 #if DEBUG
             public readonly uint value;
             public readonly World world;
+            public readonly Entity parent;
             public readonly StackTrace creationStackTrace;
             public readonly ComponentType[] componentTypes;
             public readonly ArrayType[] arrayTypes;
+            public readonly Entity[] references;
 
             public EntityDebugView(Entity entity)
             {
                 value = entity.GetEntityValue();
                 world = entity.GetWorld();
+                parent = entity.Parent;
                 creationStackTrace = UnsafeWorld.createStackTraces[entity];
                 USpan<ComponentType> componentTypeBuffer = stackalloc ComponentType[BitSet.Capacity];
                 uint bufferLength = entity.CopyComponentTypesTo(componentTypeBuffer);
@@ -686,6 +689,12 @@ namespace Worlds
                 USpan<ArrayType> arrayTypeBuffer = stackalloc ArrayType[BitSet.Capacity];
                 bufferLength = entity.CopyArrayTypesTo(arrayTypeBuffer);
                 arrayTypes = arrayTypeBuffer.Slice(0, bufferLength).ToArray();
+                references = new Entity[entity.GetReferenceCount()];
+                for (uint i = 0; i < references.Length; i++)
+                {
+                    rint reference = new(i + 1);
+                    references[i] = new(world, entity.GetReference(reference));
+                }
             }
 #endif
         }
