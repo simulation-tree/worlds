@@ -370,6 +370,17 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Attempts to retrieve the component value of type <typeparamref name="T"/>.
+        /// </summary>
+        /// <returns><c>true</c> if found.</returns>
+        public readonly bool TryGetComponent<T>(out T component) where T : unmanaged
+        {
+            ThrowIfDestroyed();
+
+            return world.TryGetComponent(value, out component);
+        }
+
+        /// <summary>
         /// Retrieves an existing component of type <typeparamref name="T"/>, or the default value.
         /// </summary>
         public readonly T GetComponent<T>(T defaultValue) where T : unmanaged

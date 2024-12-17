@@ -1,5 +1,6 @@
 ﻿using Collections;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using Unmanaged;
 using Worlds.Unsafe;
@@ -1731,16 +1732,44 @@ namespace Worlds
         /// <returns><c>true</c> if the component is found.</returns>
         public readonly ref T TryGetComponent<T>(uint entity, out bool contains) where T : unmanaged
         {
-            if (ContainsComponent<T>(entity))
+            Dictionary<BitSet, ComponentChunk> components = ComponentChunks;
+            ref EntitySlot slot = ref Slots[entity - 1];
+            ComponentType componentType = ComponentType.Get<T>();
+            contains = slot.componentTypes.Contains(componentType);
+            if (contains)
             {
-                contains = true;
-                return ref GetComponent<T>(entity);
+                ComponentChunk chunk = components[slot.componentTypes];
+                uint index = chunk.Entities.IndexOf(entity);
+                return ref chunk.GetComponent<T>(index);
             }
             else
             {
-                contains = false;
                 return ref *(T*)default(nint);
             }
+        }
+
+        /// <summary>
+        /// Attempts to retrieve the component of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
+        /// </summary>
+        /// <returns><c>true</c> if found.</returns>
+        public readonly bool TryGetComponent<T>(uint entity, out T component) where T : unmanaged
+        {
+            Dictionary<BitSet, ComponentChunk> components = ComponentChunks;
+            ref EntitySlot slot = ref Slots[entity - 1];
+            ComponentType componentType = ComponentType.Get<T>();
+            bool contains = slot.componentTypes.Contains(componentType);
+            if (contains)
+            {
+                ComponentChunk chunk = components[slot.componentTypes];
+                uint index = chunk.Entities.IndexOf(entity);
+                component = chunk.GetComponent<T>(index);
+            }
+            else
+            {
+                component = default;
+            }
+
+            return contains;
         }
 
         /// <summary>
