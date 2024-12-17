@@ -68,16 +68,13 @@ namespace Worlds
             throw new NotSupportedException();
         }
 
-        internal ArrayType(byte value, ushort size)
+        /// <summary>
+        /// Initializes an existing array type.
+        /// </summary>
+        public ArrayType(byte value, ushort size = 0)
         {
             this.index = value;
             this.size = size;
-        }
-
-        internal ArrayType(byte value)
-        {
-            this.index = value;
-            size = 0;
         }
 
         [Conditional("DEBUG")]
@@ -131,6 +128,21 @@ namespace Worlds
         public readonly override int GetHashCode()
         {
             return index.GetHashCode();
+        }
+
+        /// <summary>
+        /// Checks if this component type is the same as <typeparamref name="T"/>.
+        /// </summary>
+        public readonly bool Is<T>() where T : unmanaged
+        {
+            if (systemTypeToType.TryGetValue(typeof(T), out ArrayType targetType))
+            {
+                return index == targetType.index;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         /// <summary>

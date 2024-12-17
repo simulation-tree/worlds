@@ -68,16 +68,13 @@ namespace Worlds
             throw new NotSupportedException();
         }
 
-        internal ComponentType(byte value, ushort size)
+        /// <summary>
+        /// Initializes an existing component type with the given index.
+        /// </summary>
+        public ComponentType(byte value, ushort size = 0)
         {
             this.index = value;
             this.size = size;
-        }
-
-        internal ComponentType(byte value)
-        {
-            this.index = value;
-            this.size = 0;
         }
 
         [Conditional("DEBUG")]
@@ -131,6 +128,21 @@ namespace Worlds
         public readonly override int GetHashCode()
         {
             return index.GetHashCode();
+        }
+
+        /// <summary>
+        /// Checks if this component type is the same as <typeparamref name="T"/>.
+        /// </summary>
+        public readonly bool Is<T>() where T : unmanaged
+        {
+            if (systemTypeToType.TryGetValue(typeof(T), out ComponentType targetType))
+            {
+                return index == targetType.index;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         /// <summary>
