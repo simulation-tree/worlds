@@ -1,6 +1,5 @@
 ﻿using Collections;
 using System;
-using System.ComponentModel;
 using System.Diagnostics;
 using Unmanaged;
 using Worlds.Unsafe;
@@ -247,11 +246,12 @@ namespace Worlds
                     writer.WriteValue(slot.parent);
 
                     //write components
-                    ComponentChunk chunk = chunks[slot.componentTypes];
-                    writer.WriteValue(slot.componentTypes.Count);
+                    ComponentChunk chunk = slot.componentChunk;
+                    BitSet componentTypes = chunk.TypesMask;
+                    writer.WriteValue(componentTypes.Count);
                     for (byte c = 0; c < BitSet.Capacity; c++)
                     {
-                        if (slot.componentTypes.Contains(c))
+                        if (componentTypes.Contains(c))
                         {
                             ComponentType componentType = ComponentType.All[c];
                             writer.WriteValue((byte)uniqueComponentTypes.IndexOf(c));
@@ -471,11 +471,12 @@ namespace Worlds
                     entityIndex++;
 
                     //add components
-                    ComponentChunk sourceChunk = sourceWorld.ComponentChunks[sourceSlot.componentTypes];
+                    ComponentChunk sourceChunk = sourceSlot.componentChunk;
+                    BitSet componentTypes = sourceChunk.TypesMask;
                     uint sourceIndex = sourceChunk.Entities.IndexOf(sourceEntity);
                     for (byte c = 0; c < BitSet.Capacity; c++)
                     {
-                        if (sourceSlot.componentTypes.Contains(c))
+                        if (componentTypes.Contains(c))
                         {
                             ComponentType componentType = ComponentType.All[c];
                             USpan<byte> bytes = UnsafeWorld.AddComponent(value, destinationEntity, componentType);
@@ -774,7 +775,7 @@ namespace Worlds
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
             ref EntitySlot slot = ref Slots[entity - 1];
-            ComponentChunk chunk = ComponentChunks[slot.componentTypes];
+            ComponentChunk chunk = slot.componentChunk;
             return chunk.CopyTypesTo(buffer);
         }
 
@@ -839,7 +840,7 @@ namespace Worlds
         /// </summary>
         public readonly bool TryGetFirst<T>(out T entity, bool onlyEnabled = false) where T : unmanaged, IEntity
         {
-            Entity.ThrowIfTypeLayoutMismatches<T>();
+            EntityExtensions.ThrowIfTypeLayoutMismatches<T>();
 
             Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
             Definition definition = default(T).Definition;
@@ -1098,7 +1099,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1>(T1 component1) where T1 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new Definition().AddComponentType<T1>();
+            Definition definition = new(ComponentType.GetBitSet<T1>(), default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             return entity;
@@ -1110,7 +1111,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1, T2>(T1 component1, T2 component2) where T1 : unmanaged where T2 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new Definition().AddComponentTypes<T1, T2>();
+            Definition definition = new(ComponentType.GetBitSet<T1, T2>(), default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
@@ -1123,7 +1124,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1, T2, T3>(T1 component1, T2 component2, T3 component3) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new Definition().AddComponentTypes<T1, T2, T3>();
+            Definition definition = new(ComponentType.GetBitSet<T1, T2, T3>(), default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
@@ -1137,7 +1138,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1, T2, T3, T4>(T1 component1, T2 component2, T3 component3, T4 component4) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new Definition().AddComponentTypes<T1, T2, T3, T4>();
+            Definition definition = new(ComponentType.GetBitSet<T1, T2, T3, T4>(), default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
@@ -1152,7 +1153,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1, T2, T3, T4, T5>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new Definition().AddComponentTypes<T1, T2, T3, T4, T5>();
+            Definition definition = new(ComponentType.GetBitSet<T1, T2, T3, T4, T5>(), default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
@@ -1168,7 +1169,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new Definition().AddComponentTypes<T1, T2, T3, T4, T5, T6>();
+            Definition definition = new(ComponentType.GetBitSet<T1, T2, T3, T4, T5, T6>(), default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
@@ -1176,6 +1177,201 @@ namespace Worlds
             SetComponent(entity, component4);
             SetComponent(entity, component5);
             SetComponent(entity, component6);
+            return entity;
+        }
+
+        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
+        {
+            uint entity = GetNextEntity();
+            Definition definition = new(ComponentType.GetBitSet<T1, T2, T3, T4, T5, T6, T7>(), default);
+            InitializeEntity(definition, entity);
+            SetComponent(entity, component1);
+            SetComponent(entity, component2);
+            SetComponent(entity, component3);
+            SetComponent(entity, component4);
+            SetComponent(entity, component5);
+            SetComponent(entity, component6);
+            SetComponent(entity, component7);
+            return entity;
+        }
+
+        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
+        {
+            uint entity = GetNextEntity();
+            Definition definition = new(ComponentType.GetBitSet<T1, T2, T3, T4, T5, T6, T7, T8>(), default);
+            InitializeEntity(definition, entity);
+            SetComponent(entity, component1);
+            SetComponent(entity, component2);
+            SetComponent(entity, component3);
+            SetComponent(entity, component4);
+            SetComponent(entity, component5);
+            SetComponent(entity, component6);
+            SetComponent(entity, component7);
+            SetComponent(entity, component8);
+            return entity;
+        }
+
+        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
+        {
+            uint entity = GetNextEntity();
+            Definition definition = new(ComponentType.GetBitSet<T1, T2, T3, T4, T5, T6, T7, T8, T9>(), default);
+            InitializeEntity(definition, entity);
+            SetComponent(entity, component1);
+            SetComponent(entity, component2);
+            SetComponent(entity, component3);
+            SetComponent(entity, component4);
+            SetComponent(entity, component5);
+            SetComponent(entity, component6);
+            SetComponent(entity, component7);
+            SetComponent(entity, component8);
+            SetComponent(entity, component9);
+            return entity;
+        }
+
+        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
+        {
+            uint entity = GetNextEntity();
+            Definition definition = new(ComponentType.GetBitSet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(), default);
+            InitializeEntity(definition, entity);
+            SetComponent(entity, component1);
+            SetComponent(entity, component2);
+            SetComponent(entity, component3);
+            SetComponent(entity, component4);
+            SetComponent(entity, component5);
+            SetComponent(entity, component6);
+            SetComponent(entity, component7);
+            SetComponent(entity, component8);
+            SetComponent(entity, component9);
+            SetComponent(entity, component10);
+            return entity;
+        }
+
+        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
+        {
+            uint entity = GetNextEntity();
+            Definition definition = new(ComponentType.GetBitSet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(), default);
+            InitializeEntity(definition, entity);
+            SetComponent(entity, component1);
+            SetComponent(entity, component2);
+            SetComponent(entity, component3);
+            SetComponent(entity, component4);
+            SetComponent(entity, component5);
+            SetComponent(entity, component6);
+            SetComponent(entity, component7);
+            SetComponent(entity, component8);
+            SetComponent(entity, component9);
+            SetComponent(entity, component10);
+            SetComponent(entity, component11);
+            return entity;
+        }
+
+        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
+        {
+            uint entity = GetNextEntity();
+            Definition definition = new(ComponentType.GetBitSet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(), default);
+            InitializeEntity(definition, entity);
+            SetComponent(entity, component1);
+            SetComponent(entity, component2);
+            SetComponent(entity, component3);
+            SetComponent(entity, component4);
+            SetComponent(entity, component5);
+            SetComponent(entity, component6);
+            SetComponent(entity, component7);
+            SetComponent(entity, component8);
+            SetComponent(entity, component9);
+            SetComponent(entity, component10);
+            SetComponent(entity, component11);
+            SetComponent(entity, component12);
+            return entity;
+        }
+
+        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged
+        {
+            uint entity = GetNextEntity();
+            Definition definition = new(ComponentType.GetBitSet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(), default);
+            InitializeEntity(definition, entity);
+            SetComponent(entity, component1);
+            SetComponent(entity, component2);
+            SetComponent(entity, component3);
+            SetComponent(entity, component4);
+            SetComponent(entity, component5);
+            SetComponent(entity, component6);
+            SetComponent(entity, component7);
+            SetComponent(entity, component8);
+            SetComponent(entity, component9);
+            SetComponent(entity, component10);
+            SetComponent(entity, component11);
+            SetComponent(entity, component12);
+            SetComponent(entity, component13);
+            return entity;
+        }
+
+        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13, T14 component14) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged
+        {
+            uint entity = GetNextEntity();
+            Definition definition = new(ComponentType.GetBitSet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(), default);
+            InitializeEntity(definition, entity);
+            SetComponent(entity, component1);
+            SetComponent(entity, component2);
+            SetComponent(entity, component3);
+            SetComponent(entity, component4);
+            SetComponent(entity, component5);
+            SetComponent(entity, component6);
+            SetComponent(entity, component7);
+            SetComponent(entity, component8);
+            SetComponent(entity, component9);
+            SetComponent(entity, component10);
+            SetComponent(entity, component11);
+            SetComponent(entity, component12);
+            SetComponent(entity, component13);
+            SetComponent(entity, component14);
+            return entity;
+        }
+
+        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13, T14 component14, T15 component15) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged
+        {
+            uint entity = GetNextEntity();
+            Definition definition = new(ComponentType.GetBitSet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(), default);
+            InitializeEntity(definition, entity);
+            SetComponent(entity, component1);
+            SetComponent(entity, component2);
+            SetComponent(entity, component3);
+            SetComponent(entity, component4);
+            SetComponent(entity, component5);
+            SetComponent(entity, component6);
+            SetComponent(entity, component7);
+            SetComponent(entity, component8);
+            SetComponent(entity, component9);
+            SetComponent(entity, component10);
+            SetComponent(entity, component11);
+            SetComponent(entity, component12);
+            SetComponent(entity, component13);
+            SetComponent(entity, component14);
+            SetComponent(entity, component15);
+            return entity;
+        }
+
+        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13, T14 component14, T15 component15, T16 component16) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged
+        {
+            uint entity = GetNextEntity();
+            Definition definition = new(ComponentType.GetBitSet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(), default);
+            InitializeEntity(definition, entity);
+            SetComponent(entity, component1);
+            SetComponent(entity, component2);
+            SetComponent(entity, component3);
+            SetComponent(entity, component4);
+            SetComponent(entity, component5);
+            SetComponent(entity, component6);
+            SetComponent(entity, component7);
+            SetComponent(entity, component8);
+            SetComponent(entity, component9);
+            SetComponent(entity, component10);
+            SetComponent(entity, component11);
+            SetComponent(entity, component12);
+            SetComponent(entity, component13);
+            SetComponent(entity, component14);
+            SetComponent(entity, component15);
+            SetComponent(entity, component16);
             return entity;
         }
 
@@ -1732,13 +1928,12 @@ namespace Worlds
         /// <returns><c>true</c> if the component is found.</returns>
         public readonly ref T TryGetComponent<T>(uint entity, out bool contains) where T : unmanaged
         {
-            Dictionary<BitSet, ComponentChunk> components = ComponentChunks;
             ref EntitySlot slot = ref Slots[entity - 1];
             ComponentType componentType = ComponentType.Get<T>();
-            contains = slot.componentTypes.Contains(componentType);
+            ComponentChunk chunk = slot.componentChunk;
+            contains = chunk.TypesMask.Contains(componentType);
             if (contains)
             {
-                ComponentChunk chunk = components[slot.componentTypes];
                 uint index = chunk.Entities.IndexOf(entity);
                 return ref chunk.GetComponent<T>(index);
             }
@@ -1754,13 +1949,12 @@ namespace Worlds
         /// <returns><c>true</c> if found.</returns>
         public readonly bool TryGetComponent<T>(uint entity, out T component) where T : unmanaged
         {
-            Dictionary<BitSet, ComponentChunk> components = ComponentChunks;
             ref EntitySlot slot = ref Slots[entity - 1];
             ComponentType componentType = ComponentType.Get<T>();
-            bool contains = slot.componentTypes.Contains(componentType);
+            ComponentChunk chunk = slot.componentChunk;
+            bool contains = chunk.TypesMask.Contains(componentType);
             if (contains)
             {
-                ComponentChunk chunk = components[slot.componentTypes];
                 uint index = chunk.Entities.IndexOf(entity);
                 component = chunk.GetComponent<T>(index);
             }
@@ -1798,7 +1992,7 @@ namespace Worlds
             UnsafeWorld.ThrowIfEntityIsMissing(value, entity);
 
             ref EntitySlot slot = ref Slots[entity - 1];
-            return ComponentChunks[slot.componentTypes];
+            return slot.componentChunk;
         }
 
         /// <summary>
@@ -1973,11 +2167,12 @@ namespace Worlds
             UnsafeWorld.ThrowIfEntityIsMissing(value, sourceEntity);
 
             EntitySlot sourceSlot = Slots[sourceEntity - 1];
-            ComponentChunk sourceChunk = ComponentChunks[sourceSlot.componentTypes];
+            ComponentChunk sourceChunk = sourceSlot.componentChunk;
+            BitSet sourceComponentTypes = sourceChunk.TypesMask;
             uint sourceIndex = sourceChunk.Entities.IndexOf(sourceEntity);
             for (byte c = 0; c < BitSet.Capacity; c++)
             {
-                if (sourceSlot.componentTypes.Contains(c))
+                if (sourceComponentTypes.Contains(c))
                 {
                     ComponentType componentType = ComponentType.All[c];
                     if (!destinationWorld.ContainsComponent(destinationEntity, componentType))

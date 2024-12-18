@@ -282,6 +282,171 @@ namespace Worlds
             return this;
         }
 
+        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged
+        {
+            componentTypesMask.Set(ComponentType.Get<C1>());
+            componentTypesMask.Set(ComponentType.Get<C2>());
+            componentTypesMask.Set(ComponentType.Get<C3>());
+            componentTypesMask.Set(ComponentType.Get<C4>());
+            componentTypesMask.Set(ComponentType.Get<C5>());
+            componentTypesMask.Set(ComponentType.Get<C6>());
+            componentTypesMask.Set(ComponentType.Get<C7>());
+            return this;
+        }
+
+        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged
+        {
+            componentTypesMask.Set(ComponentType.Get<C1>());
+            componentTypesMask.Set(ComponentType.Get<C2>());
+            componentTypesMask.Set(ComponentType.Get<C3>());
+            componentTypesMask.Set(ComponentType.Get<C4>());
+            componentTypesMask.Set(ComponentType.Get<C5>());
+            componentTypesMask.Set(ComponentType.Get<C6>());
+            componentTypesMask.Set(ComponentType.Get<C7>());
+            componentTypesMask.Set(ComponentType.Get<C8>());
+            return this;
+        }
+
+        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged
+        {
+            componentTypesMask.Set(ComponentType.Get<C1>());
+            componentTypesMask.Set(ComponentType.Get<C2>());
+            componentTypesMask.Set(ComponentType.Get<C3>());
+            componentTypesMask.Set(ComponentType.Get<C4>());
+            componentTypesMask.Set(ComponentType.Get<C5>());
+            componentTypesMask.Set(ComponentType.Get<C6>());
+            componentTypesMask.Set(ComponentType.Get<C7>());
+            componentTypesMask.Set(ComponentType.Get<C8>());
+            componentTypesMask.Set(ComponentType.Get<C9>());
+            return this;
+        }
+
+        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged
+        {
+            componentTypesMask.Set(ComponentType.Get<C1>());
+            componentTypesMask.Set(ComponentType.Get<C2>());
+            componentTypesMask.Set(ComponentType.Get<C3>());
+            componentTypesMask.Set(ComponentType.Get<C4>());
+            componentTypesMask.Set(ComponentType.Get<C5>());
+            componentTypesMask.Set(ComponentType.Get<C6>());
+            componentTypesMask.Set(ComponentType.Get<C7>());
+            componentTypesMask.Set(ComponentType.Get<C8>());
+            componentTypesMask.Set(ComponentType.Get<C9>());
+            componentTypesMask.Set(ComponentType.Get<C10>());
+            return this;
+        }
+
+        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged
+        {
+            componentTypesMask.Set(ComponentType.Get<C1>());
+            componentTypesMask.Set(ComponentType.Get<C2>());
+            componentTypesMask.Set(ComponentType.Get<C3>());
+            componentTypesMask.Set(ComponentType.Get<C4>());
+            componentTypesMask.Set(ComponentType.Get<C5>());
+            componentTypesMask.Set(ComponentType.Get<C6>());
+            componentTypesMask.Set(ComponentType.Get<C7>());
+            componentTypesMask.Set(ComponentType.Get<C8>());
+            componentTypesMask.Set(ComponentType.Get<C9>());
+            componentTypesMask.Set(ComponentType.Get<C10>());
+            componentTypesMask.Set(ComponentType.Get<C11>());
+            return this;
+        }
+
+        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged
+        {
+            componentTypesMask.Set(ComponentType.Get<C1>());
+            componentTypesMask.Set(ComponentType.Get<C2>());
+            componentTypesMask.Set(ComponentType.Get<C3>());
+            componentTypesMask.Set(ComponentType.Get<C4>());
+            componentTypesMask.Set(ComponentType.Get<C5>());
+            componentTypesMask.Set(ComponentType.Get<C6>());
+            componentTypesMask.Set(ComponentType.Get<C7>());
+            componentTypesMask.Set(ComponentType.Get<C8>());
+            componentTypesMask.Set(ComponentType.Get<C9>());
+            componentTypesMask.Set(ComponentType.Get<C10>());
+            componentTypesMask.Set(ComponentType.Get<C11>());
+            componentTypesMask.Set(ComponentType.Get<C12>());
+            return this;
+        }
+
+        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged
+        {
+            componentTypesMask.Set(ComponentType.Get<C1>());
+            componentTypesMask.Set(ComponentType.Get<C2>());
+            componentTypesMask.Set(ComponentType.Get<C3>());
+            componentTypesMask.Set(ComponentType.Get<C4>());
+            componentTypesMask.Set(ComponentType.Get<C5>());
+            componentTypesMask.Set(ComponentType.Get<C6>());
+            componentTypesMask.Set(ComponentType.Get<C7>());
+            componentTypesMask.Set(ComponentType.Get<C8>());
+            componentTypesMask.Set(ComponentType.Get<C9>());
+            componentTypesMask.Set(ComponentType.Get<C10>());
+            componentTypesMask.Set(ComponentType.Get<C11>());
+            componentTypesMask.Set(ComponentType.Get<C12>());
+            componentTypesMask.Set(ComponentType.Get<C13>());
+            return this;
+        }
+
+        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged
+        {
+            componentTypesMask.Set(ComponentType.Get<C1>());
+            componentTypesMask.Set(ComponentType.Get<C2>());
+            componentTypesMask.Set(ComponentType.Get<C3>());
+            componentTypesMask.Set(ComponentType.Get<C4>());
+            componentTypesMask.Set(ComponentType.Get<C5>());
+            componentTypesMask.Set(ComponentType.Get<C6>());
+            componentTypesMask.Set(ComponentType.Get<C7>());
+            componentTypesMask.Set(ComponentType.Get<C8>());
+            componentTypesMask.Set(ComponentType.Get<C9>());
+            componentTypesMask.Set(ComponentType.Get<C10>());
+            componentTypesMask.Set(ComponentType.Get<C11>());
+            componentTypesMask.Set(ComponentType.Get<C12>());
+            componentTypesMask.Set(ComponentType.Get<C13>());
+            componentTypesMask.Set(ComponentType.Get<C14>());
+            return this;
+        }
+
+        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged where C15 : unmanaged
+        {
+            componentTypesMask.Set(ComponentType.Get<C1>());
+            componentTypesMask.Set(ComponentType.Get<C2>());
+            componentTypesMask.Set(ComponentType.Get<C3>());
+            componentTypesMask.Set(ComponentType.Get<C4>());
+            componentTypesMask.Set(ComponentType.Get<C5>());
+            componentTypesMask.Set(ComponentType.Get<C6>());
+            componentTypesMask.Set(ComponentType.Get<C7>());
+            componentTypesMask.Set(ComponentType.Get<C8>());
+            componentTypesMask.Set(ComponentType.Get<C9>());
+            componentTypesMask.Set(ComponentType.Get<C10>());
+            componentTypesMask.Set(ComponentType.Get<C11>());
+            componentTypesMask.Set(ComponentType.Get<C12>());
+            componentTypesMask.Set(ComponentType.Get<C13>());
+            componentTypesMask.Set(ComponentType.Get<C14>());
+            componentTypesMask.Set(ComponentType.Get<C15>());
+            return this;
+        }
+
+        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged where C15 : unmanaged where C16 : unmanaged
+        {
+            componentTypesMask.Set(ComponentType.Get<C1>());
+            componentTypesMask.Set(ComponentType.Get<C2>());
+            componentTypesMask.Set(ComponentType.Get<C3>());
+            componentTypesMask.Set(ComponentType.Get<C4>());
+            componentTypesMask.Set(ComponentType.Get<C5>());
+            componentTypesMask.Set(ComponentType.Get<C6>());
+            componentTypesMask.Set(ComponentType.Get<C7>());
+            componentTypesMask.Set(ComponentType.Get<C8>());
+            componentTypesMask.Set(ComponentType.Get<C9>());
+            componentTypesMask.Set(ComponentType.Get<C10>());
+            componentTypesMask.Set(ComponentType.Get<C11>());
+            componentTypesMask.Set(ComponentType.Get<C12>());
+            componentTypesMask.Set(ComponentType.Get<C13>());
+            componentTypesMask.Set(ComponentType.Get<C14>());
+            componentTypesMask.Set(ComponentType.Get<C15>());
+            componentTypesMask.Set(ComponentType.Get<C16>());
+            return this;
+        }
+
         /// <summary>
         /// Adds the specified <paramref name="arrayType"/> to this definition.
         /// </summary>

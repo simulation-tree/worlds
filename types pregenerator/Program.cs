@@ -1,48 +1,31 @@
-﻿using System.IO;
-using System.Text;
+﻿using System;
 
-const string TypeName = "ComponentQuery";
-
-string template = File.ReadAllText("ComponentQuery.cs.template");
-for (uint i = 0; i < 16; i++)
+if (args.Length == 0)
 {
-    string source = template;
-    source = source.Replace("{{TypeName}}", TypeName);
-    source = source.Replace("{{GenericTypeArguments}}", GetGenericTypeArguments(i));
-    source = source.Replace("{{TypeConstraints}}", GetTypeConstraints(i));
-    File.WriteAllText($"{TypeName}{i + 1}.cs", source);
+    Console.WriteLine("Expected 1 argument referring to generation mode:");
+    Console.WriteLine("  0 = ComponentQuery<>");
+    Console.WriteLine("  1 = Entity<>");
+    return;
 }
 
-string GetGenericTypeArguments(uint count)
+string firstInput = args[0];
+if (int.TryParse(firstInput, out int mode))
 {
-    StringBuilder builder = new();
-    for (uint i = 1; i <= count + 1; i++)
+    Console.WriteLine($"Generating mode {mode}");
+    switch (mode)
     {
-        builder.Append('C');
-        builder.Append(i);
-        if (i <= count)
-        {
-            builder.Append(", ");
-        }
+        case 0:
+            ComponentQuery.Generate();
+            break;
+        case 1:
+            Entity.Generate();
+            break;
+        default:
+            Console.WriteLine($"Invalid generation mode {mode}");
+            break;
     }
-
-    return builder.ToString();
 }
-
-string GetTypeConstraints(uint count)
+else
 {
-    StringBuilder builder = new();
-    for (uint i = 1; i <= count + 1; i++)
-    {
-        builder.Append("where C");
-        builder.Append(i);
-        builder.Append(" : ");
-        builder.Append("unmanaged");
-        if (i <= count)
-        {
-            builder.Append(' ');
-        }
-    }
-
-    return builder.ToString();
+    Console.WriteLine($"Invalid generation mode {firstInput}, expected a number");
 }

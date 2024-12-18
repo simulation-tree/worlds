@@ -1,5 +1,10 @@
-﻿using System.Threading;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
+using Unmanaged;
 
 namespace Worlds
 {
@@ -35,7 +40,25 @@ namespace Worlds
         /// </summary>
         public static Entity GetParent<T>(this T entity) where T : unmanaged, IEntity
         {
-            return new(entity.GetWorld(), entity.World.GetParent(entity.Value));
+            World world = entity.World;
+            uint parent = world.GetParent(entity.Value);
+            if (parent != default)
+            {
+                return new(world, parent);
+            }
+            else
+            {
+                return default;
+            }
+        }
+
+        /// <summary>
+        /// Attempts to retrieve the parent of this entity.
+        /// </summary>
+        public static bool TryGetParent<T>(this T entity, out uint parent) where T : unmanaged, IEntity
+        {
+            parent = entity.World.GetParent(entity.Value);
+            return parent != default;
         }
 
         /// <summary>
@@ -54,6 +77,11 @@ namespace Worlds
         public static void SetParent<T>(this T entity, Entity parent) where T : unmanaged, IEntity
         {
             entity.World.SetParent(entity.Value, parent.GetEntityValue());
+        }
+
+        public static USpan<uint> GetChildren<T>(this T entity) where T : unmanaged, IEntity
+        {
+            return entity.World.GetChildren(entity.Value);
         }
 
         /// <summary>
@@ -81,6 +109,14 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves how many references this entity has.
+        /// </summary>
+        public static uint GetReferenceCount<T>(this T entity) where T : unmanaged, IEntity
+        {
+            return entity.World.GetReferenceCount(entity.Value);
+        }
+
+        /// <summary>
         /// Retrieves the entity ID found with the given local <paramref name="reference"/> on this entity.
         /// </summary>
         public static uint GetReference<T>(this T entity, rint reference) where T : unmanaged, IEntity
@@ -89,11 +125,11 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Assigns the given <paramref name="entityId"/> to an existing local <paramref name="reference"/> on this entity.
+        /// Assigns the given <paramref name="otherEntity"/> to an existing local <paramref name="reference"/> on this entity.
         /// </summary>
-        public static void SetReference<T>(this T entity, rint reference, uint entityId) where T : unmanaged, IEntity
+        public static void SetReference<T>(this T entity, rint reference, uint otherEntity) where T : unmanaged, IEntity
         {
-            entity.World.SetReference(entity.Value, reference, entityId);
+            entity.World.SetReference(entity.Value, reference, otherEntity);
         }
 
         /// <summary>
@@ -105,19 +141,19 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Adds a new local reference to the given <paramref name="value"/> on this entity.
+        /// Adds a new local reference to the given <paramref name="otherEntity"/> on this entity.
         /// </summary>
-        public static rint AddReference<T>(this T entity, uint value) where T : unmanaged, IEntity
+        public static rint AddReference<T>(this T entity, uint otherEntity) where T : unmanaged, IEntity
         {
-            return entity.World.AddReference(entity.Value, value);
+            return entity.World.AddReference(entity.Value, otherEntity);
         }
 
         /// <summary>
-        /// Adds a new local reference to the given <paramref name="value"/> on this entity.
+        /// Adds a new local reference to the given <paramref name="otherEntity"/> on this entity.
         /// </summary>
-        public static rint AddReference<T, E>(this T entity, E value) where T : unmanaged, IEntity where E : unmanaged, IEntity
+        public static rint AddReference<T, E>(this T entity, E otherEntity) where T : unmanaged, IEntity where E : unmanaged, IEntity
         {
-            return entity.World.AddReference(entity.Value, value);
+            return entity.World.AddReference(entity.Value, otherEntity);
         }
 
         /// <summary>
@@ -129,11 +165,35 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Checks if this entity contains the given local <paramref name="reference"/>.
+        /// </summary>
+        public static bool ContainsReference<T>(this T entity, rint reference) where T : unmanaged, IEntity
+        {
+            return entity.World.ContainsReference(entity.Value, reference);
+        }
+
+        /// <summary>
+        /// Attempts to retrieve an entity from the given local <paramref name="reference"/>.
+        /// </summary>
+        public static bool TryGetReference<T>(this T entity, rint reference, out uint otherEntity) where T : unmanaged, IEntity
+        {
+            return entity.World.TryGetReference(entity.Value, reference, out otherEntity);
+        }
+
+        /// <summary>
         /// Adds a new component of type <typeparamref name="C"/> to this entity.
         /// </summary>
-        public static void AddComponent<T, C>(this T entity, C component) where T : unmanaged, IEntity where C : unmanaged
+        public static ref C AddComponent<T, C>(this T entity, C component) where T : unmanaged, IEntity where C : unmanaged
         {
-            entity.World.AddComponent(entity.Value, component);
+            return ref entity.World.AddComponent(entity.Value, component);
+        }
+
+        /// <summary>
+        /// Adds a new component of the given <paramref name="componentType"/>.
+        /// </summary>
+        public static void AddComponent<T>(this T entity, ComponentType componentType) where T : unmanaged, IEntity
+        {
+            entity.World.AddComponent(entity.Value, componentType);
         }
 
         /// <summary>
@@ -142,6 +202,31 @@ namespace Worlds
         public static void SetComponent<T, C>(this T entity, C component) where T : unmanaged, IEntity where C : unmanaged
         {
             entity.World.SetComponent(entity.Value, component);
+        }
+
+        /// <summary>
+        /// Retrieves the bytes of this entity's component of type <paramref name="componentType"/>.
+        /// </summary>
+        public static USpan<byte> GetComponentBytes<T>(this T entity, ComponentType componentType) where T : unmanaged, IEntity
+        {
+            return entity.World.GetComponentBytes(entity.Value, componentType);
+        }
+
+        /// <summary>
+        /// Removes the component of the given <paramref name="componentType"/> from the entity.
+        /// </summary>
+        public static void RemoveComponent<T>(this T entity, ComponentType componentType) where T : unmanaged, IEntity
+        {
+            entity.World.RemoveComponent(entity.Value, componentType);
+        }
+
+        /// <summary>
+        /// Removes the component of type <typeparamref name="T"/> from the entity.
+        /// </summary>
+        public static void RemoveComponent<T, C>(this T entity, out C removedComponent) where T : unmanaged, IEntity where C : unmanaged
+        {
+            removedComponent = entity.World.GetComponent<C>(entity.Value);
+            entity.World.RemoveComponent<C>(entity.Value);
         }
 
         /// <summary>
@@ -164,11 +249,12 @@ namespace Worlds
             World world = entity.World;
             uint value = entity.Value;
             ref EntitySlot slot = ref world.Slots[value - 1];
-            if (!slot.componentTypes.ContainsAll(definition.ComponentTypesMask))
+            BitSet componentTypes = slot.componentChunk.TypesMask;
+            if (!componentTypes.ContainsAll(definition.ComponentTypesMask))
             {
                 for (byte c = 0; c < BitSet.Capacity; c++)
                 {
-                    if (definition.ComponentTypesMask.Contains(c) && !slot.componentTypes.Contains(c))
+                    if (definition.ComponentTypesMask.Contains(c) && !componentTypes.Contains(c))
                     {
                         ComponentType componentType = ComponentType.All[c];
                         world.AddComponent(value, componentType);
@@ -205,7 +291,8 @@ namespace Worlds
             World world = entity.World;
             uint value = entity.Value;
             ref EntitySlot slot = ref world.Slots[value - 1];
-            return slot.componentTypes.ContainsAll(definition.ComponentTypesMask) && slot.arrayTypes.ContainsAll(definition.ArrayTypesMask);
+            BitSet componentTypes = slot.componentChunk.TypesMask;
+            return componentTypes.ContainsAll(definition.ComponentTypesMask) && slot.arrayTypes.ContainsAll(definition.ArrayTypesMask);
         }
 
         /// <summary>
@@ -219,6 +306,121 @@ namespace Worlds
             {
                 await action(world, cancellation);
             }
+        }
+
+        /// <summary>
+        /// Checks if this entity has a component of the given <paramref name="componentType"/>.
+        /// </summary>
+        public static bool ContainsComponent<T>(this T entity, ComponentType componentType) where T : unmanaged, IEntity
+        {
+            return entity.World.ContainsComponent(entity.Value, componentType);
+        }
+
+        /// <summary>
+        /// Checks if this entity has an array of the given <paramref name="arrayType"/>.
+        /// </summary>
+        public static bool ContainsArray<T>(this T entity, ArrayType arrayType) where T : unmanaged, IEntity
+        {
+            return entity.World.ContainsArray(entity.Value, arrayType);
+        }
+
+        /// <summary>
+        /// Copies all <see cref="ComponentType"/>s this entity has to the given <paramref name="buffer"/>.
+        /// </summary>
+        public static byte CopyComponentTypesTo<T>(this T entity, USpan<ComponentType> buffer) where T : unmanaged, IEntity
+        {
+            return entity.World.CopyComponentTypesTo(entity.Value, buffer);
+        }
+
+        /// <summary>
+        /// Copies all <see cref="ArrayType"/>s this entity has to the given <paramref name="buffer"/>.
+        /// </summary>
+        public static byte CopyArrayTypesTo<T>(this T entity, USpan<ArrayType> buffer) where T : unmanaged, IEntity
+        {
+            return entity.World.CopyArrayTypesTo(entity.Value, buffer);
+        }
+
+        /// <summary>
+        /// Retrieves an array of type <paramref name="arrayType"/> on this entity.
+        /// </summary>
+        public static Allocation GetArray<T>(this T entity, ArrayType arrayType) where T : unmanaged, IEntity
+        {
+            return entity.World.GetArray(entity.Value, arrayType, out _);
+        }
+
+        /// <summary>
+        /// Retrieves an array of type <paramref name="arrayType"/> on this entity.
+        /// </summary>
+        public static Allocation GetArray<T>(this T entity, ArrayType arrayType, out uint length) where T : unmanaged, IEntity
+        {
+            return entity.World.GetArray(entity.Value, arrayType, out length);
+        }
+
+        /// <summary>
+        /// Resizes the array of type <paramref name="arrayType"/> to the given <paramref name="newLength"/>.
+        /// </summary>
+        /// <returns>Newly resized array.</returns>
+        public static Allocation ResizeArray<T>(this T entity, ArrayType arrayType, uint newLength) where T : unmanaged, IEntity
+        {
+            return entity.World.ResizeArray(entity.Value, arrayType, newLength);
+        }
+
+        /// <summary>
+        /// Throws an <see cref="InvalidOperationException"/> if the entity is destroyed.
+        /// </summary>
+        /// <exception cref="InvalidOperationException"></exception>
+        [Conditional("DEBUG")]
+        public static void ThrowIfDestroyed<T>(this T entity) where T : unmanaged, IEntity
+        {
+            if (!entity.IsDestroyed())
+            {
+                throw new InvalidOperationException($"Entity `{entity.Value}` is destroyed and no longer available");
+            }
+        }
+
+        /// <summary>
+        /// Throws if the given type doesn't have the same layout as <see cref="Entity"/>.
+        /// </summary>
+        [Conditional("DEBUG")]
+        public static void ThrowIfTypeLayoutMismatches<T>() where T : unmanaged, IEntity
+        {
+            BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+            Stack<Type> checkStack = new();
+            Type type = typeof(T);
+            checkStack.Push(type);
+            while (checkStack.Count > 0)
+            {
+                Type checkingType = checkStack.Pop();
+                if (checkingType == typeof(Entity))
+                {
+                    return;
+                }
+                else if (typeof(IEntity).IsAssignableFrom(checkingType))
+                {
+#pragma warning disable IL2075
+                    FieldInfo[] checkingFields = checkingType.GetFields(flags);
+#pragma warning restore IL2075
+                    if (checkingFields.Length == 1)
+                    {
+                        checkStack.Push(checkingFields[0].FieldType);
+                    }
+                    else if (checkingFields.Length == 2)
+                    {
+                        Type first = checkingFields[0].FieldType;
+                        Type second = checkingFields[1].FieldType;
+                        if (first == typeof(uint) && second == typeof(World))
+                        {
+                            return;
+                        }
+                        else
+                        {
+                            throw new Exception($"Unexpected entity type layout in `{checkingType}`. Was expecting `uint`, then `{nameof(World)}`");
+                        }
+                    }
+                }
+            }
+
+            throw new Exception($"The type `{type}` does not align with the `{nameof(Entity)}` type");
         }
     }
 }

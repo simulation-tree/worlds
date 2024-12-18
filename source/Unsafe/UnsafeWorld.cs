@@ -142,7 +142,8 @@ namespace Worlds.Unsafe
         public static void ThrowIfComponentMissing(UnsafeWorld* world, uint entity, ComponentType componentType)
         {
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
-            if (!slot.componentTypes.Contains(componentType))
+            BitSet componentTypes = slot.componentChunk.TypesMask;
+            if (!componentTypes.Contains(componentType))
             {
                 throw new NullReferenceException($"Component `{componentType}` not found on `{entity}`");
             }
@@ -156,7 +157,8 @@ namespace Worlds.Unsafe
         public static void ThrowIfComponentAlreadyPresent(UnsafeWorld* world, uint entity, ComponentType componentType)
         {
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
-            if (slot.componentTypes.Contains(componentType))
+            BitSet componentTypes = slot.componentChunk.TypesMask;
+            if (componentTypes.Contains(componentType))
             {
                 throw new InvalidOperationException($"Component `{componentType}` already present on `{entity}`");
             }
@@ -362,8 +364,7 @@ namespace Worlds.Unsafe
             }
 
             slot.referenceCount = 0;
-            Dictionary<BitSet, ComponentChunk> components = GetComponentChunks(world);
-            ComponentChunk chunk = components[slot.componentTypes];
+            ComponentChunk chunk = slot.componentChunk;
             chunk.RemoveEntity(entity);
 
             //reset arrays
@@ -388,7 +389,7 @@ namespace Worlds.Unsafe
             //reset the rest
             slot.entity = default;
             slot.parent = default;
-            slot.componentTypes = default;
+            slot.componentChunk = default;
             slot.state = EntitySlot.State.Destroyed;
             UnsafeList.Add(world->freeEntities, entity);
             NotifyDestruction(new(world), entity);
@@ -529,7 +530,6 @@ namespace Worlds.Unsafe
 
             ref EntitySlot slot = ref slots[newEntity - 1];
             slot.entity = newEntity;
-            slot.componentTypes = definition.ComponentTypesMask;
             slot.state = EntitySlot.State.Enabled;
 
             //put entity into correct chunk
@@ -539,6 +539,8 @@ namespace Worlds.Unsafe
                 chunk = new(definition.ComponentTypesMask);
                 components.Add(definition.ComponentTypesMask, chunk);
             }
+
+            slot.componentChunk = chunk;
 
             //add arrays
             if (definition.ArrayTypesMask != default)
@@ -715,10 +717,9 @@ namespace Worlds.Unsafe
 
             Dictionary<BitSet, ComponentChunk> components = GetComponentChunks(world);
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
-            ComponentChunk previousChunk = components[slot.componentTypes];
-            BitSet newComponentTypes = slot.componentTypes;
+            ComponentChunk previousChunk = slot.componentChunk;
+            BitSet newComponentTypes = previousChunk.TypesMask;
             newComponentTypes.Set(componentType);
-            slot.componentTypes = newComponentTypes;
 
             if (!components.TryGetValue(newComponentTypes, out ComponentChunk destinationChunk))
             {
@@ -726,6 +727,7 @@ namespace Worlds.Unsafe
                 components.Add(newComponentTypes, destinationChunk);
             }
 
+            slot.componentChunk = destinationChunk;
             uint index = previousChunk.MoveEntity(entity, destinationChunk);
             return destinationChunk.GetComponentBytes(index, componentType);
         }
@@ -743,10 +745,9 @@ namespace Worlds.Unsafe
 
             Dictionary<BitSet, ComponentChunk> components = GetComponentChunks(world);
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
-            ComponentChunk previousChunk = components[slot.componentTypes];
-            BitSet newComponentTypes = slot.componentTypes;
+            ComponentChunk previousChunk = slot.componentChunk;
+            BitSet newComponentTypes = previousChunk.TypesMask;
             newComponentTypes.Set(componentType);
-            slot.componentTypes = newComponentTypes;
 
             if (!components.TryGetValue(newComponentTypes, out ComponentChunk destinationChunk))
             {
@@ -754,6 +755,7 @@ namespace Worlds.Unsafe
                 components.Add(newComponentTypes, destinationChunk);
             }
 
+            slot.componentChunk = destinationChunk;
             uint index = previousChunk.MoveEntity(entity, destinationChunk);
             return ref destinationChunk.GetComponent<T>(index);
         }
@@ -767,9 +769,8 @@ namespace Worlds.Unsafe
             ThrowIfEntityIsMissing(world, entity);
             ThrowIfComponentMissing(world, entity, componentType);
 
-            Dictionary<BitSet, ComponentChunk> components = GetComponentChunks(world);
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
-            ComponentChunk chunk = components[slot.componentTypes];
+            ComponentChunk chunk = slot.componentChunk;
             chunk.SetComponentBytes(entity, componentType, bytes);
         }
 
@@ -792,10 +793,9 @@ namespace Worlds.Unsafe
 
             Dictionary<BitSet, ComponentChunk> components = GetComponentChunks(world);
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
-            ComponentChunk previousChunk = components[slot.componentTypes];
-            BitSet newComponentTypes = slot.componentTypes;
+            ComponentChunk previousChunk = slot.componentChunk;
+            BitSet newComponentTypes = previousChunk.TypesMask;
             newComponentTypes.Clear(componentType);
-            slot.componentTypes = newComponentTypes;
 
             if (!components.TryGetValue(newComponentTypes, out ComponentChunk destinationChunk))
             {
@@ -803,6 +803,7 @@ namespace Worlds.Unsafe
                 components.Add(newComponentTypes, destinationChunk);
             }
 
+            slot.componentChunk = destinationChunk;
             previousChunk.MoveEntity(entity, destinationChunk);
             NotifyComponentRemoved(new(world), entity, componentType);
         }
@@ -817,7 +818,7 @@ namespace Worlds.Unsafe
 
             uint index = entity - 1;
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, index);
-            return slot.componentTypes.Contains(componentType);
+            return slot.componentChunk.TypesMask.Contains(componentType);
         }
 
         /// <summary>
@@ -831,9 +832,8 @@ namespace Worlds.Unsafe
             ComponentType type = ComponentType.Get<T>();
             ThrowIfComponentMissing(world, entity, type);
 
-            Dictionary<BitSet, ComponentChunk> components = GetComponentChunks(world);
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
-            ComponentChunk chunk = components[slot.componentTypes];
+            ComponentChunk chunk = slot.componentChunk;
             uint index = chunk.Entities.IndexOf(entity);
             return ref chunk.GetComponent<T>(index);
         }
@@ -844,9 +844,8 @@ namespace Worlds.Unsafe
             ThrowIfEntityIsMissing(world, entity);
             ThrowIfComponentMissing(world, entity, componentType);
 
-            Dictionary<BitSet, ComponentChunk> components = GetComponentChunks(world);
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
-            ComponentChunk chunk = components[slot.componentTypes];
+            ComponentChunk chunk = slot.componentChunk;
             uint index = chunk.Entities.IndexOf(entity);
             return chunk.GetComponent(index, componentType);
         }

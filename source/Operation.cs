@@ -19,6 +19,35 @@ namespace Worlds
         public readonly uint Count => UnsafeOperation.GetCount(operation);
 
         /// <summary>
+        /// Checks if there are any entities selected.
+        /// </summary>
+        public readonly bool HasSelection
+        {
+            get
+            {
+                uint length = Count;
+                for (uint i = length - 1; i != uint.MaxValue; i--)
+                {
+                    Instruction instruction = this[i];
+                    if (instruction.type == Instruction.Type.SelectEntity)
+                    {
+                        return true;
+                    }
+                    else if (instruction.type == Instruction.Type.CreateEntity)
+                    {
+                        return true;
+                    }
+                    else if (instruction.type == Instruction.Type.ClearSelection)
+                    {
+                        break;
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Indexer for accessing each <see cref="Instruction"/>.
         /// </summary>
         public readonly Instruction this[uint index]
@@ -65,7 +94,7 @@ namespace Worlds
         {
             Allocations.ThrowIfNull(operation);
 
-            ClearInstructions();
+            Clear();
             UnsafeOperation.Free(ref operation);
         }
 
@@ -270,7 +299,7 @@ namespace Worlds
         /// <summary>
         /// Removes all instructions inside this operation.
         /// </summary>
-        public readonly void ClearInstructions()
+        public readonly void Clear()
         {
             Allocations.ThrowIfNull(operation);
 
@@ -278,7 +307,7 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Creates a new entity and makes it the selected entity.
+        /// Creates a new entity and makes it the only selected entity.
         /// </summary>
         public readonly SelectedEntity CreateEntity()
         {
@@ -764,6 +793,7 @@ namespace Worlds
         internal class OperationDebugView
         {
             public readonly uint[] selected;
+            public readonly Instruction[] instructions;
 
             public OperationDebugView(Operation operation)
             {
@@ -775,6 +805,8 @@ namespace Worlds
                 {
                     selected[i] = selection[(uint)i];
                 }
+
+                instructions = operation.AsSpan().ToArray();
             }
         }
     }

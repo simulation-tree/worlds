@@ -19,9 +19,9 @@ namespace Worlds
         public uint parent;
 
         /// <summary>
-        /// Hash of the component types and chunk.
+        /// The chunk that this entity slot belongs to.
         /// </summary>
-        public BitSet componentTypes;
+        public ComponentChunk componentChunk;
 
         /// <summary>
         /// Number of children.
