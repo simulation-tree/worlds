@@ -59,7 +59,7 @@ namespace Worlds
             BitSet typesMask = new();
             for (byte i = 0; i < componentTypes.Length; i++)
             {
-                typesMask.Set(componentTypes[i]);
+                typesMask |= componentTypes[i];
             }
 
             value = UnsafeComponentChunk.Allocate(typesMask);
@@ -88,7 +88,7 @@ namespace Worlds
             BitSet typeMask = TypesMask;
             for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                if (typeMask.Contains(i))
+                if (typeMask == i)
                 {
                     ComponentType type = new(i);
                     length += type.ToString(buffer.Slice(length));
@@ -127,7 +127,7 @@ namespace Worlds
             byte count = 0;
             for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                if (typeMask.Contains(i))
+                if (typeMask == i)
                 {
                     buffer[count++] = ComponentType.All[i];
                 }

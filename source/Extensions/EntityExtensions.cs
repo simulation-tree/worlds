@@ -250,11 +250,11 @@ namespace Worlds
             uint value = entity.Value;
             ref EntitySlot slot = ref world.Slots[value - 1];
             BitSet componentTypes = slot.componentChunk.TypesMask;
-            if (!componentTypes.ContainsAll(definition.ComponentTypesMask))
+            if ((componentTypes & definition.ComponentTypesMask) != definition.ComponentTypesMask)
             {
                 for (byte c = 0; c < BitSet.Capacity; c++)
                 {
-                    if (definition.ComponentTypesMask.Contains(c) && !componentTypes.Contains(c))
+                    if (definition.ComponentTypesMask == c && componentTypes != c)
                     {
                         ComponentType componentType = ComponentType.All[c];
                         world.AddComponent(value, componentType);
@@ -262,11 +262,11 @@ namespace Worlds
                 }
             }
 
-            if (!slot.arrayTypes.ContainsAll(definition.ArrayTypesMask))
+            if ((slot.arrayTypes & definition.ArrayTypesMask) != definition.ArrayTypesMask)
             {
                 for (byte a = 0; a < BitSet.Capacity; a++)
                 {
-                    if (definition.ArrayTypesMask.Contains(a) && !slot.arrayTypes.Contains(a))
+                    if (definition.ArrayTypesMask == a && slot.arrayTypes != a)
                     {
                         ArrayType arrayType = ArrayType.All[a];
                         world.CreateArray(value, arrayType);
@@ -292,7 +292,7 @@ namespace Worlds
             uint value = entity.Value;
             ref EntitySlot slot = ref world.Slots[value - 1];
             BitSet componentTypes = slot.componentChunk.TypesMask;
-            return componentTypes.ContainsAll(definition.ComponentTypesMask) && slot.arrayTypes.ContainsAll(definition.ArrayTypesMask);
+            return (componentTypes & definition.ComponentTypesMask) == definition.ComponentTypesMask && (slot.arrayTypes & definition.ArrayTypesMask) == definition.ArrayTypesMask;
         }
 
         /// <summary>

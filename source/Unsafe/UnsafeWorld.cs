@@ -143,7 +143,7 @@ namespace Worlds.Unsafe
         {
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
             BitSet componentTypes = slot.componentChunk.TypesMask;
-            if (!componentTypes.Contains(componentType))
+            if (componentTypes != componentType)
             {
                 throw new NullReferenceException($"Component `{componentType}` not found on `{entity}`");
             }
@@ -158,7 +158,7 @@ namespace Worlds.Unsafe
         {
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
             BitSet componentTypes = slot.componentChunk.TypesMask;
-            if (componentTypes.Contains(componentType))
+            if (componentTypes == componentType)
             {
                 throw new InvalidOperationException($"Component `{componentType}` already present on `{entity}`");
             }
@@ -173,7 +173,7 @@ namespace Worlds.Unsafe
         public static void ThrowIfArrayIsMissing(UnsafeWorld* world, uint entity, ArrayType arrayType)
         {
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
-            if (!slot.arrayTypes.Contains(arrayType))
+            if (slot.arrayTypes != arrayType)
             {
                 throw new NullReferenceException($"Array of type `{arrayType}` not found on entity `{entity}`");
             }
@@ -188,7 +188,7 @@ namespace Worlds.Unsafe
         public static void ThrowIfArrayIsAlreadyPresent(UnsafeWorld* world, uint entity, ArrayType arrayType)
         {
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
-            if (slot.arrayTypes.Contains(arrayType))
+            if (slot.arrayTypes == arrayType)
             {
                 throw new InvalidOperationException($"Array of type `{arrayType}` already present on `{entity}`");
             }
@@ -286,7 +286,7 @@ namespace Worlds.Unsafe
                     bool hasArrays = false;
                     for (byte a = 0; a < BitSet.Capacity; a++)
                     {
-                        if (slot.arrayTypes.Contains(a))
+                        if (slot.arrayTypes == a)
                         {
                             hasArrays = true;
                             slot.arrays[a].Dispose();
@@ -372,7 +372,7 @@ namespace Worlds.Unsafe
             {
                 for (byte a = 0; a < BitSet.Capacity; a++)
                 {
-                    if (slot.arrayTypes.Contains(a))
+                    if (slot.arrayTypes == a)
                     {
                         slot.arrays[a].Dispose();
                     }
@@ -543,14 +543,14 @@ namespace Worlds.Unsafe
             slot.componentChunk = chunk;
 
             //add arrays
-            if (definition.ArrayTypesMask != default)
+            if (definition.ArrayTypesMask != default(BitSet))
             {
                 slot.arrayLengths = new(BitSet.Capacity);
                 slot.arrayTypes = definition.ArrayTypesMask;
                 slot.arrays = new(BitSet.Capacity);
                 for (byte a = 0; a < BitSet.Capacity; a++)
                 {
-                    if (slot.arrayTypes.Contains(a))
+                    if (slot.arrayTypes == a)
                     {
                         ArrayType arrayType = ArrayType.All[a];
                         slot.arrays[arrayType] = new(arrayType.Size);
@@ -624,7 +624,7 @@ namespace Worlds.Unsafe
             }
 
             Allocation newArray = new(arrayType.Size * length);
-            slot.arrayTypes.Set(arrayType);
+            slot.arrayTypes |= arrayType;
             slot.arrays[arrayType] = newArray;
             slot.arrayLengths[arrayType] = length;
             return slot.arrays[arrayType];
@@ -639,7 +639,7 @@ namespace Worlds.Unsafe
             ThrowIfEntityIsMissing(world, entity);
 
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
-            return slot.arrayTypes.Contains(arrayType);
+            return slot.arrayTypes == arrayType;
         }
 
         /// <summary>
@@ -696,7 +696,7 @@ namespace Worlds.Unsafe
 
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
             slot.arrays[arrayType].Dispose();
-            slot.arrayTypes.Clear(arrayType);
+            slot.arrayTypes &= arrayType;
             slot.arrayLengths[arrayType] = 0;
 
             if (slot.arrayTypes.Count == 0)
@@ -719,7 +719,7 @@ namespace Worlds.Unsafe
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
             ComponentChunk previousChunk = slot.componentChunk;
             BitSet newComponentTypes = previousChunk.TypesMask;
-            newComponentTypes.Set(componentType);
+            newComponentTypes |= componentType;
 
             if (!components.TryGetValue(newComponentTypes, out ComponentChunk destinationChunk))
             {
@@ -747,7 +747,7 @@ namespace Worlds.Unsafe
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
             ComponentChunk previousChunk = slot.componentChunk;
             BitSet newComponentTypes = previousChunk.TypesMask;
-            newComponentTypes.Set(componentType);
+            newComponentTypes |= componentType;
 
             if (!components.TryGetValue(newComponentTypes, out ComponentChunk destinationChunk))
             {
@@ -795,7 +795,7 @@ namespace Worlds.Unsafe
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
             ComponentChunk previousChunk = slot.componentChunk;
             BitSet newComponentTypes = previousChunk.TypesMask;
-            newComponentTypes.Clear(componentType);
+            newComponentTypes &= componentType;
 
             if (!components.TryGetValue(newComponentTypes, out ComponentChunk destinationChunk))
             {
@@ -818,7 +818,7 @@ namespace Worlds.Unsafe
 
             uint index = entity - 1;
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, index);
-            return slot.componentChunk.TypesMask.Contains(componentType);
+            return slot.componentChunk.TypesMask == componentType;
         }
 
         /// <summary>

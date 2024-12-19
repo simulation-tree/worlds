@@ -49,7 +49,7 @@ namespace Worlds
         public Array<Allocation> arrays;
 
         /// <summary>
-        /// Mask of array types.
+        /// Mask of array types this entity slot contains.
         /// </summary>
         public BitSet arrayTypes;
 

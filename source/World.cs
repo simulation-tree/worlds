@@ -190,12 +190,9 @@ namespace Worlds
                 ComponentChunk chunk = chunks[key];
                 for (byte c = 0; c < BitSet.Capacity; c++)
                 {
-                    if (key.Contains(c))
+                    if (key == c)
                     {
-                        if (!uniqueComponentTypes.Contains(c))
-                        {
-                            uniqueComponentTypes.Add(c);
-                        }
+                        uniqueComponentTypes.TryAdd(c);
                     }
                 }
             }
@@ -205,12 +202,9 @@ namespace Worlds
                 EntitySlot slot = Slots[i];
                 for (byte a = 0; a < BitSet.Capacity; a++)
                 {
-                    if (slot.arrayTypes.Contains(a))
+                    if (slot.arrayTypes == a)
                     {
-                        if (!uniqueArrayTypes.Contains(a))
-                        {
-                            uniqueArrayTypes.Add(a);
-                        }
+                        uniqueArrayTypes.TryAdd(a);
                     }
                 }
             }
@@ -251,7 +245,7 @@ namespace Worlds
                     writer.WriteValue(componentTypes.Count);
                     for (byte c = 0; c < BitSet.Capacity; c++)
                     {
-                        if (componentTypes.Contains(c))
+                        if (componentTypes == c)
                         {
                             ComponentType componentType = ComponentType.All[c];
                             writer.WriteValue((byte)uniqueComponentTypes.IndexOf(c));
@@ -264,7 +258,7 @@ namespace Worlds
                     writer.WriteValue(slot.arrayTypes.Count);
                     for (byte a = 0; a < BitSet.Capacity; a++)
                     {
-                        if (slot.arrayTypes.Contains(a))
+                        if (slot.arrayTypes == a)
                         {
                             void* array = slot.arrays[a];
                             uint arrayLength = slot.arrayLengths[a];
@@ -476,7 +470,7 @@ namespace Worlds
                     uint sourceIndex = sourceChunk.Entities.IndexOf(sourceEntity);
                     for (byte c = 0; c < BitSet.Capacity; c++)
                     {
-                        if (componentTypes.Contains(c))
+                        if (componentTypes == c)
                         {
                             ComponentType componentType = ComponentType.All[c];
                             USpan<byte> bytes = UnsafeWorld.AddComponent(value, destinationEntity, componentType);
@@ -488,7 +482,7 @@ namespace Worlds
                     //add arrays
                     for (byte a = 0; a < BitSet.Capacity; a++)
                     {
-                        if (sourceSlot.arrayTypes.Contains(a))
+                        if (sourceSlot.arrayTypes == a)
                         {
                             ArrayType sourceArrayType = ArrayType.All[a];
                             uint sourceArrayLength = sourceSlot.arrayLengths[a];
@@ -844,19 +838,20 @@ namespace Worlds
 
             Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
             Definition definition = default(T).Definition;
-            if (definition.ArrayTypesMask != default)
+            if (definition.ArrayTypesMask != default(BitSet))
             {
                 if (onlyEnabled)
                 {
                     foreach (BitSet key in chunks.Keys)
                     {
-                        if (key.ContainsAll(definition.ComponentTypesMask))
+                        if ((key & definition.ComponentTypesMask) == definition.ComponentTypesMask)
                         {
                             ComponentChunk chunk = chunks[key];
                             for (uint e = 0; e < chunk.Entities.Count; e++)
                             {
                                 uint entityValue = chunk.Entities[e];
-                                if (definition.ArrayTypesMask.ContainsAll(GetArrayTypesMask(entityValue)))
+                                BitSet arrayTypes = GetArrayTypesMask(entityValue);
+                                if ((definition.ArrayTypesMask & arrayTypes) == arrayTypes)
                                 {
                                     if (IsEnabled(entityValue))
                                     {
@@ -872,13 +867,14 @@ namespace Worlds
                 {
                     foreach (BitSet key in chunks.Keys)
                     {
-                        if (key.ContainsAll(definition.ComponentTypesMask))
+                        if ((key & definition.ComponentTypesMask) == definition.ComponentTypesMask)
                         {
                             ComponentChunk chunk = chunks[key];
                             for (uint e = 0; e < chunk.Entities.Count; e++)
                             {
                                 uint entityValue = chunk.Entities[e];
-                                if (definition.ArrayTypesMask.ContainsAll(GetArrayTypesMask(entityValue)))
+                                BitSet arrayTypes = GetArrayTypesMask(entityValue);
+                                if ((definition.ArrayTypesMask & arrayTypes) == arrayTypes)
                                 {
                                     entity = new Entity(this, entityValue).As<T>();
                                     return true;
@@ -895,7 +891,7 @@ namespace Worlds
                     foreach (BitSet key in chunks.Keys)
                     {
                         ComponentChunk chunk = chunks[key];
-                        if (chunk.Entities.Count > 0 && key.ContainsAll(definition.ComponentTypesMask))
+                        if (chunk.Entities.Count > 0 && (key & definition.ComponentTypesMask) == definition.ComponentTypesMask)
                         {
                             uint entityValue = chunk.Entities[0];
                             entity = new Entity(this, entityValue).As<T>();
@@ -907,7 +903,7 @@ namespace Worlds
                 {
                     foreach (BitSet key in chunks.Keys)
                     {
-                        if (key.ContainsAll(definition.ComponentTypesMask))
+                        if ((key & definition.ComponentTypesMask) == definition.ComponentTypesMask)
                         {
                             ComponentChunk chunk = chunks[key];
                             for (uint e = 0; e < chunk.Entities.Count; e++)
@@ -957,7 +953,7 @@ namespace Worlds
             ComponentType type = ComponentType.Get<T>();
             foreach (BitSet key in chunks.Keys)
             {
-                if (key.Contains(type))
+                if (key == type)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (chunk.Count > 0)
@@ -981,7 +977,7 @@ namespace Worlds
             ComponentType type = ComponentType.Get<T>();
             foreach (BitSet key in chunks.Keys)
             {
-                if (key.Contains(type))
+                if (key == type)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (chunk.Count > 0)
@@ -1005,7 +1001,7 @@ namespace Worlds
             ComponentType type = ComponentType.Get<T>();
             foreach (BitSet key in chunks.Keys)
             {
-                if (key.Contains(type))
+                if (key == type)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (chunk.Count > 0)
@@ -1035,7 +1031,7 @@ namespace Worlds
             ComponentType type = ComponentType.Get<T>();
             foreach (BitSet key in chunks.Keys)
             {
-                if (key.Contains(type))
+                if (key == type)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (chunk.Count > 0)
@@ -1061,7 +1057,7 @@ namespace Worlds
             ComponentType type = ComponentType.Get<T>();
             foreach (BitSet key in chunks.Keys)
             {
-                if (key.Contains(type))
+                if (key == type)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (chunk.Count > 0)
@@ -1631,7 +1627,7 @@ namespace Worlds
             byte count = 0;
             for (byte a = 0; a < BitSet.Capacity; a++)
             {
-                if (slot.arrayTypes.Contains(a))
+                if (slot.arrayTypes == a)
                 {
                     buffer[count++] = new(a);
                 }
@@ -1851,7 +1847,7 @@ namespace Worlds
             ComponentType type = ComponentType.Get<T>();
             foreach (BitSet key in chunks.Keys)
             {
-                if (key.Contains(type))
+                if (key == type)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (chunk.Entities.Count > 0)
@@ -1931,7 +1927,7 @@ namespace Worlds
             ref EntitySlot slot = ref Slots[entity - 1];
             ComponentType componentType = ComponentType.Get<T>();
             ComponentChunk chunk = slot.componentChunk;
-            contains = chunk.TypesMask.Contains(componentType);
+            contains = chunk.TypesMask == componentType;
             if (contains)
             {
                 uint index = chunk.Entities.IndexOf(entity);
@@ -1952,7 +1948,7 @@ namespace Worlds
             ref EntitySlot slot = ref Slots[entity - 1];
             ComponentType componentType = ComponentType.Get<T>();
             ComponentChunk chunk = slot.componentChunk;
-            bool contains = chunk.TypesMask.Contains(componentType);
+            bool contains = chunk.TypesMask == componentType;
             if (contains)
             {
                 uint index = chunk.Entities.IndexOf(entity);
@@ -2003,7 +1999,7 @@ namespace Worlds
             BitSet bitSet = new();
             for (uint i = 0; i < componentTypes.Length; i++)
             {
-                bitSet.Set(componentTypes[i]);
+                bitSet |= componentTypes[i];
             }
 
             if (ComponentChunks.TryGetValue(bitSet, out ComponentChunk chunk))
@@ -2024,7 +2020,7 @@ namespace Worlds
             BitSet bitSet = new();
             for (uint i = 0; i < componentTypes.Length; i++)
             {
-                bitSet.Set(componentTypes[i]);
+                bitSet |= componentTypes[i];
             }
 
             return ComponentChunks.ContainsKey(bitSet);
@@ -2038,7 +2034,7 @@ namespace Worlds
             BitSet bitSet = new();
             for (uint i = 0; i < componentTypes.Length; i++)
             {
-                bitSet.Set(componentTypes[i]);
+                bitSet |= componentTypes[i];
             }
 
             return ComponentChunks.TryGetValue(bitSet, out chunk);
@@ -2061,7 +2057,7 @@ namespace Worlds
             uint count = 0;
             foreach (BitSet key in ComponentChunks.Keys)
             {
-                if (key.Contains(componentType))
+                if (key == componentType)
                 {
                     ComponentChunk chunk = ComponentChunks[key];
                     if (!onlyEnabled)
@@ -2093,17 +2089,18 @@ namespace Worlds
             Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
             Definition definition = default(T).Definition;
             uint count = 0;
-            if (definition.ArrayTypesMask != default)
+            if (definition.ArrayTypesMask != default(BitSet))
             {
                 foreach (BitSet key in chunks.Keys)
                 {
-                    if (key.ContainsAll(definition.ComponentTypesMask))
+                    if ((key & definition.ComponentTypesMask) == definition.ComponentTypesMask)
                     {
                         ComponentChunk chunk = chunks[key];
                         for (uint e = 0; e < chunk.Entities.Count; e++)
                         {
                             uint entity = chunk.Entities[e];
-                            if (definition.ArrayTypesMask.ContainsAll(GetArrayTypesMask(entity)))
+                            BitSet arrayTypesMask = GetArrayTypesMask(entity);
+                            if ((definition.ArrayTypesMask & arrayTypesMask) == arrayTypesMask)
                             {
                                 if (onlyEnabled)
                                 {
@@ -2127,7 +2124,7 @@ namespace Worlds
                 {
                     foreach (BitSet key in chunks.Keys)
                     {
-                        if (key.ContainsAll(definition.ComponentTypesMask))
+                        if ((key & definition.ComponentTypesMask) == definition.ComponentTypesMask)
                         {
                             ComponentChunk chunk = chunks[key];
                             count += chunk.Entities.Count;
@@ -2138,7 +2135,7 @@ namespace Worlds
                 {
                     foreach (BitSet key in chunks.Keys)
                     {
-                        if (key.ContainsAll(definition.ComponentTypesMask))
+                        if ((key & definition.ComponentTypesMask) == definition.ComponentTypesMask)
                         {
                             ComponentChunk chunk = chunks[key];
                             for (uint e = 0; e < chunk.Entities.Count; e++)
@@ -2172,7 +2169,7 @@ namespace Worlds
             uint sourceIndex = sourceChunk.Entities.IndexOf(sourceEntity);
             for (byte c = 0; c < BitSet.Capacity; c++)
             {
-                if (sourceComponentTypes.Contains(c))
+                if (sourceComponentTypes == c)
                 {
                     ComponentType componentType = ComponentType.All[c];
                     if (!destinationWorld.ContainsComponent(destinationEntity, componentType))
@@ -2197,7 +2194,7 @@ namespace Worlds
             BitSet arrayTypesMask = GetArrayTypesMask(sourceEntity);
             for (byte a = 0; a < BitSet.Capacity; a++)
             {
-                if (arrayTypesMask.Contains(a))
+                if (arrayTypesMask == a)
                 {
                     ArrayType arrayType = ArrayType.All[a];
                     void* sourceArray = UnsafeWorld.GetArray(value, sourceEntity, arrayType, out uint sourceLength);
@@ -2240,12 +2237,12 @@ namespace Worlds
             BitSet componentTypesMask = new();
             foreach (ComponentType type in componentTypes)
             {
-                componentTypesMask.Set(type);
+                componentTypesMask |= type;
             }
 
             foreach (BitSet key in chunks.Keys)
             {
-                if (key.ContainsAll(componentTypesMask))
+                if ((key & componentTypesMask) == componentTypesMask)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (!onlyEnabled)
@@ -2276,7 +2273,7 @@ namespace Worlds
             Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
             foreach (BitSet key in chunks.Keys)
             {
-                if (key.Contains(type))
+                if (key == type)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (!onlyEnabled)
@@ -2308,7 +2305,7 @@ namespace Worlds
             Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
             foreach (BitSet key in chunks.Keys)
             {
-                if (key.Contains(type))
+                if (key == type)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (!onlyEnabled)
@@ -2339,7 +2336,7 @@ namespace Worlds
             Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
             foreach (BitSet key in chunks.Keys)
             {
-                if (key.Contains(type))
+                if (key == type)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (!onlyEnabled)
@@ -2372,7 +2369,7 @@ namespace Worlds
             Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
             foreach (BitSet key in chunks.Keys)
             {
-                if (key.Contains(componentType))
+                if (key == componentType)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (!onlyEnabled)

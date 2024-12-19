@@ -1,8 +1,6 @@
 ﻿using Collections;
 using System;
 using System.Diagnostics;
-using System.Linq;
-using static Worlds.Tests.QueryTests;
 
 namespace Worlds.Tests
 {
@@ -317,7 +315,7 @@ namespace Worlds.Tests
                 Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
                 foreach (BitSet key in chunks.Keys)
                 {
-                    if (key.ContainsAll(componentTypes))
+                    if ((key & componentTypes) == componentTypes)
                     {
                         ComponentChunk chunk = chunks[key];
                         List<uint> entities = chunk.Entities;

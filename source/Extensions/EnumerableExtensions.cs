@@ -11,7 +11,7 @@ namespace Worlds
             {
                 foreach (BitSet key in chunks.Keys)
                 {
-                    if (key.ContainsAll(componentTypes))
+                    if ((key & componentTypes) == componentTypes)
                     {
                         ComponentChunk chunk = chunks[key];
                         Collections.List<uint> entities = chunk.Entities;
@@ -30,7 +30,7 @@ namespace Worlds
             {
                 foreach (BitSet key in chunks.Keys)
                 {
-                    if (key.ContainsAll(componentTypes))
+                    if ((key & componentTypes) == componentTypes)
                     {
                         ComponentChunk chunk = chunks[key];
                         Collections.List<uint> entities = chunk.Entities;
@@ -45,7 +45,7 @@ namespace Worlds
 
         public static IEnumerable<uint> GetAllContaining(this World world, ComponentType componentType, bool onlyEnabled = false)
         {
-            BitSet componentTypes = new BitSet().Set(componentType);
+            BitSet componentTypes = new(componentType);
             return GetAllContaining(world, componentTypes, onlyEnabled);
         }
 

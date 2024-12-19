@@ -28,12 +28,12 @@ namespace Worlds
         {
             foreach (ComponentType type in componentTypes)
             {
-                componentTypesMask.Set(type);
+                componentTypesMask |= type;
             }
 
             foreach (ArrayType type in arrayTypes)
             {
-                arrayTypesMask.Set(type);
+                arrayTypesMask |= type;
             }
         }
 
@@ -62,7 +62,7 @@ namespace Worlds
             uint length = 0;
             for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                if (componentTypesMask.Contains(i))
+                if (componentTypesMask == i)
                 {
                     ComponentType type = new(i);
                     length += type.ToString(buffer.Slice(length));
@@ -73,7 +73,7 @@ namespace Worlds
 
             for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                if (arrayTypesMask.Contains(i))
+                if (arrayTypesMask == i)
                 {
                     ArrayType type = new(i);
                     length += type.ToString(buffer.Slice(length));
@@ -99,7 +99,7 @@ namespace Worlds
             byte count = 0;
             for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                if (componentTypesMask.Contains(i))
+                if (componentTypesMask == i)
                 {
                     buffer[count] = ComponentType.All[i];
                     count++;
@@ -118,7 +118,7 @@ namespace Worlds
             byte count = 0;
             for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                if (arrayTypesMask.Contains(i))
+                if (arrayTypesMask == i)
                 {
                     buffer[count] = ArrayType.All[i];
                     count++;
@@ -151,7 +151,7 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsComponent(ComponentType componentType)
         {
-            return componentTypesMask.Contains(componentType);
+            return componentTypesMask == componentType;
         }
 
         /// <summary>
@@ -167,7 +167,7 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsArray(ArrayType arrayType)
         {
-            return arrayTypesMask.Contains(arrayType);
+            return arrayTypesMask == arrayType;
         }
 
         /// <summary>
@@ -185,7 +185,7 @@ namespace Worlds
         {
             foreach (ComponentType type in componentTypes)
             {
-                componentTypesMask.Set(type);
+                componentTypesMask |= type;
             }
 
             return this;
@@ -198,18 +198,18 @@ namespace Worlds
         {
             foreach (ArrayType type in arrayTypes)
             {
-                arrayTypesMask.Set(type);
+                arrayTypesMask |= type;
             }
 
             return this;
         }
 
         /// <summary>
-        /// Adds the specified <paramref name="arrayType"/> to this definition.
+        /// Adds the specified <paramref name="componentType"/> to this definition.
         /// </summary>
-        public Definition AddComponentType(ComponentType arrayType)
+        public Definition AddComponentType(ComponentType componentType)
         {
-            arrayTypesMask.Set(arrayType);
+            componentTypesMask |= componentType;
             return this;
         }
 
@@ -218,7 +218,7 @@ namespace Worlds
         /// </summary>
         public Definition AddComponentType<C1>() where C1 : unmanaged
         {
-            componentTypesMask.Set(ComponentType.Get<C1>());
+            componentTypesMask |= ComponentType.Get<C1>();
             return this;
         }
 
@@ -227,8 +227,7 @@ namespace Worlds
         /// </summary>
         public Definition AddComponentTypes<C1, C2>() where C1 : unmanaged where C2 : unmanaged
         {
-            componentTypesMask.Set(ComponentType.Get<C1>());
-            componentTypesMask.Set(ComponentType.Get<C2>());
+            componentTypesMask |= ComponentType.GetBitSet<C1, C2>();
             return this;
         }
 
@@ -237,9 +236,7 @@ namespace Worlds
         /// </summary>
         public Definition AddComponentTypes<C1, C2, C3>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged
         {
-            componentTypesMask.Set(ComponentType.Get<C1>());
-            componentTypesMask.Set(ComponentType.Get<C2>());
-            componentTypesMask.Set(ComponentType.Get<C3>());
+            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3>();
             return this;
         }
 
@@ -248,10 +245,7 @@ namespace Worlds
         /// </summary>
         public Definition AddComponentTypes<C1, C2, C3, C4>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged
         {
-            componentTypesMask.Set(ComponentType.Get<C1>());
-            componentTypesMask.Set(ComponentType.Get<C2>());
-            componentTypesMask.Set(ComponentType.Get<C3>());
-            componentTypesMask.Set(ComponentType.Get<C4>());
+            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4>();
             return this;
         }
 
@@ -260,11 +254,7 @@ namespace Worlds
         /// </summary>
         public Definition AddComponentTypes<C1, C2, C3, C4, C5>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged
         {
-            componentTypesMask.Set(ComponentType.Get<C1>());
-            componentTypesMask.Set(ComponentType.Get<C2>());
-            componentTypesMask.Set(ComponentType.Get<C3>());
-            componentTypesMask.Set(ComponentType.Get<C4>());
-            componentTypesMask.Set(ComponentType.Get<C5>());
+            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5>();
             return this;
         }
 
@@ -273,177 +263,67 @@ namespace Worlds
         /// </summary>
         public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged
         {
-            componentTypesMask.Set(ComponentType.Get<C1>());
-            componentTypesMask.Set(ComponentType.Get<C2>());
-            componentTypesMask.Set(ComponentType.Get<C3>());
-            componentTypesMask.Set(ComponentType.Get<C4>());
-            componentTypesMask.Set(ComponentType.Get<C5>());
-            componentTypesMask.Set(ComponentType.Get<C6>());
+            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6>();
             return this;
         }
 
         public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged
         {
-            componentTypesMask.Set(ComponentType.Get<C1>());
-            componentTypesMask.Set(ComponentType.Get<C2>());
-            componentTypesMask.Set(ComponentType.Get<C3>());
-            componentTypesMask.Set(ComponentType.Get<C4>());
-            componentTypesMask.Set(ComponentType.Get<C5>());
-            componentTypesMask.Set(ComponentType.Get<C6>());
-            componentTypesMask.Set(ComponentType.Get<C7>());
+            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6, C7>();
             return this;
         }
 
         public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged
         {
-            componentTypesMask.Set(ComponentType.Get<C1>());
-            componentTypesMask.Set(ComponentType.Get<C2>());
-            componentTypesMask.Set(ComponentType.Get<C3>());
-            componentTypesMask.Set(ComponentType.Get<C4>());
-            componentTypesMask.Set(ComponentType.Get<C5>());
-            componentTypesMask.Set(ComponentType.Get<C6>());
-            componentTypesMask.Set(ComponentType.Get<C7>());
-            componentTypesMask.Set(ComponentType.Get<C8>());
+            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8>();
             return this;
         }
 
         public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged
         {
-            componentTypesMask.Set(ComponentType.Get<C1>());
-            componentTypesMask.Set(ComponentType.Get<C2>());
-            componentTypesMask.Set(ComponentType.Get<C3>());
-            componentTypesMask.Set(ComponentType.Get<C4>());
-            componentTypesMask.Set(ComponentType.Get<C5>());
-            componentTypesMask.Set(ComponentType.Get<C6>());
-            componentTypesMask.Set(ComponentType.Get<C7>());
-            componentTypesMask.Set(ComponentType.Get<C8>());
-            componentTypesMask.Set(ComponentType.Get<C9>());
+            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9>();
             return this;
         }
 
         public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged
         {
-            componentTypesMask.Set(ComponentType.Get<C1>());
-            componentTypesMask.Set(ComponentType.Get<C2>());
-            componentTypesMask.Set(ComponentType.Get<C3>());
-            componentTypesMask.Set(ComponentType.Get<C4>());
-            componentTypesMask.Set(ComponentType.Get<C5>());
-            componentTypesMask.Set(ComponentType.Get<C6>());
-            componentTypesMask.Set(ComponentType.Get<C7>());
-            componentTypesMask.Set(ComponentType.Get<C8>());
-            componentTypesMask.Set(ComponentType.Get<C9>());
-            componentTypesMask.Set(ComponentType.Get<C10>());
+            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10>();
             return this;
         }
 
         public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged
         {
-            componentTypesMask.Set(ComponentType.Get<C1>());
-            componentTypesMask.Set(ComponentType.Get<C2>());
-            componentTypesMask.Set(ComponentType.Get<C3>());
-            componentTypesMask.Set(ComponentType.Get<C4>());
-            componentTypesMask.Set(ComponentType.Get<C5>());
-            componentTypesMask.Set(ComponentType.Get<C6>());
-            componentTypesMask.Set(ComponentType.Get<C7>());
-            componentTypesMask.Set(ComponentType.Get<C8>());
-            componentTypesMask.Set(ComponentType.Get<C9>());
-            componentTypesMask.Set(ComponentType.Get<C10>());
-            componentTypesMask.Set(ComponentType.Get<C11>());
+            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11>();
             return this;
         }
 
         public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged
         {
-            componentTypesMask.Set(ComponentType.Get<C1>());
-            componentTypesMask.Set(ComponentType.Get<C2>());
-            componentTypesMask.Set(ComponentType.Get<C3>());
-            componentTypesMask.Set(ComponentType.Get<C4>());
-            componentTypesMask.Set(ComponentType.Get<C5>());
-            componentTypesMask.Set(ComponentType.Get<C6>());
-            componentTypesMask.Set(ComponentType.Get<C7>());
-            componentTypesMask.Set(ComponentType.Get<C8>());
-            componentTypesMask.Set(ComponentType.Get<C9>());
-            componentTypesMask.Set(ComponentType.Get<C10>());
-            componentTypesMask.Set(ComponentType.Get<C11>());
-            componentTypesMask.Set(ComponentType.Get<C12>());
+            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12>();
             return this;
         }
 
         public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged
         {
-            componentTypesMask.Set(ComponentType.Get<C1>());
-            componentTypesMask.Set(ComponentType.Get<C2>());
-            componentTypesMask.Set(ComponentType.Get<C3>());
-            componentTypesMask.Set(ComponentType.Get<C4>());
-            componentTypesMask.Set(ComponentType.Get<C5>());
-            componentTypesMask.Set(ComponentType.Get<C6>());
-            componentTypesMask.Set(ComponentType.Get<C7>());
-            componentTypesMask.Set(ComponentType.Get<C8>());
-            componentTypesMask.Set(ComponentType.Get<C9>());
-            componentTypesMask.Set(ComponentType.Get<C10>());
-            componentTypesMask.Set(ComponentType.Get<C11>());
-            componentTypesMask.Set(ComponentType.Get<C12>());
-            componentTypesMask.Set(ComponentType.Get<C13>());
+            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13>();
             return this;
         }
 
         public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged
         {
-            componentTypesMask.Set(ComponentType.Get<C1>());
-            componentTypesMask.Set(ComponentType.Get<C2>());
-            componentTypesMask.Set(ComponentType.Get<C3>());
-            componentTypesMask.Set(ComponentType.Get<C4>());
-            componentTypesMask.Set(ComponentType.Get<C5>());
-            componentTypesMask.Set(ComponentType.Get<C6>());
-            componentTypesMask.Set(ComponentType.Get<C7>());
-            componentTypesMask.Set(ComponentType.Get<C8>());
-            componentTypesMask.Set(ComponentType.Get<C9>());
-            componentTypesMask.Set(ComponentType.Get<C10>());
-            componentTypesMask.Set(ComponentType.Get<C11>());
-            componentTypesMask.Set(ComponentType.Get<C12>());
-            componentTypesMask.Set(ComponentType.Get<C13>());
-            componentTypesMask.Set(ComponentType.Get<C14>());
+            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14>();
             return this;
         }
 
         public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged where C15 : unmanaged
         {
-            componentTypesMask.Set(ComponentType.Get<C1>());
-            componentTypesMask.Set(ComponentType.Get<C2>());
-            componentTypesMask.Set(ComponentType.Get<C3>());
-            componentTypesMask.Set(ComponentType.Get<C4>());
-            componentTypesMask.Set(ComponentType.Get<C5>());
-            componentTypesMask.Set(ComponentType.Get<C6>());
-            componentTypesMask.Set(ComponentType.Get<C7>());
-            componentTypesMask.Set(ComponentType.Get<C8>());
-            componentTypesMask.Set(ComponentType.Get<C9>());
-            componentTypesMask.Set(ComponentType.Get<C10>());
-            componentTypesMask.Set(ComponentType.Get<C11>());
-            componentTypesMask.Set(ComponentType.Get<C12>());
-            componentTypesMask.Set(ComponentType.Get<C13>());
-            componentTypesMask.Set(ComponentType.Get<C14>());
-            componentTypesMask.Set(ComponentType.Get<C15>());
+            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15>();
             return this;
         }
 
         public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged where C15 : unmanaged where C16 : unmanaged
         {
-            componentTypesMask.Set(ComponentType.Get<C1>());
-            componentTypesMask.Set(ComponentType.Get<C2>());
-            componentTypesMask.Set(ComponentType.Get<C3>());
-            componentTypesMask.Set(ComponentType.Get<C4>());
-            componentTypesMask.Set(ComponentType.Get<C5>());
-            componentTypesMask.Set(ComponentType.Get<C6>());
-            componentTypesMask.Set(ComponentType.Get<C7>());
-            componentTypesMask.Set(ComponentType.Get<C8>());
-            componentTypesMask.Set(ComponentType.Get<C9>());
-            componentTypesMask.Set(ComponentType.Get<C10>());
-            componentTypesMask.Set(ComponentType.Get<C11>());
-            componentTypesMask.Set(ComponentType.Get<C12>());
-            componentTypesMask.Set(ComponentType.Get<C13>());
-            componentTypesMask.Set(ComponentType.Get<C14>());
-            componentTypesMask.Set(ComponentType.Get<C15>());
-            componentTypesMask.Set(ComponentType.Get<C16>());
+            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16>();
             return this;
         }
 
@@ -452,7 +332,7 @@ namespace Worlds
         /// </summary>
         public Definition AddArrayType(ArrayType arrayType)
         {
-            arrayTypesMask.Set(arrayType);
+            arrayTypesMask |= arrayType;
             return this;
         }
 
@@ -461,7 +341,7 @@ namespace Worlds
         /// </summary>
         public Definition AddArrayType<C1>() where C1 : unmanaged
         {
-            arrayTypesMask.Set(ArrayType.Get<C1>());
+            arrayTypesMask |= ArrayType.Get<C1>();
             return this;
         }
 
@@ -470,8 +350,7 @@ namespace Worlds
         /// </summary>
         public Definition AddArrayTypes<C1, C2>() where C1 : unmanaged where C2 : unmanaged
         {
-            arrayTypesMask.Set(ArrayType.Get<C1>());
-            arrayTypesMask.Set(ArrayType.Get<C2>());
+            arrayTypesMask |= ArrayType.GetBitSet<C1, C2>();
             return this;
         }
 
@@ -480,9 +359,7 @@ namespace Worlds
         /// </summary>
         public Definition AddArrayTypes<C1, C2, C3>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged
         {
-            arrayTypesMask.Set(ArrayType.Get<C1>());
-            arrayTypesMask.Set(ArrayType.Get<C2>());
-            arrayTypesMask.Set(ArrayType.Get<C3>());
+            arrayTypesMask |= ArrayType.GetBitSet<C1, C2, C3>();
             return this;
         }
 
@@ -491,10 +368,7 @@ namespace Worlds
         /// </summary>
         public Definition AddArrayTypes<C1, C2, C3, C4>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged
         {
-            arrayTypesMask.Set(ArrayType.Get<C1>());
-            arrayTypesMask.Set(ArrayType.Get<C2>());
-            arrayTypesMask.Set(ArrayType.Get<C3>());
-            arrayTypesMask.Set(ArrayType.Get<C4>());
+            arrayTypesMask |= ArrayType.GetBitSet<C1, C2, C3, C4>();
             return this;
         }
 
@@ -503,11 +377,7 @@ namespace Worlds
         /// </summary>
         public Definition AddArrayTypes<C1, C2, C3, C4, C5>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged
         {
-            arrayTypesMask.Set(ArrayType.Get<C1>());
-            arrayTypesMask.Set(ArrayType.Get<C2>());
-            arrayTypesMask.Set(ArrayType.Get<C3>());
-            arrayTypesMask.Set(ArrayType.Get<C4>());
-            arrayTypesMask.Set(ArrayType.Get<C5>());
+            arrayTypesMask |= ArrayType.GetBitSet<C1, C2, C3, C4, C5>();
             return this;
         }
 
@@ -516,12 +386,7 @@ namespace Worlds
         /// </summary>
         public Definition AddArrayTypes<C1, C2, C3, C4, C5, C6>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged
         {
-            arrayTypesMask.Set(ArrayType.Get<C1>());
-            arrayTypesMask.Set(ArrayType.Get<C2>());
-            arrayTypesMask.Set(ArrayType.Get<C3>());
-            arrayTypesMask.Set(ArrayType.Get<C4>());
-            arrayTypesMask.Set(ArrayType.Get<C5>());
-            arrayTypesMask.Set(ArrayType.Get<C6>());
+            arrayTypesMask |= ArrayType.GetBitSet<C1, C2, C3, C4, C5, C6>();
             return this;
         }
 
@@ -531,6 +396,51 @@ namespace Worlds
         public static Definition Get<T>() where T : unmanaged, IEntity
         {
             return default(T).Definition;
+        }
+
+        public static Definition Get<T1, T2>() where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity
+        {
+            Definition t1 = default(T1).Definition;
+            Definition t2 = default(T2).Definition;
+            return new Definition(t1.componentTypesMask | t2.componentTypesMask, t1.arrayTypesMask | t2.arrayTypesMask);
+        }
+
+        public static Definition Get<T1, T2, T3>() where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity where T3 : unmanaged, IEntity
+        {
+            Definition t1 = default(T1).Definition;
+            Definition t2 = default(T2).Definition;
+            Definition t3 = default(T3).Definition;
+            return new Definition(t1.componentTypesMask | t2.componentTypesMask | t3.componentTypesMask, t1.arrayTypesMask | t2.arrayTypesMask | t3.arrayTypesMask);
+        }
+
+        public static Definition Get<T1, T2, T3, T4>() where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity where T3 : unmanaged, IEntity where T4 : unmanaged, IEntity
+        {
+            Definition t1 = default(T1).Definition;
+            Definition t2 = default(T2).Definition;
+            Definition t3 = default(T3).Definition;
+            Definition t4 = default(T4).Definition;
+            return new Definition(t1.componentTypesMask | t2.componentTypesMask | t3.componentTypesMask | t4.componentTypesMask, t1.arrayTypesMask | t2.arrayTypesMask | t3.arrayTypesMask | t4.arrayTypesMask);
+        }
+
+        public static Definition Get<T1, T2, T3, T4, T5>() where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity where T3 : unmanaged, IEntity where T4 : unmanaged, IEntity where T5 : unmanaged, IEntity
+        {
+            Definition t1 = default(T1).Definition;
+            Definition t2 = default(T2).Definition;
+            Definition t3 = default(T3).Definition;
+            Definition t4 = default(T4).Definition;
+            Definition t5 = default(T5).Definition;
+            return new Definition(t1.componentTypesMask | t2.componentTypesMask | t3.componentTypesMask | t4.componentTypesMask | t5.componentTypesMask, t1.arrayTypesMask | t2.arrayTypesMask | t3.arrayTypesMask | t4.arrayTypesMask | t5.arrayTypesMask);
+        }
+
+        public static Definition Get<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity where T3 : unmanaged, IEntity where T4 : unmanaged, IEntity where T5 : unmanaged, IEntity where T6 : unmanaged, IEntity
+        {
+            Definition t1 = default(T1).Definition;
+            Definition t2 = default(T2).Definition;
+            Definition t3 = default(T3).Definition;
+            Definition t4 = default(T4).Definition;
+            Definition t5 = default(T5).Definition;
+            Definition t6 = default(T6).Definition;
+            return new Definition(t1.componentTypesMask | t2.componentTypesMask | t3.componentTypesMask | t4.componentTypesMask | t5.componentTypesMask | t6.componentTypesMask, t1.arrayTypesMask | t2.arrayTypesMask | t3.arrayTypesMask | t4.arrayTypesMask | t5.arrayTypesMask | t6.arrayTypesMask);
         }
 
         public static bool operator ==(Definition a, Definition b)

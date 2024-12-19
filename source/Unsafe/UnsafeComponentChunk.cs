@@ -35,7 +35,7 @@ namespace Worlds.Unsafe
             byte typeCount = 0;
             for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                if (componentTypesMask.Contains(i))
+                if (componentTypesMask == i)
                 {
                     ComponentType componentType = ComponentType.All[i];
                     componentArrays[i] = (nint)UnsafeList.Allocate(4, componentType.Size);
@@ -564,7 +564,7 @@ namespace Worlds.Unsafe
         [Conditional("DEBUG")]
         private static void ThrowIfComponentTypeIsMissing(UnsafeComponentChunk* chunk, ComponentType componentType)
         {
-            if (!chunk->typeMask.Contains(componentType))
+            if (chunk->typeMask != componentType)
             {
                 throw new ArgumentException($"Component type `{componentType}` is missing from the chunk");
             }
