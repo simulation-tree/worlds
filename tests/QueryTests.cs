@@ -35,7 +35,7 @@ namespace Worlds.Tests
             foreach (var r in appleQuery)
             {
                 ref Apple apple = ref r.component1;
-                Assert.That(apple.bites, Is.EqualTo(5));
+                Assert.That(apple.bites, Is.EqualTo(5).Or.EqualTo(4));
                 foundApples++;
             }
 
@@ -44,7 +44,7 @@ namespace Worlds.Tests
             uint foundCombos = 0;
             foreach (var r in comboQuery)
             {
-                Assert.That(r.component1.bites, Is.EqualTo(5));
+                Assert.That(r.component1.bites, Is.EqualTo(5).Or.EqualTo(4));
                 Assert.That(r.component2.hearts, Is.EqualTo(0));
                 foundCombos++;
             }

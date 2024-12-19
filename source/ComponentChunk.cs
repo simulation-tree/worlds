@@ -19,6 +19,11 @@ namespace Worlds
         public readonly bool IsDisposed => value is null;
 
         /// <summary>
+        /// Native address of this chunk.
+        /// </summary>
+        public readonly nint Address => (nint)value;
+
+        /// <summary>
         /// Returns the entities in this chunk.
         /// </summary>
         public readonly List<uint> Entities => UnsafeComponentChunk.GetEntities(value);
@@ -324,6 +329,16 @@ namespace Worlds
         public static bool operator !=(ComponentChunk left, ComponentChunk right)
         {
             return !(left == right);
+        }
+
+        public readonly ref struct Entity
+        {
+            public readonly uint entity;
+
+            public Entity(uint entity)
+            {
+                this.entity = entity;
+            }
         }
 
         public readonly ref struct Entity<C1> where C1 : unmanaged

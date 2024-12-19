@@ -13,6 +13,9 @@ public static class ComponentQuery
             source = source.Replace("{{TypeName}}", TypeName);
             source = source.Replace("{{GenericTypeArguments}}", SharedFunctions.GetGenericTypeArguments(i));
             source = source.Replace("{{TypeConstraints}}", SharedFunctions.GetTypeConstraints(i));
+            source = source.Replace("{{DeclareComponentTypeFields}}", SharedFunctions.DeclareComponentTypeFields(i));
+            source = source.Replace("{{AssignComponentTypeFields}}", SharedFunctions.AssignComponentTypeFields(i));
+            source = source.Replace("{{TypeParameters}}", SharedFunctions.GetTypeParameters(i));
             File.WriteAllText($"{TypeName}{i + 1}.cs", source);
         }
     }

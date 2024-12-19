@@ -2,6 +2,7 @@ using Collections;
 using System;
 using System.Runtime.InteropServices;
 using Unmanaged;
+using Worlds.Unsafe;
 
 namespace Worlds
 {
@@ -37,24 +38,29 @@ namespace Worlds
 
         public unsafe ref struct Enumerator
         {
-            private readonly BitSet componentTypes;
-            private readonly BitSet excludedComponentTypes;
-            private readonly void* chunks;
-            private readonly uint chunkCount;
+            private readonly USpan<nint> chunks;
+            public readonly ComponentType c1;
+            public readonly ComponentType c2;
+            public readonly ComponentType c3;
+            public readonly ComponentType c4;
+            public readonly ComponentType c5;
+            public readonly ComponentType c6;
+            public readonly ComponentType c7;
+            public readonly ComponentType c8;
             private uint entityCount;
             private uint entityIndex;
             private uint chunkIndex;
-            private ComponentChunk chunk;
+            private UnsafeComponentChunk* chunk;
 
             /// <summary>
             /// Current result.
             /// </summary>
-            public readonly ComponentChunk.Entity<C1, C2, C3, C4, C5, C6, C7, C8> Current => chunk.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8>(entityIndex - 1);
+            public readonly ComponentChunk.Entity<C1, C2, C3, C4, C5, C6, C7, C8> Current => UnsafeComponentChunk.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8>(chunk, entityIndex - 1, c1, c2, c3, c4, c5, c6, c7, c8);
 
             internal Enumerator(BitSet componentTypes, BitSet excludedComponentTypes, Dictionary<BitSet, ComponentChunk> allChunks)
             {
-                chunkCount = 0;
-                USpan<ComponentChunk> chunksBuffer = stackalloc ComponentChunk[(int)allChunks.Count];
+                uint chunkCount = 0;
+                USpan<nint> chunksBuffer = stackalloc nint[(int)allChunks.Count];
                 foreach (BitSet key in allChunks.Keys)
                 {
                     if (key.ContainsAll(componentTypes) && !key.ContainsAny(excludedComponentTypes))
@@ -62,23 +68,29 @@ namespace Worlds
                         ComponentChunk chunk = allChunks[key];
                         if (chunk.Count > 0)
                         {
-                            chunksBuffer[chunkCount++] = chunk;
+                            chunksBuffer[chunkCount++] = chunk.Address;
                         }
                     }
                 }
 
-                this.excludedComponentTypes = excludedComponentTypes;
-                this.componentTypes = componentTypes;
                 entityIndex = 0;
                 chunkIndex = 0;
                 entityCount = 0;
                 if (chunkCount > 0)
                 {
+                    c1 = ComponentType.Get<C1>();
+                    c2 = ComponentType.Get<C2>();
+                    c3 = ComponentType.Get<C3>();
+                    c4 = ComponentType.Get<C4>();
+                    c5 = ComponentType.Get<C5>();
+                    c6 = ComponentType.Get<C6>();
+                    c7 = ComponentType.Get<C7>();
+                    c8 = ComponentType.Get<C8>();
                     uint stride = TypeInfo<ComponentChunk>.size;
-                    chunks = NativeMemory.Alloc(chunkCount * stride);
-                    System.Runtime.CompilerServices.Unsafe.CopyBlock(chunks, chunksBuffer.Pointer, stride * chunkCount);
-                    chunk = chunksBuffer[0];
-                    entityCount = chunk.Count;
+                    chunks = new(NativeMemory.Alloc(chunkCount * stride), chunkCount);
+                    System.Runtime.CompilerServices.Unsafe.CopyBlock(chunks.Pointer, chunksBuffer.Pointer, stride * chunkCount);
+                    chunk = (UnsafeComponentChunk*)chunksBuffer[0];
+                    entityCount = UnsafeComponentChunk.GetCount(chunk);
                 }
             }
 
@@ -95,10 +107,10 @@ namespace Worlds
                 else
                 {
                     chunkIndex++;
-                    if (chunkIndex < chunkCount)
+                    if (chunkIndex < chunks.Length)
                     {
-                        chunk = ((ComponentChunk*)chunks)[chunkIndex];
-                        entityCount = chunk.Count;
+                        chunk = (UnsafeComponentChunk*)chunks[chunkIndex];
+                        entityCount = UnsafeComponentChunk.GetCount(chunk);
                         entityIndex = 1;
                         return true;
                     }
@@ -111,9 +123,9 @@ namespace Worlds
 
             public readonly void Dispose()
             {
-                if (chunkCount > 0)
+                if (chunks.Length > 0)
                 {
-                    NativeMemory.Free(chunks);
+                    NativeMemory.Free(chunks.Pointer);
                 }
             }
         }
