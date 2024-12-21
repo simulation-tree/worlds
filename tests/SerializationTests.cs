@@ -75,7 +75,7 @@ namespace Worlds.Tests
             Assert.That(newEntities, Is.EquivalentTo(oldEntities));
             Assert.That(newApples, Is.EquivalentTo(apples));
             Assert.That(loadedWorld.ContainsArray<Character>(list), Is.True);
-            Assert.That(loadedWorld.GetArray<Character>(list).As<char>().ToArray(), Is.EqualTo("Well hello there list"));
+            Assert.That(loadedWorld.GetArray<Character>(list).As<char>().ToString(), Is.EqualTo("Well hello there list"));
         }
 
         [Test]
