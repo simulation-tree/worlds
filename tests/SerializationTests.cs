@@ -36,32 +36,32 @@ namespace Worlds.Tests
             USpan<byte> data = writer.GetBytes();
             using BinaryReader reader = new(data);
 
-            World.SerializationContext.GetComponentType = (fullTypeName) =>
+            World.SerializationContext.GetComponentType = (type) =>
             {
-                if (fullTypeName.SequenceEqual(typeof(Fruit).FullName.AsSpan()))
+                if (type.Name == typeof(Fruit).Name)
                 {
                     return ComponentType.Get<Fruit>();
                 }
-                else if (fullTypeName.SequenceEqual(typeof(Apple).FullName.AsSpan()))
+                else if (type.Name == typeof(Apple).Name)
                 {
                     return ComponentType.Get<Apple>();
                 }
-                else if (fullTypeName.SequenceEqual(typeof(Cherry).FullName.AsSpan()))
+                else if (type.Name == typeof(Cherry).Name)
                 {
                     return ComponentType.Get<Cherry>();
                 }
 
-                throw new Exception($"Unknown type {fullTypeName.ToString()}");
+                throw new Exception($"Unknown type {type}");
             };
 
-            World.SerializationContext.GetArrayType = (fullTypeName) =>
+            World.SerializationContext.GetArrayType = (type) =>
             {
-                if (fullTypeName.SequenceEqual(typeof(Character).FullName.AsSpan()))
+                if (type.Name == typeof(Character).Name)
                 {
                     return ArrayType.Get<Character>();
                 }
 
-                throw new Exception($"Unknown type {fullTypeName.ToString()}");
+                throw new Exception($"Unknown type {type}");
             };
 
             using World loadedWorld = reader.ReadObject<World>();
@@ -97,29 +97,29 @@ namespace Worlds.Tests
             uint c = world.CreateEntity();
             world.AddComponent(c, new Cherry("Goodbye, World!"));
 
-            World.SerializationContext.GetComponentType = (fullTypeName) =>
+            World.SerializationContext.GetComponentType = (type) =>
             {
-                if (fullTypeName.SequenceEqual(typeof(Prefab).FullName.AsSpan()))
-                {
-                    return ComponentType.Get<Prefab>();
-                }
-                else if (fullTypeName.SequenceEqual(typeof(Fruit).FullName.AsSpan()))
+                if (type.Name == typeof(Fruit).Name)
                 {
                     return ComponentType.Get<Fruit>();
                 }
-                else if (fullTypeName.SequenceEqual(typeof(Apple).FullName.AsSpan()))
+                else if (type.Name == typeof(Apple).Name)
                 {
                     return ComponentType.Get<Apple>();
                 }
-                else if (fullTypeName.SequenceEqual(typeof(Cherry).FullName.AsSpan()))
+                else if (type.Name == typeof(Cherry).Name)
                 {
                     return ComponentType.Get<Cherry>();
                 }
+                else if (type.Name == typeof(Prefab).Name)
+                {
+                    return ComponentType.Get<Prefab>();
+                }
 
-                throw new Exception($"Unknown serialized component type {fullTypeName.ToString()}");
+                throw new Exception($"Unknown serialized component type {type}");
             };
 
-            using BinaryReader reader = new(writer);
+            using BinaryReader reader = new (writer);
             using World loadedWorld = reader.ReadObject<World>();
             world.Append(loadedWorld);
 

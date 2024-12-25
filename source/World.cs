@@ -197,9 +197,10 @@ namespace Worlds
                 }
             }
 
-            for (uint i = 0; i < Slots.Count; i++)
+            List<EntitySlot> slots = Slots;
+            for (uint i = 0; i < slots.Count; i++)
             {
-                EntitySlot slot = Slots[i];
+                EntitySlot slot = slots[i];
                 for (byte a = 0; a < BitSet.Capacity; a++)
                 {
                     if (slot.arrayTypes == a)
@@ -214,25 +215,47 @@ namespace Worlds
             for (uint t = 0; t < uniqueComponentTypes.Count; t++)
             {
                 ComponentType type = new(uniqueComponentTypes[t]);
-                USpan<char> typeFullName = type.FullName;
-                writer.WriteValue((ushort)typeFullName.Length);
-                writer.WriteSpan(typeFullName);
+                if (type.TryGetLayout(out TypeLayout layout))
+                {
+                    writer.WriteValue((byte)0);
+                    writer.WriteObject(layout);
+                }
+                else
+                {
+                    writer.WriteValue((byte)1);
+                    writer.WriteValue((byte)type.FullName.Length);
+                    for (uint i = 0; i < type.FullName.Length; i++)
+                    {
+                        writer.WriteValue((byte)type.FullName[i]);
+                    }
+                }
             }
 
             writer.WriteValue((byte)uniqueArrayTypes.Count);
             for (uint t = 0; t < uniqueArrayTypes.Count; t++)
             {
                 ArrayType type = new(uniqueArrayTypes[t]);
-                USpan<char> typeFullName = type.FullName;
-                writer.WriteValue((ushort)typeFullName.Length);
-                writer.WriteSpan(typeFullName);
+                if (type.TryGetLayout(out TypeLayout layout))
+                {
+                    writer.WriteValue((byte)0);
+                    writer.WriteObject(layout);
+                }
+                else
+                {
+                    writer.WriteValue((byte)1);
+                    writer.WriteValue((byte)type.FullName.Length);
+                    for (uint i = 0; i < type.FullName.Length; i++)
+                    {
+                        writer.WriteValue((byte)type.FullName[i]);
+                    }
+                }
             }
 
             //write each entity and its components
             writer.WriteValue(Count);
-            for (uint s = 0; s < Slots.Count; s++)
+            for (uint s = 0; s < slots.Count; s++)
             {
-                EntitySlot slot = Slots[s];
+                EntitySlot slot = slots[s];
                 uint entity = slot.entity;
                 if (!Free.Contains(entity))
                 {
@@ -330,11 +353,8 @@ namespace Worlds
                 }
             }
 
-            /// <inheritdoc/>
-            public delegate ComponentType GetComponentTypeDelegate(USpan<char> fullTypeName);
-
-            /// <inheritdoc/>
-            public delegate ArrayType GetArrayTypeDelegate(USpan<char> fullTypeName);
+            public delegate ComponentType GetComponentTypeDelegate(TypeLayout typeLayout);
+            public delegate ArrayType GetArrayTypeDelegate(TypeLayout typeLayout);
         }
 
         void ISerializable.Read(BinaryReader reader)
@@ -344,18 +364,48 @@ namespace Worlds
             using Array<byte> uniqueComponentTypes = new(componentTypeCount);
             for (uint i = 0; i < componentTypeCount; i++)
             {
-                ushort nameLength = reader.ReadValue<ushort>();
-                USpan<char> typeFullName = reader.ReadSpan<char>(nameLength);
-                uniqueComponentTypes[i] = SerializationContext.GetComponentType(typeFullName);
+                if (reader.ReadValue<byte>() == 0)
+                {
+                    TypeLayout typeLayout = reader.ReadObject<TypeLayout>();
+                    uniqueComponentTypes[i] = SerializationContext.GetComponentType(typeLayout);
+                }
+                else
+                {
+                    byte typeFullNameLength = reader.ReadValue<byte>();
+                    FixedString typeFullName = default;
+                    typeFullName.Length = typeFullNameLength;
+                    for (uint j = 0; j < typeFullNameLength; j++)
+                    {
+                        typeFullName[j] = (char)reader.ReadValue<byte>();
+                    }
+
+                    TypeLayout typeLayout = new(typeFullName, 0, default);
+                    uniqueComponentTypes[i] = SerializationContext.GetComponentType(typeLayout);
+                }
             }
 
             byte arrayTypeCount = reader.ReadValue<byte>();
             using Array<ArrayType> uniqueArrayTypes = new(arrayTypeCount);
             for (uint i = 0; i < arrayTypeCount; i++)
             {
-                ushort nameLength = reader.ReadValue<ushort>();
-                USpan<char> typeFullName = reader.ReadSpan<char>(nameLength);
-                uniqueArrayTypes[i] = SerializationContext.GetArrayType(typeFullName);
+                if (reader.ReadValue<byte>() == 0)
+                {
+                    TypeLayout typeLayout = reader.ReadObject<TypeLayout>();
+                    uniqueArrayTypes[i] = SerializationContext.GetArrayType(typeLayout);
+                }
+                else
+                {
+                    byte typeFullNameLength = reader.ReadValue<byte>();
+                    FixedString typeFullName = default;
+                    typeFullName.Length = typeFullNameLength;
+                    for (uint j = 0; j < typeFullNameLength; j++)
+                    {
+                        typeFullName[j] = (char)reader.ReadValue<byte>();
+                    }
+
+                    TypeLayout typeLayout = new(typeFullName, 0, default);
+                    uniqueArrayTypes[i] = SerializationContext.GetArrayType(typeLayout);
+                }
             }
 
             List<EntitySlot> slots = Slots;

@@ -7,6 +7,6 @@
         public readonly ushort second;
         public readonly uint third;
         public readonly float fourth;
-        public readonly bool yes;
+        public readonly Cherry cherry;
     }
 }

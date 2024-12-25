@@ -5,18 +5,22 @@ using Unmanaged;
 
 namespace Worlds
 {
-    public unsafe struct TypeLayout : IEquatable<TypeLayout>
+    public unsafe struct TypeLayout : IEquatable<TypeLayout>, ISerializable
     {
-        private static readonly Dictionary<Type, TypeLayout> systemTypeToType = new();
+        private static readonly Dictionary<int, TypeLayout> nameToType = new();
         private static readonly List<Type> systemTypes = new();
         private static readonly List<TypeLayout> all = new();
 
-        public const uint Capacity = 128;
+        /// <summary>
+        /// Maximum amount of variables per type.
+        /// </summary>
+        public const uint Capacity = 32;
 
-        public readonly FixedString name;
-        public readonly byte count;
+        private FixedString fullName;
+        private ushort size;
+        private byte count;
 
-        private fixed byte data[(int)(Capacity * Variable.Size)];
+        private fixed byte data[(int)(Capacity * 260)];
 
         public readonly USpan<Variable> Variables
         {
@@ -29,18 +33,21 @@ namespace Worlds
             }
         }
 
-        public readonly uint Size
+        public readonly FixedString FullName => fullName;
+        public readonly ushort Size => size;
+
+        public readonly FixedString Name
         {
             get
             {
-                uint size = 0;
-                USpan<Variable> variables = Variables;
-                foreach (Variable variable in variables)
+                if (fullName.TryLastIndexOf('.', out uint index))
                 {
-                    size += variable.size;
+                    return fullName.Slice(index + 1);
                 }
-
-                return size;
+                else
+                {
+                    return fullName;
+                }
             }
         }
 
@@ -52,11 +59,12 @@ namespace Worlds
         }
 #endif
 
-        private TypeLayout(FixedString name, USpan<Variable> variables)
+        public TypeLayout(FixedString fullName, ushort size, USpan<Variable> variables)
         {
             ThrowIfGreaterThanCapacity(variables.Length);
 
-            this.name = name;
+            this.fullName = fullName;
+            this.size = size;
             count = (byte)variables.Length;
             variables.CopyTo(Variables);
         }
@@ -68,71 +76,65 @@ namespace Worlds
             return buffer.Slice(0, length).ToString();
         }
 
-        public readonly uint ToString(USpan<char> buffer)
+        public readonly uint ToString(USpan<char> destination)
         {
-            uint length = 0;
-            length += name.CopyTo(buffer);
-            buffer[length++] = ' ';
-            buffer[length++] = '(';
-            buffer[length++] = 's';
-            buffer[length++] = 'i';
-            buffer[length++] = 'z';
-            buffer[length++] = 'e';
-            buffer[length++] = '=';
-            length += Size.ToString(buffer.Slice(length));
-            buffer[length++] = ')';
+            uint length = fullName.CopyTo(destination);
+            destination[length++] = ' ';
+            destination[length++] = '(';
+            destination[length++] = 's';
+            destination[length++] = 'i';
+            destination[length++] = 'z';
+            destination[length++] = 'e';
+            destination[length++] = '=';
+            length += size.ToString(destination.Slice(length));
+            destination[length++] = ')';
             return length;
-        }
-
-        public readonly bool Contains(Type type)
-        {
-            RuntimeTypeHandle typeHandle = type.TypeHandle;
-            nint typeValue = RuntimeTypeHandle.ToIntPtr(typeHandle);
-            USpan<Variable> variables = Variables;
-            foreach (Variable variable in variables)
-            {
-                if (variable.type == typeValue)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         public static bool IsRegistered<T>()
         {
-            return systemTypeToType.ContainsKey(typeof(T));
+            return systemTypes.Contains(typeof(T));
         }
 
-        public static bool IsRegistered(Type type)
-        {
-            return systemTypeToType.ContainsKey(type);
-        }
-
-        public static void Register<T>(FixedString name, USpan<Variable> variables)
+        public unsafe static void Register<T>(FixedString fullName, USpan<Variable> variables) where T : unmanaged
         {
             ThrowIfAlreadyRegistered<T>();
 
-            TypeLayout layout = new(name, variables);
-            Type systemType = typeof(T);
-            systemTypeToType.Add(systemType, layout);
-            systemTypes.Add(systemType);
+            ushort size = (ushort)sizeof(T);
+            TypeLayout layout = new(fullName, size, variables);
+            systemTypes.Add(typeof(T));
             all.Add(layout);
+            nameToType.Add(fullName.GetHashCode(), layout);
         }
 
         public static TypeLayout Get<T>()
         {
-            ThrowIfTypeIsNotRegistered(typeof(T));
+            ThrowIfTypeIsNotRegistered<T>();
 
-            return TypeCache<T>.layout;
+            int index = systemTypes.IndexOf(typeof(T));
+            return all[index];
         }
 
-        public static TypeLayout Get(Type type)
+        public static TypeLayout Get(FixedString fullName)
         {
-            ThrowIfTypeIsNotRegistered(type);
+            ThrowIfTypeIsNotRegistered(fullName);
 
-            return systemTypeToType[type];
+            return Get(fullName.GetHashCode());
+        }
+
+        public static TypeLayout Get(USpan<char> fullName)
+        {
+            return Get(new FixedString(fullName));
+        }
+
+        public static TypeLayout Get(string fullName)
+        {
+            return Get(new FixedString(fullName));
+        }
+
+        public static TypeLayout Get(int fullNameHash)
+        {
+            return nameToType[fullNameHash];
         }
 
         [Conditional("DEBUG")]
@@ -145,27 +147,30 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        public static void ThrowIfTypeIsNotRegistered(Type systemType)
+        public static void ThrowIfTypeIsNotRegistered<T>()
         {
-            if (!systemTypeToType.ContainsKey(systemType))
+            if (!systemTypes.Contains(typeof(T)))
             {
-                throw new InvalidOperationException($"TypeLayout for {systemType} is not registered");
+                throw new InvalidOperationException($"TypeLayout for {typeof(T)} is not registered");
             }
         }
 
         [Conditional("DEBUG")]
         public static void ThrowIfAlreadyRegistered<T>()
         {
-            Type systemType = typeof(T);
-            if (systemTypeToType.ContainsKey(systemType))
+            if (systemTypes.Contains(typeof(T)))
             {
-                throw new InvalidOperationException($"TypeLayout for {systemType} is already registered");
+                throw new InvalidOperationException($"TypeLayout for {typeof(T)} is already registered");
             }
         }
 
-        internal static class TypeCache<T>
+        [Conditional("DEBUG")]
+        public static void ThrowIfTypeIsNotRegistered(FixedString fullName)
         {
-            internal static readonly TypeLayout layout = systemTypeToType[typeof(T)];
+            if (!nameToType.ContainsKey(fullName.GetHashCode()))
+            {
+                throw new InvalidOperationException($"TypeLayout for {fullName} is not registered");
+            }
         }
 
         public readonly override bool Equals(object? obj)
@@ -175,93 +180,58 @@ namespace Worlds
 
         public readonly bool Equals(TypeLayout other)
         {
-            return name.Equals(other.name) && count == other.count && Variables.SequenceEqual(other.Variables);
+            return fullName.Equals(other.fullName) && count == other.count && Variables.SequenceEqual(other.Variables);
         }
 
         public readonly override int GetHashCode()
         {
-            return HashCode.Combine(name, count, Variables.GetHashCode());
+            return HashCode.Combine(fullName, count, Variables.GetHashCode());
         }
 
-        public readonly struct Variable : IEquatable<Variable>
+        readonly void ISerializable.Write(BinaryWriter writer)
         {
-            public const uint Size = 256 + 4 + 8;
-
-            public readonly FixedString name;
-            public readonly ushort size;
-            public readonly nint type;
-
-            public readonly RuntimeTypeHandle TypeHandle => RuntimeTypeHandle.FromIntPtr(type);
-            public readonly Type Type => Type.GetTypeFromHandle(TypeHandle) ?? throw new();
-            public readonly bool IsRegistered => IsRegistered(Type);
-            public readonly TypeLayout Layout => Get(Type);
-
-            public Variable(FixedString name, ushort size, Type type)
+            //full name
+            writer.WriteValue(fullName.Length);
+            for (byte i = 0; i < fullName.Length; i++)
             {
-                this.type = type.TypeHandle.Value;
-                this.name = name;
-                this.size = size;
+                writer.WriteValue((byte)fullName[i]);
             }
 
-            public readonly override string ToString()
+            writer.WriteValue(size);
+
+            //variables
+            writer.WriteValue(count);
+            USpan<Variable> variables = Variables;
+            foreach (Variable variable in variables)
             {
-                USpan<char> buffer = stackalloc char[256];
-                uint length = ToString(buffer);
-                return buffer.Slice(0, length).ToString();
+                writer.WriteObject(variable);
+            }
+        }
+
+        void ISerializable.Read(BinaryReader reader)
+        {
+            //full name
+            byte fullNameLength = reader.ReadValue<byte>();
+            fullName = default;
+            fullName.Length = fullNameLength;
+            for (byte i = 0; i < fullNameLength; i++)
+            {
+                fullName[i] = (char)reader.ReadValue<byte>();
             }
 
-            public readonly uint ToString(USpan<char> buffer)
+            size = reader.ReadValue<ushort>();
+
+            //variables
+            count = reader.ReadValue<byte>();
+            USpan<Variable> variables = stackalloc Variable[count];
+            for (byte i = 0; i < count; i++)
             {
-                uint length = 0;
-                length += name.CopyTo(buffer);
-                buffer[length++] = ' ';
-                buffer[length++] = '(';
-                buffer[length++] = 's';
-                buffer[length++] = 'i';
-                buffer[length++] = 'z';
-                buffer[length++] = 'e';
-                buffer[length++] = '=';
-                length += size.ToString(buffer.Slice(length));
-                buffer[length++] = ')';
-                return length;
+                variables[i] = reader.ReadObject<Variable>();
             }
 
-            public readonly override bool Equals(object? obj)
+            fixed (byte* ptr = data)
             {
-                return obj is Variable variable && Equals(variable);
-            }
-
-            public readonly bool Equals(Variable other)
-            {
-                return type.Equals(other.type);
-            }
-
-            public readonly override int GetHashCode()
-            {
-                return type.GetHashCode();
-            }
-
-            public readonly bool TryGetLayout(out TypeLayout layout)
-            {
-                Type type = Type;
-                if (IsRegistered(type))
-                {
-                    layout = Get(type);
-                    return true;
-                }
-
-                layout = default;
-                return false;
-            }
-
-            public static bool operator ==(Variable left, Variable right)
-            {
-                return left.Equals(right);
-            }
-
-            public static bool operator !=(Variable left, Variable right)
-            {
-                return !(left == right);
+                variables.CopyTo(new(ptr, count));
             }
         }
 
@@ -273,6 +243,95 @@ namespace Worlds
         public static bool operator !=(TypeLayout left, TypeLayout right)
         {
             return !(left == right);
+        }
+
+        public struct Variable : IEquatable<Variable>, ISerializable
+        {
+            private FixedString name;
+            private int typeFullNameHash;
+
+            public readonly FixedString Name => name;
+            public readonly TypeLayout TypeLayout => Get(typeFullNameHash);
+            public readonly ushort Size => TypeLayout.Size;
+
+            public Variable(FixedString name, FixedString typeFullName)
+            {
+                this.name = name;
+                typeFullNameHash = typeFullName.GetHashCode();
+            }
+
+            public Variable(FixedString name, int typeFullNameHash)
+            {
+                this.name = name;
+                this.typeFullNameHash = typeFullNameHash;
+            }
+
+            public readonly override string ToString()
+            {
+                USpan<char> buffer = stackalloc char[256];
+                uint length = ToString(buffer);
+                return buffer.Slice(0, length).ToString();
+            }
+
+            public readonly uint ToString(USpan<char> buffer)
+            {
+                TypeLayout typeLayout = TypeLayout;
+                uint length = name.CopyTo(buffer);
+                buffer[length++] = ' ';
+                buffer[length++] = '(';
+                length += typeLayout.Name.CopyTo(buffer.Slice(length));
+                buffer[length++] = ')';
+                return length;
+            }
+
+            public readonly override bool Equals(object? obj)
+            {
+                return obj is Variable variable && Equals(variable);
+            }
+
+            public readonly bool Equals(Variable other)
+            {
+                return Name.Equals(other.Name) && typeFullNameHash == other.typeFullNameHash;
+            }
+
+            public readonly override int GetHashCode()
+            {
+                return HashCode.Combine(Name, typeFullNameHash);
+            }
+
+            void ISerializable.Write(BinaryWriter writer)
+            {
+                writer.WriteValue(name.Length);
+                for (byte i = 0; i < name.Length; i++)
+                {
+                    writer.WriteValue((byte)name[i]);
+                }
+
+                writer.WriteValue(typeFullNameHash);
+            }
+
+            void ISerializable.Read(BinaryReader reader)
+            {
+                byte nameLength = reader.ReadValue<byte>();
+                name = default;
+                name.Length = nameLength;
+                for (byte i = 0; i < nameLength; i++)
+                {
+                    name[i] = (char)reader.ReadValue<byte>();
+                }
+
+                typeFullNameHash = reader.ReadValue<int>();
+            }
+
+            public static bool operator ==(Variable left, Variable right)
+            {
+                return left.Equals(right);
+            }
+
+            public static bool operator !=(Variable left, Variable right)
+            {
+                return !(left == right);
+            }
         }
     }
 }

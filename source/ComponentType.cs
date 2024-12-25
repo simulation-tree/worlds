@@ -13,6 +13,7 @@ namespace Worlds
         private static readonly Dictionary<Type, ComponentType> systemTypeToType = new();
         private static readonly List<Type> systemTypes = new();
         private static readonly List<ComponentType> all = new();
+        private static readonly List<TypeLayout> layouts = new();
 
         /// <summary>
         /// All registered component types.
@@ -146,6 +147,23 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves a possible <see cref="TypeLayout"/> for this component type.
+        /// </summary>
+        public readonly bool TryGetLayout(out TypeLayout layout)
+        {
+            if (index < layouts.Count)
+            {
+                layout = layouts[index];
+                return true;
+            }
+            else
+            {
+                layout = default;
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Registers or retrieves a component type for the given system type.
         /// </summary>
         public static ComponentType Register<T>() where T : unmanaged
@@ -158,6 +176,15 @@ namespace Worlds
                 systemTypeToType.Add(systemType, type);
                 systemTypes.Add(systemType);
                 all.Add(type);
+
+                if (TypeLayout.IsRegistered<T>())
+                {
+                    layouts.Add(TypeLayout.Get<T>());
+                }
+                else
+                {
+                    layouts.Add(default);
+                }
             }
 
             return type;

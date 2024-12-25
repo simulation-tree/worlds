@@ -30,6 +30,8 @@ namespace Worlds.TypeTableGenerator
         public static string Generate(Compilation compilation)
         {
             source.Clear();
+            source.AppendLine("using System.Diagnostics;");
+            source.AppendLine();
             source.AppendLine($"namespace {Namespace}");
             source.BeginGroup();
             {
@@ -44,6 +46,36 @@ namespace Worlds.TypeTableGenerator
                         HashSet<ITypeSymbol> types = [];
                         CollectTypeSymbols(compilation, componentTypes, arrayTypes, types);
 
+                        //recursively make sure that variables are also registered
+                        Stack<ITypeSymbol> stack = new();
+                        foreach (ITypeSymbol type in types)
+                        {
+                            stack.Push(type);
+                        }
+
+                        while (stack.Count > 0)
+                        {
+                            ITypeSymbol type = stack.Pop();
+                            foreach (IFieldSymbol field in GetVariables(type))
+                            {
+                                if (types.Add(field.Type))
+                                {
+                                    stack.Push(field.Type);
+                                }
+                            }
+                        }
+
+                        foreach (ITypeSymbol type in types)
+                        {
+                            //skip pointer types
+                            if (GetFullTypeName(type).Contains("*"))
+                            {
+                                continue;
+                            }
+
+                            AppendLayoutRegistration(type);
+                        }
+
                         foreach (ITypeSymbol componentType in componentTypes)
                         {
                             AppendComponentTypeRegistration(componentType);
@@ -53,25 +85,6 @@ namespace Worlds.TypeTableGenerator
                         {
                             AppendArrayTypeRegistration(arrayType);
                         }
-
-                        foreach (ITypeSymbol type in types)
-                        {
-                            AppendLayoutRegistration(type);
-                        }
-                    }
-                    source.EndGroup();
-                    source.AppendLine();
-                    source.AppendLine("private static void RegisterComponentType<T>() where T : unmanaged");
-                    source.BeginGroup();
-                    {
-                        source.AppendLine($"{ComponentTypeName}.Register<T>();");
-                    }
-                    source.EndGroup();
-                    source.AppendLine();
-                    source.AppendLine("private static void RegisterArrayType<T>() where T : unmanaged");
-                    source.BeginGroup();
-                    {
-                        source.AppendLine($"{ArrayTypeName}.Register<T>();");
                     }
                     source.EndGroup();
                 }
@@ -79,6 +92,22 @@ namespace Worlds.TypeTableGenerator
             }
             source.EndGroup();
             return source.ToString();
+        }
+
+        private static IEnumerable<IFieldSymbol> GetVariables(ITypeSymbol type)
+        {
+            foreach (ISymbol typeMember in type.GetMembers())
+            {
+                if (typeMember is IFieldSymbol field)
+                {
+                    if (field.HasConstantValue || field.IsStatic)
+                    {
+                        continue;
+                    }
+
+                    yield return field;
+                }
+            }
         }
 
         private static void CollectTypeSymbols(Compilation compilation, HashSet<ITypeSymbol> componentTypes, HashSet<ITypeSymbol> arrayTypes, HashSet<ITypeSymbol> types)
@@ -165,29 +194,24 @@ namespace Worlds.TypeTableGenerator
 
         private static void AppendComponentTypeRegistration(ITypeSymbol componentType)
         {
-            source.AppendLine($"RegisterComponentType<{GetFullTypeName(componentType)}>();");
+            source.AppendLine($"{ComponentTypeName}.Register<{GetFullTypeName(componentType)}>();");
         }
 
         private static void AppendArrayTypeRegistration(ITypeSymbol arrayType)
         {
-            source.AppendLine($"RegisterArrayType<{GetFullTypeName(arrayType)}>();");
+            source.AppendLine($"{ArrayTypeName}.Register<{GetFullTypeName(arrayType)}>();");
         }
 
         private static void AppendLayoutRegistration(ITypeSymbol type)
         {
             StringBuilder variables = new();
-            foreach (ISymbol typeMember in type.GetMembers())
+            foreach (IFieldSymbol field in GetVariables(type))
             {
-                if (typeMember is IFieldSymbol field)
-                {
-                    variables.Append("new(\"");
-                    variables.Append(field.Name);
-                    variables.Append("\", (ushort)Unmanaged.TypeInfo<");
-                    variables.Append(GetFullTypeName(field.Type));
-                    variables.Append(">.size, typeof(");
-                    variables.Append(GetFullTypeName(field.Type));
-                    variables.Append(")), ");
-                }
+                variables.Append("new(\"");
+                variables.Append(field.Name);
+                variables.Append("\", \"");
+                variables.Append(GetFullTypeName(field.Type));
+                variables.Append("\"), ");
             }
 
             if (variables.Length > 0)
@@ -195,7 +219,8 @@ namespace Worlds.TypeTableGenerator
                 variables.Length -= 2;
             }
 
-            source.AppendLine($"TypeLayout.Register<{GetFullTypeName(type)}>(\"{type.Name}\", [{variables}]);");
+            string fullName = GetFullTypeName(type);
+            source.AppendLine($"TypeLayout.Register<{fullName}>(\"{fullName}\", [{variables}]);");
         }
 
         private static string GetFullTypeName(ITypeSymbol type)
