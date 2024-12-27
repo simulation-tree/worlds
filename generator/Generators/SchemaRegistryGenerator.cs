@@ -1,0 +1,72 @@
+﻿using Microsoft.CodeAnalysis;
+using System.Collections.Generic;
+
+namespace Worlds.TypeTableGenerator
+{
+    [Generator(LanguageNames.CSharp)]
+    public class SchemaRegistryGenerator : IIncrementalGenerator
+    {
+        private static readonly SourceBuilder source = new();
+        private const string TypeName = "SchemaRegistry";
+
+        void IIncrementalGenerator.Initialize(IncrementalGeneratorInitializationContext context)
+        {
+            context.RegisterSourceOutput(context.CompilationProvider, Generate);
+        }
+
+        private static void Generate(SourceProductionContext context, Compilation compilation)
+        {
+            context.AddSource($"{TypeName}.generated.cs", Generate(compilation));
+        }
+
+        public static string Generate(Compilation compilation)
+        {
+            HashSet<ITypeSymbol> componentTypes = [];
+            HashSet<ITypeSymbol> arrayTypes = [];
+            compilation.CollectTypeSymbols(componentTypes, arrayTypes);
+
+            source.Clear();
+            source.Clear();
+            source.AppendLine("using System.Diagnostics;");
+            source.AppendLine();
+            source.AppendLine($"namespace {SharedFunctions.Namespace}");
+            source.BeginGroup();
+            {
+                source.AppendLine($"internal static partial class {TypeName}");
+                source.BeginGroup();
+                {
+                    source.AppendLine("/// <summary>");
+                    source.AppendLine("/// Retrieves a schema containing all possible component and array types.");
+                    source.AppendLine("/// </summary>");
+                    source.AppendLine($"public static void Load(Schema schema)");
+                    source.BeginGroup();
+                    {
+                        foreach (ITypeSymbol componentType in componentTypes)
+                        {
+                            AppendComponentRegistration(componentType);
+                        }
+
+                        foreach (ITypeSymbol arrayType in arrayTypes)
+                        {
+                            AppendArrayElementRegistration(arrayType);
+                        }
+                    }
+                    source.EndGroup();
+                }
+                source.EndGroup();
+            }
+            source.EndGroup();
+            return source.ToString();
+        }
+
+        private static void AppendComponentRegistration(ITypeSymbol componentType)
+        {
+            source.AppendLine($"schema.RegisterComponent<{componentType.ToDisplayString()}>();");
+        }
+
+        private static void AppendArrayElementRegistration(ITypeSymbol arrayType)
+        {
+            source.AppendLine($"schema.RegisterArrayElement<{arrayType.ToDisplayString()}>();");
+        }
+    }
+}

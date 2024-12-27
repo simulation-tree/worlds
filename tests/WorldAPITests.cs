@@ -9,7 +9,7 @@ namespace Worlds.Tests
         [Test]
         public void CreateAndDisposeWorld()
         {
-            World world = new();
+            World world = CreateWorld();
             world.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }
@@ -17,7 +17,7 @@ namespace Worlds.Tests
         [Test]
         public void DisposeTwiceError()
         {
-            World world = new();
+            World world = CreateWorld();
             world.Dispose();
             Assert.Throws<NullReferenceException>(() => world.Dispose());
         }
@@ -32,7 +32,7 @@ namespace Worlds.Tests
         [Test]
         public void MaxEntityIDIsValid()
         {
-            using World world = new();
+            using World world = CreateWorld();
             USpan<uint> entities = stackalloc uint[4];
             world.CreateEntities(entities);
             Assert.That(world.MaxEntityValue, Is.EqualTo(entities[3]));
@@ -48,7 +48,7 @@ namespace Worlds.Tests
         [Test]
         public void DestroyParentEntity()
         {
-            using World world = new();
+            using World world = CreateWorld();
             uint a = world.CreateEntity();
             uint b = world.CreateEntity();
             uint c = world.CreateEntity();
@@ -70,7 +70,7 @@ namespace Worlds.Tests
         [Test]
         public void EnumerateRealEntities()
         {
-            using World world = new();
+            using World world = CreateWorld();
             uint a = world.CreateEntity();
             uint b = world.CreateEntity();
             uint c = world.CreateEntity();
@@ -94,7 +94,7 @@ namespace Worlds.Tests
         [Test]
         public void GetAddedComponent()
         {
-            using World world = new();
+            using World world = CreateWorld();
             uint entity = world.CreateEntity();
             SimpleComponent component = new("Hello World");
             world.AddComponent(entity, component);
@@ -113,7 +113,7 @@ namespace Worlds.Tests
         [Test]
         public void CreateAndDestroyEntity()
         {
-            using World world = new();
+            using World world = CreateWorld();
             uint entity = world.CreateEntity();
             world.DestroyEntity(entity);
             Assert.That(world.ContainsEntity(entity), Is.False);
@@ -124,7 +124,7 @@ namespace Worlds.Tests
         [Test]
         public void AddingTwoComponents()
         {
-            using World world = new();
+            using World world = CreateWorld();
             uint entity = world.CreateEntity();
             SimpleComponent component1 = new("Hello World");
             Another component2 = new(42);
@@ -140,7 +140,7 @@ namespace Worlds.Tests
         [Test]
         public void TwoInitialComponents()
         {
-            using World world = new();
+            using World world = CreateWorld();
             uint a = world.CreateEntity(new Another(32), new SimpleComponent("what is this?"));
             Assert.That(world.ContainsComponent<SimpleComponent>(a), Is.True);
             Assert.That(world.ContainsComponent<Another>(a), Is.True);
@@ -156,7 +156,7 @@ namespace Worlds.Tests
         [Test]
         public void DestroyEntityTwice()
         {
-            using World world = new();
+            using World world = CreateWorld();
             uint entity = world.CreateEntity();
             Assert.That(world.ContainsEntity(entity), Is.True);
             world.DestroyEntity(entity);
@@ -171,7 +171,7 @@ namespace Worlds.Tests
         [Test]
         public void EnablingAndDisabling()
         {
-            using World world = new();
+            using World world = CreateWorld();
             uint a = world.CreateEntity();
             uint b = world.CreateEntity();
             world.AddComponent(a, new SimpleComponent("Hello World"));
@@ -187,7 +187,7 @@ namespace Worlds.Tests
         [Test]
         public void DestroyEntityWithArray()
         {
-            World world = new();
+            World world = CreateWorld();
             uint entity = world.CreateEntity();
             USpan<SimpleComponent> list = world.CreateArray<SimpleComponent>(entity, 2);
             list[0] = new("Hello World 1");
@@ -209,7 +209,7 @@ namespace Worlds.Tests
         [Test]
         public void CreateThenEmptyArray()
         {
-            World world = new();
+            World world = CreateWorld();
             uint entity = world.CreateEntity();
             world.CreateArray<SimpleComponent>(entity, 2);
             world.DestroyArray<SimpleComponent>(entity);
@@ -221,7 +221,7 @@ namespace Worlds.Tests
         [Test]
         public void MoveChildToAnotherParent()
         {
-            World world = new();
+            World world = CreateWorld();
             uint a = world.CreateEntity();
             uint b = world.CreateEntity();
             uint c = world.CreateEntity();
@@ -237,7 +237,7 @@ namespace Worlds.Tests
         [Test]
         public void DestroyArrayTwice()
         {
-            World world = new();
+            World world = CreateWorld();
             uint entity = world.CreateEntity();
             USpan<SimpleComponent> list = world.CreateArray<SimpleComponent>(entity, 4);
             list[0] = new("apple");
@@ -255,7 +255,7 @@ namespace Worlds.Tests
         [Test]
         public void PopulateWorldThenClear()
         {
-            using World world = new();
+            using World world = CreateWorld();
             using RandomGenerator rng = RandomGenerator.Create();
             uint realEntities = 0;
             for (uint i = 0; i < 100; i++)
@@ -304,7 +304,7 @@ namespace Worlds.Tests
         [Test]
         public void CloneEntity()
         {
-            using World world = new();
+            using World world = CreateWorld();
             uint entity = world.CreateEntity();
             world.AddComponent(entity, new SimpleComponent("apple"));
             world.AddComponent(entity, new Another(5));

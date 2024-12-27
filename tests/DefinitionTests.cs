@@ -7,20 +7,21 @@ namespace Worlds.Tests
         [Test]
         public void CompareEquality()
         {
-            Definition a = new([ComponentType.Get<Float>()], [ArrayType.Get<Byte>()]);
-            Definition b = new([ComponentType.Get<Float>()], [ArrayType.Get<Byte>()]);
+            using Schema schema = CreateSchema();
+            Definition a = new([schema.GetComponent<Float>()], [schema.GetArrayElement<Byte>()]);
+            Definition b = new([schema.GetComponent<Float>()], [schema.GetArrayElement<Byte>()]);
 
             Assert.That(a, Is.EqualTo(b));
 
-            a = a.AddComponentType<Integer>();
-            a = a.AddComponentType<Double>();
-            a = a.AddComponentType<Character>();
+            a = a.AddComponentType<Integer>(schema);
+            a = a.AddComponentType<Double>(schema);
+            a = a.AddComponentType<Character>(schema);
 
             Assert.That(a, Is.Not.EqualTo(b));
 
-            b = b.AddComponentType<Double>();
-            b = b.AddComponentType<Character>();
-            b = b.AddComponentType<Integer>();
+            b = b.AddComponentType<Double>(schema);
+            b = b.AddComponentType<Character>(schema);
+            b = b.AddComponentType<Integer>(schema);
 
             Assert.That(a, Is.EqualTo(b));
         }
@@ -28,8 +29,9 @@ namespace Worlds.Tests
         [Test]
         public void NotEqual()
         {
-            Definition a = new([ComponentType.Get<Float>()], [ArrayType.Get<Byte>()]);
-            Definition b = new([ComponentType.Get<Float>()], [ArrayType.Get<Float>()]);
+            using Schema schema = CreateSchema();
+            Definition a = new([schema.GetComponent<Float>()], [schema.GetArrayElement<Byte>()]);
+            Definition b = new([schema.GetComponent<Float>()], [schema.GetArrayElement<Float>()]);
 
             Assert.That(a, Is.Not.EqualTo(b));
         }
@@ -37,11 +39,12 @@ namespace Worlds.Tests
         [Test]
         public void AddingAndIndexing()
         {
+            using Schema schema = CreateSchema();
             Definition a = new();
-            a = a.AddComponentType<Integer>();
-            a = a.AddArrayType<Double>();
-            a = a.AddComponentType<Character>();
-            a = a.AddArrayType<Float>();
+            a = a.AddComponentType<Integer>(schema);
+            a = a.AddArrayType<Double>(schema);
+            a = a.AddComponentType<Character>(schema);
+            a = a.AddArrayType<Float>(schema);
 
             Assert.That(a.ComponentTypesMask.Count, Is.EqualTo(2));
             Assert.That(a.ArrayTypesMask.Count, Is.EqualTo(2));
@@ -49,40 +52,42 @@ namespace Worlds.Tests
             USpan<ArrayType> arrayTypes = stackalloc ArrayType[BitSet.Capacity];
             a.CopyComponentTypesTo(componentTypes);
             a.CopyArrayTypesTo(arrayTypes);
-            Assert.That(componentTypes.Contains(ComponentType.Get<Integer>()), Is.True);
-            Assert.That(componentTypes.Contains(ComponentType.Get<Character>()), Is.True);
-            Assert.That(arrayTypes.Contains(ArrayType.Get<Double>()), Is.True);
-            Assert.That(arrayTypes.Contains(ArrayType.Get<Float>()), Is.True);
+            Assert.That(componentTypes.Contains(schema.GetComponent<Integer>()), Is.True);
+            Assert.That(componentTypes.Contains(schema.GetComponent<Character>()), Is.True);
+            Assert.That(arrayTypes.Contains(schema.GetArrayElement<Double>()), Is.True);
+            Assert.That(arrayTypes.Contains(schema.GetArrayElement<Float>()), Is.True);
         }
 
         [Test]
         public void CreateDefinitionFromMany()
         {
-            Definition definition = new Definition().AddComponentTypes<Integer, Character, Double, Float>();
+            using Schema schema = CreateSchema();
+            Definition definition = new Definition().AddComponentTypes<Integer, Character, Double, Float>(schema);
             Assert.That(definition.ComponentTypesMask.Count, Is.EqualTo(4));
             Assert.That(definition.ArrayTypesMask.Count, Is.EqualTo(0));
-            Assert.That(definition.ContainsComponent<Integer>(), Is.True);
-            Assert.That(definition.ContainsComponent<Character>(), Is.True);
-            Assert.That(definition.ContainsComponent<Double>(), Is.True);
-            Assert.That(definition.ContainsComponent<Float>(), Is.True);
+            Assert.That(definition.ContainsComponent<Integer>(schema), Is.True);
+            Assert.That(definition.ContainsComponent<Character>(schema), Is.True);
+            Assert.That(definition.ContainsComponent<Double>(schema), Is.True);
+            Assert.That(definition.ContainsComponent<Float>(schema), Is.True);
         }
 
         [Test]
         public void ContainsComponentTypes()
         {
-            Definition definition = new([ComponentType.Get<Byte>(), ComponentType.Get<Float>()], [ArrayType.Get<Character>()]);
-            Assert.That(definition.ContainsComponent<Byte>(), Is.True);
-            Assert.That(definition.ContainsComponent<Float>(), Is.True);
-            Assert.That(definition.ContainsComponent<Character>(), Is.False);
-            Assert.That(definition.ContainsArray<Character>(), Is.True);
+            using Schema schema = CreateSchema();
+            Definition definition = new([schema.GetComponent<Byte>(), schema.GetComponent<Float>()], [schema.GetArrayElement<Character>()]);
+            Assert.That(definition.ContainsComponent<Byte>(schema), Is.True);
+            Assert.That(definition.ContainsComponent<Float>(schema), Is.True);
+            Assert.That(definition.ContainsComponent<Character>(schema), Is.False);
+            Assert.That(definition.ContainsArray<Character>(schema), Is.True);
         }
 
         [Test]
         public void CreateFromDefinition()
         {
-            using World world = new();
+            using World world = CreateWorld();
 
-            Definition definition = new([ComponentType.Get<Byte>(), ComponentType.Get<Float>()], [ArrayType.Get<Character>()]);
+            Definition definition = new([world.Schema.GetComponent<Byte>(), world.Schema.GetComponent<Float>()], [world.Schema.GetArrayElement<Character>()]);
             uint entity = world.CreateEntity(definition);
             Byte defaultByte = world.GetComponent<Byte>(entity);
             Float defaultFloat = world.GetComponent<Float>(entity);
@@ -96,9 +101,9 @@ namespace Worlds.Tests
         [Test]
         public void BecomeADefinition()
         {
-            using World world = new();
+            using World world = CreateWorld();
 
-            Definition definitionA = new([ComponentType.Get<Byte>(), ComponentType.Get<Float>()], [ArrayType.Get<Character>()]);
+            Definition definitionA = new([world.Schema.GetComponent<Byte>(), world.Schema.GetComponent<Float>()], [world.Schema.GetArrayElement<Character>()]);
 
             Entity entity = new(world);
             entity.Become(definitionA);
@@ -112,7 +117,7 @@ namespace Worlds.Tests
             Assert.That(entity.GetComponent<Float>(), Is.EqualTo(default(Float)));
             Assert.That(entity.GetArray<Character>().Length, Is.EqualTo(0));
 
-            Definition definitionB = new([], [ArrayType.Get<Byte>()]);
+            Definition definitionB = new([], [world.Schema.GetArrayElement<Byte>()]);
 
             entity.Become(definitionB);
 
@@ -122,7 +127,7 @@ namespace Worlds.Tests
         [Test]
         public void CheckIfIsDefinition()
         {
-            using World world = new();
+            using World world = CreateWorld();
 
             Entity entityA = new(world);
             entityA.AddComponent<Byte>();
@@ -133,7 +138,7 @@ namespace Worlds.Tests
             entityB.AddComponent<Float>();
             entityB.CreateArray<Character>();
 
-            Definition definition = new([ComponentType.Get<Byte>(), ComponentType.Get<Float>()], [ArrayType.Get<Character>()]);
+            Definition definition = new([world.Schema.GetComponent<Byte>(), world.Schema.GetComponent<Float>()], [world.Schema.GetArrayElement<Character>()]);
 
             Assert.That(entityA.Is(definition), Is.False);
             Assert.That(entityB.Is(definition), Is.True);

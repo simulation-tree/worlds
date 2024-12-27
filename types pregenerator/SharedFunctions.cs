@@ -138,7 +138,7 @@ public static class SharedFunctions
             builder.Append("                    ");
             builder.Append('c');
             builder.Append(i);
-            builder.Append(" = ComponentType.Get<");
+            builder.Append(" = schema.GetComponent<");
             builder.Append(GenericTypePrefix);
             builder.Append(i);
             builder.Append(">();\n");

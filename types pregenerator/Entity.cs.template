@@ -12,7 +12,11 @@ namespace Worlds
 
         readonly World IEntity.World => entity.world;
         readonly uint IEntity.Value => entity.value;
-        readonly Definition IEntity.Definition => new(ComponentType.GetBitSet<{{GenericTypeArguments}}>(), default);
+
+        readonly Definition IEntity.GetDefinition(Schema schema)
+        {
+            return new(schema.GetComponents<{{GenericTypeArguments}}>(), default);
+        }
 
         public Entity(World world, uint existingEntity)
         {

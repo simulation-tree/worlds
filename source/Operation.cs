@@ -448,99 +448,99 @@ namespace Worlds
         /// <summary>
         /// Adds a new component entry to every entity in the selection.
         /// </summary>
-        public readonly void AddComponent<T>(T component) where T : unmanaged
+        public readonly void AddComponent<T>(T component, Schema schema) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
 
-            AddInstruction(Instruction.AddComponent(component));
+            AddInstruction(Instruction.AddComponent(component, schema));
         }
 
-        public readonly void AddComponent<T>() where T : unmanaged
+        public readonly void AddComponent<T>(Schema schema) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
 
-            AddInstruction(Instruction.AddComponent(new T()));
+            AddInstruction(Instruction.AddComponent(new T(), schema));
         }
 
         /// <summary>
         /// Assigns the given component value onto every selected entities,
         /// assuming they already contain the component entry.
         /// </summary>
-        public readonly void SetComponent<T>(T component) where T : unmanaged
+        public readonly void SetComponent<T>(T component, Schema schema) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
 
-            AddInstruction(Instruction.SetComponent(component));
+            AddInstruction(Instruction.SetComponent(component, schema));
         }
 
         /// <summary>
         /// Removes the given component type from all selected entities.
         /// </summary>
-        public readonly void RemoveComponent<T>() where T : unmanaged
+        public readonly void RemoveComponent<T>(Schema schema) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
 
-            AddInstruction(Instruction.RemoveComponent<T>());
+            AddInstruction(Instruction.RemoveComponent<T>(schema));
         }
 
         /// <summary>
         /// Creates a new array for every selected entities.
         /// </summary>
-        public readonly void CreateArray<T>(uint length) where T : unmanaged
+        public readonly void CreateArray<T>(uint length, Schema schema) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
 
-            AddInstruction(Instruction.CreateArray<T>(length));
+            AddInstruction(Instruction.CreateArray<T>(length, schema));
         }
 
         /// <summary>
         /// Creates a new array for every selected entities containing the given <paramref name="values"/>.
         /// </summary>
-        public readonly void CreateArray<T>(USpan<T> values) where T : unmanaged
+        public readonly void CreateArray<T>(USpan<T> values, Schema schema) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
 
-            AddInstruction(Instruction.CreateArray(values));
+            AddInstruction(Instruction.CreateArray(values, schema));
         }
 
         /// <summary>
         /// Destroys an existing array on selected entities.
         /// </summary>
-        public readonly void DestroyArray<T>() where T : unmanaged
+        public readonly void DestroyArray<T>(Schema schema) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
 
-            AddInstruction(Instruction.DestroyArray<T>());
+            AddInstruction(Instruction.DestroyArray<T>(schema));
         }
 
         /// <summary>
         /// Writes the given value into the array at the given index.
         /// </summary>
-        public readonly void SetArrayElement<T>(uint index, T element) where T : unmanaged
+        public readonly void SetArrayElement<T>(uint index, T element, Schema schema) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
 
-            AddInstruction(Instruction.SetArrayElement(index, element));
+            AddInstruction(Instruction.SetArrayElement(index, element, schema));
         }
 
         /// <summary>
         /// Writes the given span into the array starting from the given index.
         /// </summary>
-        public readonly void SetArrayElements<T>(uint index, USpan<T> elements) where T : unmanaged
+        public readonly void SetArrayElements<T>(uint index, USpan<T> elements, Schema schema) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
 
-            AddInstruction(Instruction.SetArrayElement(index, elements));
+            AddInstruction(Instruction.SetArrayElement(index, elements, schema));
         }
 
         /// <summary>
         /// Resizes the array for every selected entity.
         /// </summary>
-        public readonly void ResizeArray<T>(uint newLength) where T : unmanaged
+        public readonly void ResizeArray<T>(uint newLength, Schema schema) where T : unmanaged
         {
             ThrowIfSelectionIsEmpty();
 
-            AddInstruction(Instruction.ResizeArray<T>(newLength));
+            AddInstruction(Instruction.ResizeArray<T>(newLength, schema));
         }
 
         /// <summary>
@@ -598,57 +598,57 @@ namespace Worlds
             /// <summary>
             /// Submits an instruction to add the given <paramref name="component"/> to this entity.
             /// </summary>
-            public void AddComponent<T>(T component) where T : unmanaged
+            public void AddComponent<T>(T component, Schema schema) where T : unmanaged
             {
-                operation.InsertInstructionAt(Instruction.AddComponent(component), index);
+                operation.InsertInstructionAt(Instruction.AddComponent(component, schema), index);
                 index++;
             }
 
-            public void SetComponent<T>(T component) where T : unmanaged
+            public void SetComponent<T>(T component, Schema schema) where T : unmanaged
             {
-                operation.InsertInstructionAt(Instruction.SetComponent(component), index);
+                operation.InsertInstructionAt(Instruction.SetComponent(component, schema), index);
                 index++;
             }
 
-            public void RemoveComponent<T>() where T : unmanaged
+            public void RemoveComponent<T>(Schema schema) where T : unmanaged
             {
-                operation.InsertInstructionAt(Instruction.RemoveComponent<T>(), index);
+                operation.InsertInstructionAt(Instruction.RemoveComponent<T>(schema), index);
                 index++;
             }
 
-            public void CreateArray<T>(uint length) where T : unmanaged
+            public void CreateArray<T>(uint length, Schema schema) where T : unmanaged
             {
-                operation.InsertInstructionAt(Instruction.CreateArray<T>(length), index);
+                operation.InsertInstructionAt(Instruction.CreateArray<T>(length, schema), index);
                 index++;
             }
 
-            public void CreateArray<T>(USpan<T> values) where T : unmanaged
+            public void CreateArray<T>(USpan<T> values, Schema schema) where T : unmanaged
             {
-                operation.InsertInstructionAt(Instruction.CreateArray(values), index);
+                operation.InsertInstructionAt(Instruction.CreateArray(values, schema), index);
                 index++;
             }
 
-            public void DestroyArray<T>() where T : unmanaged
+            public void DestroyArray<T>(Schema schema) where T : unmanaged
             {
-                operation.InsertInstructionAt(Instruction.DestroyArray<T>(), index);
+                operation.InsertInstructionAt(Instruction.DestroyArray<T>(schema), index);
                 index++;
             }
 
-            public void ResizeArray<T>(uint newLength) where T : unmanaged
+            public void ResizeArray<T>(uint newLength, Schema schema) where T : unmanaged
             {
-                operation.InsertInstructionAt(Instruction.ResizeArray<T>(newLength), index);
+                operation.InsertInstructionAt(Instruction.ResizeArray<T>(newLength, schema), index);
                 index++;
             }
 
-            public void SetArrayElement<T>(uint index, T element) where T : unmanaged
+            public void SetArrayElement<T>(uint index, T element, Schema schema) where T : unmanaged
             {
-                operation.InsertInstructionAt(Instruction.SetArrayElement(index, element), this.index);
+                operation.InsertInstructionAt(Instruction.SetArrayElement(index, element, schema), this.index);
                 this.index++;
             }
 
-            public void SetArrayElements<T>(uint index, USpan<T> elements) where T : unmanaged
+            public void SetArrayElements<T>(uint index, USpan<T> elements, Schema schema) where T : unmanaged
             {
-                operation.InsertInstructionAt(Instruction.SetArrayElement(index, elements), this.index);
+                operation.InsertInstructionAt(Instruction.SetArrayElement(index, elements, schema), this.index);
                 this.index++;
             }
 

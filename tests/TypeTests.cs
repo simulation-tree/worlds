@@ -34,8 +34,48 @@ namespace Worlds.Tests
             TypeLayout b = reader.ReadObject<TypeLayout>();
 
             Assert.That(a.Name.ToString(), Is.EqualTo(b.Name.ToString()));
+            Assert.That(a.Variables.Length, Is.EqualTo(b.Variables.Length));
             Assert.That(a.Variables[4].Name.ToString(), Is.EqualTo(b.Variables[4].Name.ToString()));
             Assert.That(a.Variables[4].TypeLayout.Variables[0], Is.EqualTo(b.Variables[4].TypeLayout.Variables[0]));
+            Assert.That(a, Is.EqualTo(b));
+        }
+
+        [Test]
+        public void AddToSchema()
+        {
+            using Schema schema = new();
+            schema.RegisterComponent<Stress>();
+
+            using Schema copy = new();
+            copy.CopyFrom(schema);
+
+            Assert.That(copy.ContainsComponent<Stress>(), Is.True);
+        }
+
+        [Test]
+        public void CheckIfLayoutIs()
+        {
+            TypeLayout layout = TypeLayout.Get<Stress>();
+
+            Assert.That(layout.Is<Stress>(), Is.True);
+            Assert.That(layout.Is<Cherry>(), Is.False);
+        }
+
+        [Test]
+        public void SerializeSchema()
+        {
+            using Schema prefabSchema = new();
+            prefabSchema.RegisterComponent<float>();
+            prefabSchema.RegisterComponent<char>();
+
+            using BinaryWriter writer = new();
+            writer.WriteObject(prefabSchema);
+
+            using BinaryReader reader = new(writer);
+            using Schema loadedSchema = reader.ReadObject<Schema>();
+
+            Assert.That(loadedSchema.ContainsComponent<float>(), Is.True);
+            Assert.That(loadedSchema.ContainsComponent<char>(), Is.True);
         }
     }
 }

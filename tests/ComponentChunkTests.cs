@@ -8,18 +8,21 @@ namespace Worlds.Tests
         [Test]
         public void AddEntityNoComponents()
         {
-            ComponentChunk chunk = new();
+            Schema schema = CreateSchema();
+            ComponentChunk chunk = new(schema);
             chunk.AddEntity(7);
             Assert.That(chunk.Entities, Has.Count.EqualTo(1));
             Assert.That(chunk.Entities[0], Is.EqualTo(7));
             chunk.Dispose();
+            schema.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
         public void AddEntityWithComponents()
         {
-            ComponentChunk chunk = new([ComponentType.Get<Integer>(), ComponentType.Get<Float>()]);
+            Schema schema = CreateSchema();
+            ComponentChunk chunk = new([schema.GetComponent<Integer>(), schema.GetComponent<Float>()], schema);
             uint entity = 7;
             uint index = chunk.AddEntity(entity);
             ref Integer intComponent = ref chunk.GetComponent<Integer>(index);
@@ -35,13 +38,15 @@ namespace Worlds.Tests
             Assert.That(floatComponents, Has.Count.EqualTo(1));
             Assert.That(floatComponents[0], Is.EqualTo((Float)3.14f));
             chunk.Dispose();
+            schema.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
         public void RemovingEntity()
         {
-            ComponentChunk chunk = new([ComponentType.Get<Integer>(), ComponentType.Get<Float>()]);
+            Schema schema = CreateSchema();
+            ComponentChunk chunk = new([schema.GetComponent<Integer>(), schema.GetComponent<Float>()], schema);
             uint entity = 7;
             uint index = chunk.AddEntity(entity);
             ref Integer intComponent = ref chunk.GetComponent<Integer>(index);
@@ -55,17 +60,19 @@ namespace Worlds.Tests
             Assert.That(intComponents, Is.Empty);
             Assert.That(floatComponents, Is.Empty);
             chunk.Dispose();
+            schema.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
         public void MovingEntity()
         {
-            ComponentChunk chunkA = new([]);
+            Schema schema = CreateSchema();
+            ComponentChunk chunkA = new([], schema);
             uint entity = 7;
             uint oldIndex = chunkA.AddEntity(entity);
 
-            ComponentChunk chunkB = new([ComponentType.Get<Integer>()]);
+            ComponentChunk chunkB = new([schema.GetComponent<Integer>()], schema);
             uint newIndex = chunkA.MoveEntity(entity, chunkB);
             ref Integer intComponent = ref chunkB.GetComponent<Integer>(newIndex);
             intComponent = 42;
@@ -77,7 +84,7 @@ namespace Worlds.Tests
             Assert.That(intComponents, Has.Count.EqualTo(1));
             Assert.That(intComponents[0], Is.EqualTo((Integer)42));
 
-            ComponentChunk chunkC = new([ComponentType.Get<Float>(), ComponentType.Get<Integer>()]);
+            ComponentChunk chunkC = new([schema.GetComponent<Float>(), schema.GetComponent<Integer>()], schema);
             uint newerIndex = chunkB.MoveEntity(entity, chunkC);
             ref Float floatComponent = ref chunkC.GetComponent<Float>(newerIndex);
             floatComponent = 3.14f;
@@ -93,14 +100,16 @@ namespace Worlds.Tests
             chunkA.Dispose();
             chunkB.Dispose();
             chunkC.Dispose();
+            schema.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
         public void HashTypes()
         {
-            ComponentChunk chunkA = new([ComponentType.Get<Integer>(), ComponentType.Get<Float>()]);
-            ComponentChunk chunkB = new([ComponentType.Get<Float>(), ComponentType.Get<Integer>()]);
+            using Schema schema = CreateSchema();
+            ComponentChunk chunkA = new([schema.GetComponent<Integer>(), schema.GetComponent<Float>()], schema);
+            ComponentChunk chunkB = new([schema.GetComponent<Float>(), schema.GetComponent<Integer>()], schema);
             int hashA = chunkA.GetHashCode();
             int hashB = chunkB.GetHashCode();
             Assert.That(hashA, Is.EqualTo(hashB));

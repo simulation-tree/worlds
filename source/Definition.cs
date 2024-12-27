@@ -91,17 +91,17 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Copies the component types in this definition to the <paramref name="buffer"/>.
+        /// Copies the component types in this definition to the <paramref name="destination"/>.
         /// </summary>
         /// <returns>Amount of component types copied.</returns>
-        public readonly byte CopyComponentTypesTo(USpan<ComponentType> buffer)
+        public readonly byte CopyComponentTypesTo(USpan<ComponentType> destination)
         {
             byte count = 0;
-            for (byte i = 0; i < BitSet.Capacity; i++)
+            for (byte c = 0; c < BitSet.Capacity; c++)
             {
-                if (componentTypesMask == i)
+                if (componentTypesMask == c)
                 {
-                    buffer[count] = ComponentType.All[i];
+                    destination[count] = new(c);
                     count++;
                 }
             }
@@ -110,17 +110,17 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Copies the array types in this definition to the <paramref name="buffer"/>.
+        /// Copies the array types in this definition to the <paramref name="destination"/>.
         /// </summary>
         /// <returns>Amount of array types copied.</returns>
-        public readonly byte CopyArrayTypesTo(USpan<ArrayType> buffer)
+        public readonly byte CopyArrayTypesTo(USpan<ArrayType> destination)
         {
             byte count = 0;
-            for (byte i = 0; i < BitSet.Capacity; i++)
+            for (byte a = 0; a < BitSet.Capacity; a++)
             {
-                if (arrayTypesMask == i)
+                if (arrayTypesMask == a)
                 {
-                    buffer[count] = ArrayType.All[i];
+                    destination[count] = new(a);
                     count++;
                 }
             }
@@ -157,9 +157,9 @@ namespace Worlds
         /// <summary>
         /// Checks if this definition contains the specified <typeparamref name="T"/> component type.
         /// </summary>
-        public readonly bool ContainsComponent<T>() where T : unmanaged
+        public readonly bool ContainsComponent<T>(Schema schema) where T : unmanaged
         {
-            return ContainsComponent(ComponentType.Get<T>());
+            return ContainsComponent(schema.GetComponent<T>());
         }
 
         /// <summary>
@@ -173,9 +173,9 @@ namespace Worlds
         /// <summary>
         /// Checks if this definition contains the specified <typeparamref name="T"/> array type.
         /// </summary>
-        public readonly bool ContainsArray<T>() where T : unmanaged
+        public readonly bool ContainsArray<T>(Schema schema) where T : unmanaged
         {
-            return ContainsArray(ArrayType.Get<T>());
+            return ContainsArray(schema.GetArrayElement<T>());
         }
 
         /// <summary>
@@ -216,114 +216,54 @@ namespace Worlds
         /// <summary>
         /// Adds the specified <typeparamref name="C1"/> component type to this definition.
         /// </summary>
-        public Definition AddComponentType<C1>() where C1 : unmanaged
+        public Definition AddComponentType<C1>(Schema schema) where C1 : unmanaged
         {
-            componentTypesMask |= ComponentType.Get<C1>();
+            componentTypesMask |= schema.GetComponent<C1>();
             return this;
         }
 
         /// <summary>
         /// Adds the specified <typeparamref name="C1"/> and <typeparamref name="C2"/> component types to this definition.
         /// </summary>
-        public Definition AddComponentTypes<C1, C2>() where C1 : unmanaged where C2 : unmanaged
+        public Definition AddComponentTypes<C1, C2>(Schema schema) where C1 : unmanaged where C2 : unmanaged
         {
-            componentTypesMask |= ComponentType.GetBitSet<C1, C2>();
+            componentTypesMask |= schema.GetComponents<C1, C2>();
             return this;
         }
 
-        /// <summary>
-        /// Adds the specified <typeparamref name="C1"/>, <typeparamref name="C2"/> and <typeparamref name="C3"/> component types to this definition.
-        /// </summary>
-        public Definition AddComponentTypes<C1, C2, C3>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged
+        public Definition AddComponentTypes<C1, C2, C3>(Schema schema) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged
         {
-            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3>();
+            componentTypesMask |= schema.GetComponents<C1, C2, C3>();
             return this;
         }
 
-        /// <summary>
-        /// Adds the specified <typeparamref name="C1"/>, <typeparamref name="C2"/>, <typeparamref name="C3"/> and <typeparamref name="C4"/> component types to this definition.
-        /// </summary>
-        public Definition AddComponentTypes<C1, C2, C3, C4>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged
+        public Definition AddComponentTypes<C1, C2, C3, C4>(Schema schema) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged
         {
-            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4>();
+            componentTypesMask |= schema.GetComponents<C1, C2, C3, C4>();
             return this;
         }
 
-        /// <summary>
-        /// Adds the specified <typeparamref name="C1"/>, <typeparamref name="C2"/>, <typeparamref name="C3"/>, <typeparamref name="C4"/> and <typeparamref name="C5"/> component types to this definition.
-        /// </summary>
-        public Definition AddComponentTypes<C1, C2, C3, C4, C5>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged
+        public Definition AddComponentTypes<C1, C2, C3, C4, C5>(Schema schema) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged
         {
-            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5>();
+            componentTypesMask |= schema.GetComponents<C1, C2, C3, C4, C5>();
             return this;
         }
 
-        /// <summary>
-        /// Adds the specified <typeparamref name="C1"/>, <typeparamref name="C2"/>, <typeparamref name="C3"/>, <typeparamref name="C4"/>, <typeparamref name="C5"/> and <typeparamref name="C6"/> component types to this definition.
-        /// </summary>
-        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged
+        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6>(Schema schema) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged
         {
-            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6>();
+            componentTypesMask |= schema.GetComponents<C1, C2, C3, C4, C5, C6>();
             return this;
         }
 
-        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged
+        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7>(Schema schema) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged
         {
-            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6, C7>();
+            componentTypesMask |= schema.GetComponents<C1, C2, C3, C4, C5, C6, C7>();
             return this;
         }
 
-        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged
+        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8>(Schema schema) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged
         {
-            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8>();
-            return this;
-        }
-
-        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged
-        {
-            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9>();
-            return this;
-        }
-
-        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged
-        {
-            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10>();
-            return this;
-        }
-
-        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged
-        {
-            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11>();
-            return this;
-        }
-
-        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged
-        {
-            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12>();
-            return this;
-        }
-
-        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged
-        {
-            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13>();
-            return this;
-        }
-
-        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged
-        {
-            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14>();
-            return this;
-        }
-
-        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged where C15 : unmanaged
-        {
-            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15>();
-            return this;
-        }
-
-        public Definition AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged where C15 : unmanaged where C16 : unmanaged
-        {
-            componentTypesMask |= ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16>();
+            componentTypesMask |= schema.GetComponents<C1, C2, C3, C4, C5, C6, C7, C8>();
             return this;
         }
 
@@ -337,109 +277,109 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Adds the specified <typeparamref name="C1"/> array type to this definition.
+        /// Adds the specified <typeparamref name="A1"/> array type to this definition.
         /// </summary>
-        public Definition AddArrayType<C1>() where C1 : unmanaged
+        public Definition AddArrayType<A1>(Schema schema) where A1 : unmanaged
         {
-            arrayTypesMask |= ArrayType.Get<C1>();
+            arrayTypesMask |= schema.GetArrayElements<A1>();
             return this;
         }
 
         /// <summary>
-        /// Adds the specified <typeparamref name="C1"/> and <typeparamref name="C2"/> array types to this definition.
+        /// Adds the specified <typeparamref name="A1"/> and <typeparamref name="A2"/> array types to this definition.
         /// </summary>
-        public Definition AddArrayTypes<C1, C2>() where C1 : unmanaged where C2 : unmanaged
+        public Definition AddArrayTypes<A1, A2>(Schema schema) where A1 : unmanaged where A2 : unmanaged
         {
-            arrayTypesMask |= ArrayType.GetBitSet<C1, C2>();
+            arrayTypesMask |= schema.GetArrayElements<A1, A2>();
             return this;
         }
 
         /// <summary>
-        /// Adds the specified <typeparamref name="C1"/>, <typeparamref name="C2"/> and <typeparamref name="C3"/> array types to this definition.
+        /// Adds the specified <typeparamref name="A1"/>, <typeparamref name="A2"/> and <typeparamref name="A3"/> array types to this definition.
         /// </summary>
-        public Definition AddArrayTypes<C1, C2, C3>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged
+        public Definition AddArrayTypes<A1, A2, A3>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged
         {
-            arrayTypesMask |= ArrayType.GetBitSet<C1, C2, C3>();
+            arrayTypesMask |= schema.GetArrayElements<A1, A2, A3>();
             return this;
         }
 
         /// <summary>
-        /// Adds the specified <typeparamref name="C1"/>, <typeparamref name="C2"/>, <typeparamref name="C3"/> and <typeparamref name="C4"/> array types to this definition.
+        /// Adds the specified <typeparamref name="A1"/>, <typeparamref name="A2"/>, <typeparamref name="A3"/> and <typeparamref name="A4"/> array types to this definition.
         /// </summary>
-        public Definition AddArrayTypes<C1, C2, C3, C4>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged
+        public Definition AddArrayTypes<A1, A2, A3, A4>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged where A4 : unmanaged
         {
-            arrayTypesMask |= ArrayType.GetBitSet<C1, C2, C3, C4>();
+            arrayTypesMask |= schema.GetArrayElements<A1, A2, A3, A4>();
             return this;
         }
 
         /// <summary>
-        /// Adds the specified <typeparamref name="C1"/>, <typeparamref name="C2"/>, <typeparamref name="C3"/>, <typeparamref name="C4"/> and <typeparamref name="C5"/> array types to this definition.
+        /// Adds the specified <typeparamref name="A1"/>, <typeparamref name="A2"/>, <typeparamref name="A3"/>, <typeparamref name="A4"/> and <typeparamref name="A5"/> array types to this definition.
         /// </summary>
-        public Definition AddArrayTypes<C1, C2, C3, C4, C5>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged
+        public Definition AddArrayTypes<A1, A2, A3, A4, A5>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged where A4 : unmanaged where A5 : unmanaged
         {
-            arrayTypesMask |= ArrayType.GetBitSet<C1, C2, C3, C4, C5>();
+            arrayTypesMask |= schema.GetArrayElements<A1, A2, A3, A4, A5>();
             return this;
         }
 
         /// <summary>
-        /// Adds the specified <typeparamref name="C1"/>, <typeparamref name="C2"/>, <typeparamref name="C3"/>, <typeparamref name="C4"/>, <typeparamref name="C5"/> and <typeparamref name="C6"/> array types to this definition.
+        /// Adds the specified <typeparamref name="A1"/>, <typeparamref name="A2"/>, <typeparamref name="A3"/>, <typeparamref name="A4"/>, <typeparamref name="A5"/> and <typeparamref name="A6"/> array types to this definition.
         /// </summary>
-        public Definition AddArrayTypes<C1, C2, C3, C4, C5, C6>() where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged
+        public Definition AddArrayTypes<A1, A2, A3, A4, A5, A6>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged where A4 : unmanaged where A5 : unmanaged where A6 : unmanaged
         {
-            arrayTypesMask |= ArrayType.GetBitSet<C1, C2, C3, C4, C5, C6>();
+            arrayTypesMask |= schema.GetArrayElements<A1, A2, A3, A4, A5, A6>();
             return this;
         }
 
         /// <summary>
         /// Retrieves the definition for the specified <typeparamref name="T"/> entity type.
         /// </summary>
-        public static Definition Get<T>() where T : unmanaged, IEntity
+        public static Definition Get<T>(Schema schema) where T : unmanaged, IEntity
         {
-            return default(T).Definition;
+            return default(T).GetDefinition(schema);
         }
 
-        public static Definition Get<T1, T2>() where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity
+        public static Definition Get<T1, T2>(Schema schema) where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity
         {
-            Definition t1 = default(T1).Definition;
-            Definition t2 = default(T2).Definition;
+            Definition t1 = default(T1).GetDefinition(schema);
+            Definition t2 = default(T2).GetDefinition(schema);
             return new Definition(t1.componentTypesMask | t2.componentTypesMask, t1.arrayTypesMask | t2.arrayTypesMask);
         }
 
-        public static Definition Get<T1, T2, T3>() where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity where T3 : unmanaged, IEntity
+        public static Definition Get<T1, T2, T3>(Schema schema) where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity where T3 : unmanaged, IEntity
         {
-            Definition t1 = default(T1).Definition;
-            Definition t2 = default(T2).Definition;
-            Definition t3 = default(T3).Definition;
+            Definition t1 = default(T1).GetDefinition(schema);
+            Definition t2 = default(T2).GetDefinition(schema);
+            Definition t3 = default(T3).GetDefinition(schema);
             return new Definition(t1.componentTypesMask | t2.componentTypesMask | t3.componentTypesMask, t1.arrayTypesMask | t2.arrayTypesMask | t3.arrayTypesMask);
         }
 
-        public static Definition Get<T1, T2, T3, T4>() where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity where T3 : unmanaged, IEntity where T4 : unmanaged, IEntity
+        public static Definition Get<T1, T2, T3, T4>(Schema schema) where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity where T3 : unmanaged, IEntity where T4 : unmanaged, IEntity
         {
-            Definition t1 = default(T1).Definition;
-            Definition t2 = default(T2).Definition;
-            Definition t3 = default(T3).Definition;
-            Definition t4 = default(T4).Definition;
+            Definition t1 = default(T1).GetDefinition(schema);
+            Definition t2 = default(T2).GetDefinition(schema);
+            Definition t3 = default(T3).GetDefinition(schema);
+            Definition t4 = default(T4).GetDefinition(schema);
             return new Definition(t1.componentTypesMask | t2.componentTypesMask | t3.componentTypesMask | t4.componentTypesMask, t1.arrayTypesMask | t2.arrayTypesMask | t3.arrayTypesMask | t4.arrayTypesMask);
         }
 
-        public static Definition Get<T1, T2, T3, T4, T5>() where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity where T3 : unmanaged, IEntity where T4 : unmanaged, IEntity where T5 : unmanaged, IEntity
+        public static Definition Get<T1, T2, T3, T4, T5>(Schema schema) where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity where T3 : unmanaged, IEntity where T4 : unmanaged, IEntity where T5 : unmanaged, IEntity
         {
-            Definition t1 = default(T1).Definition;
-            Definition t2 = default(T2).Definition;
-            Definition t3 = default(T3).Definition;
-            Definition t4 = default(T4).Definition;
-            Definition t5 = default(T5).Definition;
+            Definition t1 = default(T1).GetDefinition(schema);
+            Definition t2 = default(T2).GetDefinition(schema);
+            Definition t3 = default(T3).GetDefinition(schema);
+            Definition t4 = default(T4).GetDefinition(schema);
+            Definition t5 = default(T5).GetDefinition(schema);
             return new Definition(t1.componentTypesMask | t2.componentTypesMask | t3.componentTypesMask | t4.componentTypesMask | t5.componentTypesMask, t1.arrayTypesMask | t2.arrayTypesMask | t3.arrayTypesMask | t4.arrayTypesMask | t5.arrayTypesMask);
         }
 
-        public static Definition Get<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity where T3 : unmanaged, IEntity where T4 : unmanaged, IEntity where T5 : unmanaged, IEntity where T6 : unmanaged, IEntity
+        public static Definition Get<T1, T2, T3, T4, T5, T6>(Schema schema) where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity where T3 : unmanaged, IEntity where T4 : unmanaged, IEntity where T5 : unmanaged, IEntity where T6 : unmanaged, IEntity
         {
-            Definition t1 = default(T1).Definition;
-            Definition t2 = default(T2).Definition;
-            Definition t3 = default(T3).Definition;
-            Definition t4 = default(T4).Definition;
-            Definition t5 = default(T5).Definition;
-            Definition t6 = default(T6).Definition;
+            Definition t1 = default(T1).GetDefinition(schema);
+            Definition t2 = default(T2).GetDefinition(schema);
+            Definition t3 = default(T3).GetDefinition(schema);
+            Definition t4 = default(T4).GetDefinition(schema);
+            Definition t5 = default(T5).GetDefinition(schema);
+            Definition t6 = default(T6).GetDefinition(schema);
             return new Definition(t1.componentTypesMask | t2.componentTypesMask | t3.componentTypesMask | t4.componentTypesMask | t5.componentTypesMask | t6.componentTypesMask, t1.arrayTypesMask | t2.arrayTypesMask | t3.arrayTypesMask | t4.arrayTypesMask | t5.arrayTypesMask | t6.arrayTypesMask);
         }
 

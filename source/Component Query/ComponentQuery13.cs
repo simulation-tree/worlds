@@ -22,7 +22,7 @@ namespace Worlds
 
         public ComponentQuery(World world, BitSet excludedComponentTypes = default)
         {
-            componentTypes = ComponentType.GetBitSet<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13>();
+            componentTypes = world.Schema.GetComponents<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13>();
             this.excludedComponentTypes = excludedComponentTypes;
             this.world = world;
         }
@@ -33,7 +33,7 @@ namespace Worlds
         public readonly Enumerator GetEnumerator()
         {
             Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
-            return new(componentTypes, excludedComponentTypes, chunks);
+            return new(componentTypes, excludedComponentTypes, chunks, world.Schema);
         }
 
         public unsafe ref struct Enumerator
@@ -62,7 +62,7 @@ namespace Worlds
             /// </summary>
             public readonly ComponentChunk.Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13> Current => UnsafeComponentChunk.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13>(chunk, entityIndex - 1, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13);
 
-            internal Enumerator(BitSet componentTypes, BitSet excludedComponentTypes, Dictionary<BitSet, ComponentChunk> allChunks)
+            internal Enumerator(BitSet componentTypes, BitSet excludedComponentTypes, Dictionary<BitSet, ComponentChunk> allChunks, Schema schema)
             {
                 uint chunkCount = 0;
                 USpan<nint> chunksBuffer = stackalloc nint[(int)allChunks.Count];
@@ -83,19 +83,19 @@ namespace Worlds
                 entityCount = 0;
                 if (chunkCount > 0)
                 {
-                    c1 = ComponentType.Get<C1>();
-                    c2 = ComponentType.Get<C2>();
-                    c3 = ComponentType.Get<C3>();
-                    c4 = ComponentType.Get<C4>();
-                    c5 = ComponentType.Get<C5>();
-                    c6 = ComponentType.Get<C6>();
-                    c7 = ComponentType.Get<C7>();
-                    c8 = ComponentType.Get<C8>();
-                    c9 = ComponentType.Get<C9>();
-                    c10 = ComponentType.Get<C10>();
-                    c11 = ComponentType.Get<C11>();
-                    c12 = ComponentType.Get<C12>();
-                    c13 = ComponentType.Get<C13>();
+                    c1 = schema.GetComponent<C1>();
+                    c2 = schema.GetComponent<C2>();
+                    c3 = schema.GetComponent<C3>();
+                    c4 = schema.GetComponent<C4>();
+                    c5 = schema.GetComponent<C5>();
+                    c6 = schema.GetComponent<C6>();
+                    c7 = schema.GetComponent<C7>();
+                    c8 = schema.GetComponent<C8>();
+                    c9 = schema.GetComponent<C9>();
+                    c10 = schema.GetComponent<C10>();
+                    c11 = schema.GetComponent<C11>();
+                    c12 = schema.GetComponent<C12>();
+                    c13 = schema.GetComponent<C13>();
                     uint stride = TypeInfo<ComponentChunk>.size;
                     chunks = new(NativeMemory.Alloc(chunkCount * stride), chunkCount);
                     System.Runtime.CompilerServices.Unsafe.CopyBlock(chunks.Pointer, chunksBuffer.Pointer, stride * chunkCount);

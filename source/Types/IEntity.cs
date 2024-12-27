@@ -20,6 +20,6 @@ namespace Worlds
         /// <summary>
         /// Describes the components and arrays of the entity.
         /// </summary>
-        Definition Definition { get; }
+        Definition GetDefinition(Schema schema);
     }
 }

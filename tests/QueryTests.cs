@@ -9,7 +9,7 @@ namespace Worlds.Tests
         [Test]
         public void FindComponents()
         {
-            using World world = new();
+            using World world = CreateWorld();
             uint a = world.CreateEntity();
             uint b = world.CreateEntity();
             uint c = world.CreateEntity();
@@ -55,7 +55,7 @@ namespace Worlds.Tests
         [Test]
         public void QueryWithExclusion()
         {
-            using World world = new();
+            using World world = CreateWorld();
 
             uint a = world.CreateEntity();
             world.AddComponent(a, new Apple());
@@ -71,7 +71,7 @@ namespace Worlds.Tests
             world.AddComponent(d, new Apple());
 
             using List<uint> entities = new();
-            ComponentQuery<Apple> appleQuery = new(world, ComponentType.GetBitSet<Berry>());
+            ComponentQuery<Apple> appleQuery = new(world, world.Schema.GetComponents<Berry>());
             foreach (var r in appleQuery)
             {
                 entities.Add(r.entity);
@@ -85,7 +85,7 @@ namespace Worlds.Tests
         [Test]
         public void FindOnlyEnabledEntities()
         {
-            using World world = new();
+            using World world = CreateWorld();
             uint a = world.CreateEntity();
             uint b = world.CreateEntity();
             uint c = world.CreateEntity();
@@ -115,7 +115,7 @@ namespace Worlds.Tests
         [Test]
         public void QueryComponentsAfterDestroyingEntities()
         {
-            using World world = new();
+            using World world = CreateWorld();
             uint entity1 = world.CreateEntity();
             uint entity2 = world.CreateEntity();
             Cherry component1 = new("apple");
@@ -137,7 +137,7 @@ namespace Worlds.Tests
         [Test]
         public void ComponentBuffer()
         {
-            using World world = new();
+            using World world = CreateWorld();
             uint entity1 = world.CreateEntity();
             uint entity2 = world.CreateEntity();
             SimpleComponent component1 = new("apple");
@@ -173,7 +173,7 @@ namespace Worlds.Tests
         [Test]
         public void EnumerateQueryResults()
         {
-            using World world = new();
+            using World world = CreateWorld();
 
             uint first = world.CreateEntity();
             world.AddComponent(first, new Apple(232));
@@ -235,7 +235,7 @@ namespace Worlds.Tests
         [Test]
         public void QueryMultipleComponents()
         {
-            using World world = new();
+            using World world = CreateWorld();
             uint entity1 = world.CreateEntity();
             uint entity2 = world.CreateEntity();
             Cherry component1 = new("apple");
@@ -266,9 +266,9 @@ namespace Worlds.Tests
         [Test]
         public void BenchmarkMethods()
         {
-            BitSet componentTypes = ComponentType.GetBitSet<Apple, Berry, Cherry>();
-            BitSet otherComponentTypes = ComponentType.GetBitSet<Apple, Berry>();
-            using World world = new();
+            using World world = CreateWorld();
+            BitSet componentTypes = world.Schema.GetComponents<Apple, Berry, Cherry>();
+            BitSet otherComponentTypes = world.Schema.GetComponents<Apple, Berry>();
             uint sampleCount = 70000;
             uint count = 0;
             Stopwatch stopwatch = Stopwatch.StartNew();

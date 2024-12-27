@@ -38,28 +38,38 @@ namespace Worlds
         /// </summary>
         public readonly BitSet TypesMask => UnsafeComponentChunk.GetTypesMask(value);
 
+        /// <summary>
+        /// The schema that this chunk was created with.
+        /// </summary>
+        public readonly Schema Schema => UnsafeComponentChunk.GetSchema(value);
+
 #if NET
+        [Obsolete("Default constructor not supported", true)]
+        public ComponentChunk()
+        {
+            throw new NotSupportedException();
+        }
+#endif
         /// <summary>
         /// Creates a new component chunk.
         /// </summary>
-        public ComponentChunk()
+        public ComponentChunk(Schema schema)
         {
-            value = UnsafeComponentChunk.Allocate(default);
-        }
-#endif
-
-        /// <summary>
-        /// Creates a new component chunk with the given <paramref name="componentTypes"/>.
-        /// </summary>
-        public ComponentChunk(BitSet componentTypes)
-        {
-            value = UnsafeComponentChunk.Allocate(componentTypes);
+            value = UnsafeComponentChunk.Allocate(default, schema);
         }
 
         /// <summary>
         /// Creates a new component chunk with the given <paramref name="componentTypes"/>.
         /// </summary>
-        public ComponentChunk(USpan<ComponentType> componentTypes)
+        public ComponentChunk(BitSet componentTypes, Schema schema)
+        {
+            value = UnsafeComponentChunk.Allocate(componentTypes, schema);
+        }
+
+        /// <summary>
+        /// Creates a new component chunk with the given <paramref name="componentTypes"/>.
+        /// </summary>
+        public ComponentChunk(USpan<ComponentType> componentTypes, Schema schema)
         {
             BitSet typesMask = new();
             for (byte i = 0; i < componentTypes.Length; i++)
@@ -67,7 +77,7 @@ namespace Worlds
                 typesMask |= componentTypes[i];
             }
 
-            value = UnsafeComponentChunk.Allocate(typesMask);
+            value = UnsafeComponentChunk.Allocate(typesMask, schema);
         }
 
         /// <inheritdoc/>
@@ -130,11 +140,11 @@ namespace Worlds
         {
             BitSet typeMask = TypesMask;
             byte count = 0;
-            for (byte i = 0; i < BitSet.Capacity; i++)
+            for (byte c = 0; c < BitSet.Capacity; c++)
             {
-                if (typeMask == i)
+                if (typeMask == c)
                 {
-                    buffer[count++] = ComponentType.All[i];
+                    buffer[count++] = new(c);
                 }
             }
 
@@ -258,7 +268,8 @@ namespace Worlds
         /// </summary>
         public readonly List<T> GetComponents<T>() where T : unmanaged
         {
-            return new(GetComponents(ComponentType.Get<T>()));
+            Schema schema = Schema;
+            return new(GetComponents(schema.GetComponent<T>()));
         }
 
         /// <summary>
@@ -266,7 +277,8 @@ namespace Worlds
         /// </summary>
         public readonly ref T GetComponent<T>(uint index) where T : unmanaged
         {
-            ComponentType componentType = ComponentType.Get<T>();
+            Schema schema = Schema;
+            ComponentType componentType = schema.GetComponent<T>();
             UnsafeList* components = GetComponents(componentType);
             nint address = UnsafeList.GetStartAddress(components);
             return ref *(T*)(address + index * TypeInfo<T>.size);
@@ -277,8 +289,12 @@ namespace Worlds
         /// </summary>
         public readonly USpan<byte> GetComponentBytes(uint index, ComponentType type)
         {
-            void* component = GetComponent(index, type);
-            return new USpan<byte>(component, type.Size);
+            Schema schema = Schema;
+            UnsafeList* components = GetComponents(type);
+            nint address = UnsafeList.GetStartAddress(components);
+            ushort componentSize = schema.GetComponentSize(type);
+            void* component = (void*)(address + index * componentSize);
+            return new(component, componentSize);
         }
 
         /// <summary>
@@ -286,9 +302,11 @@ namespace Worlds
         /// </summary>
         public readonly void* GetComponent(uint index, ComponentType type)
         {
+            Schema schema = Schema;
             UnsafeList* components = GetComponents(type);
             nint address = UnsafeList.GetStartAddress(components);
-            return (void*)(address + index * type.Size);
+            ushort componentSize = schema.GetComponentSize(type);
+            return (void*)(address + index * componentSize);
         }
 
         /// <summary>
@@ -296,7 +314,8 @@ namespace Worlds
         /// </summary>
         public readonly nint GetComponentAddress<T>(uint index) where T : unmanaged
         {
-            ComponentType componentType = ComponentType.Get<T>();
+            Schema schema = Schema;
+            ComponentType componentType = schema.GetComponent<T>();
             UnsafeList* components = GetComponents(componentType);
             nint address = UnsafeList.GetStartAddress(components);
             return (nint)(address + index * TypeInfo<T>.size);

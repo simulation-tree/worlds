@@ -22,7 +22,7 @@ namespace Worlds
 
         public {{TypeName}}(World world, BitSet excludedComponentTypes = default)
         {
-            componentTypes = ComponentType.GetBitSet<{{GenericTypeArguments}}>();
+            componentTypes = world.Schema.GetComponents<{{GenericTypeArguments}}>();
             this.excludedComponentTypes = excludedComponentTypes;
             this.world = world;
         }
@@ -33,7 +33,7 @@ namespace Worlds
         public readonly Enumerator GetEnumerator()
         {
             Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
-            return new(componentTypes, excludedComponentTypes, chunks);
+            return new(componentTypes, excludedComponentTypes, chunks, world.Schema);
         }
 
         public unsafe ref struct Enumerator
@@ -50,7 +50,7 @@ namespace Worlds
             /// </summary>
             public readonly ComponentChunk.Entity<{{GenericTypeArguments}}> Current => UnsafeComponentChunk.GetEntity<{{GenericTypeArguments}}>(chunk, entityIndex - 1, {{TypeParameters}});
 
-            internal Enumerator(BitSet componentTypes, BitSet excludedComponentTypes, Dictionary<BitSet, ComponentChunk> allChunks)
+            internal Enumerator(BitSet componentTypes, BitSet excludedComponentTypes, Dictionary<BitSet, ComponentChunk> allChunks, Schema schema)
             {
                 uint chunkCount = 0;
                 USpan<nint> chunksBuffer = stackalloc nint[(int)allChunks.Count];

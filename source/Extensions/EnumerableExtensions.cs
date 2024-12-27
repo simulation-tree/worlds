@@ -51,7 +51,7 @@ namespace Worlds
 
         public static IEnumerable<uint> GetAllContaining<C1>(this World world, bool onlyEnabled = false) where C1 : unmanaged
         {
-            return GetAllContaining(world, ComponentType.Get<C1>(), onlyEnabled);
+            return GetAllContaining(world, world.Schema.GetComponent<C1>(), onlyEnabled);
         }
     }
 }

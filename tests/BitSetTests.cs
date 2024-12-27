@@ -147,8 +147,9 @@ namespace Worlds.Tests
         [Test]
         public void CompareHashCodeCase1()
         {
-            BitSet a = new([ComponentType.Get<Double>(), ComponentType.Get<Byte>(), ComponentType.Get<Float>()]);
-            BitSet b = new([ComponentType.Get<Byte>(), ComponentType.Get<Float>()]);
+            using Schema schema = CreateSchema();
+            BitSet a = new([schema.GetComponent<Double>(), schema.GetComponent<Byte>(), schema.GetComponent<Float>()]);
+            BitSet b = new([schema.GetComponent<Byte>(), schema.GetComponent<Float>()]);
             Assert.That(a, Is.Not.EqualTo(b));
         }
     }

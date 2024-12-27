@@ -23,7 +23,11 @@ namespace Worlds
 
         readonly World IEntity.World => world;
         readonly uint IEntity.Value => value;
-        readonly Definition IEntity.Definition => new();
+
+        readonly Definition IEntity.GetDefinition(Schema schema)
+        {
+            return new();
+        }
 
 #if NET
         /// <summary>
@@ -278,7 +282,7 @@ namespace Worlds
         /// </summary>
         public readonly T Become<T>() where T : unmanaged, IEntity
         {
-            this.Become(Definition.Get<T>());
+            this.Become(Definition.Get<T>(world.Schema));
             return As<T>();
         }
 
@@ -287,7 +291,7 @@ namespace Worlds
         /// </summary>
         public readonly bool Is<T>() where T : unmanaged, IEntity
         {
-            Definition definition = default(T).Definition;
+            Definition definition = default(T).GetDefinition(world.Schema);
             return this.Is(definition);
         }
 

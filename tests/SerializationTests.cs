@@ -1,5 +1,4 @@
 ﻿using Collections;
-using System;
 using Unmanaged;
 
 namespace Worlds.Tests
@@ -9,7 +8,8 @@ namespace Worlds.Tests
         [Test]
         public void SaveWorld()
         {
-            World world = new();
+            using Schema schema = CreateSchema();
+            World world = CreateWorld();
             uint a = world.CreateEntity();
             world.AddComponent(a, new Fruit(42));
             world.AddComponent(a, new Cherry("Hello, World!"));
@@ -35,35 +35,6 @@ namespace Worlds.Tests
 
             USpan<byte> data = writer.GetBytes();
             using BinaryReader reader = new(data);
-
-            World.SerializationContext.GetComponentType = (type) =>
-            {
-                if (type.Name == typeof(Fruit).Name)
-                {
-                    return ComponentType.Get<Fruit>();
-                }
-                else if (type.Name == typeof(Apple).Name)
-                {
-                    return ComponentType.Get<Apple>();
-                }
-                else if (type.Name == typeof(Cherry).Name)
-                {
-                    return ComponentType.Get<Cherry>();
-                }
-
-                throw new Exception($"Unknown type {type}");
-            };
-
-            World.SerializationContext.GetArrayType = (type) =>
-            {
-                if (type.Name == typeof(Character).Name)
-                {
-                    return ArrayType.Get<Character>();
-                }
-
-                throw new Exception($"Unknown type {type}");
-            };
-
             using World loadedWorld = reader.ReadObject<World>();
             using List<uint> newEntities = new(loadedWorld.Entities);
             using List<(uint, Apple)> newApples = new();
@@ -81,7 +52,8 @@ namespace Worlds.Tests
         [Test]
         public void AppendSavedWorld()
         {
-            using World prefabWorld = new();
+            using Schema schema = CreateSchema();
+            using World prefabWorld = CreateWorld();
             uint a = prefabWorld.CreateEntity();
             prefabWorld.AddComponent(a, new Fruit(42));
             prefabWorld.AddComponent(a, new Cherry("Hello, World!"));
@@ -90,36 +62,14 @@ namespace Worlds.Tests
             using BinaryWriter writer = new();
             writer.WriteObject(prefabWorld);
 
-            using World world = new();
+            using World world = CreateWorld();
             uint b = world.CreateEntity();
             world.AddComponent(b, new Fruit(43));
 
             uint c = world.CreateEntity();
             world.AddComponent(c, new Cherry("Goodbye, World!"));
 
-            World.SerializationContext.GetComponentType = (type) =>
-            {
-                if (type.Name == typeof(Fruit).Name)
-                {
-                    return ComponentType.Get<Fruit>();
-                }
-                else if (type.Name == typeof(Apple).Name)
-                {
-                    return ComponentType.Get<Apple>();
-                }
-                else if (type.Name == typeof(Cherry).Name)
-                {
-                    return ComponentType.Get<Cherry>();
-                }
-                else if (type.Name == typeof(Prefab).Name)
-                {
-                    return ComponentType.Get<Prefab>();
-                }
-
-                throw new Exception($"Unknown serialized component type {type}");
-            };
-
-            using BinaryReader reader = new (writer);
+            using BinaryReader reader = new(writer);
             using World loadedWorld = reader.ReadObject<World>();
             world.Append(loadedWorld);
 

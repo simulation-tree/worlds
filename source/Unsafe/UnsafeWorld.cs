@@ -43,13 +43,7 @@ namespace Worlds.Unsafe
         private UnsafeList* slots;
         private UnsafeList* freeEntities;
         private UnsafeDictionary* components;
-
-        private UnsafeWorld(UnsafeList* slots, UnsafeList* freeEntities, UnsafeDictionary* components)
-        {
-            this.slots = slots;
-            this.freeEntities = freeEntities;
-            this.components = components;
-        }
+        private Schema.Implementation* schema;
 
         /// <summary>
         /// Throws an <see cref="NullReferenceException"/> if the given <paramref name="entity"/> is missing.
@@ -224,6 +218,13 @@ namespace Worlds.Unsafe
             return new(world->components);
         }
 
+        public static Schema GetSchema(UnsafeWorld* world)
+        {
+            Allocations.ThrowIfNull(world);
+
+            return new(world->schema);
+        }
+
         /// <summary>
         /// Allocates a new <see cref="UnsafeWorld"/> instance.
         /// </summary>
@@ -232,15 +233,17 @@ namespace Worlds.Unsafe
             UnsafeList* slots = UnsafeList.Allocate<EntitySlot>(4);
             UnsafeList* freeEntities = UnsafeList.Allocate<uint>(4);
             UnsafeDictionary* components = UnsafeDictionary.Allocate<BitSet, ComponentChunk>(4);
+            Schema.Implementation* schema = Schema.Implementation.Allocate();
 
             BitSet defaultSet = default;
-            ComponentChunk defaultComponentChunk = new(defaultSet);
+            ComponentChunk defaultComponentChunk = new(defaultSet, new(schema));
             UnsafeDictionary.TryAdd(components, defaultSet, defaultComponentChunk);
 
             UnsafeWorld* world = Allocations.Allocate<UnsafeWorld>();
             world->slots = slots;
             world->freeEntities = freeEntities;
             world->components = components;
+            world->schema = schema;
             return world;
         }
 
@@ -252,6 +255,7 @@ namespace Worlds.Unsafe
             Allocations.ThrowIfNull(world);
 
             ClearEntities(world);
+            Schema.Implementation.Free(ref world->schema);
             UnsafeList.Free(ref world->slots);
             UnsafeList.Free(ref world->freeEntities);
             UnsafeDictionary.Free(ref world->components);
@@ -510,6 +514,7 @@ namespace Worlds.Unsafe
 
             List<EntitySlot> slots = GetEntitySlots(world);
             List<uint> freeEntities = GetFreeEntities(world);
+            Schema schema = GetSchema(world);
 
             //make sure islands of free entities dont exist
             while (newEntity > slots.Count + 1)
@@ -536,7 +541,7 @@ namespace Worlds.Unsafe
             Dictionary<BitSet, ComponentChunk> components = GetComponentChunks(world);
             if (!components.TryGetValue(definition.ComponentTypesMask, out ComponentChunk chunk))
             {
-                chunk = new(definition.ComponentTypesMask);
+                chunk = new(definition.ComponentTypesMask, schema);
                 components.Add(definition.ComponentTypesMask, chunk);
             }
 
@@ -552,8 +557,9 @@ namespace Worlds.Unsafe
                 {
                     if (slot.arrayTypes == a)
                     {
-                        ArrayType arrayType = ArrayType.All[a];
-                        slot.arrays[arrayType] = new(arrayType.Size);
+                        ArrayType arrayType = new(a);
+                        ushort arrayElementSize = schema.GetArrayElementSize(arrayType);
+                        slot.arrays[arrayType] = new(arrayElementSize); //todo: not sure why this is initialized to 1 at first tbh
                         slot.arrayLengths[arrayType] = 0;
                     }
                 }
@@ -623,7 +629,8 @@ namespace Worlds.Unsafe
                 slot.arrayLengths = new(BitSet.Capacity);
             }
 
-            Allocation newArray = new(arrayType.Size * length);
+            ushort arrayElementSize = GetSchema(world).GetArrayElementSize(arrayType);
+            Allocation newArray = new(arrayElementSize * length);
             slot.arrayTypes |= arrayType;
             slot.arrays[arrayType] = newArray;
             slot.arrayLengths[arrayType] = length;
@@ -680,7 +687,8 @@ namespace Worlds.Unsafe
 
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
             ref Allocation array = ref slot.arrays[arrayType];
-            Allocation.Resize(ref array, arrayType.Size * newLength);
+            ushort arrayElementSize = GetSchema(world).GetArrayElementSize(arrayType);
+            Allocation.Resize(ref array, arrayElementSize * newLength);
             slot.arrayLengths[arrayType] = newLength;
             return array;
         }
@@ -715,6 +723,7 @@ namespace Worlds.Unsafe
             ThrowIfEntityIsMissing(world, entity);
             ThrowIfComponentAlreadyPresent(world, entity, componentType);
 
+            Schema schema = GetSchema(world);
             Dictionary<BitSet, ComponentChunk> components = GetComponentChunks(world);
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
             ComponentChunk previousChunk = slot.componentChunk;
@@ -723,7 +732,7 @@ namespace Worlds.Unsafe
 
             if (!components.TryGetValue(newComponentTypes, out ComponentChunk destinationChunk))
             {
-                destinationChunk = new(newComponentTypes);
+                destinationChunk = new(newComponentTypes, schema);
                 components.Add(newComponentTypes, destinationChunk);
             }
 
@@ -740,9 +749,10 @@ namespace Worlds.Unsafe
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
 
-            ComponentType componentType = ComponentType.Get<T>();
+            ComponentType componentType = GetSchema(world).GetComponent<T>();
             ThrowIfComponentAlreadyPresent(world, entity, componentType);
 
+            Schema schema = GetSchema(world);
             Dictionary<BitSet, ComponentChunk> components = GetComponentChunks(world);
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
             ComponentChunk previousChunk = slot.componentChunk;
@@ -751,7 +761,7 @@ namespace Worlds.Unsafe
 
             if (!components.TryGetValue(newComponentTypes, out ComponentChunk destinationChunk))
             {
-                destinationChunk = new(newComponentTypes);
+                destinationChunk = new(newComponentTypes, schema);
                 components.Add(newComponentTypes, destinationChunk);
             }
 
@@ -769,6 +779,7 @@ namespace Worlds.Unsafe
             ThrowIfEntityIsMissing(world, entity);
             ThrowIfComponentMissing(world, entity, componentType);
 
+            Schema schema = GetSchema(world);
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
             ComponentChunk chunk = slot.componentChunk;
             chunk.SetComponentBytes(entity, componentType, bytes);
@@ -779,7 +790,8 @@ namespace Worlds.Unsafe
         /// </summary>
         public static void RemoveComponent<T>(UnsafeWorld* world, uint entity) where T : unmanaged
         {
-            RemoveComponent(world, entity, ComponentType.Get<T>());
+            ComponentType componentType = GetSchema(world).GetComponent<T>();
+            RemoveComponent(world, entity, componentType);
         }
 
         /// <summary>
@@ -791,6 +803,7 @@ namespace Worlds.Unsafe
             ThrowIfEntityIsMissing(world, entity);
             ThrowIfComponentMissing(world, entity, componentType);
 
+            Schema schema = GetSchema(world);
             Dictionary<BitSet, ComponentChunk> components = GetComponentChunks(world);
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
             ComponentChunk previousChunk = slot.componentChunk;
@@ -799,7 +812,7 @@ namespace Worlds.Unsafe
 
             if (!components.TryGetValue(newComponentTypes, out ComponentChunk destinationChunk))
             {
-                destinationChunk = new(newComponentTypes);
+                destinationChunk = new(newComponentTypes, schema);
                 components.Add(newComponentTypes, destinationChunk);
             }
 
@@ -829,7 +842,8 @@ namespace Worlds.Unsafe
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
 
-            ComponentType type = ComponentType.Get<T>();
+            Schema schema = GetSchema(world);
+            ComponentType type = schema.GetComponent<T>();
             ThrowIfComponentMissing(world, entity, type);
 
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
@@ -844,6 +858,7 @@ namespace Worlds.Unsafe
             ThrowIfEntityIsMissing(world, entity);
             ThrowIfComponentMissing(world, entity, componentType);
 
+            Schema schema = GetSchema(world);
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
             ComponentChunk chunk = slot.componentChunk;
             uint index = chunk.Entities.IndexOf(entity);

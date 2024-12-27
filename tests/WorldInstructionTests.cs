@@ -8,10 +8,10 @@ namespace Worlds.Tests
         [Test]
         public void CreateOneEntity()
         {
-            using World world = new();
+            using World world = CreateWorld();
             using Operation operation = new();
             Operation.SelectedEntity newEntity = operation.CreateEntity();
-            newEntity.AddComponent(new TestComponent(1337));
+            newEntity.AddComponent(new TestComponent(1337), world.Schema);
 
             world.Perform(operation);
             uint entity = world[0];
@@ -22,7 +22,7 @@ namespace Worlds.Tests
         [Test]
         public void DestroyExistingEntities()
         {
-            using World world = new();
+            using World world = CreateWorld();
             for (uint i = 0; i < 30; i++)
             {
                 world.CreateEntity();
@@ -45,10 +45,10 @@ namespace Worlds.Tests
         [Test]
         public void CreateManyWithData()
         {
-            using World world = new();
+            using World world = CreateWorld();
             using Operation operation = new();
             operation.CreateEntities(40);
-            operation.AddComponent(new TestComponent(2));
+            operation.AddComponent(new TestComponent(2), world.Schema);
             world.Perform(operation);
             List<uint> createdEntities = new();
             foreach (uint entity in world.Entities)
@@ -63,22 +63,23 @@ namespace Worlds.Tests
         [Test]
         public void CreateThreeObjects()
         {
+            using Schema schema = CreateSchema();
             using Operation operation = new();
             operation.CreateEntity();
-            operation.AddComponent(new TestComponent(4));
+            operation.AddComponent(new TestComponent(4), schema);
 
             operation.CreateEntity();
-            operation.AddComponent(new TestComponent(5));
+            operation.AddComponent(new TestComponent(5), schema);
 
             operation.CreateEntity();
             operation.SetParentToPreviouslyCreatedEntity(2);
-            operation.AddComponent(new TestComponent(6));
-            operation.CreateArray<Character>(3);
-            operation.SetArrayElement(0, (Character)'a');
-            operation.SetArrayElement(1, (Character)'b');
-            operation.SetArrayElement(2, (Character)'c');
+            operation.AddComponent(new TestComponent(6), schema);
+            operation.CreateArray<Character>(3, schema);
+            operation.SetArrayElement(0, (Character)'a', schema);
+            operation.SetArrayElement(1, (Character)'b', schema);
+            operation.SetArrayElement(2, (Character)'c', schema);
 
-            using World world = new();
+            using World world = CreateWorld();
             world.Perform(operation);
 
             uint firstEntity = world[0];
@@ -97,12 +98,13 @@ namespace Worlds.Tests
         [Test]
         public void AddInstructionsThenRemove()
         {
+            using Schema schema = CreateSchema();
             using Operation operation = new();
             operation.SelectEntity(1);
-            operation.AddComponent(new TestComponent(1));
+            operation.AddComponent(new TestComponent(1), schema);
             operation.ClearSelection();
             operation.SelectEntity(2);
-            operation.AddComponent(new TestComponent(2));
+            operation.AddComponent(new TestComponent(2), schema);
 
             Assert.That(operation.Count, Is.EqualTo(5));
 
@@ -119,8 +121,9 @@ namespace Worlds.Tests
         [Test]
         public void SerializeInstructions()
         {
+            using Schema schema = CreateSchema();
             Instruction a = Instruction.CreateEntity();
-            Instruction b = Instruction.AddComponent(new TestComponent(1), out Allocation allocation);
+            Instruction b = Instruction.AddComponent(new TestComponent(1), schema, out Allocation allocation);
             Instruction c = Instruction.CreateEntity();
             Instruction d = Instruction.SetParent(1);
 
@@ -147,13 +150,14 @@ namespace Worlds.Tests
         [Test]
         public void WriteSpanIntoArray()
         {
+            using Schema schema = CreateSchema();
             string testString = "this is not an abacus";
             using Operation operation = new();
             operation.CreateEntity();
-            operation.CreateArray<Character>((uint)testString.Length);
-            operation.SetArrayElements(0, testString.AsUSpan().As<Character>());
+            operation.CreateArray<Character>((uint)testString.Length, schema);
+            operation.SetArrayElements(0, testString.AsUSpan().As<Character>(), schema);
 
-            using World world = new();
+            using World world = CreateWorld();
             world.Perform(operation);
 
             uint entity = world[0];
@@ -164,12 +168,13 @@ namespace Worlds.Tests
         [Test]
         public void ModifyArrayMultipleTimes()
         {
+            using Schema schema = CreateSchema();
             Operation operation = new();
             operation.CreateEntity();
-            operation.CreateArray<Character>(4);
-            operation.SetArrayElement(0, (Character)'a');
+            operation.CreateArray<Character>(4, schema);
+            operation.SetArrayElement(0, (Character)'a', schema);
 
-            using World world = new();
+            using World world = CreateWorld();
             world.Perform(operation);
 
             uint entity = world[0];
@@ -181,8 +186,8 @@ namespace Worlds.Tests
 
             operation.Clear();
             Operation.SelectedEntity selected = operation.SelectEntity(entity);
-            selected.SetArrayElement(1, (Character)'b');
-            selected.SetArrayElement(2, (Character)'c');
+            selected.SetArrayElement(1, (Character)'b', schema);
+            selected.SetArrayElement(2, (Character)'c', schema);
 
             world.Perform(operation);
             list = world.GetArray<Character>(entity);
@@ -196,11 +201,12 @@ namespace Worlds.Tests
         [Test]
         public void ResizeExistingArray()
         {
+            using Schema schema = CreateSchema();
             using Operation operation = new();
             Operation.SelectedEntity newEntity = operation.CreateEntity();
-            newEntity.CreateArray("abcd".AsUSpan().As<Character>());
+            newEntity.CreateArray("abcd".AsUSpan().As<Character>(), schema);
 
-            using World world = new();
+            using World world = CreateWorld();
             world.Perform(operation);
 
             uint entity = world[0];
@@ -209,7 +215,7 @@ namespace Worlds.Tests
 
             operation.Clear();
             Operation.SelectedEntity selectedEntity = operation.SelectEntity(entity);
-            selectedEntity.ResizeArray<Character>(8);
+            selectedEntity.ResizeArray<Character>(8, schema);
 
             world.Perform(operation);
 
@@ -219,11 +225,12 @@ namespace Worlds.Tests
         [Test]
         public void InsertInstructions()
         {
+            using Schema schema = CreateSchema();
             using Operation operation = new();
             operation.CreateEntity();
-            operation.AddComponent(new TestComponent(1));
+            operation.AddComponent(new TestComponent(1), schema);
             operation.CreateEntity();
-            operation.InsertInstructionAt(Instruction.AddComponent(new Another(25)), 1);
+            operation.InsertInstructionAt(Instruction.AddComponent(new Another(25), schema), 1);
 
             Assert.That(operation.Count, Is.EqualTo(4));
             Assert.That(operation[0].type, Is.EqualTo(Instruction.Type.CreateEntity));
@@ -231,7 +238,7 @@ namespace Worlds.Tests
             Assert.That(operation[2].type, Is.EqualTo(Instruction.Type.AddComponent));
             Assert.That(operation[3].type, Is.EqualTo(Instruction.Type.CreateEntity));
 
-            operation.InsertInstructionAt(Instruction.RemoveComponent<TestComponent>(), 4);
+            operation.InsertInstructionAt(Instruction.RemoveComponent<TestComponent>(schema), 4);
 
             Assert.That(operation.Count, Is.EqualTo(5));
             Assert.That(operation[4].type, Is.EqualTo(Instruction.Type.RemoveComponent));
@@ -240,9 +247,10 @@ namespace Worlds.Tests
         [Test]
         public void AddOneComponentToSelectedEntity()
         {
+            using Schema schema = CreateSchema();
             using Operation operation = new();
             Operation.SelectedEntity a = operation.CreateEntity();
-            a.AddComponent(new TestComponent(1));
+            a.AddComponent(new TestComponent(1), schema);
 
             Assert.That(operation.Count, Is.EqualTo(2));
             Assert.That(operation[0].type, Is.EqualTo(Instruction.Type.CreateEntity));
@@ -252,6 +260,7 @@ namespace Worlds.Tests
         [Test]
         public void AddThenRemoveComponents()
         {
+            using Schema schema = CreateSchema();
             using Operation operation = new();
             for (uint i = 0; i < 5; i++)
             {
@@ -264,10 +273,10 @@ namespace Worlds.Tests
                 operation.SelectPreviouslyCreatedEntity(i);
             }
 
-            operation.AddComponent(new TestComponent(1));
-            operation.AddComponent(new SimpleComponent("what"));
+            operation.AddComponent(new TestComponent(1), schema);
+            operation.AddComponent(new SimpleComponent("what"), schema);
 
-            using World world = new();
+            using World world = CreateWorld();
             world.Perform(operation);
 
             for (uint i = 1; i <= 5; i++)
@@ -282,7 +291,7 @@ namespace Worlds.Tests
                 operation.SelectEntity(i);
             }
 
-            operation.RemoveComponent<TestComponent>();
+            operation.RemoveComponent<TestComponent>(schema);
 
             world.Perform(operation);
 
@@ -298,7 +307,7 @@ namespace Worlds.Tests
                 operation.SelectEntity(i);
             }
 
-            operation.RemoveComponent<SimpleComponent>();
+            operation.RemoveComponent<SimpleComponent>(schema);
 
             world.Perform(operation);
 

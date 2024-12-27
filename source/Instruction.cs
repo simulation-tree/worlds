@@ -323,8 +323,8 @@ namespace Worlds
                 buffer[length++] = 'a';
                 buffer[length++] = 'y';
                 buffer[length++] = '<';
-                ArrayType arrayType = new((byte)a);
-                length += arrayType.ToString(buffer.Slice(length));
+                ArrayType arrayElementType = new((byte)a);
+                length += arrayElementType.ToString(buffer.Slice(length));
                 buffer[length++] = '>';
                 buffer[length++] = '(';
                 length += b.ToString(buffer.Slice(length));
@@ -345,8 +345,8 @@ namespace Worlds
                 buffer[length++] = 'a';
                 buffer[length++] = 'y';
                 buffer[length++] = '<';
-                ArrayType arrayType = new((byte)a);
-                length += arrayType.ToString(buffer.Slice(length));
+                ArrayType arrayElementType = new((byte)a);
+                length += arrayElementType.ToString(buffer.Slice(length));
                 buffer[length++] = '>';
                 buffer[length++] = '(';
                 buffer[length++] = ')';
@@ -365,8 +365,8 @@ namespace Worlds
                 buffer[length++] = 'a';
                 buffer[length++] = 'y';
                 buffer[length++] = '<';
-                ArrayType arrayType = new((byte)a);
-                length += arrayType.ToString(buffer.Slice(length));
+                ArrayType arrayElementType = new((byte)a);
+                length += arrayElementType.ToString(buffer.Slice(length));
                 buffer[length++] = '>';
                 buffer[length++] = '(';
                 buffer[length++] = ')';
@@ -505,9 +505,9 @@ namespace Worlds
         /// <summary>
         /// Adds the given component to all entities inside the selection.
         /// </summary>
-        public static Instruction AddComponent<T>(T component) where T : unmanaged
+        public static Instruction AddComponent<T>(T component, Schema schema) where T : unmanaged
         {
-            return AddComponent(component, out _);
+            return AddComponent(component, schema, out _);
         }
 
         /// <summary>
@@ -516,18 +516,19 @@ namespace Worlds
         /// <paramref name="allocation"/> will contain the memory of the component.
         /// </para>
         /// </summary>
-        public static Instruction AddComponent<T>(T component, out Allocation allocation) where T : unmanaged
+        public static Instruction AddComponent<T>(T component, Schema schema, out Allocation allocation) where T : unmanaged
         {
             allocation = Allocation.Create(component);
-            return new(Type.AddComponent, ComponentType.Get<T>().index, (ulong)allocation.Address, 0);
+            return new(Type.AddComponent, schema.GetComponent<T>(), (ulong)allocation.Address, 0);
         }
 
         /// <summary>
         /// Adds the given component to all entities inside the selection.
         /// </summary>
-        public static Instruction AddComponent(ComponentType componentType)
+        public static Instruction AddComponent(ComponentType componentType, Schema schema)
         {
-            Allocation allocation = Allocation.Create(componentType.Size);
+            ushort componentSize = schema.GetComponentSize(componentType);
+            Allocation allocation = Allocation.Create(componentSize);
             return new(Type.AddComponent, componentType.index, (ulong)allocation.Address, 0);
         }
 
@@ -543,9 +544,9 @@ namespace Worlds
         /// <summary>
         /// Removes the component of the given type from the selected entities.
         /// </summary>
-        public static Instruction RemoveComponent<T>() where T : unmanaged
+        public static Instruction RemoveComponent<T>(Schema schema) where T : unmanaged
         {
-            return RemoveComponent(ComponentType.Get<T>());
+            return RemoveComponent(schema.GetComponent<T>());
         }
 
         /// <summary>
@@ -559,10 +560,10 @@ namespace Worlds
         /// <summary>
         /// Modifies the component of the given type on the selected entities.
         /// </summary>
-        public static Instruction SetComponent<T>(T component) where T : unmanaged
+        public static Instruction SetComponent<T>(T component, Schema schema) where T : unmanaged
         {
             Allocation allocation = Allocation.Create(component);
-            return new(Type.SetComponent, ComponentType.Get<T>().index, (ulong)allocation.Address, 0);
+            return new(Type.SetComponent, schema.GetComponent<T>(), (ulong)allocation.Address, 0);
         }
 
         /// <summary>
@@ -577,81 +578,90 @@ namespace Worlds
         /// <summary>
         /// Creates an array of the specified type and length for the selected entities.
         /// </summary>
-        public static Instruction CreateArray<T>(uint length) where T : unmanaged
+        public static Instruction CreateArray<T>(uint length, Schema schema) where T : unmanaged
         {
-            return CreateArray(ArrayType.Get<T>(), length);
+            ArrayType arrayElementType = schema.GetArrayElement<T>();
+            ushort arrayElementSize = schema.GetArrayElementSize(arrayElementType);
+            Allocation allocaton = new(arrayElementSize * length);
+            return new(Type.CreateArray, arrayElementType.index, (ulong)(nint)allocaton, length);
         }
 
         /// <summary>
         /// Creates an array of the specified type and length for the selected entities.
         /// </summary>
-        public static Instruction CreateArray(ArrayType arrayType, uint length)
+        public static Instruction CreateArray(ArrayType arrayElementType, uint length, Schema schema)
         {
-            Allocation allocaton = new(arrayType.Size * length);
-            return new(Type.CreateArray, arrayType.index, (ulong)(nint)allocaton, length);
+            ushort arrayElementSize = schema.GetArrayElementSize(arrayElementType);
+            Allocation allocaton = new(arrayElementSize * length);
+            return new(Type.CreateArray, arrayElementType, (ulong)(nint)allocaton, length);
         }
 
         /// <summary>
         /// Creates an array of the specified type and length for the selected entities.
         /// </summary>
-        public unsafe static Instruction CreateArray<T>(USpan<T> values) where T : unmanaged
+        public unsafe static Instruction CreateArray<T>(USpan<T> values, Schema schema) where T : unmanaged
         {
             Allocation allocation = Allocation.Create(values);
-            return new(Type.CreateArray, ArrayType.Get<T>().index, (ulong)(nint)allocation, values.Length);
+            ArrayType arrayElementType = schema.GetArrayElement<T>();
+            return new(Type.CreateArray, arrayElementType, (ulong)(nint)allocation, values.Length);
         }
 
         /// <summary>
         /// Destroys the array of the specified type for the selected entities.
         /// </summary>
-        public static Instruction DestroyArray<T>() where T : unmanaged
+        public static Instruction DestroyArray<T>(Schema schema) where T : unmanaged
         {
-            return DestroyArray(ArrayType.Get<T>());
+            ArrayType arrayElementType = schema.GetArrayElement<T>();
+            return DestroyArray(arrayElementType);
         }
 
         /// <summary>
         /// Destroys the array of the specified type for the selected entities.
         /// </summary>
-        public static Instruction DestroyArray(ArrayType arrayType)
+        public static Instruction DestroyArray(ArrayType arrayElementType)
         {
-            return new(Type.DestroyArray, arrayType.index, 0, 0);
+            return new(Type.DestroyArray, arrayElementType.index, 0, 0);
         }
 
         /// <summary>
         /// Sets the element at the given index in the array of the specified type.
         /// </summary>
-        public unsafe static Instruction SetArrayElement<T>(uint index, T element) where T : unmanaged
+        public unsafe static Instruction SetArrayElement<T>(uint index, T element, Schema schema) where T : unmanaged
         {
             Allocation allocation = new(sizeof(uint) + TypeInfo<T>.size);
             allocation.Write(0, 1);
             allocation.Write(sizeof(uint), element);
-            return new(Type.SetArrayElement, ArrayType.Get<T>().index, (ulong)(nint)allocation, index);
+            ArrayType arrayElementType = schema.GetArrayElement<T>();
+            return new(Type.SetArrayElement, arrayElementType, (ulong)(nint)allocation, index);
         }
 
         /// <summary>
         /// Sets the element at the given index in the array of the specified type.
         /// </summary>
-        public unsafe static Instruction SetArrayElement<T>(uint index, USpan<T> elements) where T : unmanaged
+        public unsafe static Instruction SetArrayElement<T>(uint index, USpan<T> elements, Schema schema) where T : unmanaged
         {
             Allocation allocation = new(sizeof(uint) + TypeInfo<T>.size * elements.Length);
             allocation.Write(0, elements.Length);
             allocation.Write(sizeof(uint), elements);
-            return new(Type.SetArrayElement, ArrayType.Get<T>().index, (ulong)(nint)allocation, index);
+            ArrayType arrayElementType = schema.GetArrayElement<T>();
+            return new(Type.SetArrayElement, arrayElementType, (ulong)(nint)allocation, index);
         }
 
         /// <summary>
         /// Resizes the array of the specified type to the new length.
         /// </summary>
-        public static Instruction ResizeArray<T>(uint newLength) where T : unmanaged
+        public static Instruction ResizeArray<T>(uint newLength, Schema schema) where T : unmanaged
         {
-            return ResizeArray(ArrayType.Get<T>(), newLength);
+            ArrayType arrayElementType = schema.GetArrayElement<T>();
+            return ResizeArray(arrayElementType, newLength);
         }
 
         /// <summary>
         /// Resizes the array of the specified type to the new length.
         /// </summary>
-        public static Instruction ResizeArray(ArrayType arrayType, uint newLength)
+        public static Instruction ResizeArray(ArrayType arrayElementType, uint newLength)
         {
-            return new(Type.ResizeArray, arrayType.index, newLength, 0);
+            return new(Type.ResizeArray, arrayElementType.index, newLength, 0);
         }
 
         readonly void ISerializable.Write(BinaryWriter writer)

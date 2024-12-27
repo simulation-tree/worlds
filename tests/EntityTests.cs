@@ -12,7 +12,7 @@
         [Test]
         public void CompareAgainstDefaultDespiteWorld()
         {
-            using World world = new();
+            using World world = CreateWorld();
             Entity a = new(world, 0);
             Assert.That(a, Is.EqualTo(default(Entity)));
         }

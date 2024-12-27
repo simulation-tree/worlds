@@ -256,7 +256,7 @@ namespace Worlds
                 {
                     if (definition.ComponentTypesMask == c && componentTypes != c)
                     {
-                        ComponentType componentType = ComponentType.All[c];
+                        ComponentType componentType = new(c);
                         world.AddComponent(value, componentType);
                     }
                 }
@@ -268,8 +268,8 @@ namespace Worlds
                 {
                     if (definition.ArrayTypesMask == a && slot.arrayTypes != a)
                     {
-                        ArrayType arrayType = ArrayType.All[a];
-                        world.CreateArray(value, arrayType);
+                        ArrayType arrayElementType = new(a);
+                        world.CreateArray(value, arrayElementType);
                     }
                 }
             }
@@ -280,7 +280,8 @@ namespace Worlds
         /// </summary>
         public static bool Is<T>(this T entity) where T : unmanaged, IEntity
         {
-            return entity.Is(entity.Definition);
+            Schema schema = entity.GetWorld().Schema;
+            return entity.Is(entity.GetDefinition(schema));
         }
 
         /// <summary>
@@ -301,7 +302,7 @@ namespace Worlds
         public static async Task UntilCompliant<T>(this T entity, Update action, CancellationToken cancellation = default) where T : unmanaged, IEntity
         {
             World world = entity.World;
-            Definition definition = entity.Definition;
+            Definition definition = entity.GetDefinition(world.Schema);
             while (!entity.Is(definition))
             {
                 await action(world, cancellation);

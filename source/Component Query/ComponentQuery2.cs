@@ -22,7 +22,7 @@ namespace Worlds
 
         public ComponentQuery(World world, BitSet excludedComponentTypes = default)
         {
-            componentTypes = ComponentType.GetBitSet<C1, C2>();
+            componentTypes = world.Schema.GetComponents<C1, C2>();
             this.excludedComponentTypes = excludedComponentTypes;
             this.world = world;
         }
@@ -33,7 +33,7 @@ namespace Worlds
         public readonly Enumerator GetEnumerator()
         {
             Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
-            return new(componentTypes, excludedComponentTypes, chunks);
+            return new(componentTypes, excludedComponentTypes, chunks, world.Schema);
         }
 
         public unsafe ref struct Enumerator
@@ -51,7 +51,7 @@ namespace Worlds
             /// </summary>
             public readonly ComponentChunk.Entity<C1, C2> Current => UnsafeComponentChunk.GetEntity<C1, C2>(chunk, entityIndex - 1, c1, c2);
 
-            internal Enumerator(BitSet componentTypes, BitSet excludedComponentTypes, Dictionary<BitSet, ComponentChunk> allChunks)
+            internal Enumerator(BitSet componentTypes, BitSet excludedComponentTypes, Dictionary<BitSet, ComponentChunk> allChunks, Schema schema)
             {
                 uint chunkCount = 0;
                 USpan<nint> chunksBuffer = stackalloc nint[(int)allChunks.Count];
@@ -72,8 +72,8 @@ namespace Worlds
                 entityCount = 0;
                 if (chunkCount > 0)
                 {
-                    c1 = ComponentType.Get<C1>();
-                    c2 = ComponentType.Get<C2>();
+                    c1 = schema.GetComponent<C1>();
+                    c2 = schema.GetComponent<C2>();
                     uint stride = TypeInfo<ComponentChunk>.size;
                     chunks = new(NativeMemory.Alloc(chunkCount * stride), chunkCount);
                     System.Runtime.CompilerServices.Unsafe.CopyBlock(chunks.Pointer, chunksBuffer.Pointer, stride * chunkCount);
