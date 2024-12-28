@@ -1803,7 +1803,7 @@ namespace Worlds
         public readonly ref T GetComponent<T>(uint entity) where T : unmanaged
         {
             ComponentType componentType = Schema.GetComponent<T>();
-            ushort componentSize = Schema.GetSize(componentType);
+            ushort componentSize = (ushort)sizeof(T);
             void* component = UnsafeWorld.GetComponent(value, entity, componentType, componentSize);
             return ref *(T*)component;
         }

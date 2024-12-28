@@ -302,7 +302,6 @@ namespace Worlds
         /// </summary>
         public readonly void* GetComponent(uint index, ComponentType type, ushort componentSize)
         {
-            Schema schema = Schema;
             UnsafeList* components = GetComponents(type);
             nint address = UnsafeList.GetStartAddress(components);
             return (void*)(address + index * componentSize);
