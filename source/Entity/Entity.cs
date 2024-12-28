@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using Unmanaged;
-using Worlds.Unsafe;
 
 namespace Worlds
 {
@@ -346,7 +345,7 @@ namespace Worlds
                 value = entity.GetEntityValue();
                 world = entity.GetWorld();
                 parent = entity.GetParent();
-                creationStackTrace = UnsafeWorld.createStackTraces[entity];
+                creationStackTrace = World.Implementation.createStackTraces[entity];
                 USpan<ComponentType> componentTypeBuffer = stackalloc ComponentType[BitSet.Capacity];
                 uint bufferLength = entity.CopyComponentTypesTo(componentTypeBuffer);
                 componentTypes = componentTypeBuffer.Slice(0, bufferLength).ToArray();

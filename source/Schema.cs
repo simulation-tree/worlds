@@ -589,8 +589,8 @@ namespace Worlds
             {
                 destination->components = source->components;
                 destination->arrays = source->arrays;
-                source->sizes.CopyTo(destination->sizes, 0, 0, BitSet.Capacity * 2 * 2);
-                source->typeLayouts.CopyTo(destination->typeLayouts, 0, 0, (uint)sizeof(TypeLayout) * BitSet.Capacity * 2);
+                source->sizes.CopyTo(destination->sizes, BitSet.Capacity * 2 * 2);
+                source->typeLayouts.CopyTo(destination->typeLayouts, (uint)sizeof(TypeLayout) * BitSet.Capacity * 2);
                 destination->componentIndices.Clear();
                 foreach ((int hashCode, byte index) in source->componentIndices)
                 {

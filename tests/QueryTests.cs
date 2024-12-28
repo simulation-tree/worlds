@@ -272,7 +272,7 @@ namespace Worlds.Tests
             ComponentType appleType = world.Schema.GetComponent<Apple>();
             ComponentType berryType = world.Schema.GetComponent<Berry>();
             ComponentType cherryType = world.Schema.GetComponent<Cherry>();
-            uint sampleCount = 70000;
+            uint sampleCount = 90000;
             uint count = 0;
             Stopwatch stopwatch = Stopwatch.StartNew();
             for (uint i = 0; i < sampleCount; i++)

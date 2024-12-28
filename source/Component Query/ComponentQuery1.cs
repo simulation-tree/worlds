@@ -2,7 +2,6 @@ using Collections;
 using System;
 using System.Runtime.InteropServices;
 using Unmanaged;
-using Worlds.Unsafe;
 
 namespace Worlds
 {
@@ -38,21 +37,24 @@ namespace Worlds
 
         public unsafe ref struct Enumerator
         {
-            private readonly USpan<nint> chunks;
+            private static readonly uint stride = (uint)sizeof(ComponentChunk);
+
+            private readonly Allocation chunks;
+            private readonly uint chunkCount;
             public readonly ComponentType c1;
             private uint entityCount;
             private uint entityIndex;
             private uint chunkIndex;
-            private UnsafeComponentChunk* chunk;
+            private ComponentChunk.Implementation* chunk;
 
             /// <summary>
             /// Current result.
             /// </summary>
-            public readonly ComponentChunk.Entity<C1> Current => UnsafeComponentChunk.GetEntity<C1>(chunk, entityIndex - 1, c1);
+            public readonly ComponentChunk.Entity<C1> Current => ComponentChunk.Implementation.GetEntity<C1>(chunk, entityIndex - 1, c1);
 
             internal Enumerator(BitSet componentTypes, BitSet excludedComponentTypes, Dictionary<BitSet, ComponentChunk> allChunks, Schema schema)
             {
-                uint chunkCount = 0;
+                chunkCount = 0;
                 USpan<nint> chunksBuffer = stackalloc nint[(int)allChunks.Count];
                 foreach (BitSet key in allChunks.Keys)
                 {
@@ -72,11 +74,10 @@ namespace Worlds
                 if (chunkCount > 0)
                 {
                     c1 = schema.GetComponent<C1>();
-                    uint stride = TypeInfo<ComponentChunk>.size;
-                    chunks = new(NativeMemory.Alloc(chunkCount * stride), chunkCount);
-                    System.Runtime.CompilerServices.Unsafe.CopyBlock(chunks.Pointer, chunksBuffer.Pointer, stride * chunkCount);
-                    chunk = (UnsafeComponentChunk*)chunksBuffer[0];
-                    entityCount = UnsafeComponentChunk.GetCount(chunk);
+                    chunks = new(NativeMemory.Alloc(chunkCount * stride));
+                    chunks.CopyFrom(chunksBuffer.Pointer, stride * chunkCount);
+                    chunk = (ComponentChunk.Implementation*)chunksBuffer[0];
+                    entityCount = ComponentChunk.Implementation.GetCount(chunk);
                 }
             }
 
@@ -93,10 +94,10 @@ namespace Worlds
                 else
                 {
                     chunkIndex++;
-                    if (chunkIndex < chunks.Length)
+                    if (chunkIndex < chunkCount)
                     {
-                        chunk = (UnsafeComponentChunk*)chunks[chunkIndex];
-                        entityCount = UnsafeComponentChunk.GetCount(chunk);
+                        chunk = (ComponentChunk.Implementation*)chunks.Read<nint>(chunkIndex * stride);
+                        entityCount = ComponentChunk.Implementation.GetCount(chunk);
                         entityIndex = 1;
                         return true;
                     }
@@ -109,9 +110,9 @@ namespace Worlds
 
             public readonly void Dispose()
             {
-                if (chunks.Length > 0)
+                if (chunkCount > 0)
                 {
-                    NativeMemory.Free(chunks.Pointer);
+                    NativeMemory.Free(chunks);
                 }
             }
         }
