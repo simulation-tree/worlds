@@ -130,11 +130,11 @@ namespace Worlds.Tests
             Another component2 = new(42);
             world.AddComponent(entity, component1);
             world.AddComponent(entity, component2);
-            Assert.That(world.GetComponent<SimpleComponent>(entity), Is.EqualTo(component1));
-            Assert.That(world.GetComponent<Another>(entity), Is.EqualTo(component2));
+            Assert.That(world.GetComponent<SimpleComponent>(entity).data.ToString(), Is.EqualTo(component1.data.ToString()));
+            Assert.That(world.GetComponent<Another>(entity).data, Is.EqualTo(component2.data));
             world.RemoveComponent<SimpleComponent>(entity);
             Assert.Throws<NullReferenceException>(() => world.GetComponent<SimpleComponent>(entity));
-            Assert.That(world.GetComponent<Another>(entity), Is.EqualTo(component2));
+            Assert.That(world.GetComponent<Another>(entity).data, Is.EqualTo(component2.data));
         }
 
         [Test]

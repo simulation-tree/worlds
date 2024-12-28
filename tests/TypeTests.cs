@@ -41,10 +41,24 @@ namespace Worlds.Tests
         }
 
         [Test]
+        public void CheckLayouts()
+        {
+            Assert.That(TypeLayout.IsRegistered<bool>(), Is.True);
+            Assert.That(TypeLayout.IsRegistered<byte>(), Is.True);
+            TypeLayout boolean = TypeLayout.Get<bool>();
+            TypeLayout byteType = TypeLayout.Get<byte>();
+            Assert.That(boolean.Size, Is.EqualTo(1));
+            Assert.That(byteType.Size, Is.EqualTo(1));
+            Assert.That(boolean.GetHashCode(), Is.EqualTo(TypeLayout.Get<bool>().GetHashCode()));
+            Assert.That(byteType.GetHashCode(), Is.EqualTo(TypeLayout.Get<byte>().GetHashCode()));
+        }
+
+        [Test]
         public void AddToSchema()
         {
             using Schema schema = new();
             schema.RegisterComponent<Stress>();
+            Assert.That(schema.ContainsComponent<Stress>(), Is.True);
 
             using Schema copy = new();
             copy.CopyFrom(schema);

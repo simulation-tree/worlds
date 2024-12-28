@@ -272,6 +272,12 @@ namespace Worlds
             return new(GetComponents(schema.GetComponent<T>()));
         }
 
+        public readonly List<T> GetComponents<T>(ComponentType componentType) where T : unmanaged
+        {
+            Schema schema = Schema;
+            return new(GetComponents(componentType));
+        }
+
         /// <summary>
         /// Retrieves a specific component of the type <typeparamref name="T"/> at <paramref name="index"/>.
         /// </summary>
@@ -281,53 +287,25 @@ namespace Worlds
             ComponentType componentType = schema.GetComponent<T>();
             UnsafeList* components = GetComponents(componentType);
             nint address = UnsafeList.GetStartAddress(components);
-            return ref *(T*)(address + index * TypeInfo<T>.size);
+            return ref *(T*)(address + index * sizeof(T));
         }
 
-        /// <summary>
-        /// Retrieves the bytes for the specific component of the type <paramref name="type"/> at <paramref name="index"/>.
-        /// </summary>
-        public readonly USpan<byte> GetComponentBytes(uint index, ComponentType type)
+        public readonly ref T GetComponent<T>(uint index, ComponentType componentType) where T : unmanaged
         {
-            Schema schema = Schema;
-            UnsafeList* components = GetComponents(type);
+            UnsafeList* components = GetComponents(componentType);
             nint address = UnsafeList.GetStartAddress(components);
-            ushort componentSize = schema.GetComponentSize(type);
-            void* component = (void*)(address + index * componentSize);
-            return new(component, componentSize);
+            return ref *(T*)(address + index * sizeof(T));
         }
 
         /// <summary>
         /// Retrieves the pointer for the specific component of the type <paramref name="type"/> at <paramref name="index"/>.
         /// </summary>
-        public readonly void* GetComponent(uint index, ComponentType type)
+        public readonly void* GetComponent(uint index, ComponentType type, ushort componentSize)
         {
             Schema schema = Schema;
             UnsafeList* components = GetComponents(type);
             nint address = UnsafeList.GetStartAddress(components);
-            ushort componentSize = schema.GetComponentSize(type);
             return (void*)(address + index * componentSize);
-        }
-
-        /// <summary>
-        /// Retrieves the pointer for the specific component of the type <typeparamref name="T"/> at <paramref name="index"/>.
-        /// </summary>
-        public readonly nint GetComponentAddress<T>(uint index) where T : unmanaged
-        {
-            Schema schema = Schema;
-            ComponentType componentType = schema.GetComponent<T>();
-            UnsafeList* components = GetComponents(componentType);
-            nint address = UnsafeList.GetStartAddress(components);
-            return (nint)(address + index * TypeInfo<T>.size);
-        }
-
-        /// <summary>
-        /// Assigns the given <paramref name="bytes"/> to the component of the type <paramref name="type"/> at <paramref name="index"/>.
-        /// </summary>
-        public readonly void SetComponentBytes(uint index, ComponentType type, USpan<byte> bytes)
-        {
-            void* component = GetComponent(index, type);
-            bytes.CopyTo(new USpan<byte>(component, bytes.Length));
         }
 
         public readonly override bool Equals(object? obj)

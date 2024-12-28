@@ -209,9 +209,10 @@ namespace Worlds
                         if (componentTypes == c)
                         {
                             ComponentType componentType = new(c);
+                            ushort componentSize = schema.GetComponentSize(componentType);
                             writer.WriteValue(componentType);
-                            USpan<byte> componentBytes = chunk.GetComponentBytes(chunk.Entities.IndexOf(entity), componentType);
-                            writer.WriteSpan(componentBytes);
+                            void* component = chunk.GetComponent(chunk.Entities.IndexOf(entity), componentType, componentSize);
+                            writer.Write(component, componentSize);
                         }
                     }
 
@@ -229,7 +230,7 @@ namespace Worlds
                             if (arrayLength > 0)
                             {
                                 ushort arrayElementSize = schema.GetArrayElementSize(arrayElementType);
-                                writer.WriteSpan(new USpan<byte>(array, arrayLength * arrayElementSize));
+                                writer.Write(array, arrayLength * arrayElementSize);
                             }
                         }
                     }
@@ -283,9 +284,9 @@ namespace Worlds
                 for (byte c = 0; c < componentCount; c++)
                 {
                     ComponentType componentType = reader.ReadValue<ComponentType>();
-                    USpan<byte> bytes = UnsafeWorld.AddComponent(value, entity, componentType);
                     ushort componentSize = schema.GetComponentSize(componentType);
-                    reader.ReadSpan<byte>(componentSize).CopyTo(bytes);
+                    void* component = UnsafeWorld.AddComponent(value, entity, componentType, componentSize);
+                    reader.ReadSpan<byte>(componentSize).CopyTo(component, componentSize);
                     UnsafeWorld.NotifyComponentAdded(this, entity, componentType);
                 }
 
@@ -300,7 +301,7 @@ namespace Worlds
                     void* array = UnsafeWorld.CreateArray(value, entity, arrayElementType, arrayLength);
                     if (arrayLength > 0)
                     {
-                        reader.ReadSpan<byte>(byteCount).CopyTo(new USpan<byte>(array, byteCount));
+                        reader.ReadSpan<byte>(byteCount).CopyTo(array, byteCount);
                     }
                 }
 
@@ -367,8 +368,10 @@ namespace Worlds
                         if (componentTypes == c)
                         {
                             ComponentType componentType = new(c);
-                            USpan<byte> bytes = UnsafeWorld.AddComponent(value, destinationEntity, componentType);
-                            sourceChunk.GetComponentBytes(sourceIndex, componentType).CopyTo(bytes);
+                            ushort componentSize = schema.GetComponentSize(componentType);
+                            void* destinationComponent = UnsafeWorld.AddComponent(value, destinationEntity, componentType, componentSize);
+                            void* sourceComponent = sourceChunk.GetComponent(sourceIndex, componentType, componentSize);
+                            System.Runtime.CompilerServices.Unsafe.CopyBlock(destinationComponent, sourceComponent, componentSize);
                             UnsafeWorld.NotifyComponentAdded(this, destinationEntity, componentType);
                         }
                     }
@@ -385,8 +388,7 @@ namespace Worlds
                             if (sourceArrayLength > 0)
                             {
                                 ushort sourceArrayElementSize = schema.GetArrayElementSize(sourceArrayType);
-                                USpan<byte> sourceBytes = new(sourceArray, sourceArrayLength * sourceArrayElementSize);
-                                sourceBytes.CopyTo(new USpan<byte>(destinationArray, sourceArrayLength * sourceArrayElementSize));
+                                System.Runtime.CompilerServices.Unsafe.CopyBlock(destinationArray, sourceArray, sourceArrayLength * sourceArrayElementSize);
                             }
                         }
                     }
@@ -582,13 +584,13 @@ namespace Worlds
                 Allocation allocation = new((void*)(nint)instruction.B);
                 uint elementCount = allocation.Read<uint>();
                 uint start = (uint)instruction.C;
-                USpan<byte> elementBytes = allocation.AsSpan(sizeof(uint), elementCount * arrayElementSize);
+                void* source = (void*)(allocation + sizeof(uint));
                 for (uint i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
                     void* array = UnsafeWorld.GetArray(value, entity, arrayType, out uint entityArrayLength);
-                    USpan<byte> entityArray = new(array, entityArrayLength * arrayElementSize);
-                    elementBytes.CopyTo(entityArray.Slice(start * arrayElementSize, elementCount * arrayElementSize));
+                    void* arrayStart = (void*)((nint)array + arrayElementSize * start);
+                    System.Runtime.CompilerServices.Unsafe.CopyBlock(arrayStart, source, elementCount * arrayElementSize);
                 }
             }
             else if (instruction.type == Instruction.Type.ResizeArray)
@@ -849,16 +851,16 @@ namespace Worlds
         {
             Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
             Schema schema = Schema;
-            ComponentType type = schema.GetComponent<T>();
+            ComponentType componentType = schema.GetComponent<T>();
             foreach (BitSet key in chunks.Keys)
             {
-                if (key == type)
+                if (key == componentType)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (chunk.Count > 0)
                     {
                         contains = true;
-                        return ref chunk.GetComponent<T>(0);
+                        return ref chunk.GetComponent<T>(0, componentType);
                     }
                 }
             }
@@ -898,17 +900,17 @@ namespace Worlds
         {
             Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
             Schema schema = Schema;
-            ComponentType type = schema.GetComponent<T>();
+            ComponentType componentType = schema.GetComponent<T>();
             foreach (BitSet key in chunks.Keys)
             {
-                if (key == type)
+                if (key == componentType)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (chunk.Count > 0)
                     {
                         entity = chunk.Entities[0];
                         contains = true;
-                        return ref chunk.GetComponent<T>(0);
+                        return ref chunk.GetComponent<T>(0, componentType);
                     }
                 }
             }
@@ -929,15 +931,15 @@ namespace Worlds
         {
             Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
             Schema schema = Schema;
-            ComponentType type = schema.GetComponent<T>();
+            ComponentType componentType = schema.GetComponent<T>();
             foreach (BitSet key in chunks.Keys)
             {
-                if (key == type)
+                if (key == componentType)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (chunk.Count > 0)
                     {
-                        return ref chunk.GetComponent<T>(0);
+                        return ref chunk.GetComponent<T>(0, componentType);
                     }
                 }
             }
@@ -956,16 +958,16 @@ namespace Worlds
         {
             Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
             Schema schema = Schema;
-            ComponentType type = schema.GetComponent<T>();
+            ComponentType componentType = schema.GetComponent<T>();
             foreach (BitSet key in chunks.Keys)
             {
-                if (key == type)
+                if (key == componentType)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (chunk.Count > 0)
                     {
                         entity = chunk.Entities[0];
-                        return ref chunk.GetComponent<T>(0);
+                        return ref chunk.GetComponent<T>(0, componentType);
                     }
                 }
             }
@@ -1656,8 +1658,8 @@ namespace Worlds
             ArrayType arrayElementType = Schema.GetArrayElement<T>();
             UnsafeWorld.ThrowIfArrayIsMissing(value, entity, arrayElementType);
             void* array = UnsafeWorld.GetArray(value, entity, arrayElementType, out uint arrayLength);
-            USpan<T> span = new(array, arrayLength);
-            return ref span[index];
+            void* element = (void*)((nint)array + index * sizeof(T));
+            return ref *(T*)element;
         }
 
         /// <summary>
@@ -1691,11 +1693,12 @@ namespace Worlds
         /// </summary>
         public readonly ref T AddComponent<T>(uint entity, T component) where T : unmanaged
         {
-            ComponentType type = Schema.GetComponent<T>();
-            ref T target = ref UnsafeWorld.AddComponent<T>(value, entity);
-            target = component;
-            UnsafeWorld.NotifyComponentAdded(this, entity, type);
-            return ref target;
+            ComponentType componentType = Schema.GetComponent<T>();
+            ushort componentSize = (ushort)sizeof(T);
+            void* destination = UnsafeWorld.AddComponent(value, entity, componentType, componentSize);
+            System.Runtime.CompilerServices.Unsafe.CopyBlock(destination, &component, componentSize);
+            UnsafeWorld.NotifyComponentAdded(this, entity, componentType);
+            return ref *(T*)destination;
         }
 
         /// <summary>
@@ -1703,18 +1706,20 @@ namespace Worlds
         /// </summary>
         public readonly void AddComponent(uint entity, ComponentType componentType)
         {
-            UnsafeWorld.AddComponent(value, entity, componentType);
+            ushort componentSize = Schema.GetComponentSize(componentType);
+            UnsafeWorld.AddComponent(value, entity, componentType, componentSize);
             UnsafeWorld.NotifyComponentAdded(this, entity, componentType);
         }
 
         /// <summary>
-        /// Adds a new component of the given <paramref name="componentType"/> with <paramref name="componentData"/> bytes
+        /// Adds a new component of the given <paramref name="componentType"/> with <paramref name="source"/> bytes
         /// to <paramref name="entity"/>.
         /// </summary>
-        public readonly void AddComponent(uint entity, ComponentType componentType, USpan<byte> componentData)
+        public readonly void AddComponent(uint entity, ComponentType componentType, USpan<byte> source)
         {
-            USpan<byte> bytes = UnsafeWorld.AddComponent(value, entity, componentType);
-            componentData.CopyTo(bytes);
+            ushort componentSize = Schema.GetComponentSize(componentType);
+            void* component = UnsafeWorld.AddComponent(value, entity, componentType, componentSize);
+            source.CopyTo(component, source.Length);
             UnsafeWorld.NotifyComponentAdded(this, entity, componentType);
         }
 
@@ -1723,10 +1728,11 @@ namespace Worlds
         /// </summary>
         public readonly ref T AddComponent<T>(uint entity) where T : unmanaged
         {
-            ComponentType type = Schema.GetComponent<T>();
-            ref T newComponent = ref UnsafeWorld.AddComponent<T>(value, entity);
-            UnsafeWorld.NotifyComponentAdded(this, entity, type);
-            return ref newComponent;
+            ComponentType componentType = Schema.GetComponent<T>();
+            ushort componentSize = (ushort)sizeof(T);
+            void* destination = UnsafeWorld.AddComponent(value, entity, componentType, componentSize);
+            UnsafeWorld.NotifyComponentAdded(this, entity, componentType);
+            return ref *(T*)destination;
         }
 
         /// <summary>
@@ -1789,7 +1795,10 @@ namespace Worlds
         /// </summary>
         public readonly ref T GetComponent<T>(uint entity) where T : unmanaged
         {
-            return ref UnsafeWorld.GetComponent<T>(value, entity);
+            ComponentType componentType = Schema.GetComponent<T>();
+            ushort componentSize = Schema.GetComponentSize(componentType);
+            void* component = UnsafeWorld.GetComponent(value, entity, componentType, componentSize);
+            return ref *(T*)component;
         }
 
         /// <summary>
@@ -1814,7 +1823,8 @@ namespace Worlds
         /// </summary>
         public readonly void* GetComponent(uint entity, ComponentType componentType)
         {
-            return UnsafeWorld.GetComponent(value, entity, componentType);
+            ushort componentSize = Schema.GetComponentSize(componentType);
+            return UnsafeWorld.GetComponent(value, entity, componentType, componentSize);
         }
 
         /// <summary>
@@ -1822,8 +1832,8 @@ namespace Worlds
         /// </summary>
         public readonly USpan<byte> GetComponentBytes(uint entity, ComponentType componentType)
         {
-            void* component = UnsafeWorld.GetComponent(value, entity, componentType);
             ushort componentSize = Schema.GetComponentSize(componentType);
+            void* component = UnsafeWorld.GetComponent(value, entity, componentType, componentSize);
             return new(component, componentSize);
         }
 
@@ -1841,7 +1851,7 @@ namespace Worlds
             if (contains)
             {
                 uint index = chunk.Entities.IndexOf(entity);
-                return ref chunk.GetComponent<T>(index);
+                return ref chunk.GetComponent<T>(index, componentType);
             }
             else
             {
@@ -1863,7 +1873,7 @@ namespace Worlds
             if (contains)
             {
                 uint index = chunk.Entities.IndexOf(entity);
-                component = chunk.GetComponent<T>(index);
+                component = chunk.GetComponent<T>(index, componentType);
             }
             else
             {
@@ -2078,6 +2088,7 @@ namespace Worlds
             ComponentChunk sourceChunk = sourceSlot.componentChunk;
             BitSet sourceComponentTypes = sourceChunk.TypesMask;
             uint sourceIndex = sourceChunk.Entities.IndexOf(sourceEntity);
+            Schema schema = Schema;
             for (byte c = 0; c < BitSet.Capacity; c++)
             {
                 if (sourceComponentTypes == c)
@@ -2088,9 +2099,10 @@ namespace Worlds
                         destinationWorld.AddComponent(destinationEntity, componentType);
                     }
 
-                    USpan<byte> sourceBytes = sourceChunk.GetComponentBytes(sourceIndex, componentType);
-                    USpan<byte> destinationBytes = destinationWorld.GetComponentBytes(destinationEntity, componentType);
-                    sourceBytes.CopyTo(destinationBytes);
+                    ushort componentSize = schema.GetComponentSize(componentType);
+                    void* sourceComponent = sourceChunk.GetComponent(sourceIndex, componentType, componentSize);
+                    void* destinationComponent = destinationWorld.GetComponent(destinationEntity, componentType);
+                    System.Runtime.CompilerServices.Unsafe.CopyBlock(destinationComponent, sourceComponent, componentSize);
                 }
             }
         }
@@ -2120,9 +2132,7 @@ namespace Worlds
                     }
 
                     ushort arrayElementSize = Schema.GetArrayElementSize(arrayType);
-                    USpan<byte> sourceBytes = new(sourceArray, sourceLength * arrayElementSize);
-                    USpan<byte> destinationBytes = new(destinationArray, sourceLength * arrayElementSize);
-                    sourceBytes.CopyTo(destinationBytes);
+                    System.Runtime.CompilerServices.Unsafe.CopyBlock(destinationArray, sourceArray, sourceLength * arrayElementSize);
                 }
             }
         }
@@ -2189,7 +2199,7 @@ namespace Worlds
                     ComponentChunk chunk = chunks[key];
                     if (!onlyEnabled)
                     {
-                        list.AddRange(chunk.GetComponents<T>());
+                        list.AddRange(chunk.GetComponents<T>(componentType));
                     }
                     else
                     {
@@ -2198,7 +2208,7 @@ namespace Worlds
                             uint entity = chunk.Entities[e];
                             if (IsEnabled(entity))
                             {
-                                list.Add(chunk.GetComponent<T>(e));
+                                list.Add(chunk.GetComponent<T>(e, componentType));
                             }
                         }
                     }
@@ -2253,7 +2263,7 @@ namespace Worlds
                     ComponentChunk chunk = chunks[key];
                     if (!onlyEnabled)
                     {
-                        components.AddRange(chunk.GetComponents<T>());
+                        components.AddRange(chunk.GetComponents<T>(componentType));
                         entities.AddRange(chunk.Entities);
                     }
                     else
@@ -2263,7 +2273,7 @@ namespace Worlds
                             uint entity = chunk.Entities[e];
                             if (IsEnabled(entity))
                             {
-                                components.Add(chunk.GetComponent<T>(e));
+                                components.Add(chunk.GetComponent<T>(e, componentType));
                                 entities.Add(entity);
                             }
                         }

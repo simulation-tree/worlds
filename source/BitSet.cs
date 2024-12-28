@@ -22,7 +22,7 @@ namespace Worlds
         /// <summary>
         /// Maximum amount of bits in the bit set.
         /// </summary>
-        public const byte Capacity = byte.MaxValue;
+        public const byte Capacity = 0xFF;
 
 #if USE_VECTOR256
         [FieldOffset(0)]

@@ -717,13 +717,12 @@ namespace Worlds.Unsafe
         /// <summary>
         /// Adds a new component of the given <paramref name="componentType"/> to the given <paramref name="entity"/>.
         /// </summary>
-        public static USpan<byte> AddComponent(UnsafeWorld* world, uint entity, ComponentType componentType)
+        public static void* AddComponent(UnsafeWorld* world, uint entity, ComponentType componentType, ushort componentSize)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
             ThrowIfComponentAlreadyPresent(world, entity, componentType);
 
-            Schema schema = GetSchema(world);
             Dictionary<BitSet, ComponentChunk> components = GetComponentChunks(world);
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
             ComponentChunk previousChunk = slot.componentChunk;
@@ -732,57 +731,14 @@ namespace Worlds.Unsafe
 
             if (!components.TryGetValue(newComponentTypes, out ComponentChunk destinationChunk))
             {
+                Schema schema = GetSchema(world);
                 destinationChunk = new(newComponentTypes, schema);
                 components.Add(newComponentTypes, destinationChunk);
             }
 
             slot.componentChunk = destinationChunk;
             uint index = previousChunk.MoveEntity(entity, destinationChunk);
-            return destinationChunk.GetComponentBytes(index, componentType);
-        }
-
-        /// <summary>
-        /// Adds a new component of the given <typeparamref name="T"/> type to the given <paramref name="entity"/>.
-        /// </summary>
-        public static ref T AddComponent<T>(UnsafeWorld* world, uint entity) where T : unmanaged
-        {
-            Allocations.ThrowIfNull(world);
-            ThrowIfEntityIsMissing(world, entity);
-
-            ComponentType componentType = GetSchema(world).GetComponent<T>();
-            ThrowIfComponentAlreadyPresent(world, entity, componentType);
-
-            Schema schema = GetSchema(world);
-            Dictionary<BitSet, ComponentChunk> components = GetComponentChunks(world);
-            ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
-            ComponentChunk previousChunk = slot.componentChunk;
-            BitSet newComponentTypes = previousChunk.TypesMask;
-            newComponentTypes |= componentType;
-
-            if (!components.TryGetValue(newComponentTypes, out ComponentChunk destinationChunk))
-            {
-                destinationChunk = new(newComponentTypes, schema);
-                components.Add(newComponentTypes, destinationChunk);
-            }
-
-            slot.componentChunk = destinationChunk;
-            uint index = previousChunk.MoveEntity(entity, destinationChunk);
-            return ref destinationChunk.GetComponent<T>(index);
-        }
-
-        /// <summary>
-        /// Assigns the given <paramref name="bytes"/> to the component of the given <paramref name="componentType"/> on the given <paramref name="entity"/>.
-        /// </summary>
-        public static void SetComponentBytes(UnsafeWorld* world, uint entity, ComponentType componentType, USpan<byte> bytes)
-        {
-            Allocations.ThrowIfNull(world);
-            ThrowIfEntityIsMissing(world, entity);
-            ThrowIfComponentMissing(world, entity, componentType);
-
-            Schema schema = GetSchema(world);
-            ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
-            ComponentChunk chunk = slot.componentChunk;
-            chunk.SetComponentBytes(entity, componentType, bytes);
+            return destinationChunk.GetComponent(index, componentType, componentSize);
         }
 
         /// <summary>
@@ -834,35 +790,16 @@ namespace Worlds.Unsafe
             return slot.componentChunk.TypesMask == componentType;
         }
 
-        /// <summary>
-        /// Retrieves the component of the given <typeparamref name="T"/> type from <paramref name="entity"/>.
-        /// </summary>
-        public static ref T GetComponent<T>(UnsafeWorld* world, uint entity) where T : unmanaged
-        {
-            Allocations.ThrowIfNull(world);
-            ThrowIfEntityIsMissing(world, entity);
-
-            Schema schema = GetSchema(world);
-            ComponentType type = schema.GetComponent<T>();
-            ThrowIfComponentMissing(world, entity, type);
-
-            ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
-            ComponentChunk chunk = slot.componentChunk;
-            uint index = chunk.Entities.IndexOf(entity);
-            return ref chunk.GetComponent<T>(index);
-        }
-
-        public static void* GetComponent(UnsafeWorld* world, uint entity, ComponentType componentType)
+        public static void* GetComponent(UnsafeWorld* world, uint entity, ComponentType componentType, ushort componentSize)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(world, entity);
             ThrowIfComponentMissing(world, entity, componentType);
 
-            Schema schema = GetSchema(world);
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
             ComponentChunk chunk = slot.componentChunk;
             uint index = chunk.Entities.IndexOf(entity);
-            return chunk.GetComponent(index, componentType);
+            return chunk.GetComponent(index, componentType, componentSize);
         }
 
         internal static void NotifyCreation(World world, uint entity)

@@ -269,6 +269,9 @@ namespace Worlds.Tests
             using World world = CreateWorld();
             BitSet componentTypes = world.Schema.GetComponents<Apple, Berry, Cherry>();
             BitSet otherComponentTypes = world.Schema.GetComponents<Apple, Berry>();
+            ComponentType appleType = world.Schema.GetComponent<Apple>();
+            ComponentType berryType = world.Schema.GetComponent<Berry>();
+            ComponentType cherryType = world.Schema.GetComponent<Cherry>();
             uint sampleCount = 70000;
             uint count = 0;
             Stopwatch stopwatch = Stopwatch.StartNew();
@@ -322,9 +325,9 @@ namespace Worlds.Tests
                         for (uint e = 0; e < entities.Count; e++)
                         {
                             uint entity = entities[e];
-                            ref Apple apple = ref chunk.GetComponent<Apple>(e);
-                            ref Berry berry = ref chunk.GetComponent<Berry>(e);
-                            ref Cherry cherry = ref chunk.GetComponent<Cherry>(e);
+                            ref Apple apple = ref chunk.GetComponent<Apple>(e, appleType);
+                            ref Berry berry = ref chunk.GetComponent<Berry>(e, berryType);
+                            ref Cherry cherry = ref chunk.GetComponent<Cherry>(e, cherryType);
                             results.Add((entity, apple, berry, cherry));
                         }
                     }

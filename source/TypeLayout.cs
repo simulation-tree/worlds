@@ -34,9 +34,19 @@ namespace Worlds
             }
         }
 
+        /// <summary>
+        /// Full name of the type including the namespace.
+        /// </summary>
         public readonly FixedString FullName => fullName;
+
+        /// <summary>
+        /// Size of the type in bytes.
+        /// </summary>
         public readonly ushort Size => size;
 
+        /// <summary>
+        /// Name of the type.
+        /// </summary>
         public readonly FixedString Name
         {
             get
@@ -92,7 +102,7 @@ namespace Worlds
             return length;
         }
 
-        public readonly bool Is<T>()
+        public readonly bool Is<T>() where T : unmanaged
         {
             int index = systemTypes.IndexOf(typeof(T));
             if (index >= 0)
@@ -103,7 +113,7 @@ namespace Worlds
             return false;
         }
 
-        public static bool IsRegistered<T>()
+        public static bool IsRegistered<T>() where T : unmanaged
         {
             return systemTypes.Contains(typeof(T));
         }
@@ -306,12 +316,11 @@ namespace Worlds
             nameToType.Add(new FixedString(fullName).GetHashCode(), layout);
         }
 
-        public static TypeLayout Get<T>()
+        public static TypeLayout Get<T>() where T : unmanaged
         {
             ThrowIfTypeIsNotRegistered<T>();
 
-            int index = systemTypes.IndexOf(typeof(T));
-            return all[index];
+            return Cache<T>.value;
         }
 
         public static TypeLayout Get(FixedString fullName)
@@ -384,7 +393,23 @@ namespace Worlds
 
         public readonly override int GetHashCode()
         {
-            return HashCode.Combine(fullName, count, Variables.GetHashCode());
+            unchecked
+            {
+                int hashCode = 17;
+                for (byte i = 0; i < fullName.Length; i++)
+                {
+                    hashCode = hashCode * 31 + fullName[i];
+                }
+
+                hashCode = hashCode * 31 + size;
+                USpan<Variable> variables = Variables;
+                foreach (Variable variable in variables)
+                {
+                    hashCode = hashCode * 31 + variable.GetHashCode();
+                }
+
+                return hashCode;
+            }
         }
 
         readonly void ISerializable.Write(BinaryWriter writer)
@@ -464,7 +489,6 @@ namespace Worlds
             {
                 this.name = name;
                 typeFullNameHash = new FixedString(typeFullName).GetHashCode();
-                Console.WriteLine($"{typeFullName} = {typeFullNameHash}");
             }
 
             public Variable(FixedString name, int typeFullNameHash)
@@ -503,7 +527,17 @@ namespace Worlds
 
             public readonly override int GetHashCode()
             {
-                return HashCode.Combine(Name, typeFullNameHash);
+                unchecked
+                {
+                    int hashCode = 17;
+                    for (byte i = 0; i < name.Length; i++)
+                    {
+                        hashCode = hashCode * 31 + name[i];
+                    }
+
+                    hashCode = hashCode * 31 + typeFullNameHash;
+                    return hashCode;
+                }
             }
 
             void ISerializable.Write(BinaryWriter writer)
@@ -577,6 +611,11 @@ namespace Worlds
                 name = layout.Name.ToString();
                 size = layout.Size;
             }
+        }
+
+        internal static class Cache<T> where T : unmanaged
+        {
+            public static readonly TypeLayout value = all[systemTypes.IndexOf(typeof(T))];
         }
     }
 }
