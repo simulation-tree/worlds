@@ -3,7 +3,6 @@ using System;
 using System.Diagnostics;
 using Unmanaged;
 using Worlds.Unsafe;
-using IEnumerableUInt = System.Collections.Generic.IEnumerable<uint>;
 
 namespace Worlds
 {
@@ -59,7 +58,7 @@ namespace Worlds
         /// <summary>
         /// All entities that exist in the world.
         /// </summary>
-        public readonly IEnumerableUInt Entities
+        public readonly System.Collections.Generic.IEnumerable<uint> Entities
         {
             get
             {
@@ -104,13 +103,21 @@ namespace Worlds
 
 #if NET
         /// <summary>
-        /// Creates a new disposable world.
+        /// Creates a new world.
         /// </summary>
         public World()
         {
-            value = UnsafeWorld.Allocate();
+            value = UnsafeWorld.Allocate(new());
         }
 #endif
+
+        /// <summary>
+        /// Creates a new world with the given <paramref name="schema"/>.
+        /// </summary>
+        public World(Schema schema)
+        {
+            value = UnsafeWorld.Allocate(schema);
+        }
 
         /// <summary>
         /// Initializes an existing world from the given address.
@@ -209,7 +216,7 @@ namespace Worlds
                         if (componentTypes == c)
                         {
                             ComponentType componentType = new(c);
-                            ushort componentSize = schema.GetComponentSize(componentType);
+                            ushort componentSize = schema.GetSize(componentType);
                             writer.WriteValue(componentType);
                             void* component = chunk.GetComponent(chunk.Entities.IndexOf(entity), componentType, componentSize);
                             writer.Write(component, componentSize);
@@ -229,7 +236,7 @@ namespace Worlds
                             writer.WriteValue(arrayLength);
                             if (arrayLength > 0)
                             {
-                                ushort arrayElementSize = schema.GetArrayElementSize(arrayElementType);
+                                ushort arrayElementSize = schema.GetSize(arrayElementType);
                                 writer.Write(array, arrayLength * arrayElementSize);
                             }
                         }
@@ -248,8 +255,8 @@ namespace Worlds
 
         void ISerializable.Read(BinaryReader reader)
         {
-            value = UnsafeWorld.Allocate();
-            Schema schema = UnsafeWorld.GetSchema(value);
+            Schema schema = new();
+            value = UnsafeWorld.Allocate(schema);
             List<EntitySlot> slots = UnsafeWorld.GetEntitySlots(value);
             using Schema loadedSchema = reader.ReadObject<Schema>();
             schema.CopyFrom(loadedSchema);
@@ -284,7 +291,7 @@ namespace Worlds
                 for (byte c = 0; c < componentCount; c++)
                 {
                     ComponentType componentType = reader.ReadValue<ComponentType>();
-                    ushort componentSize = schema.GetComponentSize(componentType);
+                    ushort componentSize = schema.GetSize(componentType);
                     void* component = UnsafeWorld.AddComponent(value, entity, componentType, componentSize);
                     reader.ReadSpan<byte>(componentSize).CopyTo(component, componentSize);
                     UnsafeWorld.NotifyComponentAdded(this, entity, componentType);
@@ -296,7 +303,7 @@ namespace Worlds
                 {
                     ArrayType arrayElementType = reader.ReadValue<ArrayType>();
                     uint arrayLength = reader.ReadValue<uint>();
-                    ushort arrayElementSize = schema.GetArrayElementSize(arrayElementType);
+                    ushort arrayElementSize = schema.GetSize(arrayElementType);
                     uint byteCount = arrayLength * arrayElementSize;
                     void* array = UnsafeWorld.CreateArray(value, entity, arrayElementType, arrayLength);
                     if (arrayLength > 0)
@@ -368,7 +375,7 @@ namespace Worlds
                         if (componentTypes == c)
                         {
                             ComponentType componentType = new(c);
-                            ushort componentSize = schema.GetComponentSize(componentType);
+                            ushort componentSize = schema.GetSize(componentType);
                             void* destinationComponent = UnsafeWorld.AddComponent(value, destinationEntity, componentType, componentSize);
                             void* sourceComponent = sourceChunk.GetComponent(sourceIndex, componentType, componentSize);
                             System.Runtime.CompilerServices.Unsafe.CopyBlock(destinationComponent, sourceComponent, componentSize);
@@ -387,7 +394,7 @@ namespace Worlds
                             void* destinationArray = UnsafeWorld.CreateArray(value, destinationEntity, sourceArrayType, sourceArrayLength);
                             if (sourceArrayLength > 0)
                             {
-                                ushort sourceArrayElementSize = schema.GetArrayElementSize(sourceArrayType);
+                                ushort sourceArrayElementSize = schema.GetSize(sourceArrayType);
                                 System.Runtime.CompilerServices.Unsafe.CopyBlock(destinationArray, sourceArray, sourceArrayLength * sourceArrayElementSize);
                             }
                         }
@@ -526,7 +533,7 @@ namespace Worlds
             {
                 ComponentType componentType = new((byte)instruction.A);
                 Allocation allocation = new((void*)(nint)instruction.B);
-                ushort componentSize = schema.GetComponentSize(componentType);
+                ushort componentSize = schema.GetSize(componentType);
                 USpan<byte> componentData = allocation.AsSpan<byte>(0, componentSize);
                 for (uint i = 0; i < selection.Count; i++)
                 {
@@ -547,7 +554,7 @@ namespace Worlds
             {
                 ComponentType componentType = new((byte)instruction.A);
                 Allocation allocation = new((void*)(nint)instruction.B);
-                ushort componentSize = schema.GetComponentSize(componentType);
+                ushort componentSize = schema.GetSize(componentType);
                 USpan<byte> componentBytes = allocation.AsSpan<byte>(0, componentSize);
                 for (uint i = 0; i < selection.Count; i++)
                 {
@@ -558,7 +565,7 @@ namespace Worlds
             else if (instruction.type == Instruction.Type.CreateArray)
             {
                 ArrayType arrayType = new((byte)instruction.A);
-                ushort arrayElementSize = schema.GetArrayElementSize(arrayType);
+                ushort arrayElementSize = schema.GetSize(arrayType);
                 Allocation allocation = new((void*)(nint)instruction.B);
                 uint count = (uint)instruction.C;
                 for (uint i = 0; i < selection.Count; i++)
@@ -580,7 +587,7 @@ namespace Worlds
             else if (instruction.type == Instruction.Type.SetArrayElement)
             {
                 ArrayType arrayType = new((byte)instruction.A);
-                ushort arrayElementSize = schema.GetArrayElementSize(arrayType);
+                ushort arrayElementSize = schema.GetSize(arrayType);
                 Allocation allocation = new((void*)(nint)instruction.B);
                 uint elementCount = allocation.Read<uint>();
                 uint start = (uint)instruction.C;
@@ -1706,7 +1713,7 @@ namespace Worlds
         /// </summary>
         public readonly void AddComponent(uint entity, ComponentType componentType)
         {
-            ushort componentSize = Schema.GetComponentSize(componentType);
+            ushort componentSize = Schema.GetSize(componentType);
             UnsafeWorld.AddComponent(value, entity, componentType, componentSize);
             UnsafeWorld.NotifyComponentAdded(this, entity, componentType);
         }
@@ -1717,7 +1724,7 @@ namespace Worlds
         /// </summary>
         public readonly void AddComponent(uint entity, ComponentType componentType, USpan<byte> source)
         {
-            ushort componentSize = Schema.GetComponentSize(componentType);
+            ushort componentSize = Schema.GetSize(componentType);
             void* component = UnsafeWorld.AddComponent(value, entity, componentType, componentSize);
             source.CopyTo(component, source.Length);
             UnsafeWorld.NotifyComponentAdded(this, entity, componentType);
@@ -1796,7 +1803,7 @@ namespace Worlds
         public readonly ref T GetComponent<T>(uint entity) where T : unmanaged
         {
             ComponentType componentType = Schema.GetComponent<T>();
-            ushort componentSize = Schema.GetComponentSize(componentType);
+            ushort componentSize = Schema.GetSize(componentType);
             void* component = UnsafeWorld.GetComponent(value, entity, componentType, componentSize);
             return ref *(T*)component;
         }
@@ -1823,7 +1830,7 @@ namespace Worlds
         /// </summary>
         public readonly void* GetComponent(uint entity, ComponentType componentType)
         {
-            ushort componentSize = Schema.GetComponentSize(componentType);
+            ushort componentSize = Schema.GetSize(componentType);
             return UnsafeWorld.GetComponent(value, entity, componentType, componentSize);
         }
 
@@ -1832,7 +1839,7 @@ namespace Worlds
         /// </summary>
         public readonly USpan<byte> GetComponentBytes(uint entity, ComponentType componentType)
         {
-            ushort componentSize = Schema.GetComponentSize(componentType);
+            ushort componentSize = Schema.GetSize(componentType);
             void* component = UnsafeWorld.GetComponent(value, entity, componentType, componentSize);
             return new(component, componentSize);
         }
@@ -2099,7 +2106,7 @@ namespace Worlds
                         destinationWorld.AddComponent(destinationEntity, componentType);
                     }
 
-                    ushort componentSize = schema.GetComponentSize(componentType);
+                    ushort componentSize = schema.GetSize(componentType);
                     void* sourceComponent = sourceChunk.GetComponent(sourceIndex, componentType, componentSize);
                     void* destinationComponent = destinationWorld.GetComponent(destinationEntity, componentType);
                     System.Runtime.CompilerServices.Unsafe.CopyBlock(destinationComponent, sourceComponent, componentSize);
@@ -2131,7 +2138,7 @@ namespace Worlds
                         destinationArray = UnsafeWorld.ResizeArray(destinationWorld.value, destinationEntity, arrayType, sourceLength);
                     }
 
-                    ushort arrayElementSize = Schema.GetArrayElementSize(arrayType);
+                    ushort arrayElementSize = Schema.GetSize(arrayType);
                     System.Runtime.CompilerServices.Unsafe.CopyBlock(destinationArray, sourceArray, sourceLength * arrayElementSize);
                 }
             }
@@ -2318,7 +2325,7 @@ namespace Worlds
         /// </summary>
         public static World Create()
         {
-            return new(UnsafeWorld.Allocate());
+            return new(UnsafeWorld.Allocate(Schema.Create()));
         }
 
         /// <inheritdoc/>

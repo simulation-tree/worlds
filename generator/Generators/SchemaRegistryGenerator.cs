@@ -36,7 +36,7 @@ namespace Worlds.TypeTableGenerator
                 source.BeginGroup();
                 {
                     source.AppendLine("/// <summary>");
-                    source.AppendLine("/// Retrieves a schema containing all possible component and array types.");
+                    source.AppendLine("/// Loads all relevant component and array types into the given schema.");
                     source.AppendLine("/// </summary>");
                     source.AppendLine($"public static void Load(Schema schema)");
                     source.BeginGroup();
@@ -50,6 +50,18 @@ namespace Worlds.TypeTableGenerator
                         {
                             AppendArrayElementRegistration(arrayType);
                         }
+                    }
+                    source.EndGroup();
+                    source.AppendLine();
+                    source.AppendLine("/// <summary>");
+                    source.AppendLine("/// Retrieves a schema containing all possible component and array types.");
+                    source.AppendLine("/// </summary>");
+                    source.AppendLine($"public static Schema Get()");
+                    source.BeginGroup();
+                    {
+                        source.AppendLine("Schema schema = new();");
+                        source.AppendLine("Load(schema);");
+                        source.AppendLine("return schema;");
                     }
                     source.EndGroup();
                 }

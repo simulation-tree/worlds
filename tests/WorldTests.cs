@@ -11,16 +11,13 @@ namespace Worlds.Tests
 
         public static World CreateWorld()
         {
-            World world = new();
-            SchemaRegistry.Load(world.Schema);
+            World world = new(SchemaRegistry.Get());
             return world;
         }
 
         public static Schema CreateSchema()
         {
-            Schema schema = new();
-            SchemaRegistry.Load(schema);
-            return schema;
+            return SchemaRegistry.Get();
         }
     }
 }

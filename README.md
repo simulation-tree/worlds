@@ -3,14 +3,16 @@ Library for implementing efficient storage of data as _components_ and _arrays_,
 Entities themselves are stored within these _worlds_, which can be serialized, deserialized, and appended to other worlds at runtime.
 
 ### Initializing
-To use this library, all of the component and array types that will be used need to be registered.
-This is done by decorating them with either `[Component]` or `[Array]` (or both), and then calling
-the type table's constructor:
+To use this library, all of the component and array types that will be used need to be registered ahead of time.
+This is done by decorating them with either `[Component]` or `[Array]` (or both), and utilizing the `TypeLayoutRegistry` class
+to register the layouts first. And then creating a schema with `SchemaRegistry.Get()` for each world to use:
 ```cs
 private static void Main()
 {
-    RuntimeHelpers.RunClassConstructor(typeof(TypeTable).TypeHandle);
-    ArrayType.Register<char>();
+    TypeLayoutRegistry.RegisterAll();
+    Schema schema = SchemaRegistry.Get();
+    using World world = new(schema);
+    //...
 }
 
 [Component]
@@ -21,13 +23,21 @@ public struct MyComponent(uint value)
 ```
 
 If the attributes aren't present, or the type table isn't initialized, then each type needs to
-be registered manually:
+be registered with `TypeLayout` and `Schema`:
 ```cs
 private static void Main()
 {
-    ComponentType.Register<MyComponent>();
-    ComponentType.Register<IsPlayer>();
-    ArrayType.Register<char>();
+    TypeLayout.Register<MyComponent>("MyComponent");
+    TypeLayout.Register<IsPlayer>("IsPlayer");
+    TypeLayout.Register<MyReference>("MyReference");
+    TypeLayout.Register<char>("char");
+    Schema schema = new();
+    schema.RegisterComponent<MyComponent>();
+    schema.RegisterComponent<IsPlayer>();
+    schema.RegisterComponent<MyReference>();
+    schema.RegisterArrayElement<char>();
+    using World world = new(schema);
+    //...
 }
 ```
 
@@ -41,7 +51,6 @@ using (World world = new())
     world.AddComponent(entity, new MyComponent(25));
 }
 ```
-> Only 1 component of each type can be on an entity
 
 ### Storing multiple values with arrays
 Unlike components, arrays offer a way to store multiple of the same type,
@@ -77,17 +86,17 @@ void Do()
 {
     //only downside here is having to read a lot of code
     Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
-    ComponentType type = ComponentType.Get<MyComponent>();
+    ComponentType componentType = world.Schema.GetComponent<MyComponent>();
     foreach (BitSet key in chunks.Keys)
     {
-        if (key.ContainsType(type))
+        if (key == componentType)
         {
             ComponentChunk chunk = chunks[key];
             List<uint> entities = chunk.Entities;
             for (uint e = 0; e < entities.Count; e++)
             {
                 uint entity = entities[e];
-                ref MyComponent component = ref chunk.GetComponent<MyComponent>(e);
+                ref MyComponent component = ref chunk.GetComponent<MyComponent>(e, componentType);
                 component.value *= 2;
                 sum += component.value;
             }
@@ -131,7 +140,7 @@ public struct MyReference(rint entityReference)
     public rint entityReference = entityReference;
 }
 
-using World dummyWorld = new();
+using World dummyWorld = new(SchemaRegistry.Get());
 uint firstEntity = dummyWorld.CreateEntity();
 uint secondEntity = dummyWorld.CreateEntity();
 rint entityReference = dummyWorld.AddReference(firstEntity, secondEntity);
@@ -175,8 +184,7 @@ public readonly struct Player : IEntity
 //creating a player using its type's constructor
 Player player = new(world, "unnamed");
 ```
-> `IEntity` types are expected to be only big enough to store an `Entity` field,
-or `uint`+`World` fields.
+> The layout of an `IEntity` type is expected to be match `uint`+`World`.
 
 These types can then be used to transform or interpret existing entities:
 ```cs
@@ -193,56 +201,23 @@ Player anotherPlayer = new Entity(world, anotherEntity).As<Player>();
 ### Serialization and deserialization
 Serializing a world to bytes is simple:
 ```cs
-ComponentType.Register<float>();
-ComponentType.Register<bool>();
-ArrayType.Register<char>();
-
-using World world = new();
-Entity entity = new(world);
-entity.AddComponent(25f);
-entity.AddComponent(true);
-world.CreateArray<char>(entity, "Hello world");
+using World prefabWorld = new(SchemaRegistry.Get());
+Entity entity = new(prefabWorld);
+entity.AddComponent(new MyComponent(1337));
+prefabWorld.CreateArray<char>(entity, "Hello world");
 
 using BinaryWriter writer = new();
-writer.WriteObject(world);
+writer.WriteObject(prefabWorld);
 USpan<byte> bytes = writer.GetBytes();
-```
-
-But for deserializing, because component and array types are not deterministic (due to the order
-that they're registered with, and which are used), deserialization requires functions for
-remapping the saved type to the expected:
-```cs
-World.SerializationContext.GetComponentType = (fullTypeName) =>
-{
-    if (fullTypeName.SequenceEqual(typeof(float).FullName.AsSpan()))
-    {
-        return ComponentType.Get<float>();
-    }
-    else if (fullTypeName.SequenceEqual(typeof(bool).FullName.AsSpan()))
-    {
-        return ComponentType.Get<bool>();
-    }
-
-    throw new Exception($"Unknown type {fullTypeName.ToString()}");
-};
-
-World.SerializationContext.GetArrayType = (fullTypeName) =>
-{
-    if (fullTypeName.SequenceEqual(typeof(char).FullName.AsSpan()))
-    {
-        return ArrayType.Get<char>();
-    }
-
-    throw new Exception($"Unknown type {fullTypeName.ToString()}");
-};
 
 using BinaryReader reader = new(bytes);
-World deserializedWorld = reader.ReadObject<World>();
+using World deserializedWorld = reader.ReadObject<World>();
+using World anotherWorld = new(SchemaRegistry.Get());
 anotherWorld.Append(deserializedWorld);
 ```
 
 ### Contributing and Design
 This library implements the "[entity-component-system](https://en.wikipedia.org/wiki/Entity_component_system)" pattern of the "archetype" variety.
-Created for building programs of whatever kind, with an open door to the author for efficiency.
+Created for building programs of whatever kind, with an open door to the author when targeting efficiency.
 
 Contributions to this are welcome.

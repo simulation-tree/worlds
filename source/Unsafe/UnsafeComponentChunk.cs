@@ -40,7 +40,7 @@ namespace Worlds.Unsafe
                 if (componentTypesMask == c)
                 {
                     ComponentType componentType = new(c);
-                    ushort componentSize = schema.GetComponentSize(componentType);
+                    ushort componentSize = schema.GetSize(componentType);
                     componentArrays[c] = (nint)UnsafeList.Allocate(4, componentSize);
                     typeIndices[typeCount++] = c;
                 }

@@ -228,22 +228,21 @@ namespace Worlds.Unsafe
         /// <summary>
         /// Allocates a new <see cref="UnsafeWorld"/> instance.
         /// </summary>
-        public static UnsafeWorld* Allocate()
+        public static UnsafeWorld* Allocate(Schema schema)
         {
             UnsafeList* slots = UnsafeList.Allocate<EntitySlot>(4);
             UnsafeList* freeEntities = UnsafeList.Allocate<uint>(4);
             UnsafeDictionary* components = UnsafeDictionary.Allocate<BitSet, ComponentChunk>(4);
-            Schema.Implementation* schema = Schema.Implementation.Allocate();
 
             BitSet defaultSet = default;
-            ComponentChunk defaultComponentChunk = new(defaultSet, new(schema));
+            ComponentChunk defaultComponentChunk = new(defaultSet, schema);
             UnsafeDictionary.TryAdd(components, defaultSet, defaultComponentChunk);
 
             UnsafeWorld* world = Allocations.Allocate<UnsafeWorld>();
             world->slots = slots;
             world->freeEntities = freeEntities;
             world->components = components;
-            world->schema = schema;
+            world->schema = (Schema.Implementation*)schema.Pointer;
             return world;
         }
 
@@ -558,7 +557,7 @@ namespace Worlds.Unsafe
                     if (slot.arrayTypes == a)
                     {
                         ArrayType arrayType = new(a);
-                        ushort arrayElementSize = schema.GetArrayElementSize(arrayType);
+                        ushort arrayElementSize = schema.GetSize(arrayType);
                         slot.arrays[arrayType] = new(arrayElementSize); //todo: not sure why this is initialized to 1 at first tbh
                         slot.arrayLengths[arrayType] = 0;
                     }
@@ -629,7 +628,7 @@ namespace Worlds.Unsafe
                 slot.arrayLengths = new(BitSet.Capacity);
             }
 
-            ushort arrayElementSize = GetSchema(world).GetArrayElementSize(arrayType);
+            ushort arrayElementSize = GetSchema(world).GetSize(arrayType);
             Allocation newArray = new(arrayElementSize * length);
             slot.arrayTypes |= arrayType;
             slot.arrays[arrayType] = newArray;
@@ -687,7 +686,7 @@ namespace Worlds.Unsafe
 
             ref EntitySlot slot = ref UnsafeList.GetRef<EntitySlot>(world->slots, entity - 1);
             ref Allocation array = ref slot.arrays[arrayType];
-            ushort arrayElementSize = GetSchema(world).GetArrayElementSize(arrayType);
+            ushort arrayElementSize = GetSchema(world).GetSize(arrayType);
             Allocation.Resize(ref array, arrayElementSize * newLength);
             slot.arrayLengths[arrayType] = newLength;
             return array;

@@ -527,7 +527,7 @@ namespace Worlds
         /// </summary>
         public static Instruction AddComponent(ComponentType componentType, Schema schema)
         {
-            ushort componentSize = schema.GetComponentSize(componentType);
+            ushort componentSize = schema.GetSize(componentType);
             Allocation allocation = Allocation.Create(componentSize);
             return new(Type.AddComponent, componentType.index, (ulong)allocation.Address, 0);
         }
@@ -581,7 +581,7 @@ namespace Worlds
         public static Instruction CreateArray<T>(uint length, Schema schema) where T : unmanaged
         {
             ArrayType arrayElementType = schema.GetArrayElement<T>();
-            ushort arrayElementSize = schema.GetArrayElementSize(arrayElementType);
+            ushort arrayElementSize = schema.GetSize(arrayElementType);
             Allocation allocaton = new(arrayElementSize * length);
             return new(Type.CreateArray, arrayElementType.index, (ulong)(nint)allocaton, length);
         }
@@ -591,7 +591,7 @@ namespace Worlds
         /// </summary>
         public static Instruction CreateArray(ArrayType arrayElementType, uint length, Schema schema)
         {
-            ushort arrayElementSize = schema.GetArrayElementSize(arrayElementType);
+            ushort arrayElementSize = schema.GetSize(arrayElementType);
             Allocation allocaton = new(arrayElementSize * length);
             return new(Type.CreateArray, arrayElementType, (ulong)(nint)allocaton, length);
         }

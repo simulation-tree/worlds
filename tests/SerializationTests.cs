@@ -8,7 +8,6 @@ namespace Worlds.Tests
         [Test]
         public void SaveWorld()
         {
-            using Schema schema = CreateSchema();
             World world = CreateWorld();
             uint a = world.CreateEntity();
             world.AddComponent(a, new Fruit(42));
@@ -52,7 +51,6 @@ namespace Worlds.Tests
         [Test]
         public void AppendSavedWorld()
         {
-            using Schema schema = CreateSchema();
             using World prefabWorld = CreateWorld();
             uint a = prefabWorld.CreateEntity();
             prefabWorld.AddComponent(a, new Fruit(42));
@@ -78,6 +76,31 @@ namespace Worlds.Tests
             Assert.That(world.ContainsEntity(prefabEntity), Is.True);
             Assert.That(world.GetComponent<Fruit>(prefabEntity).data, Is.EqualTo(42));
             Assert.That(world.GetComponent<Cherry>(prefabEntity).stones.ToString(), Is.EqualTo("Hello, World!"));
+        }
+
+        [Test]
+        public unsafe void CheckSchemaOfLoadedWorld()
+        {
+            World prefabWorld = CreateWorld();
+            uint a = prefabWorld.CreateEntity();
+            prefabWorld.AddComponent(a, new Fruit(42));
+            prefabWorld.AddComponent(a, new Cherry("Hello, World!"));
+            prefabWorld.AddComponent(a, new Prefab());
+
+            using BinaryWriter writer = new();
+            writer.WriteObject(prefabWorld);
+            prefabWorld.Dispose();
+
+            using BinaryReader reader = new(writer);
+            using World loadedWorld = reader.ReadObject<World>();
+
+            Schema loadedSchema = loadedWorld.Schema;
+            Assert.That(loadedSchema.TryGetComponentLayout(typeof(Fruit).FullName!, out TypeLayout fruitType), Is.True);
+            Assert.That(loadedSchema.TryGetComponentLayout(typeof(Cherry).FullName!, out TypeLayout cherryType), Is.True);
+            Assert.That(loadedSchema.TryGetComponentLayout(typeof(Prefab).FullName!, out TypeLayout prefabType), Is.True);
+            Assert.That(fruitType.Size, Is.EqualTo(sizeof(Fruit)));
+            Assert.That(cherryType.Size, Is.EqualTo(sizeof(Cherry)));
+            Assert.That(prefabType.Size, Is.EqualTo(sizeof(Prefab)));
         }
     }
 }

@@ -71,7 +71,7 @@ namespace Worlds
         /// </summary>
         public readonly TypeLayout GetLayout(Schema schema)
         {
-            return schema.GetArrayElementLayout(this);
+            return schema.GetLayout(this);
         }
 
         public static bool operator ==(ArrayType left, ArrayType right)

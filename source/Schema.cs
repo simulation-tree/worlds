@@ -13,6 +13,36 @@ namespace Worlds
         public readonly void* Pointer => schema;
         public readonly nint Address => (nint)schema;
 
+        public readonly System.Collections.Generic.IEnumerable<TypeLayout> ComponentTypes
+        {
+            get
+            {
+                for (byte c = 0; c < BitSet.Capacity; c++)
+                {
+                    TypeLayout typeLayout = GetLayout(new ComponentType(c));
+                    if (typeLayout != default)
+                    {
+                        yield return typeLayout;
+                    }
+                }
+            }
+        }
+
+        public readonly System.Collections.Generic.IEnumerable<TypeLayout> ArrayElementTypes
+        {
+            get
+            {
+                for (byte a = 0; a < BitSet.Capacity; a++)
+                {
+                    TypeLayout typeLayout = GetLayout(new ArrayType(a));
+                    if (typeLayout != default)
+                    {
+                        yield return typeLayout;
+                    }
+                }
+            }
+        }
+
 #if NET
         public Schema()
         {
@@ -40,37 +70,71 @@ namespace Worlds
             Implementation.CopyTo(source.schema, schema);
         }
 
-        public readonly ushort GetComponentSize(ComponentType componentType)
+        public readonly ushort GetSize(ComponentType componentType)
         {
             ThrowIfComponentIsMissing(componentType);
 
             return schema->sizes.Read<ushort>(componentType.index * 2u);
         }
 
-        public readonly ushort GetArrayElementSize(ArrayType arrayType)
+        public readonly ushort GetSize(ArrayType arrayElementType)
         {
-            ThrowIfArrayElementIsMissing(arrayType);
+            ThrowIfArrayElementIsMissing(arrayElementType);
 
-            return schema->sizes.Read<ushort>(BitSet.Capacity * 2 + arrayType.index * 2u);
+            return schema->sizes.Read<ushort>(BitSet.Capacity * 2 + arrayElementType.index * 2u);
         }
 
-        public readonly TypeLayout GetComponentLayout(ComponentType componentType)
+        public readonly TypeLayout GetLayout(ComponentType componentType)
         {
             ThrowIfComponentIsMissing(componentType);
 
             return Implementation.GetComponentLayouts(schema)[componentType];
         }
 
-        public readonly TypeLayout GetArrayElementLayout(ArrayType arrayType)
+        public readonly TypeLayout GetLayout(ArrayType arrayElementType)
         {
-            ThrowIfArrayElementIsMissing(arrayType);
+            ThrowIfArrayElementIsMissing(arrayElementType);
 
-            return Implementation.GetArrayLayouts(schema)[arrayType];
+            return Implementation.GetArrayLayouts(schema)[arrayElementType];
         }
 
         public readonly TypeLayout GetComponentLayout<T>() where T : unmanaged
         {
-            return GetComponentLayout(GetComponent<T>());
+            return GetLayout(GetComponent<T>());
+        }
+
+        public readonly bool TryGetComponentLayout(FixedString fullTypeName, out TypeLayout typeLayout)
+        {
+            for (byte c = 0; c < BitSet.Capacity; c++)
+            {
+                ComponentType componentType = new(c);
+                TypeLayout layout = GetLayout(componentType);
+                if (layout.FullName == fullTypeName)
+                {
+                    typeLayout = layout;
+                    return true;
+                }
+            }
+
+            typeLayout = default;
+            return false;
+        }
+
+        public readonly bool TryGetArrayElementLayout(FixedString fullTypeName, out TypeLayout typeLayout)
+        {
+            for (byte a = 0; a < BitSet.Capacity; a++)
+            {
+                ArrayType arrayElementType = new(a);
+                TypeLayout layout = GetLayout(arrayElementType);
+                if (layout.FullName == fullTypeName)
+                {
+                    typeLayout = layout;
+                    return true;
+                }
+            }
+
+            typeLayout = default;
+            return false;
         }
 
         public readonly void RegisterComponent<T>() where T : unmanaged
@@ -103,9 +167,44 @@ namespace Worlds
             schema->arrays++;
         }
 
-        public readonly bool ContainsComponent(ComponentType componentType)
+        public readonly bool Contains(ComponentType componentType)
         {
-            return Implementation.GetComponentSizes(schema)[componentType] != 0;
+            return GetSize(componentType) != default;
+        }
+
+        public readonly bool Contains(ArrayType arrayElementType)
+        {
+            return GetSize(arrayElementType) != default;
+        }
+
+        public readonly bool ContainsComponent(FixedString fullTypeName)
+        {
+            for (byte c = 0; c < BitSet.Capacity; c++)
+            {
+                ComponentType componentType = new(c);
+                TypeLayout typeLayout = GetLayout(componentType);
+                if (typeLayout.FullName == fullTypeName)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public readonly bool ContainsArrayElement(FixedString fullTypeName)
+        {
+            for (byte a = 0; a < BitSet.Capacity; a++)
+            {
+                ArrayType arrayElementType = new(a);
+                TypeLayout typeLayout = GetLayout(arrayElementType);
+                if (typeLayout.FullName == fullTypeName)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public readonly bool ContainsComponent<T>() where T : unmanaged
@@ -119,11 +218,6 @@ namespace Worlds
             ThrowIfComponentIsMissing<T>();
 
             return new(schema->componentIndices[TypeLayoutHashCodeCache<T>.value]);
-        }
-
-        public readonly bool ContainsArrayElement(ArrayType arrayType)
-        {
-            return Implementation.GetArrayElementSizes(schema)[arrayType] != 0;
         }
 
         public readonly bool ContainsArrayElement<T>() where T : unmanaged
