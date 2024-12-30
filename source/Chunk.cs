@@ -26,7 +26,7 @@ namespace Worlds
         /// <summary>
         /// Returns the entities in this chunk.
         /// </summary>
-        public readonly List<uint> Entities => Implementation.GetEntities(value);
+        public readonly USpan<uint> Entities => Implementation.GetEntities(value).AsSpan();
 
         /// <summary>
         /// Amount of entities stored in this chunk.
@@ -43,6 +43,8 @@ namespace Worlds
         /// The schema that this chunk was created with.
         /// </summary>
         public readonly Schema Schema => Implementation.GetSchema(value);
+
+        public readonly uint this[uint index] => Entities[index];
 
 #if NET
         [Obsolete("Default constructor not supported", true)]
@@ -233,12 +235,13 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Retrieves the list of all components of the given <typeparamref name="T"/> type.
+        /// Retrieves all components of the given <typeparamref name="T"/> type.
         /// </summary>
-        public readonly List<T> GetComponents<T>() where T : unmanaged
+        public readonly USpan<T> GetComponents<T>() where T : unmanaged
         {
             Schema schema = Schema;
-            return new(GetComponents(schema.GetComponent<T>()));
+            List<T> list = new(GetComponents(schema.GetComponent<T>()));
+            return list.AsSpan();
         }
 
         public readonly List<T> GetComponents<T>(ComponentType componentType) where T : unmanaged

@@ -11,7 +11,7 @@ namespace Worlds.Tests
             Schema schema = CreateSchema();
             Chunk chunk = new(schema);
             chunk.AddEntity(7);
-            Assert.That(chunk.Entities, Has.Count.EqualTo(1));
+            Assert.That(chunk.Entities.Length, Is.EqualTo(1));
             Assert.That(chunk.Entities[0], Is.EqualTo(7));
             chunk.Dispose();
             schema.Dispose();
@@ -31,13 +31,13 @@ namespace Worlds.Tests
             ref Float floatComponent = ref chunk.GetComponent<Float>(index);
             intComponent = 42;
             floatComponent = 3.14f;
-            Assert.That(chunk.Entities, Has.Count.EqualTo(1));
+            Assert.That(chunk.Entities.Length, Is.EqualTo(1));
             Assert.That(chunk.Entities[0], Is.EqualTo(entity));
-            List<Integer> intComponents = chunk.GetComponents<Integer>();
-            List<Float> floatComponents = chunk.GetComponents<Float>();
-            Assert.That(intComponents, Has.Count.EqualTo(1));
+            USpan<Integer> intComponents = chunk.GetComponents<Integer>();
+            USpan<Float> floatComponents = chunk.GetComponents<Float>();
+            Assert.That(intComponents.Length, Is.EqualTo(1));
             Assert.That(intComponents[0], Is.EqualTo((Integer)42));
-            Assert.That(floatComponents, Has.Count.EqualTo(1));
+            Assert.That(floatComponents.Length, Is.EqualTo(1));
             Assert.That(floatComponents[0], Is.EqualTo((Float)3.14f));
             chunk.Dispose();
             schema.Dispose();
@@ -58,11 +58,11 @@ namespace Worlds.Tests
             intComponent = 42;
             floatComponent = 3.14f;
             chunk.RemoveEntity(entity);
-            Assert.That(chunk.Entities, Is.Empty);
-            List<Integer> intComponents = chunk.GetComponents<Integer>();
-            List<Float> floatComponents = chunk.GetComponents<Float>();
-            Assert.That(intComponents, Is.Empty);
-            Assert.That(floatComponents, Is.Empty);
+            Assert.That(chunk.Entities.Length, Is.EqualTo(0));
+            USpan<Integer> intComponents = chunk.GetComponents<Integer>();
+            USpan<Float> floatComponents = chunk.GetComponents<Float>();
+            Assert.That(intComponents.Length, Is.EqualTo(0));
+            Assert.That(floatComponents.Length, Is.EqualTo(0));
             chunk.Dispose();
             schema.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));
@@ -83,11 +83,11 @@ namespace Worlds.Tests
             ref Integer intComponent = ref chunkB.GetComponent<Integer>(newIndex);
             intComponent = 42;
 
-            Assert.That(chunkA.Entities, Is.Empty);
-            Assert.That(chunkB.Entities, Has.Count.EqualTo(1));
+            Assert.That(chunkA.Entities.Length, Is.EqualTo(0));
+            Assert.That(chunkB.Entities.Length, Is.EqualTo(1));
             Assert.That(chunkB.Entities[0], Is.EqualTo(entity));
-            List<Integer> intComponents = chunkB.GetComponents<Integer>();
-            Assert.That(intComponents, Has.Count.EqualTo(1));
+            USpan<Integer> intComponents = chunkB.GetComponents<Integer>();
+            Assert.That(intComponents.Length, Is.EqualTo(1));
             Assert.That(intComponents[0], Is.EqualTo((Integer)42));
 
             Definition definitionC = new();
@@ -97,12 +97,12 @@ namespace Worlds.Tests
             ref Float floatComponent = ref chunkC.GetComponent<Float>(newerIndex);
             floatComponent = 3.14f;
 
-            Assert.That(chunkB.GetComponents<Integer>(), Is.Empty);
-            Assert.That(chunkB.Entities, Is.Empty);
-            Assert.That(chunkC.Entities, Has.Count.EqualTo(1));
+            Assert.That(chunkB.GetComponents<Integer>().Length, Is.EqualTo(0));
+            Assert.That(chunkB.Entities.Length, Is.EqualTo(0));
+            Assert.That(chunkC.Entities.Length, Is.EqualTo(1));
             Assert.That(chunkC.Entities[0], Is.EqualTo(entity));
-            List<Float> floatComponents = chunkC.GetComponents<Float>();
-            Assert.That(floatComponents, Has.Count.EqualTo(1));
+            USpan<Float> floatComponents = chunkC.GetComponents<Float>();
+            Assert.That(floatComponents.Length, Is.EqualTo(1));
             Assert.That(floatComponents[0], Is.EqualTo((Float)3.14f));
 
             chunkA.Dispose();

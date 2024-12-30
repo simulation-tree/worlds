@@ -15,10 +15,10 @@ namespace Worlds
                     if ((key.ComponentTypes & componentTypes) == componentTypes)
                     {
                         Chunk chunk = chunks[key];
-                        Collections.List<uint> entities = chunk.Entities;
-                        for (uint e = 0; e < entities.Count; e++)
+                        uint count = chunk.Count;
+                        for (uint e = 0; e < count; e++)
                         {
-                            uint entity = entities[e];
+                            uint entity = chunk[e];
                             if (world.IsEnabled(entity))
                             {
                                 yield return entity;
@@ -34,10 +34,10 @@ namespace Worlds
                     if ((key.ComponentTypes & componentTypes) == componentTypes)
                     {
                         Chunk chunk = chunks[key];
-                        Collections.List<uint> entities = chunk.Entities;
-                        for (uint e = 0; e < entities.Count; e++)
+                        uint count = chunk.Count;
+                        for (uint e = 0; e < count; e++)
                         {
-                            yield return entities[e];
+                            yield return chunk[e];
                         }
                     }
                 }
@@ -73,15 +73,16 @@ namespace Worlds
                 if ((key.ComponentTypes & componentTypesMask) == componentTypesMask)
                 {
                     Chunk chunk = chunks[key];
+                    USpan<uint> entities = chunk.Entities;
                     if (!onlyEnabled)
                     {
-                        list.AddRange(chunk.Entities);
+                        list.AddRange(entities);
                     }
                     else
                     {
-                        for (uint e = 0; e < chunk.Entities.Count; e++)
+                        for (uint e = 0; e < entities.Length; e++)
                         {
-                            uint entity = chunk.Entities[e];
+                            uint entity = entities[e];
                             if (world.IsEnabled(entity))
                             {
                                 list.Add(entity);
@@ -110,9 +111,10 @@ namespace Worlds
                     }
                     else
                     {
-                        for (uint e = 0; e < chunk.Entities.Count; e++)
+                        USpan<uint> entities = chunk.Entities;
+                        for (uint e = 0; e < entities.Length; e++)
                         {
-                            uint entity = chunk.Entities[e];
+                            uint entity = entities[e];
                             if (world.IsEnabled(entity))
                             {
                                 list.Add(chunk.GetComponent<T>(e, componentType));
@@ -124,10 +126,10 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Fills the given <paramref name="entities"/> list with all entities that contain
+        /// Fills the given <paramref name="destination"/> list with all entities that contain
         /// a component of type <typeparamref name="T"/>.
         /// </summary>
-        public static void Fill<T>(this World world, List<uint> entities, bool onlyEnabled = false) where T : unmanaged
+        public static void Fill<T>(this World world, List<uint> destination, bool onlyEnabled = false) where T : unmanaged
         {
             ComponentType componentType = world.Schema.GetComponent<T>();
             Dictionary<Definition, Chunk> chunks = world.Chunks;
@@ -136,18 +138,19 @@ namespace Worlds
                 if (key.ComponentTypes == componentType)
                 {
                     Chunk chunk = chunks[key];
+                    USpan<uint> entities = chunk.Entities;
                     if (!onlyEnabled)
                     {
-                        entities.AddRange(chunk.Entities);
+                        destination.AddRange(entities);
                     }
                     else
                     {
-                        for (uint e = 0; e < chunk.Entities.Count; e++)
+                        for (uint e = 0; e < entities.Length; e++)
                         {
-                            uint entity = chunk.Entities[e];
+                            uint entity = entities[e];
                             if (world.IsEnabled(entity))
                             {
-                                entities.Add(entity);
+                                destination.Add(entity);
                             }
                         }
                     }
@@ -156,9 +159,9 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Fills <paramref name="components"/> and <paramref name="entities"/>.
+        /// Fills <paramref name="components"/> and <paramref name="destination"/>.
         /// </summary>
-        public static void Fill<T>(this World world, List<T> components, List<uint> entities, bool onlyEnabled = false) where T : unmanaged
+        public static void Fill<T>(this World world, List<T> components, List<uint> destination, bool onlyEnabled = false) where T : unmanaged
         {
             ComponentType componentType = world.Schema.GetComponent<T>();
             Dictionary<Definition, Chunk> chunks = world.Chunks;
@@ -167,20 +170,21 @@ namespace Worlds
                 if (key.ComponentTypes == componentType)
                 {
                     Chunk chunk = chunks[key];
+                    USpan<uint> entities = chunk.Entities;
                     if (!onlyEnabled)
                     {
                         components.AddRange(chunk.GetComponents<T>(componentType));
-                        entities.AddRange(chunk.Entities);
+                        destination.AddRange(entities);
                     }
                     else
                     {
-                        for (uint e = 0; e < chunk.Entities.Count; e++)
+                        for (uint e = 0; e < entities.Length; e++)
                         {
-                            uint entity = chunk.Entities[e];
+                            uint entity = entities[e];
                             if (world.IsEnabled(entity))
                             {
                                 components.Add(chunk.GetComponent<T>(e, componentType));
-                                entities.Add(entity);
+                                destination.Add(entity);
                             }
                         }
                     }
@@ -189,10 +193,10 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Fills the given <paramref name="entities"/> list with all entities that have
+        /// Fills the given <paramref name="destination"/> list with all entities that have
         /// a component of type <paramref name="componentType"/>.
         /// </summary>
-        public static void Fill(this World world, ComponentType componentType, List<uint> entities, bool onlyEnabled = false)
+        public static void Fill(this World world, ComponentType componentType, List<uint> destination, bool onlyEnabled = false)
         {
             Dictionary<Definition, Chunk> chunks = world.Chunks;
             foreach (Definition key in chunks.Keys)
@@ -200,18 +204,19 @@ namespace Worlds
                 if (key.ComponentTypes == componentType)
                 {
                     Chunk chunk = chunks[key];
+                    USpan<uint> entities = chunk.Entities;
                     if (!onlyEnabled)
                     {
-                        entities.AddRange(chunk.Entities);
+                        destination.AddRange(entities);
                     }
                     else
                     {
-                        for (uint e = 0; e < chunk.Entities.Count; e++)
+                        for (uint e = 0; e < entities.Length; e++)
                         {
-                            uint entity = chunk.Entities[e];
+                            uint entity = entities[e];
                             if (world.IsEnabled(entity))
                             {
-                                entities.Add(entity);
+                                destination.Add(entity);
                             }
                         }
                     }

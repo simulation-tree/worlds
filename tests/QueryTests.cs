@@ -1,6 +1,7 @@
 ﻿using Collections;
 using System;
 using System.Diagnostics;
+using Unmanaged;
 
 namespace Worlds.Tests
 {
@@ -357,13 +358,16 @@ namespace Worlds.Tests
                     if ((key.ComponentTypes & componentTypes) == componentTypes)
                     {
                         Chunk chunk = chunks[key];
-                        List<uint> entities = chunk.Entities;
-                        for (uint e = 0; e < entities.Count; e++)
+                        USpan<uint> entities = chunk.Entities;
+                        USpan<Apple> apples = chunk.GetComponents<Apple>();
+                        USpan<Berry> berries = chunk.GetComponents<Berry>();
+                        USpan<Cherry> cherries = chunk.GetComponents<Cherry>();
+                        for (uint e = 0; e < entities.Length; e++)
                         {
                             uint entity = entities[e];
-                            ref Apple apple = ref chunk.GetComponent<Apple>(e, appleType);
-                            ref Berry berry = ref chunk.GetComponent<Berry>(e, berryType);
-                            ref Cherry cherry = ref chunk.GetComponent<Cherry>(e, cherryType);
+                            ref Apple apple = ref apples[e];
+                            ref Berry berry = ref berries[e];
+                            ref Cherry cherry = ref cherries[e];
                             results.Add((entity, apple, berry, cherry));
                         }
                     }

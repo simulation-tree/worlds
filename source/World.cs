@@ -210,6 +210,7 @@ namespace Worlds
                     //write components
                     Chunk chunk = slot.chunk;
                     Definition definition = chunk.Definition;
+                    uint localEntity = chunk.Entities.IndexOf(entity);
                     writer.WriteValue(definition.ComponentTypes.Count); //todo: why not serialize the bitset directly?
                     for (byte c = 0; c < BitSet.Capacity; c++)
                     {
@@ -218,7 +219,7 @@ namespace Worlds
                             ComponentType componentType = new(c);
                             ushort componentSize = schema.GetSize(componentType);
                             writer.WriteValue(componentType);
-                            Allocation component = chunk.GetComponent(chunk.Entities.IndexOf(entity), componentType, componentSize);
+                            Allocation component = chunk.GetComponent(localEntity, componentType, componentSize);
                             writer.Write(component, componentSize);
                         }
                     }
@@ -802,9 +803,10 @@ namespace Worlds
                         if ((key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
                         {
                             Chunk chunk = chunks[key];
-                            for (uint e = 0; e < chunk.Entities.Count; e++)
+                            USpan<uint> entities = chunk.Entities;
+                            for (uint e = 0; e < entities.Length; e++)
                             {
-                                uint entityValue = chunk.Entities[e];
+                                uint entityValue = entities[e];
                                 BitSet arrayElementTypes = GetArrayElementTypes(entityValue);
                                 if ((definition.ArrayElementTypes & arrayElementTypes) == arrayElementTypes)
                                 {
@@ -825,9 +827,10 @@ namespace Worlds
                         if ((key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
                         {
                             Chunk chunk = chunks[key];
-                            for (uint e = 0; e < chunk.Entities.Count; e++)
+                            USpan<uint> entities = chunk.Entities;
+                            for (uint e = 0; e < entities.Length; e++)
                             {
-                                uint entityValue = chunk.Entities[e];
+                                uint entityValue = entities[e];
                                 BitSet arrayElementTypes = GetArrayElementTypes(entityValue);
                                 if ((definition.ArrayElementTypes & arrayElementTypes) == arrayElementTypes)
                                 {
@@ -846,9 +849,10 @@ namespace Worlds
                     foreach (Definition key in chunks.Keys)
                     {
                         Chunk chunk = chunks[key];
-                        if (chunk.Entities.Count > 0 && (key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
+                        USpan<uint> entities = chunk.Entities;
+                        if (entities.Length > 0 && (key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
                         {
-                            uint entityValue = chunk.Entities[0];
+                            uint entityValue = entities[0];
                             entity = new Entity(this, entityValue).As<T>();
                             return true;
                         }
@@ -861,7 +865,8 @@ namespace Worlds
                         if ((key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
                         {
                             Chunk chunk = chunks[key];
-                            for (uint e = 0; e < chunk.Entities.Count; e++)
+                            USpan<uint> entities = chunk.Entities;
+                            for (uint e = 0; e < entities.Length; e++)
                             {
                                 uint entityValue = chunk.Entities[e];
                                 if (IsEnabled(entityValue))
@@ -1872,7 +1877,7 @@ namespace Worlds
                 if (key.ComponentTypes == componentType)
                 {
                     Chunk chunk = chunks[key];
-                    if (chunk.Entities.Count > 0)
+                    if (chunk.Entities.Length > 0)
                     {
                         return true;
                     }
@@ -2063,15 +2068,16 @@ namespace Worlds
                 if (key.ComponentTypes == componentType)
                 {
                     Chunk chunk = chunks[key];
+                    USpan<uint> entities = chunk.Entities;
                     if (!onlyEnabled)
                     {
-                        count += chunk.Entities.Count;
+                        count += entities.Length;
                     }
                     else
                     {
-                        for (uint e = 0; e < chunk.Entities.Count; e++)
+                        for (uint e = 0; e < entities.Length; e++)
                         {
-                            uint entity = chunk.Entities[e];
+                            uint entity = entities[e];
                             if (IsEnabled(entity))
                             {
                                 count++;
@@ -2099,9 +2105,10 @@ namespace Worlds
                     if ((key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
                     {
                         Chunk chunk = chunks[key];
-                        for (uint e = 0; e < chunk.Entities.Count; e++)
+                        USpan<uint> entities = chunk.Entities;
+                        for (uint e = 0; e < entities.Length; e++)
                         {
-                            uint entity = chunk.Entities[e];
+                            uint entity = entities[e];
                             BitSet arrayElementTypes = GetArrayElementTypes(entity);
                             if ((definition.ArrayElementTypes & arrayElementTypes) == arrayElementTypes)
                             {
@@ -2130,7 +2137,7 @@ namespace Worlds
                         if ((key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
                         {
                             Chunk chunk = chunks[key];
-                            count += chunk.Entities.Count;
+                            count += chunk.Entities.Length;
                         }
                     }
                 }
@@ -2141,9 +2148,10 @@ namespace Worlds
                         if ((key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
                         {
                             Chunk chunk = chunks[key];
-                            for (uint e = 0; e < chunk.Entities.Count; e++)
+                            USpan<uint> entities = chunk.Entities;
+                            for (uint e = 0; e < entities.Length; e++)
                             {
-                                uint entity = chunk.Entities[e];
+                                uint entity = entities[e];
                                 if (IsEnabled(entity))
                                 {
                                     count++;
@@ -2767,14 +2775,13 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(world);
 
-                ref uint freeCount = ref List.GetCountRef(world->freeEntities);
-                if (freeCount > 0)
+                if (List.GetCountRef(world->freeEntities) > 0)
                 {
                     return List.GetRef<uint>(world->freeEntities, 0);
                 }
                 else
                 {
-                    return freeCount + 1;
+                    return List.GetCountRef(world->slots) + 1;
                 }
             }
 
