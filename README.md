@@ -22,8 +22,8 @@ public struct MyComponent(uint value)
 }
 ```
 
-If the attributes aren't present, or the type table isn't initialized, then each type needs to
-be registered with `TypeLayout` and `Schema`:
+If the attributes aren't present, or the type layouts aren't registered, then each type needs to
+be registered with both `TypeLayout` and `Schema`:
 ```cs
 private static void Main()
 {
@@ -31,7 +31,7 @@ private static void Main()
     TypeLayout.Register<IsPlayer>("IsPlayer");
     TypeLayout.Register<MyReference>("MyReference");
     TypeLayout.Register<char>("char");
-    Schema schema = new();
+    Schema schema = SchemaRegistry.Get();
     schema.RegisterComponent<MyComponent>();
     schema.RegisterComponent<IsPlayer>();
     schema.RegisterComponent<MyReference>();
@@ -85,18 +85,19 @@ uint sum = 0;
 void Do()
 {
     //only downside here is having to read a lot of code
-    Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
+    Dictionary<Definition, Chunk> chunks = world.Chunks;
     ComponentType componentType = world.Schema.GetComponent<MyComponent>();
-    foreach (BitSet key in chunks.Keys)
+    foreach (Definition key in chunks.Keys)
     {
-        if (key == componentType)
+        if (key.ComponentTypes == componentType)
         {
-            ComponentChunk chunk = chunks[key];
-            List<uint> entities = chunk.Entities;
-            for (uint e = 0; e < entities.Count; e++)
+            Chunk chunk = chunks[key];
+            USpan<uint> entities = chunk.Entities;
+            USpan<MyComponent> components = chunk.GetComponents<MyComponent>();
+            for (uint e = 0; e < entities.Length; e++)
             {
                 uint entity = entities[e];
-                ref MyComponent component = ref chunk.GetComponent<MyComponent>(e, componentType);
+                ref MyComponent component = ref components[e];
                 component.value *= 2;
                 sum += component.value;
             }
