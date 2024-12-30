@@ -351,12 +351,12 @@ namespace Worlds.Tests
             results.Clear();
             stopwatch.Restart();
             {
-                Dictionary<Definition, ComponentChunk> chunks = world.Chunks;
+                Dictionary<Definition, Chunk> chunks = world.Chunks;
                 foreach (Definition key in chunks.Keys)
                 {
                     if ((key.ComponentTypes & componentTypes) == componentTypes)
                     {
-                        ComponentChunk chunk = chunks[key];
+                        Chunk chunk = chunks[key];
                         List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {

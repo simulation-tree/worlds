@@ -7,9 +7,9 @@ using Unmanaged;
 namespace Worlds
 {
     /// <summary>
-    /// Stores components of entities with the same types.
+    /// Stores components of entities with the same component, array and tags.
     /// </summary>
-    public unsafe struct ComponentChunk : IDisposable, IEquatable<ComponentChunk>
+    public unsafe struct Chunk : IDisposable, IEquatable<Chunk>
     {
         private Implementation* value;
 
@@ -46,23 +46,23 @@ namespace Worlds
 
 #if NET
         [Obsolete("Default constructor not supported", true)]
-        public ComponentChunk()
+        public Chunk()
         {
             throw new NotSupportedException();
         }
 #endif
         /// <summary>
-        /// Creates a new component chunk.
+        /// Creates a new chunk.
         /// </summary>
-        public ComponentChunk(Schema schema)
+        public Chunk(Schema schema)
         {
             value = Implementation.Allocate(default, schema);
         }
 
         /// <summary>
-        /// Creates a new component chunk with the given <paramref name="definition"/>.
+        /// Creates a new chunk with the given <paramref name="definition"/>.
         /// </summary>
-        public ComponentChunk(Definition definition, Schema schema)
+        public Chunk(Definition definition, Schema schema)
         {
             value = Implementation.Allocate(definition, schema);
         }
@@ -82,7 +82,7 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Builds a string representation of this component chunk.
+        /// Builds a string representation of this chunk.
         /// </summary>
         public readonly uint ToString(USpan<char> buffer)
         {
@@ -139,7 +139,7 @@ namespace Worlds
         /// <summary>
         /// Moves the <paramref name="entity"/> and all of its components to the <paramref name="destination"/> chunk.
         /// </summary>
-        public readonly uint MoveEntity(uint entity, ComponentChunk destination)
+        public readonly uint MoveEntity(uint entity, Chunk destination)
         {
             return Implementation.Move(value, entity, destination.value);
         }
@@ -277,20 +277,20 @@ namespace Worlds
 
         public readonly override bool Equals(object? obj)
         {
-            return obj is ComponentChunk chunk && Equals(chunk);
+            return obj is Chunk chunk && Equals(chunk);
         }
 
-        public readonly bool Equals(ComponentChunk other)
+        public readonly bool Equals(Chunk other)
         {
             return (nint)value == (nint)other.value;
         }
 
-        public static bool operator ==(ComponentChunk left, ComponentChunk right)
+        public static bool operator ==(Chunk left, Chunk right)
         {
             return left.Equals(right);
         }
 
-        public static bool operator !=(ComponentChunk left, ComponentChunk right)
+        public static bool operator !=(Chunk left, Chunk right)
         {
             return !(left == right);
         }

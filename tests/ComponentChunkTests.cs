@@ -9,7 +9,7 @@ namespace Worlds.Tests
         public void AddEntityNoComponents()
         {
             Schema schema = CreateSchema();
-            ComponentChunk chunk = new(schema);
+            Chunk chunk = new(schema);
             chunk.AddEntity(7);
             Assert.That(chunk.Entities, Has.Count.EqualTo(1));
             Assert.That(chunk.Entities[0], Is.EqualTo(7));
@@ -24,7 +24,7 @@ namespace Worlds.Tests
             Schema schema = CreateSchema();
             Definition definition = new();
             definition.AddComponentTypes<Integer, Float>(schema);
-            ComponentChunk chunk = new(definition, schema);
+            Chunk chunk = new(definition, schema);
             uint entity = 7;
             uint index = chunk.AddEntity(entity);
             ref Integer intComponent = ref chunk.GetComponent<Integer>(index);
@@ -50,7 +50,7 @@ namespace Worlds.Tests
             Schema schema = CreateSchema();
             Definition definition = new();
             definition.AddComponentTypes<Integer, Float>(schema);
-            ComponentChunk chunk = new(definition, schema);
+            Chunk chunk = new(definition, schema);
             uint entity = 7;
             uint index = chunk.AddEntity(entity);
             ref Integer intComponent = ref chunk.GetComponent<Integer>(index);
@@ -72,13 +72,13 @@ namespace Worlds.Tests
         public void MovingEntity()
         {
             Schema schema = CreateSchema();
-            ComponentChunk chunkA = new(default, schema);
+            Chunk chunkA = new(default, schema);
             uint entity = 7;
             uint oldIndex = chunkA.AddEntity(entity);
 
             Definition definitionB = new();
             definitionB.AddComponentType<Integer>(schema);
-            ComponentChunk chunkB = new(definitionB, schema);
+            Chunk chunkB = new(definitionB, schema);
             uint newIndex = chunkA.MoveEntity(entity, chunkB);
             ref Integer intComponent = ref chunkB.GetComponent<Integer>(newIndex);
             intComponent = 42;
@@ -92,7 +92,7 @@ namespace Worlds.Tests
 
             Definition definitionC = new();
             definitionC.AddComponentTypes<Float, Integer>(schema);
-            ComponentChunk chunkC = new(definitionC, schema);
+            Chunk chunkC = new(definitionC, schema);
             uint newerIndex = chunkB.MoveEntity(entity, chunkC);
             ref Float floatComponent = ref chunkC.GetComponent<Float>(newerIndex);
             floatComponent = 3.14f;
@@ -120,8 +120,8 @@ namespace Worlds.Tests
             definitionA.AddComponentTypes<Integer, Float>(schema);
             Definition definitionB = new();
             definitionB.AddComponentTypes<Float, Integer>(schema);
-            ComponentChunk chunkA = new(definitionA, schema);
-            ComponentChunk chunkB = new(definitionB, schema);
+            Chunk chunkA = new(definitionA, schema);
+            Chunk chunkB = new(definitionB, schema);
             int hashA = chunkA.GetHashCode();
             int hashB = chunkB.GetHashCode();
             Assert.That(hashA, Is.EqualTo(hashB));

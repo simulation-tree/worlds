@@ -7,14 +7,14 @@ namespace Worlds
     {
         public static System.Collections.Generic.IEnumerable<uint> GetAllContaining(this World world, BitSet componentTypes, bool onlyEnabled = false)
         {
-            Dictionary<Definition, ComponentChunk> chunks = world.Chunks;
+            Dictionary<Definition, Chunk> chunks = world.Chunks;
             if (onlyEnabled)
             {
                 foreach (Definition key in chunks.Keys)
                 {
                     if ((key.ComponentTypes & componentTypes) == componentTypes)
                     {
-                        ComponentChunk chunk = chunks[key];
+                        Chunk chunk = chunks[key];
                         Collections.List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
@@ -33,7 +33,7 @@ namespace Worlds
                 {
                     if ((key.ComponentTypes & componentTypes) == componentTypes)
                     {
-                        ComponentChunk chunk = chunks[key];
+                        Chunk chunk = chunks[key];
                         Collections.List<uint> entities = chunk.Entities;
                         for (uint e = 0; e < entities.Count; e++)
                         {
@@ -61,7 +61,7 @@ namespace Worlds
         /// </summary>
         public static void Fill(this World world, USpan<ComponentType> componentTypes, List<uint> list, bool onlyEnabled = false)
         {
-            Dictionary<Definition, ComponentChunk> chunks = world.Chunks;
+            Dictionary<Definition, Chunk> chunks = world.Chunks;
             BitSet componentTypesMask = new();
             foreach (ComponentType componentType in componentTypes)
             {
@@ -72,7 +72,7 @@ namespace Worlds
             {
                 if ((key.ComponentTypes & componentTypesMask) == componentTypesMask)
                 {
-                    ComponentChunk chunk = chunks[key];
+                    Chunk chunk = chunks[key];
                     if (!onlyEnabled)
                     {
                         list.AddRange(chunk.Entities);
@@ -98,12 +98,12 @@ namespace Worlds
         public static void Fill<T>(this World world, List<T> list, bool onlyEnabled = false) where T : unmanaged
         {
             ComponentType componentType = world.Schema.GetComponent<T>();
-            Dictionary<Definition, ComponentChunk> chunks = world.Chunks;
+            Dictionary<Definition, Chunk> chunks = world.Chunks;
             foreach (Definition key in chunks.Keys)
             {
                 if (key.ComponentTypes == componentType)
                 {
-                    ComponentChunk chunk = chunks[key];
+                    Chunk chunk = chunks[key];
                     if (!onlyEnabled)
                     {
                         list.AddRange(chunk.GetComponents<T>(componentType));
@@ -130,12 +130,12 @@ namespace Worlds
         public static void Fill<T>(this World world, List<uint> entities, bool onlyEnabled = false) where T : unmanaged
         {
             ComponentType componentType = world.Schema.GetComponent<T>();
-            Dictionary<Definition, ComponentChunk> chunks = world.Chunks;
+            Dictionary<Definition, Chunk> chunks = world.Chunks;
             foreach (Definition key in chunks.Keys)
             {
                 if (key.ComponentTypes == componentType)
                 {
-                    ComponentChunk chunk = chunks[key];
+                    Chunk chunk = chunks[key];
                     if (!onlyEnabled)
                     {
                         entities.AddRange(chunk.Entities);
@@ -161,12 +161,12 @@ namespace Worlds
         public static void Fill<T>(this World world, List<T> components, List<uint> entities, bool onlyEnabled = false) where T : unmanaged
         {
             ComponentType componentType = world.Schema.GetComponent<T>();
-            Dictionary<Definition, ComponentChunk> chunks = world.Chunks;
+            Dictionary<Definition, Chunk> chunks = world.Chunks;
             foreach (Definition key in chunks.Keys)
             {
                 if (key.ComponentTypes == componentType)
                 {
-                    ComponentChunk chunk = chunks[key];
+                    Chunk chunk = chunks[key];
                     if (!onlyEnabled)
                     {
                         components.AddRange(chunk.GetComponents<T>(componentType));
@@ -194,12 +194,12 @@ namespace Worlds
         /// </summary>
         public static void Fill(this World world, ComponentType componentType, List<uint> entities, bool onlyEnabled = false)
         {
-            Dictionary<Definition, ComponentChunk> chunks = world.Chunks;
+            Dictionary<Definition, Chunk> chunks = world.Chunks;
             foreach (Definition key in chunks.Keys)
             {
                 if (key.ComponentTypes == componentType)
                 {
-                    ComponentChunk chunk = chunks[key];
+                    Chunk chunk = chunks[key];
                     if (!onlyEnabled)
                     {
                         entities.AddRange(chunk.Entities);

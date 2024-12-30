@@ -21,7 +21,7 @@ namespace Worlds
         /// <summary>
         /// The chunk that this entity slot belongs to.
         /// </summary>
-        public ComponentChunk chunk;
+        public Chunk chunk;
 
         /// <summary>
         /// Number of children.

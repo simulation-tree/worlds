@@ -392,14 +392,14 @@ namespace Worlds
         /// </summary>
         public readonly Enumerator GetEnumerator()
         {
-            Dictionary<Definition, ComponentChunk> chunks = world.Chunks;
+            Dictionary<Definition, Chunk> chunks = world.Chunks;
             Definition include = new(includeComponents, includeArrayElements, includeTags);
             return new(include, exclude, chunks, world.Schema);
         }
 
         public unsafe ref struct Enumerator
         {
-            private static readonly uint stride = (uint)sizeof(ComponentChunk);
+            private static readonly uint stride = (uint)sizeof(Chunk);
 
             private readonly Allocation chunks;
             private readonly uint chunkCount;
@@ -407,14 +407,14 @@ namespace Worlds
             private uint entityCount;
             private uint entityIndex;
             private uint chunkIndex;
-            private ComponentChunk.Implementation* chunk;
+            private Chunk.Implementation* chunk;
 
             /// <summary>
             /// Current result.
             /// </summary>
-            public readonly ComponentChunk.Entity<C1> Current => ComponentChunk.Implementation.GetEntity<C1>(chunk, entityIndex - 1, c1);
+            public readonly Chunk.Entity<C1> Current => Chunk.Implementation.GetEntity<C1>(chunk, entityIndex - 1, c1);
 
-            internal Enumerator(Definition include, Definition exclude, Dictionary<Definition, ComponentChunk> allChunks, Schema schema)
+            internal Enumerator(Definition include, Definition exclude, Dictionary<Definition, Chunk> allChunks, Schema schema)
             {
                 chunkCount = 0;
                 USpan<nint> chunksBuffer = stackalloc nint[(int)allChunks.Count];
@@ -452,7 +452,7 @@ namespace Worlds
                         continue;
                     }
 
-                    ComponentChunk chunk = allChunks[key];
+                    Chunk chunk = allChunks[key];
                     if (chunk.Count > 0)
                     {
                         chunksBuffer[chunkCount++] = chunk.Address;
@@ -467,8 +467,8 @@ namespace Worlds
                     c1 = schema.GetComponent<C1>();
                     chunks = new(NativeMemory.Alloc(chunkCount * stride));
                     chunks.CopyFrom(chunksBuffer.Pointer, stride * chunkCount);
-                    chunk = (ComponentChunk.Implementation*)chunksBuffer[0];
-                    entityCount = ComponentChunk.Implementation.GetCount(chunk);
+                    chunk = (Chunk.Implementation*)chunksBuffer[0];
+                    entityCount = Chunk.Implementation.GetCount(chunk);
                 }
             }
 
@@ -487,8 +487,8 @@ namespace Worlds
                     chunkIndex++;
                     if (chunkIndex < chunkCount)
                     {
-                        chunk = (ComponentChunk.Implementation*)chunks.Read<nint>(chunkIndex * stride);
-                        entityCount = ComponentChunk.Implementation.GetCount(chunk);
+                        chunk = (Chunk.Implementation*)chunks.Read<nint>(chunkIndex * stride);
+                        entityCount = Chunk.Implementation.GetCount(chunk);
                         entityIndex = 1;
                         return true;
                     }
