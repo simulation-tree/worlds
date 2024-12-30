@@ -57,6 +57,10 @@ namespace Worlds.Tests
             prefabWorld.AddComponent(a, new Cherry("Hello, World!"));
             prefabWorld.AddComponent(a, new Prefab());
 
+            uint aa = prefabWorld.CreateEntity();
+            prefabWorld.AddComponent(aa, new Fruit(43));
+            prefabWorld.AddTag<IsThing>(aa);
+
             using BinaryWriter writer = new();
             writer.WriteObject(prefabWorld);
 
@@ -74,8 +78,11 @@ namespace Worlds.Tests
             world.TryGetFirstEntityContainingComponent<Prefab>(out uint prefabEntity, out _);
             Assert.That(prefabEntity, Is.Not.EqualTo((uint)0));
             Assert.That(world.ContainsEntity(prefabEntity), Is.True);
+            Assert.That(world.ContainsEntity(prefabEntity + 1), Is.True);
             Assert.That(world.GetComponent<Fruit>(prefabEntity).data, Is.EqualTo(42));
             Assert.That(world.GetComponent<Cherry>(prefabEntity).stones.ToString(), Is.EqualTo("Hello, World!"));
+            Assert.That(world.GetComponent<Fruit>(prefabEntity + 1).data, Is.EqualTo(43));
+            Assert.That(world.ContainsTag<IsThing>(prefabEntity + 1), Is.True);
         }
 
         [Test]
