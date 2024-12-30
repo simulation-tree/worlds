@@ -3,7 +3,7 @@
 namespace Worlds.Tests
 {
     [Component]
-    [Array]
+    [ArrayElement]
     public struct SimpleComponent
     {
         public FixedString data;

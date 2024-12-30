@@ -22,8 +22,9 @@ namespace Worlds.TypeTableGenerator
         public static string Generate(Compilation compilation)
         {
             HashSet<ITypeSymbol> componentTypes = [];
-            HashSet<ITypeSymbol> arrayTypes = [];
-            compilation.CollectTypeSymbols(componentTypes, arrayTypes);
+            HashSet<ITypeSymbol> arrayElementTypes = [];
+            HashSet<ITypeSymbol> tagTypes = [];
+            compilation.CollectTypeSymbols(componentTypes, arrayElementTypes, tagTypes);
 
             source.Clear();
             source.Clear();
@@ -46,9 +47,14 @@ namespace Worlds.TypeTableGenerator
                             AppendComponentRegistration(componentType);
                         }
 
-                        foreach (ITypeSymbol arrayType in arrayTypes)
+                        foreach (ITypeSymbol arrayElementType in arrayElementTypes)
                         {
-                            AppendArrayElementRegistration(arrayType);
+                            AppendArrayElementRegistration(arrayElementType);
+                        }
+
+                        foreach (ITypeSymbol tagType in tagTypes)
+                        {
+                            AppendTagRegistration(tagType);
                         }
                     }
                     source.EndGroup();
@@ -76,9 +82,14 @@ namespace Worlds.TypeTableGenerator
             source.AppendLine($"schema.RegisterComponent<{componentType.ToDisplayString()}>();");
         }
 
-        private static void AppendArrayElementRegistration(ITypeSymbol arrayType)
+        private static void AppendArrayElementRegistration(ITypeSymbol arrayElementType)
         {
-            source.AppendLine($"schema.RegisterArrayElement<{arrayType.ToDisplayString()}>();");
+            source.AppendLine($"schema.RegisterArrayElement<{arrayElementType.ToDisplayString()}>();");
+        }
+
+        private static void AppendTagRegistration(ITypeSymbol tagType)
+        {
+            source.AppendLine($"schema.RegisterTag<{tagType.ToDisplayString()}>();");
         }
     }
 }

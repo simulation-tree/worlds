@@ -1,7 +1,7 @@
 ﻿namespace Worlds.Tests
 {
     [Component]
-    [Array]
+    [ArrayElement]
     public struct Integer
     {
         public int value;

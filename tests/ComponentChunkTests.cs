@@ -22,7 +22,9 @@ namespace Worlds.Tests
         public void AddEntityWithComponents()
         {
             Schema schema = CreateSchema();
-            ComponentChunk chunk = new([schema.GetComponent<Integer>(), schema.GetComponent<Float>()], schema);
+            Definition definition = new();
+            definition.AddComponentTypes<Integer, Float>(schema);
+            ComponentChunk chunk = new(definition, schema);
             uint entity = 7;
             uint index = chunk.AddEntity(entity);
             ref Integer intComponent = ref chunk.GetComponent<Integer>(index);
@@ -46,7 +48,9 @@ namespace Worlds.Tests
         public void RemovingEntity()
         {
             Schema schema = CreateSchema();
-            ComponentChunk chunk = new([schema.GetComponent<Integer>(), schema.GetComponent<Float>()], schema);
+            Definition definition = new();
+            definition.AddComponentTypes<Integer, Float>(schema);
+            ComponentChunk chunk = new(definition, schema);
             uint entity = 7;
             uint index = chunk.AddEntity(entity);
             ref Integer intComponent = ref chunk.GetComponent<Integer>(index);
@@ -68,11 +72,13 @@ namespace Worlds.Tests
         public void MovingEntity()
         {
             Schema schema = CreateSchema();
-            ComponentChunk chunkA = new([], schema);
+            ComponentChunk chunkA = new(default, schema);
             uint entity = 7;
             uint oldIndex = chunkA.AddEntity(entity);
 
-            ComponentChunk chunkB = new([schema.GetComponent<Integer>()], schema);
+            Definition definitionB = new();
+            definitionB.AddComponentType<Integer>(schema);
+            ComponentChunk chunkB = new(definitionB, schema);
             uint newIndex = chunkA.MoveEntity(entity, chunkB);
             ref Integer intComponent = ref chunkB.GetComponent<Integer>(newIndex);
             intComponent = 42;
@@ -84,7 +90,9 @@ namespace Worlds.Tests
             Assert.That(intComponents, Has.Count.EqualTo(1));
             Assert.That(intComponents[0], Is.EqualTo((Integer)42));
 
-            ComponentChunk chunkC = new([schema.GetComponent<Float>(), schema.GetComponent<Integer>()], schema);
+            Definition definitionC = new();
+            definitionC.AddComponentTypes<Float, Integer>(schema);
+            ComponentChunk chunkC = new(definitionC, schema);
             uint newerIndex = chunkB.MoveEntity(entity, chunkC);
             ref Float floatComponent = ref chunkC.GetComponent<Float>(newerIndex);
             floatComponent = 3.14f;
@@ -108,8 +116,12 @@ namespace Worlds.Tests
         public void HashTypes()
         {
             using Schema schema = CreateSchema();
-            ComponentChunk chunkA = new([schema.GetComponent<Integer>(), schema.GetComponent<Float>()], schema);
-            ComponentChunk chunkB = new([schema.GetComponent<Float>(), schema.GetComponent<Integer>()], schema);
+            Definition definitionA = new();
+            definitionA.AddComponentTypes<Integer, Float>(schema);
+            Definition definitionB = new();
+            definitionB.AddComponentTypes<Float, Integer>(schema);
+            ComponentChunk chunkA = new(definitionA, schema);
+            ComponentChunk chunkB = new(definitionB, schema);
             int hashA = chunkA.GetHashCode();
             int hashB = chunkB.GetHashCode();
             Assert.That(hashA, Is.EqualTo(hashB));

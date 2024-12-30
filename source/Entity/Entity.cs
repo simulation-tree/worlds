@@ -337,7 +337,7 @@ namespace Worlds
             public readonly Entity parent;
             public readonly StackTrace creationStackTrace;
             public readonly ComponentType[] componentTypes;
-            public readonly ArrayType[] arrayTypes;
+            public readonly ArrayElementType[] arrayTypes;
             public readonly Entity[] references;
 
             public DebugView(Entity entity)
@@ -349,8 +349,8 @@ namespace Worlds
                 USpan<ComponentType> componentTypeBuffer = stackalloc ComponentType[BitSet.Capacity];
                 uint bufferLength = entity.CopyComponentTypesTo(componentTypeBuffer);
                 componentTypes = componentTypeBuffer.Slice(0, bufferLength).ToArray();
-                USpan<ArrayType> arrayTypeBuffer = stackalloc ArrayType[BitSet.Capacity];
-                bufferLength = entity.CopyArrayTypesTo(arrayTypeBuffer);
+                USpan<ArrayElementType> arrayTypeBuffer = stackalloc ArrayElementType[BitSet.Capacity];
+                bufferLength = entity.CopyArrayElementTypesTo(arrayTypeBuffer);
                 arrayTypes = arrayTypeBuffer.Slice(0, bufferLength).ToArray();
                 references = new Entity[entity.GetReferenceCount()];
                 for (uint i = 0; i < references.Length; i++)

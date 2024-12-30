@@ -7,23 +7,25 @@ namespace Worlds.TypeTableGenerator
     public static class SharedFunctions
     {
         public const string Namespace = "Worlds";
-        public const string ComponentAttributeFullName = "Worlds.ComponentAttribute";
-        public const string ArrayAttributeFullName = "Worlds.ArrayAttribute";
-        public const string ComponentTypeName = "Worlds.ComponentType";
-        public const string ArrayTypeName = "Worlds.ArrayType";
-        public const string TypeLayoutName = "Worlds.TypeLayout";
+        public const string ComponentAttribute = "Worlds.ComponentAttribute";
+        public const string ArrayElementAttribute = "Worlds.ArrayElementAttribute";
+        public const string TagAttribute = "Worlds.TagAttribute";
+        public const string ComponentType = "Worlds.ComponentType";
+        public const string ArrayElementType = "Worlds.ArrayElementType";
+        public const string TagType = "Worlds.TagType";
+        public const string TypeLayout = "Worlds.TypeLayout";
 
-        public static void CollectTypeSymbols(this Compilation compilation, HashSet<ITypeSymbol> componentTypes, HashSet<ITypeSymbol> arrayTypes)
+        public static void CollectTypeSymbols(this Compilation compilation, HashSet<ITypeSymbol> componentTypes, HashSet<ITypeSymbol> arrayElementTypes, HashSet<ITypeSymbol> tagTypes)
         {
-            CollectTypeSymbols(compilation, componentTypes, arrayTypes, []);
+            CollectTypeSymbols(compilation, componentTypes, arrayElementTypes, tagTypes, []);
         }
 
         public static void CollectTypeSymbols(this Compilation compilation, HashSet<ITypeSymbol> types)
         {
-            CollectTypeSymbols(compilation, [], [], types);
+            CollectTypeSymbols(compilation, [], [], [], types);
         }
 
-        public static void CollectTypeSymbols(this Compilation compilation, HashSet<ITypeSymbol> componentTypes, HashSet<ITypeSymbol> arrayTypes, HashSet<ITypeSymbol> types)
+        public static void CollectTypeSymbols(this Compilation compilation, HashSet<ITypeSymbol> componentTypes, HashSet<ITypeSymbol> arrayElementTypes, HashSet<ITypeSymbol> tagTypes, HashSet<ITypeSymbol> types)
         {
             foreach (SyntaxTree tree in compilation.SyntaxTrees)
             {
@@ -96,13 +98,17 @@ namespace Worlds.TypeTableGenerator
                     ImmutableArray<AttributeData> attributes = type.GetAttributes();
                     foreach (AttributeData attribute in attributes)
                     {
-                        if (attribute.AttributeClass?.ToDisplayString() == ComponentAttributeFullName)
+                        if (attribute.AttributeClass?.ToDisplayString() == ComponentAttribute)
                         {
                             componentTypes.Add(type);
                         }
-                        else if (attribute.AttributeClass?.ToDisplayString() == ArrayAttributeFullName)
+                        else if (attribute.AttributeClass?.ToDisplayString() == ArrayElementAttribute)
                         {
-                            arrayTypes.Add(type);
+                            arrayElementTypes.Add(type);
+                        }
+                        else if (attribute.AttributeClass?.ToDisplayString() == TagAttribute)
+                        {
+                            tagTypes.Add(type);
                         }
 
                         types.Add(type);

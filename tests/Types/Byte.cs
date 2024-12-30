@@ -1,7 +1,7 @@
 ﻿namespace Worlds.Tests
 {
     [Component]
-    [Array]
+    [ArrayElement]
     public struct Byte
     {
         public byte value;

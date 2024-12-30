@@ -43,9 +43,27 @@ namespace Worlds
         /// <summary>
         /// Builds a string representation of this component type.
         /// </summary>
-        public readonly uint ToString(USpan<char> buffer)
+        public readonly string ToString(Schema schema)
         {
-            return index.ToString(buffer);
+            USpan<char> buffer = stackalloc char[256];
+            uint length = ToString(schema, buffer);
+            return buffer.Slice(0, length).ToString();
+        }
+
+        /// <summary>
+        /// Writes the index of this component type to the <paramref name="destination"/>.
+        /// </summary>
+        public readonly uint ToString(USpan<char> destination)
+        {
+            return index.ToString(destination);
+        }
+
+        /// <summary>
+        /// Writes a string representation of this component type to the <paramref name="destination"/>.
+        /// </summary>
+        public readonly uint ToString(Schema schema, USpan<char> destination)
+        {
+            return schema.GetLayout(this).ToString(destination);
         }
 
         /// <inheritdoc/>
@@ -63,7 +81,7 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return index.GetHashCode();
+            return index;
         }
 
         /// <summary>
@@ -84,9 +102,9 @@ namespace Worlds
             return !(left == right);
         }
 
-        public static implicit operator byte(ComponentType type)
+        public static implicit operator byte(ComponentType componentType)
         {
-            return type.index;
+            return componentType.index;
         }
     }
 }

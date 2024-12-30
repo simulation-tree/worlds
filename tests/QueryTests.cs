@@ -53,6 +53,41 @@ namespace Worlds.Tests
         }
 
         [Test]
+        public void FindComponentsWithTag()
+        {
+            using World world = CreateWorld();
+            uint a = world.CreateEntity(new Apple(4));
+            uint b = world.CreateEntity(new Apple(5));
+            uint c = world.CreateEntity(new Apple(6));
+            world.AddTag<IsThing>(b);
+
+            ComponentQuery<Apple> appleThingQuery = new(world);
+            appleThingQuery.IncludeTag<IsThing>();
+
+            using List<Apple> apples = new();
+            foreach (var r in appleThingQuery)
+            {
+                apples.Add(r.component1);
+            }
+
+            Assert.That(apples.Count, Is.EqualTo(1));
+            Assert.That(apples[0].bites, Is.EqualTo(5));
+
+            ComponentQuery<Apple> appleNoThingQuery = new(world);
+            appleNoThingQuery.ExcludeTag<IsThing>();
+
+            apples.Clear();
+            foreach (var r in appleNoThingQuery)
+            {
+                apples.Add(r.component1);
+            }
+
+            Assert.That(apples.Count, Is.EqualTo(2));
+            Assert.That(apples[0].bites, Is.EqualTo(4));
+            Assert.That(apples[1].bites, Is.EqualTo(6));
+        }
+
+        [Test]
         public void QueryWithExclusion()
         {
             using World world = CreateWorld();
@@ -71,7 +106,8 @@ namespace Worlds.Tests
             world.AddComponent(d, new Apple());
 
             using List<uint> entities = new();
-            ComponentQuery<Apple> appleQuery = new(world, world.Schema.GetComponents<Berry>());
+            ComponentQuery<Apple> appleQuery = new(world);
+            appleQuery.ExcludeComponent<Berry>();
             foreach (var r in appleQuery)
             {
                 entities.Add(r.entity);
@@ -281,12 +317,12 @@ namespace Worlds.Tests
                 {
                     if (i % 3 == 0)
                     {
-                        Definition definition = new(componentTypes, default);
+                        Definition definition = new(componentTypes, default, default);
                         world.CreateEntity(definition);
                     }
                     else
                     {
-                        Definition definition = new(otherComponentTypes, default);
+                        Definition definition = new(otherComponentTypes, default, default);
                         world.CreateEntity(definition);
                     }
 
@@ -315,10 +351,10 @@ namespace Worlds.Tests
             results.Clear();
             stopwatch.Restart();
             {
-                Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
-                foreach (BitSet key in chunks.Keys)
+                Dictionary<Definition, ComponentChunk> chunks = world.ComponentChunks;
+                foreach (Definition key in chunks.Keys)
                 {
-                    if ((key & componentTypes) == componentTypes)
+                    if ((key.ComponentTypes & componentTypes) == componentTypes)
                     {
                         ComponentChunk chunk = chunks[key];
                         List<uint> entities = chunk.Entities;

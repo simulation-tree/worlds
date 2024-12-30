@@ -51,7 +51,7 @@ namespace Worlds
         /// <summary>
         /// Mask of array types this entity slot contains.
         /// </summary>
-        public BitSet arrayTypes;
+        public BitSet arrayElementTypes;
 
         /// <summary>
         /// Lengths of arrays.

@@ -249,12 +249,14 @@ namespace Worlds
             World world = entity.World;
             uint value = entity.Value;
             ref EntitySlot slot = ref world.Slots[value - 1];
-            BitSet componentTypes = slot.componentChunk.TypesMask;
-            if ((componentTypes & definition.ComponentTypesMask) != definition.ComponentTypesMask)
+
+            //add missing components
+            BitSet componentTypes = slot.componentChunk.Definition.ComponentTypes;
+            if ((componentTypes & definition.ComponentTypes) != definition.ComponentTypes)
             {
                 for (byte c = 0; c < BitSet.Capacity; c++)
                 {
-                    if (definition.ComponentTypesMask == c && componentTypes != c)
+                    if (definition.ComponentTypes == c && componentTypes != c)
                     {
                         ComponentType componentType = new(c);
                         world.AddComponent(value, componentType);
@@ -262,14 +264,29 @@ namespace Worlds
                 }
             }
 
-            if ((slot.arrayTypes & definition.ArrayTypesMask) != definition.ArrayTypesMask)
+            //add missing arrays
+            if ((slot.arrayElementTypes & definition.ArrayElementTypes) != definition.ArrayElementTypes)
             {
                 for (byte a = 0; a < BitSet.Capacity; a++)
                 {
-                    if (definition.ArrayTypesMask == a && slot.arrayTypes != a)
+                    if (definition.ArrayElementTypes == a && slot.arrayElementTypes != a)
                     {
-                        ArrayType arrayElementType = new(a);
+                        ArrayElementType arrayElementType = new(a);
                         world.CreateArray(value, arrayElementType);
+                    }
+                }
+            }
+
+            //add missing tags
+            BitSet tagTypes = slot.componentChunk.Definition.TagTypes;
+            if ((tagTypes & definition.TagTypes) != definition.TagTypes)
+            {
+                for (byte t = 0; t < BitSet.Capacity; t++)
+                {
+                    if (definition.TagTypes == t && tagTypes != t)
+                    {
+                        TagType tagType = new(t);
+                        world.AddTag(value, tagType);
                     }
                 }
             }
@@ -292,8 +309,8 @@ namespace Worlds
             World world = entity.World;
             uint value = entity.Value;
             ref EntitySlot slot = ref world.Slots[value - 1];
-            BitSet componentTypes = slot.componentChunk.TypesMask;
-            return (componentTypes & definition.ComponentTypesMask) == definition.ComponentTypesMask && (slot.arrayTypes & definition.ArrayTypesMask) == definition.ArrayTypesMask;
+            BitSet componentTypes = slot.componentChunk.Definition.ComponentTypes;
+            return (componentTypes & definition.ComponentTypes) == definition.ComponentTypes && (slot.arrayElementTypes & definition.ArrayElementTypes) == definition.ArrayElementTypes;
         }
 
         /// <summary>
@@ -318,52 +335,52 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Checks if this entity has an array of the given <paramref name="arrayType"/>.
+        /// Checks if this entity has an array of the given <paramref name="arrayElementType"/>.
         /// </summary>
-        public static bool ContainsArray<T>(this T entity, ArrayType arrayType) where T : unmanaged, IEntity
+        public static bool ContainsArray<T>(this T entity, ArrayElementType arrayElementType) where T : unmanaged, IEntity
         {
-            return entity.World.ContainsArray(entity.Value, arrayType);
+            return entity.World.ContainsArray(entity.Value, arrayElementType);
         }
 
         /// <summary>
-        /// Copies all <see cref="ComponentType"/>s this entity has to the given <paramref name="buffer"/>.
+        /// Copies all <see cref="ComponentType"/>s this entity has to the given <paramref name="destination"/>.
         /// </summary>
-        public static byte CopyComponentTypesTo<T>(this T entity, USpan<ComponentType> buffer) where T : unmanaged, IEntity
+        public static byte CopyComponentTypesTo<T>(this T entity, USpan<ComponentType> destination) where T : unmanaged, IEntity
         {
-            return entity.World.CopyComponentTypesTo(entity.Value, buffer);
+            return entity.World.CopyComponentTypesTo(entity.Value, destination);
         }
 
         /// <summary>
-        /// Copies all <see cref="ArrayType"/>s this entity has to the given <paramref name="buffer"/>.
+        /// Copies all <see cref="ArrayElementType"/>s this entity has to the given <paramref name="destination"/>.
         /// </summary>
-        public static byte CopyArrayTypesTo<T>(this T entity, USpan<ArrayType> buffer) where T : unmanaged, IEntity
+        public static byte CopyArrayElementTypesTo<T>(this T entity, USpan<ArrayElementType> destination) where T : unmanaged, IEntity
         {
-            return entity.World.CopyArrayTypesTo(entity.Value, buffer);
+            return entity.World.CopyArrayElementTypesTo(entity.Value, destination);
         }
 
         /// <summary>
-        /// Retrieves an array of type <paramref name="arrayType"/> on this entity.
+        /// Retrieves an array of type <paramref name="arrayElementType"/> on this entity.
         /// </summary>
-        public static Allocation GetArray<T>(this T entity, ArrayType arrayType) where T : unmanaged, IEntity
+        public static Allocation GetArray<T>(this T entity, ArrayElementType arrayElementType) where T : unmanaged, IEntity
         {
-            return entity.World.GetArray(entity.Value, arrayType, out _);
+            return entity.World.GetArray(entity.Value, arrayElementType, out _);
         }
 
         /// <summary>
-        /// Retrieves an array of type <paramref name="arrayType"/> on this entity.
+        /// Retrieves an array of type <paramref name="arrayElementType"/> on this entity.
         /// </summary>
-        public static Allocation GetArray<T>(this T entity, ArrayType arrayType, out uint length) where T : unmanaged, IEntity
+        public static Allocation GetArray<T>(this T entity, ArrayElementType arrayElementType, out uint length) where T : unmanaged, IEntity
         {
-            return entity.World.GetArray(entity.Value, arrayType, out length);
+            return entity.World.GetArray(entity.Value, arrayElementType, out length);
         }
 
         /// <summary>
-        /// Resizes the array of type <paramref name="arrayType"/> to the given <paramref name="newLength"/>.
+        /// Resizes the array of type <paramref name="arrayElementType"/> to the given <paramref name="newLength"/>.
         /// </summary>
         /// <returns>Newly resized array.</returns>
-        public static Allocation ResizeArray<T>(this T entity, ArrayType arrayType, uint newLength) where T : unmanaged, IEntity
+        public static Allocation ResizeArray<T>(this T entity, ArrayElementType arrayElementType, uint newLength) where T : unmanaged, IEntity
         {
-            return entity.World.ResizeArray(entity.Value, arrayType, newLength);
+            return entity.World.ResizeArray(entity.Value, arrayElementType, newLength);
         }
 
         /// <summary>

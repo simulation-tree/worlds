@@ -7,12 +7,12 @@ namespace Worlds
     {
         public static System.Collections.Generic.IEnumerable<uint> GetAllContaining(this World world, BitSet componentTypes, bool onlyEnabled = false)
         {
-            Collections.Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
+            Dictionary<Definition, ComponentChunk> chunks = world.ComponentChunks;
             if (onlyEnabled)
             {
-                foreach (BitSet key in chunks.Keys)
+                foreach (Definition key in chunks.Keys)
                 {
-                    if ((key & componentTypes) == componentTypes)
+                    if ((key.ComponentTypes & componentTypes) == componentTypes)
                     {
                         ComponentChunk chunk = chunks[key];
                         Collections.List<uint> entities = chunk.Entities;
@@ -29,9 +29,9 @@ namespace Worlds
             }
             else
             {
-                foreach (BitSet key in chunks.Keys)
+                foreach (Definition key in chunks.Keys)
                 {
-                    if ((key & componentTypes) == componentTypes)
+                    if ((key.ComponentTypes & componentTypes) == componentTypes)
                     {
                         ComponentChunk chunk = chunks[key];
                         Collections.List<uint> entities = chunk.Entities;
@@ -61,16 +61,16 @@ namespace Worlds
         /// </summary>
         public static void Fill(this World world, USpan<ComponentType> componentTypes, List<uint> list, bool onlyEnabled = false)
         {
-            Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
+            Dictionary<Definition, ComponentChunk> chunks = world.ComponentChunks;
             BitSet componentTypesMask = new();
-            foreach (ComponentType type in componentTypes)
+            foreach (ComponentType componentType in componentTypes)
             {
-                componentTypesMask |= type;
+                componentTypesMask |= componentType;
             }
 
-            foreach (BitSet key in chunks.Keys)
+            foreach (Definition key in chunks.Keys)
             {
-                if ((key & componentTypesMask) == componentTypesMask)
+                if ((key.ComponentTypes & componentTypesMask) == componentTypesMask)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (!onlyEnabled)
@@ -98,10 +98,10 @@ namespace Worlds
         public static void Fill<T>(this World world, List<T> list, bool onlyEnabled = false) where T : unmanaged
         {
             ComponentType componentType = world.Schema.GetComponent<T>();
-            Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
-            foreach (BitSet key in chunks.Keys)
+            Dictionary<Definition, ComponentChunk> chunks = world.ComponentChunks;
+            foreach (Definition key in chunks.Keys)
             {
-                if (key == componentType)
+                if (key.ComponentTypes == componentType)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (!onlyEnabled)
@@ -130,10 +130,10 @@ namespace Worlds
         public static void Fill<T>(this World world, List<uint> entities, bool onlyEnabled = false) where T : unmanaged
         {
             ComponentType componentType = world.Schema.GetComponent<T>();
-            Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
-            foreach (BitSet key in chunks.Keys)
+            Dictionary<Definition, ComponentChunk> chunks = world.ComponentChunks;
+            foreach (Definition key in chunks.Keys)
             {
-                if (key == componentType)
+                if (key.ComponentTypes == componentType)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (!onlyEnabled)
@@ -161,10 +161,10 @@ namespace Worlds
         public static void Fill<T>(this World world, List<T> components, List<uint> entities, bool onlyEnabled = false) where T : unmanaged
         {
             ComponentType componentType = world.Schema.GetComponent<T>();
-            Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
-            foreach (BitSet key in chunks.Keys)
+            Dictionary<Definition, ComponentChunk> chunks = world.ComponentChunks;
+            foreach (Definition key in chunks.Keys)
             {
-                if (key == componentType)
+                if (key.ComponentTypes == componentType)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (!onlyEnabled)
@@ -194,10 +194,10 @@ namespace Worlds
         /// </summary>
         public static void Fill(this World world, ComponentType componentType, List<uint> entities, bool onlyEnabled = false)
         {
-            Dictionary<BitSet, ComponentChunk> chunks = world.ComponentChunks;
-            foreach (BitSet key in chunks.Keys)
+            Dictionary<Definition, ComponentChunk> chunks = world.ComponentChunks;
+            foreach (Definition key in chunks.Keys)
             {
-                if (key == componentType)
+                if (key.ComponentTypes == componentType)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (!onlyEnabled)

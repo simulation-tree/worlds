@@ -323,7 +323,7 @@ namespace Worlds
                 buffer[length++] = 'a';
                 buffer[length++] = 'y';
                 buffer[length++] = '<';
-                ArrayType arrayElementType = new((byte)a);
+                ArrayElementType arrayElementType = new((byte)a);
                 length += arrayElementType.ToString(buffer.Slice(length));
                 buffer[length++] = '>';
                 buffer[length++] = '(';
@@ -345,7 +345,7 @@ namespace Worlds
                 buffer[length++] = 'a';
                 buffer[length++] = 'y';
                 buffer[length++] = '<';
-                ArrayType arrayElementType = new((byte)a);
+                ArrayElementType arrayElementType = new((byte)a);
                 length += arrayElementType.ToString(buffer.Slice(length));
                 buffer[length++] = '>';
                 buffer[length++] = '(';
@@ -365,7 +365,7 @@ namespace Worlds
                 buffer[length++] = 'a';
                 buffer[length++] = 'y';
                 buffer[length++] = '<';
-                ArrayType arrayElementType = new((byte)a);
+                ArrayElementType arrayElementType = new((byte)a);
                 length += arrayElementType.ToString(buffer.Slice(length));
                 buffer[length++] = '>';
                 buffer[length++] = '(';
@@ -394,7 +394,7 @@ namespace Worlds
 
                 buffer[length++] = '<';
 
-                ArrayType elementType = new((byte)a);
+                ArrayElementType elementType = new((byte)a);
                 length += elementType.ToString(buffer.Slice(length));
 
                 buffer[length++] = '>';
@@ -580,7 +580,7 @@ namespace Worlds
         /// </summary>
         public static Instruction CreateArray<T>(uint length, Schema schema) where T : unmanaged
         {
-            ArrayType arrayElementType = schema.GetArrayElement<T>();
+            ArrayElementType arrayElementType = schema.GetArrayElement<T>();
             ushort arrayElementSize = schema.GetSize(arrayElementType);
             Allocation allocaton = new(arrayElementSize * length);
             return new(Type.CreateArray, arrayElementType.index, (ulong)(nint)allocaton, length);
@@ -589,7 +589,7 @@ namespace Worlds
         /// <summary>
         /// Creates an array of the specified type and length for the selected entities.
         /// </summary>
-        public static Instruction CreateArray(ArrayType arrayElementType, uint length, Schema schema)
+        public static Instruction CreateArray(ArrayElementType arrayElementType, uint length, Schema schema)
         {
             ushort arrayElementSize = schema.GetSize(arrayElementType);
             Allocation allocaton = new(arrayElementSize * length);
@@ -602,7 +602,7 @@ namespace Worlds
         public unsafe static Instruction CreateArray<T>(USpan<T> values, Schema schema) where T : unmanaged
         {
             Allocation allocation = Allocation.Create(values);
-            ArrayType arrayElementType = schema.GetArrayElement<T>();
+            ArrayElementType arrayElementType = schema.GetArrayElement<T>();
             return new(Type.CreateArray, arrayElementType, (ulong)(nint)allocation, values.Length);
         }
 
@@ -611,14 +611,14 @@ namespace Worlds
         /// </summary>
         public static Instruction DestroyArray<T>(Schema schema) where T : unmanaged
         {
-            ArrayType arrayElementType = schema.GetArrayElement<T>();
+            ArrayElementType arrayElementType = schema.GetArrayElement<T>();
             return DestroyArray(arrayElementType);
         }
 
         /// <summary>
         /// Destroys the array of the specified type for the selected entities.
         /// </summary>
-        public static Instruction DestroyArray(ArrayType arrayElementType)
+        public static Instruction DestroyArray(ArrayElementType arrayElementType)
         {
             return new(Type.DestroyArray, arrayElementType.index, 0, 0);
         }
@@ -631,7 +631,7 @@ namespace Worlds
             Allocation allocation = new(sizeof(uint) + TypeInfo<T>.size);
             allocation.Write(0, 1);
             allocation.Write(sizeof(uint), element);
-            ArrayType arrayElementType = schema.GetArrayElement<T>();
+            ArrayElementType arrayElementType = schema.GetArrayElement<T>();
             return new(Type.SetArrayElement, arrayElementType, (ulong)(nint)allocation, index);
         }
 
@@ -643,7 +643,7 @@ namespace Worlds
             Allocation allocation = new(sizeof(uint) + TypeInfo<T>.size * elements.Length);
             allocation.Write(0, elements.Length);
             allocation.Write(sizeof(uint), elements);
-            ArrayType arrayElementType = schema.GetArrayElement<T>();
+            ArrayElementType arrayElementType = schema.GetArrayElement<T>();
             return new(Type.SetArrayElement, arrayElementType, (ulong)(nint)allocation, index);
         }
 
@@ -652,14 +652,14 @@ namespace Worlds
         /// </summary>
         public static Instruction ResizeArray<T>(uint newLength, Schema schema) where T : unmanaged
         {
-            ArrayType arrayElementType = schema.GetArrayElement<T>();
+            ArrayElementType arrayElementType = schema.GetArrayElement<T>();
             return ResizeArray(arrayElementType, newLength);
         }
 
         /// <summary>
         /// Resizes the array of the specified type to the new length.
         /// </summary>
-        public static Instruction ResizeArray(ArrayType arrayElementType, uint newLength)
+        public static Instruction ResizeArray(ArrayElementType arrayElementType, uint newLength)
         {
             return new(Type.ResizeArray, arrayElementType.index, newLength, 0);
         }

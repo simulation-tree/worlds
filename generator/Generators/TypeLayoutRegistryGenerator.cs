@@ -273,11 +273,11 @@ namespace Worlds.TypeTableGenerator
             if (variables.Length > 0)
             {
                 variables.Length -= 2;
-                source.AppendLine($"{SharedFunctions.TypeLayoutName}.Register<{fullName}>(\"{fullName}\", {variables});");
+                source.AppendLine($"{SharedFunctions.TypeLayout}.Register<{fullName}>(\"{fullName}\", {variables});");
             }
             else
             {
-                source.AppendLine($"{SharedFunctions.TypeLayoutName}.Register<{fullName}>(\"{fullName}\");");
+                source.AppendLine($"{SharedFunctions.TypeLayout}.Register<{fullName}>(\"{fullName}\");");
             }
         }
     }

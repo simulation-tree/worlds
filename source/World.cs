@@ -48,7 +48,7 @@ namespace Worlds
         /// <summary>
         /// All component chunks in the world.
         /// </summary>
-        public readonly Dictionary<BitSet, ComponentChunk> ComponentChunks => Implementation.GetComponentChunks(value);
+        public readonly Dictionary<Definition, ComponentChunk> ComponentChunks => Implementation.GetComponentChunks(value);
 
         /// <summary>
         /// The schema containing all component and array types.
@@ -209,7 +209,7 @@ namespace Worlds
 
                     //write components
                     ComponentChunk chunk = slot.componentChunk;
-                    BitSet componentTypes = chunk.TypesMask;
+                    BitSet componentTypes = chunk.Definition.ComponentTypes;
                     writer.WriteValue(componentTypes.Count); //todo: why not serialize the bitset directly?
                     for (byte c = 0; c < BitSet.Capacity; c++)
                     {
@@ -224,14 +224,14 @@ namespace Worlds
                     }
 
                     //write arrays
-                    writer.WriteValue(slot.arrayTypes.Count);
+                    writer.WriteValue(slot.arrayElementTypes.Count);
                     for (byte a = 0; a < BitSet.Capacity; a++)
                     {
-                        if (slot.arrayTypes == a)
+                        if (slot.arrayElementTypes == a)
                         {
                             Allocation array = slot.arrays[a];
                             uint arrayLength = slot.arrayLengths[a];
-                            ArrayType arrayElementType = new(a);
+                            ArrayElementType arrayElementType = new(a);
                             writer.WriteValue(arrayElementType);
                             writer.WriteValue(arrayLength);
                             if (arrayLength > 0)
@@ -301,7 +301,7 @@ namespace Worlds
                 byte arrayCount = reader.ReadValue<byte>();
                 for (uint a = 0; a < arrayCount; a++)
                 {
-                    ArrayType arrayElementType = reader.ReadValue<ArrayType>();
+                    ArrayElementType arrayElementType = reader.ReadValue<ArrayElementType>();
                     uint arrayLength = reader.ReadValue<uint>();
                     ushort arrayElementSize = schema.GetSize(arrayElementType);
                     uint byteCount = arrayLength * arrayElementSize;
@@ -368,7 +368,7 @@ namespace Worlds
 
                     //add components
                     ComponentChunk sourceChunk = sourceSlot.componentChunk;
-                    BitSet componentTypes = sourceChunk.TypesMask;
+                    BitSet componentTypes = sourceChunk.Definition.ComponentTypes;
                     uint sourceIndex = sourceChunk.Entities.IndexOf(sourceEntity);
                     for (byte c = 0; c < BitSet.Capacity; c++)
                     {
@@ -386,13 +386,13 @@ namespace Worlds
                     //add arrays
                     for (byte a = 0; a < BitSet.Capacity; a++)
                     {
-                        if (sourceSlot.arrayTypes == a)
+                        if (sourceSlot.arrayElementTypes == a)
                         {
-                            ArrayType sourceArrayType = new(a);
+                            ArrayElementType arrayElementType = new(a);
                             uint sourceArrayLength = sourceSlot.arrayLengths[a];
-                            ushort sourceArrayElementSize = schema.GetSize(sourceArrayType);
+                            ushort sourceArrayElementSize = schema.GetSize(arrayElementType);
                             Allocation sourceArray = sourceSlot.arrays[a];
-                            Allocation destinationArray = Implementation.CreateArray(value, destinationEntity, sourceArrayType, sourceArrayElementSize, sourceArrayLength);
+                            Allocation destinationArray = Implementation.CreateArray(value, destinationEntity, arrayElementType, sourceArrayElementSize, sourceArrayLength);
                             if (sourceArrayLength > 0)
                             {
                                 sourceArray.CopyTo(destinationArray, sourceArrayLength * sourceArrayElementSize);
@@ -564,30 +564,30 @@ namespace Worlds
             }
             else if (instruction.type == Instruction.Type.CreateArray)
             {
-                ArrayType arrayType = new((byte)instruction.A);
-                ushort arrayElementSize = schema.GetSize(arrayType);
+                ArrayElementType arrayElementType = new((byte)instruction.A);
+                ushort arrayElementSize = schema.GetSize(arrayElementType);
                 Allocation allocation = new((void*)(nint)instruction.B);
                 uint count = (uint)instruction.C;
                 for (uint i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
-                    Allocation newArray = CreateArray(entity, arrayType, count);
+                    Allocation newArray = CreateArray(entity, arrayElementType, count);
                     allocation.CopyTo(newArray, count * arrayElementSize);
                 }
             }
             else if (instruction.type == Instruction.Type.DestroyArray)
             {
-                ArrayType arrayType = new((byte)instruction.A);
+                ArrayElementType arrayElementType = new((byte)instruction.A);
                 for (uint i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
-                    DestroyArray(entity, arrayType);
+                    DestroyArray(entity, arrayElementType);
                 }
             }
             else if (instruction.type == Instruction.Type.SetArrayElement)
             {
-                ArrayType arrayType = new((byte)instruction.A);
-                ushort arrayElementSize = schema.GetSize(arrayType);
+                ArrayElementType arrayElementType = new((byte)instruction.A);
+                ushort arrayElementSize = schema.GetSize(arrayElementType);
                 Allocation allocation = new((void*)(nint)instruction.B);
                 uint elementCount = allocation.Read<uint>();
                 uint start = (uint)instruction.C;
@@ -595,20 +595,20 @@ namespace Worlds
                 for (uint i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
-                    Allocation array = Implementation.GetArray(value, entity, arrayType, out _);
+                    Allocation array = Implementation.GetArray(value, entity, arrayElementType, out _);
                     Allocation arrayStart = new(array + arrayElementSize * start);
                     source.CopyTo(arrayStart, elementCount * arrayElementSize);
                 }
             }
             else if (instruction.type == Instruction.Type.ResizeArray)
             {
-                ArrayType arrayType = new((byte)instruction.A);
-                ushort arrayElementSize = schema.GetSize(arrayType);
+                ArrayElementType arrayElementType = new((byte)instruction.A);
+                ushort arrayElementSize = schema.GetSize(arrayElementType);
                 uint newLength = (uint)instruction.B;
                 for (uint i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
-                    Implementation.ResizeArray(value, entity, arrayType, arrayElementSize, newLength);
+                    Implementation.ResizeArray(value, entity, arrayElementType, arrayElementSize, newLength);
                 }
             }
             else
@@ -678,7 +678,7 @@ namespace Worlds
 
             ref EntitySlot slot = ref Slots[entity - 1];
             ComponentChunk chunk = slot.componentChunk;
-            return chunk.CopyTypesTo(buffer);
+            return chunk.Definition.CopyComponentTypesTo(buffer);
         }
 
         /// <summary>
@@ -744,22 +744,22 @@ namespace Worlds
         {
             EntityExtensions.ThrowIfTypeLayoutMismatches<T>();
 
-            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<Definition, ComponentChunk> chunks = ComponentChunks;
             Definition definition = default(T).GetDefinition(Schema);
-            if (definition.ArrayTypesMask != default(BitSet))
+            if (definition.ArrayElementTypes != default(BitSet))
             {
                 if (onlyEnabled)
                 {
-                    foreach (BitSet key in chunks.Keys)
+                    foreach (Definition key in chunks.Keys)
                     {
-                        if ((key & definition.ComponentTypesMask) == definition.ComponentTypesMask)
+                        if ((key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
                         {
                             ComponentChunk chunk = chunks[key];
                             for (uint e = 0; e < chunk.Entities.Count; e++)
                             {
                                 uint entityValue = chunk.Entities[e];
-                                BitSet arrayTypes = GetArrayTypesMask(entityValue);
-                                if ((definition.ArrayTypesMask & arrayTypes) == arrayTypes)
+                                BitSet arrayElementTypes = GetArrayElementTypes(entityValue);
+                                if ((definition.ArrayElementTypes & arrayElementTypes) == arrayElementTypes)
                                 {
                                     if (IsEnabled(entityValue))
                                     {
@@ -773,16 +773,16 @@ namespace Worlds
                 }
                 else
                 {
-                    foreach (BitSet key in chunks.Keys)
+                    foreach (Definition key in chunks.Keys)
                     {
-                        if ((key & definition.ComponentTypesMask) == definition.ComponentTypesMask)
+                        if ((key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
                         {
                             ComponentChunk chunk = chunks[key];
                             for (uint e = 0; e < chunk.Entities.Count; e++)
                             {
                                 uint entityValue = chunk.Entities[e];
-                                BitSet arrayTypes = GetArrayTypesMask(entityValue);
-                                if ((definition.ArrayTypesMask & arrayTypes) == arrayTypes)
+                                BitSet arrayElementTypes = GetArrayElementTypes(entityValue);
+                                if ((definition.ArrayElementTypes & arrayElementTypes) == arrayElementTypes)
                                 {
                                     entity = new Entity(this, entityValue).As<T>();
                                     return true;
@@ -796,10 +796,10 @@ namespace Worlds
             {
                 if (!onlyEnabled)
                 {
-                    foreach (BitSet key in chunks.Keys)
+                    foreach (Definition key in chunks.Keys)
                     {
                         ComponentChunk chunk = chunks[key];
-                        if (chunk.Entities.Count > 0 && (key & definition.ComponentTypesMask) == definition.ComponentTypesMask)
+                        if (chunk.Entities.Count > 0 && (key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
                         {
                             uint entityValue = chunk.Entities[0];
                             entity = new Entity(this, entityValue).As<T>();
@@ -809,9 +809,9 @@ namespace Worlds
                 }
                 else
                 {
-                    foreach (BitSet key in chunks.Keys)
+                    foreach (Definition key in chunks.Keys)
                     {
-                        if ((key & definition.ComponentTypesMask) == definition.ComponentTypesMask)
+                        if ((key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
                         {
                             ComponentChunk chunk = chunks[key];
                             for (uint e = 0; e < chunk.Entities.Count; e++)
@@ -857,12 +857,12 @@ namespace Worlds
         /// </summary>
         public readonly ref T TryGetFirstComponent<T>(out bool contains) where T : unmanaged
         {
-            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<Definition, ComponentChunk> chunks = ComponentChunks;
             Schema schema = Schema;
             ComponentType componentType = schema.GetComponent<T>();
-            foreach (BitSet key in chunks.Keys)
+            foreach (Definition key in chunks.Keys)
             {
-                if (key == componentType)
+                if (key.ComponentTypes == componentType)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (chunk.Count > 0)
@@ -882,11 +882,11 @@ namespace Worlds
         /// </summary>
         public readonly bool TryGetFirstEntityContainingComponent<T>(out uint entity) where T : unmanaged
         {
-            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
-            ComponentType type = Schema.GetComponent<T>();
-            foreach (BitSet key in chunks.Keys)
+            Dictionary<Definition, ComponentChunk> chunks = ComponentChunks;
+            ComponentType componentType = Schema.GetComponent<T>();
+            foreach (Definition key in chunks.Keys)
             {
-                if (key == type)
+                if (key.ComponentTypes == componentType)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (chunk.Count > 0)
@@ -906,12 +906,12 @@ namespace Worlds
         /// </summary>
         public readonly ref T TryGetFirstEntityContainingComponent<T>(out uint entity, out bool contains) where T : unmanaged
         {
-            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<Definition, ComponentChunk> chunks = ComponentChunks;
             Schema schema = Schema;
             ComponentType componentType = schema.GetComponent<T>();
-            foreach (BitSet key in chunks.Keys)
+            foreach (Definition key in chunks.Keys)
             {
-                if (key == componentType)
+                if (key.ComponentTypes == componentType)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (chunk.Count > 0)
@@ -937,12 +937,12 @@ namespace Worlds
         /// <exception cref="NullReferenceException"></exception>"
         public readonly ref T GetFirstComponent<T>() where T : unmanaged
         {
-            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<Definition, ComponentChunk> chunks = ComponentChunks;
             Schema schema = Schema;
             ComponentType componentType = schema.GetComponent<T>();
-            foreach (BitSet key in chunks.Keys)
+            foreach (Definition key in chunks.Keys)
             {
-                if (key == componentType)
+                if (key.ComponentTypes == componentType)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (chunk.Count > 0)
@@ -964,12 +964,12 @@ namespace Worlds
         /// <exception cref="NullReferenceException"></exception>
         public readonly ref T GetFirstEntityContainingComponent<T>(out uint entity) where T : unmanaged
         {
-            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<Definition, ComponentChunk> chunks = ComponentChunks;
             Schema schema = Schema;
             ComponentType componentType = schema.GetComponent<T>();
-            foreach (BitSet key in chunks.Keys)
+            foreach (Definition key in chunks.Keys)
             {
-                if (key == componentType)
+                if (key.ComponentTypes == componentType)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (chunk.Count > 0)
@@ -1007,7 +1007,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1>(T1 component1) where T1 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1>(), default);
+            Definition definition = new(Schema.GetComponents<T1>(), default, default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             return entity;
@@ -1019,7 +1019,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1, T2>(T1 component1, T2 component2) where T1 : unmanaged where T2 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2>(), default);
+            Definition definition = new(Schema.GetComponents<T1, T2>(), default, default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
@@ -1032,7 +1032,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1, T2, T3>(T1 component1, T2 component2, T3 component3) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3>(), default);
+            Definition definition = new(Schema.GetComponents<T1, T2, T3>(), default, default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
@@ -1046,7 +1046,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1, T2, T3, T4>(T1 component1, T2 component2, T3 component3, T4 component4) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4>(), default);
+            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4>(), default, default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
@@ -1061,7 +1061,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1, T2, T3, T4, T5>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5>(), default);
+            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5>(), default, default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
@@ -1077,7 +1077,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6>(), default);
+            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6>(), default, default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
@@ -1091,7 +1091,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7>(), default);
+            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7>(), default, default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
@@ -1106,7 +1106,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8>(), default);
+            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8>(), default, default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
@@ -1122,7 +1122,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9>(), default);
+            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9>(), default, default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
@@ -1139,7 +1139,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(), default);
+            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(), default, default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
@@ -1157,7 +1157,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(), default);
+            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(), default, default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
@@ -1176,7 +1176,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(), default);
+            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(), default, default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
@@ -1196,7 +1196,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(), default);
+            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(), default, default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
@@ -1217,7 +1217,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13, T14 component14) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(), default);
+            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(), default, default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
@@ -1239,7 +1239,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13, T14 component14, T15 component15) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(), default);
+            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(), default, default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
@@ -1262,7 +1262,7 @@ namespace Worlds
         public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13, T14 component14, T15 component15, T16 component16) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged
         {
             uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(), default);
+            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(), default, default);
             InitializeEntity(definition, entity);
             SetComponent(entity, component1);
             SetComponent(entity, component2);
@@ -1349,7 +1349,7 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Retreives all children of the <paramref name="entity"/> entity.
+        /// Retrieves all children of the <paramref name="entity"/> entity.
         /// </summary>
         public readonly USpan<uint> GetChildren(uint entity)
         {
@@ -1383,6 +1383,7 @@ namespace Worlds
         public readonly rint AddReference(uint entity, uint referencedEntity)
         {
             Implementation.ThrowIfEntityIsMissing(value, entity);
+            Implementation.ThrowIfEntityIsMissing(value, referencedEntity);
 
             ref EntitySlot slot = ref Slots[entity - 1];
             if (slot.referenceCount == 0)
@@ -1529,9 +1530,57 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Writes all tag types on <paramref name="entity"/> to <paramref name="destination"/>.
+        /// </summary>
+        public readonly byte CopyTagTypesTo(uint entity, USpan<TagType> destination)
+        {
+            Implementation.ThrowIfEntityIsMissing(value, entity);
+
+            ref EntitySlot slot = ref Slots[entity - 1];
+            Definition definition = slot.componentChunk.Definition;
+            return definition.CopyTagTypesTo(destination);
+        }
+
+        public readonly bool ContainsTag<T>(uint entity) where T : unmanaged
+        {
+            TagType tagType = Schema.GetTag<T>();
+            return ContainsTag(entity, tagType);
+        }
+
+        public readonly bool ContainsTag(uint entity, TagType tagType)
+        {
+            Implementation.ThrowIfEntityIsMissing(value, entity);
+
+            ref EntitySlot slot = ref Slots[entity - 1];
+            return slot.componentChunk.Definition.TagTypes == tagType;
+        }
+
+        public readonly void AddTag<T>(uint entity) where T : unmanaged
+        {
+            TagType tagType = Schema.GetTag<T>();
+            Implementation.AddTag(value, entity, tagType);
+        }
+
+        public readonly void AddTag(uint entity, TagType tagType)
+        {
+            Implementation.AddTag(value, entity, tagType);
+        }
+
+        public readonly void RemoveTag<T>(uint entity) where T : unmanaged
+        {
+            TagType tagType = Schema.GetTag<T>();
+            Implementation.RemoveTag(value, entity, tagType);
+        }
+
+        public readonly void RemoveTag(uint entity, TagType tagType)
+        {
+            Implementation.RemoveTag(value, entity, tagType);
+        }
+
+        /// <summary>
         /// Retrieves the types of all arrays on this entity.
         /// </summary>
-        public readonly byte CopyArrayTypesTo(uint entity, USpan<ArrayType> buffer)
+        public readonly byte CopyArrayElementTypesTo(uint entity, USpan<ArrayElementType> destination)
         {
             Implementation.ThrowIfEntityIsMissing(value, entity);
 
@@ -1539,9 +1588,9 @@ namespace Worlds
             byte count = 0;
             for (byte a = 0; a < BitSet.Capacity; a++)
             {
-                if (slot.arrayTypes == a)
+                if (slot.arrayElementTypes == a)
                 {
-                    buffer[count++] = new(a);
+                    destination[count++] = new(a);
                 }
             }
 
@@ -1551,18 +1600,18 @@ namespace Worlds
         /// <summary>
         /// Retrieves the types of all arrays on this entity.
         /// </summary>
-        public readonly BitSet GetArrayTypesMask(uint entity)
+        public readonly BitSet GetArrayElementTypes(uint entity)
         {
             Implementation.ThrowIfEntityIsMissing(value, entity);
 
             ref EntitySlot slot = ref Slots[entity - 1];
-            return slot.arrayTypes;
+            return slot.arrayElementTypes;
         }
 
         /// <summary>
         /// Creates a new uninitialized array with the given <paramref name="length"/> and <paramref name="arrayElementType"/>.
         /// </summary>
-        public readonly Allocation CreateArray(uint entity, ArrayType arrayElementType, uint length = 0)
+        public readonly Allocation CreateArray(uint entity, ArrayElementType arrayElementType, uint length = 0)
         {
             ushort arrayElementSize = Schema.GetSize(arrayElementType);
             return Implementation.CreateArray(value, entity, arrayElementType, arrayElementSize, length);
@@ -1573,7 +1622,7 @@ namespace Worlds
         /// </summary>
         public readonly USpan<T> CreateArray<T>(uint entity, uint length = 0) where T : unmanaged
         {
-            ArrayType arrayElementType = Schema.GetArrayElement<T>();
+            ArrayElementType arrayElementType = Schema.GetArrayElement<T>();
             ushort arrayElementSize = (ushort)sizeof(T);
             Allocation array = Implementation.CreateArray(value, entity, arrayElementType, arrayElementSize, length);
             return array.AsSpan<T>(0, length);
@@ -1593,14 +1642,14 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsArray<T>(uint entity) where T : unmanaged
         {
-            ArrayType arrayElementType = Schema.GetArrayElement<T>();
+            ArrayElementType arrayElementType = Schema.GetArrayElement<T>();
             return ContainsArray(entity, arrayElementType);
         }
 
         /// <summary>
         /// Checks if the given <paramref name="entity"/> contains an array of the given <paramref name="arrayElementType"/>.
         /// </summary>
-        public readonly bool ContainsArray(uint entity, ArrayType arrayElementType)
+        public readonly bool ContainsArray(uint entity, ArrayElementType arrayElementType)
         {
             return Implementation.ContainsArray(value, entity, arrayElementType);
         }
@@ -1610,7 +1659,7 @@ namespace Worlds
         /// </summary>
         public readonly USpan<T> GetArray<T>(uint entity) where T : unmanaged
         {
-            ArrayType arrayElementType = Schema.GetArrayElement<T>();
+            ArrayElementType arrayElementType = Schema.GetArrayElement<T>();
             Allocation array = Implementation.GetArray(value, entity, arrayElementType, out uint length);
             return array.AsSpan<T>(0, length);
         }
@@ -1618,7 +1667,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the array of the given <paramref name="arrayElementType"/> from the given <paramref name="entity"/>.
         /// </summary>
-        public readonly Allocation GetArray(uint entity, ArrayType arrayElementType, out uint length)
+        public readonly Allocation GetArray(uint entity, ArrayElementType arrayElementType, out uint length)
         {
             return Implementation.GetArray(value, entity, arrayElementType, out length);
         }
@@ -1628,19 +1677,19 @@ namespace Worlds
         /// </summary>
         public readonly USpan<T> ResizeArray<T>(uint entity, uint newLength) where T : unmanaged
         {
-            ArrayType arrayElementType = Schema.GetArrayElement<T>();
+            ArrayElementType arrayElementType = Schema.GetArrayElement<T>();
             ushort arrayElementSize = (ushort)sizeof(T);
             Allocation array = Implementation.ResizeArray(value, entity, arrayElementType, arrayElementSize, newLength);
             return array.AsSpan<T>(0, newLength);
         }
 
         /// <summary>
-        /// Resizes the array of type <paramref name="arrayType"/> on the given <paramref name="entity"/>.
+        /// Resizes the array of type <paramref name="arrayElementType"/> on the given <paramref name="entity"/>.
         /// </summary>
-        public readonly Allocation ResizeArray(uint entity, ArrayType arrayType, uint newLength)
+        public readonly Allocation ResizeArray(uint entity, ArrayElementType arrayElementType, uint newLength)
         {
-            ushort arrayElementSize = Schema.GetSize(arrayType);
-            return Implementation.ResizeArray(value, entity, arrayType, arrayElementSize, newLength);
+            ushort arrayElementSize = Schema.GetSize(arrayElementType);
+            return Implementation.ResizeArray(value, entity, arrayElementType, arrayElementSize, newLength);
         }
 
         /// <summary>
@@ -1667,7 +1716,7 @@ namespace Worlds
         {
             Implementation.ThrowIfEntityIsMissing(value, entity);
 
-            ArrayType arrayElementType = Schema.GetArrayElement<T>();
+            ArrayElementType arrayElementType = Schema.GetArrayElement<T>();
             Implementation.ThrowIfArrayIsMissing(value, entity, arrayElementType);
             Allocation array = Implementation.GetArray(value, entity, arrayElementType, out uint arrayLength);
             return ref array.Read<T>(index * (uint)sizeof(T));
@@ -1678,7 +1727,7 @@ namespace Worlds
         /// </summary>
         public readonly uint GetArrayLength<T>(uint entity) where T : unmanaged
         {
-            ArrayType arrayElementType = Schema.GetArrayElement<T>();
+            ArrayElementType arrayElementType = Schema.GetArrayElement<T>();
             return Implementation.GetArrayLength(value, entity, arrayElementType);
         }
 
@@ -1687,16 +1736,16 @@ namespace Worlds
         /// </summary>
         public readonly void DestroyArray<T>(uint entity) where T : unmanaged
         {
-            ArrayType arrayElementType = Schema.GetArrayElement<T>();
+            ArrayElementType arrayElementType = Schema.GetArrayElement<T>();
             DestroyArray(entity, arrayElementType);
         }
 
         /// <summary>
-        /// Destroys the array of the given <paramref name="arrayType"/> on the given <paramref name="entity"/>.
+        /// Destroys the array of the given <paramref name="arrayElementType"/> on the given <paramref name="entity"/>.
         /// </summary>
-        public readonly void DestroyArray(uint entity, ArrayType arrayType)
+        public readonly void DestroyArray(uint entity, ArrayElementType arrayElementType)
         {
-            Implementation.DestroyArray(value, entity, arrayType);
+            Implementation.DestroyArray(value, entity, arrayElementType);
         }
 
         /// <summary>
@@ -1768,11 +1817,11 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsAnyComponent<T>() where T : unmanaged
         {
-            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
-            ComponentType type = Schema.GetComponent<T>();
-            foreach (BitSet key in chunks.Keys)
+            Dictionary<Definition, ComponentChunk> chunks = ComponentChunks;
+            ComponentType componentType = Schema.GetComponent<T>();
+            foreach (Definition key in chunks.Keys)
             {
-                if (key == type)
+                if (key.ComponentTypes == componentType)
                 {
                     ComponentChunk chunk = chunks[key];
                     if (chunk.Entities.Count > 0)
@@ -1858,7 +1907,7 @@ namespace Worlds
             Schema schema = Schema;
             ComponentType componentType = schema.GetComponent<T>();
             ComponentChunk chunk = slot.componentChunk;
-            contains = chunk.TypesMask == componentType;
+            contains = chunk.Definition.ComponentTypes == componentType;
             if (contains)
             {
                 uint index = chunk.Entities.IndexOf(entity);
@@ -1880,7 +1929,7 @@ namespace Worlds
             Schema schema = Schema;
             ComponentType componentType = schema.GetComponent<T>();
             ComponentChunk chunk = slot.componentChunk;
-            bool contains = chunk.TypesMask == componentType;
+            bool contains = chunk.Definition.ComponentTypes == componentType;
             if (contains)
             {
                 uint index = chunk.Entities.IndexOf(entity);
@@ -1924,27 +1973,6 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Returns the main component chunk that contains all of the given component types.
-        /// </summary>
-        public readonly ComponentChunk GetComponentChunk(USpan<ComponentType> componentTypes)
-        {
-            BitSet bitSet = new();
-            for (uint i = 0; i < componentTypes.Length; i++)
-            {
-                bitSet |= componentTypes[i];
-            }
-
-            if (ComponentChunks.TryGetValue(bitSet, out ComponentChunk chunk))
-            {
-                return chunk;
-            }
-            else
-            {
-                throw new NullReferenceException($"No components found for the given types");
-            }
-        }
-
-        /// <summary>
         /// Checks if this world contains a chunk with the given <paramref name="componentTypes"/>.
         /// </summary>
         public readonly bool ContainsComponentChunk(USpan<ComponentType> componentTypes)
@@ -1955,21 +1983,15 @@ namespace Worlds
                 bitSet |= componentTypes[i];
             }
 
-            return ComponentChunks.ContainsKey(bitSet);
-        }
-
-        /// <summary>
-        /// Attempts to retrieve the component chunk that is all of the <paramref name="componentTypes"/>.
-        /// </summary>
-        public readonly bool TryGetComponentChunk(USpan<ComponentType> componentTypes, out ComponentChunk chunk)
-        {
-            BitSet bitSet = new();
-            for (uint i = 0; i < componentTypes.Length; i++)
+            foreach (Definition key in ComponentChunks.Keys)
             {
-                bitSet |= componentTypes[i];
+                if ((key.ComponentTypes & bitSet) == bitSet)
+                {
+                    return true;
+                }
             }
 
-            return ComponentChunks.TryGetValue(bitSet, out chunk);
+            return false;
         }
 
         /// <summary>
@@ -1977,8 +1999,8 @@ namespace Worlds
         /// </summary>
         public readonly uint CountEntitiesWithComponent<T>(bool onlyEnabled = false) where T : unmanaged
         {
-            ComponentType type = Schema.GetComponent<T>();
-            return CountEntitiesWithComponent(type, onlyEnabled);
+            ComponentType componentType = Schema.GetComponent<T>();
+            return CountEntitiesWithComponent(componentType, onlyEnabled);
         }
 
         /// <summary>
@@ -1987,11 +2009,12 @@ namespace Worlds
         public readonly uint CountEntitiesWithComponent(ComponentType componentType, bool onlyEnabled = false)
         {
             uint count = 0;
-            foreach (BitSet key in ComponentChunks.Keys)
+            Dictionary<Definition, ComponentChunk> chunks = ComponentChunks;
+            foreach (Definition key in chunks.Keys)
             {
-                if (key == componentType)
+                if (key.ComponentTypes == componentType)
                 {
-                    ComponentChunk chunk = ComponentChunks[key];
+                    ComponentChunk chunk = chunks[key];
                     if (!onlyEnabled)
                     {
                         count += chunk.Entities.Count;
@@ -2018,21 +2041,21 @@ namespace Worlds
         /// </summary>
         public readonly uint CountEntities<T>(bool onlyEnabled = false) where T : unmanaged, IEntity
         {
-            Dictionary<BitSet, ComponentChunk> chunks = ComponentChunks;
+            Dictionary<Definition, ComponentChunk> chunks = ComponentChunks;
             Definition definition = default(T).GetDefinition(Schema);
             uint count = 0;
-            if (definition.ArrayTypesMask != default(BitSet))
+            if (definition.ArrayElementTypes != default(BitSet))
             {
-                foreach (BitSet key in chunks.Keys)
+                foreach (Definition key in chunks.Keys)
                 {
-                    if ((key & definition.ComponentTypesMask) == definition.ComponentTypesMask)
+                    if ((key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
                     {
                         ComponentChunk chunk = chunks[key];
                         for (uint e = 0; e < chunk.Entities.Count; e++)
                         {
                             uint entity = chunk.Entities[e];
-                            BitSet arrayTypesMask = GetArrayTypesMask(entity);
-                            if ((definition.ArrayTypesMask & arrayTypesMask) == arrayTypesMask)
+                            BitSet arrayElementTypes = GetArrayElementTypes(entity);
+                            if ((definition.ArrayElementTypes & arrayElementTypes) == arrayElementTypes)
                             {
                                 if (onlyEnabled)
                                 {
@@ -2054,9 +2077,9 @@ namespace Worlds
             {
                 if (!onlyEnabled)
                 {
-                    foreach (BitSet key in chunks.Keys)
+                    foreach (Definition key in chunks.Keys)
                     {
-                        if ((key & definition.ComponentTypesMask) == definition.ComponentTypesMask)
+                        if ((key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
                         {
                             ComponentChunk chunk = chunks[key];
                             count += chunk.Entities.Count;
@@ -2065,9 +2088,9 @@ namespace Worlds
                 }
                 else
                 {
-                    foreach (BitSet key in chunks.Keys)
+                    foreach (Definition key in chunks.Keys)
                     {
-                        if ((key & definition.ComponentTypesMask) == definition.ComponentTypesMask)
+                        if ((key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
                         {
                             ComponentChunk chunk = chunks[key];
                             for (uint e = 0; e < chunk.Entities.Count; e++)
@@ -2097,12 +2120,12 @@ namespace Worlds
 
             EntitySlot sourceSlot = Slots[sourceEntity - 1];
             ComponentChunk sourceChunk = sourceSlot.componentChunk;
-            BitSet sourceComponentTypes = sourceChunk.TypesMask;
+            Definition sourceComponentTypes = sourceChunk.Definition;
             uint sourceIndex = sourceChunk.Entities.IndexOf(sourceEntity);
             Schema schema = Schema;
             for (byte c = 0; c < BitSet.Capacity; c++)
             {
-                if (sourceComponentTypes == c)
+                if (sourceComponentTypes.ComponentTypes == c)
                 {
                     ComponentType componentType = new(c);
                     if (!destinationWorld.ContainsComponent(destinationEntity, componentType))
@@ -2126,22 +2149,22 @@ namespace Worlds
         public readonly void CopyArraysTo(uint sourceEntity, World destinationWorld, uint destinationEntity)
         {
             Schema schema = Schema;
-            BitSet arrayTypesMask = GetArrayTypesMask(sourceEntity);
+            BitSet arrayElementTypes = GetArrayElementTypes(sourceEntity);
             for (byte a = 0; a < BitSet.Capacity; a++)
             {
-                if (arrayTypesMask == a)
+                if (arrayElementTypes == a)
                 {
-                    ArrayType arrayType = new(a);
-                    Allocation sourceArray = Implementation.GetArray(value, sourceEntity, arrayType, out uint sourceLength);
+                    ArrayElementType arrayElementType = new(a);
+                    Allocation sourceArray = Implementation.GetArray(value, sourceEntity, arrayElementType, out uint sourceLength);
                     Allocation destinationArray;
-                    ushort arrayElementSize = schema.GetSize(arrayType);
-                    if (!destinationWorld.ContainsArray(destinationEntity, arrayType))
+                    ushort arrayElementSize = schema.GetSize(arrayElementType);
+                    if (!destinationWorld.ContainsArray(destinationEntity, arrayElementType))
                     {
-                        destinationArray = Implementation.CreateArray(destinationWorld.value, destinationEntity, arrayType, arrayElementSize, sourceLength);
+                        destinationArray = Implementation.CreateArray(destinationWorld.value, destinationEntity, arrayElementType, arrayElementSize, sourceLength);
                     }
                     else
                     {
-                        destinationArray = Implementation.ResizeArray(destinationWorld.value, destinationEntity, arrayType, arrayElementSize, sourceLength);
+                        destinationArray = Implementation.ResizeArray(destinationWorld.value, destinationEntity, arrayElementType, arrayElementSize, sourceLength);
                     }
 
                     sourceArray.CopyTo(destinationArray, sourceLength * arrayElementSize);
@@ -2213,6 +2236,16 @@ namespace Worlds
             /// Invoked after any component is removed from any entity.
             /// </summary>
             public static event ComponentRemovedCallback ComponentRemoved = delegate { };
+
+            /// <summary>
+            /// Invoked after any tag is added to any entity.
+            /// </summary>
+            public static event TagAddedCallback TagAdded = delegate { };
+
+            /// <summary>
+            /// Invoked after any tag is removed from any entity.
+            /// </summary>
+            public static event TagRemovedCallback TagRemoved = delegate { };
 
             private List* slots;
             private List* freeEntities;
@@ -2310,10 +2343,10 @@ namespace Worlds
             public static void ThrowIfComponentMissing(Implementation* world, uint entity, ComponentType componentType)
             {
                 ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
-                BitSet componentTypes = slot.componentChunk.TypesMask;
+                BitSet componentTypes = slot.componentChunk.Definition.ComponentTypes;
                 if (componentTypes != componentType)
                 {
-                    throw new NullReferenceException($"Component `{componentType}` not found on `{entity}`");
+                    throw new NullReferenceException($"Component `{componentType.ToString(GetSchema(world))}` not found on `{entity}`");
                 }
             }
 
@@ -2325,40 +2358,60 @@ namespace Worlds
             public static void ThrowIfComponentAlreadyPresent(Implementation* world, uint entity, ComponentType componentType)
             {
                 ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
-                BitSet componentTypes = slot.componentChunk.TypesMask;
+                BitSet componentTypes = slot.componentChunk.Definition.ComponentTypes;
                 if (componentTypes == componentType)
                 {
-                    throw new InvalidOperationException($"Component `{componentType}` already present on `{entity}`");
+                    throw new InvalidOperationException($"Component `{componentType.ToString(GetSchema(world))}` already present on `{entity}`");
+                }
+            }
+
+            [Conditional("DEBUG")]
+            public static void ThrowIfTagAlreadyPresent(Implementation* world, uint entity, TagType tagType)
+            {
+                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                if (slot.componentChunk.Definition.TagTypes == tagType)
+                {
+                    throw new InvalidOperationException($"Tag `{tagType.ToString(GetSchema(world))}` already present on `{entity}`");
+                }
+            }
+
+            [Conditional("DEBUG")]
+            public static void ThrowIfTagIsMissing(Implementation* world, uint entity, TagType tagType)
+            {
+                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                if (slot.componentChunk.Definition.TagTypes != tagType)
+                {
+                    throw new NullReferenceException($"Tag `{tagType.ToString(GetSchema(world))}` not found on `{entity}`");
                 }
             }
 
             /// <summary>
             /// Throws an <see cref="NullReferenceException"/> if the given <paramref name="entity"/> is missing
-            /// the given <paramref name="arrayType"/>.
+            /// the given <paramref name="arrayElementType"/>.
             /// </summary>
             /// <exception cref="NullReferenceException"></exception>
             [Conditional("DEBUG")]
-            public static void ThrowIfArrayIsMissing(Implementation* world, uint entity, ArrayType arrayType)
+            public static void ThrowIfArrayIsMissing(Implementation* world, uint entity, ArrayElementType arrayElementType)
             {
                 ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
-                if (slot.arrayTypes != arrayType)
+                if (slot.arrayElementTypes != arrayElementType)
                 {
-                    throw new NullReferenceException($"Array of type `{arrayType}` not found on entity `{entity}`");
+                    throw new NullReferenceException($"Array of type `{arrayElementType.ToString(GetSchema(world))}` not found on entity `{entity}`");
                 }
             }
 
             /// <summary>
             /// Throws an <see cref="InvalidOperationException"/> if the given <paramref name="entity"/> already
-            /// has the given <paramref name="arrayType"/>.
+            /// has the given <paramref name="arrayElementType"/>.
             /// </summary>
             /// <exception cref="InvalidOperationException"></exception>
             [Conditional("DEBUG")]
-            public static void ThrowIfArrayIsAlreadyPresent(Implementation* world, uint entity, ArrayType arrayType)
+            public static void ThrowIfArrayIsAlreadyPresent(Implementation* world, uint entity, ArrayElementType arrayElementType)
             {
                 ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
-                if (slot.arrayTypes == arrayType)
+                if (slot.arrayElementTypes == arrayElementType)
                 {
-                    throw new InvalidOperationException($"Array of type `{arrayType}` already present on `{entity}`");
+                    throw new InvalidOperationException($"Array of type `{arrayElementType.ToString(GetSchema(world))}` already present on `{entity}`");
                 }
             }
 
@@ -2385,7 +2438,7 @@ namespace Worlds
             /// <summary>
             /// Retrieves component chunks dictionary.
             /// </summary>
-            public static Dictionary<BitSet, ComponentChunk> GetComponentChunks(Implementation* world)
+            public static Dictionary<Definition, ComponentChunk> GetComponentChunks(Implementation* world)
             {
                 Allocations.ThrowIfNull(world);
 
@@ -2406,11 +2459,10 @@ namespace Worlds
             {
                 List* slots = List.Allocate<EntitySlot>(4);
                 List* freeEntities = List.Allocate<uint>(4);
-                Dictionary* components = Dictionary.Allocate<BitSet, ComponentChunk>(4);
+                Dictionary* components = Dictionary.Allocate<Definition, ComponentChunk>(4);
 
-                BitSet defaultSet = default;
-                ComponentChunk defaultComponentChunk = new(defaultSet, schema);
-                Dictionary.TryAdd(components, defaultSet, defaultComponentChunk);
+                ComponentChunk defaultComponentChunk = new(schema);
+                Dictionary.TryAdd(components, default(Definition), defaultComponentChunk);
 
                 Implementation* world = Allocations.Allocate<Implementation>();
                 world->slots = slots;
@@ -2443,8 +2495,8 @@ namespace Worlds
                 Allocations.ThrowIfNull(world);
 
                 //clear chunks
-                Dictionary<BitSet, ComponentChunk> chunks = GetComponentChunks(world);
-                foreach (BitSet key in chunks.Keys)
+                Dictionary<Definition, ComponentChunk> chunks = GetComponentChunks(world);
+                foreach (Definition key in chunks.Keys)
                 {
                     ComponentChunk chunk = chunks[key];
                     chunk.Dispose();
@@ -2463,7 +2515,7 @@ namespace Worlds
                         bool hasArrays = false;
                         for (byte a = 0; a < BitSet.Capacity; a++)
                         {
-                            if (slot.arrayTypes == a)
+                            if (slot.arrayElementTypes == a)
                             {
                                 hasArrays = true;
                                 slot.arrays[a].Dispose();
@@ -2475,7 +2527,7 @@ namespace Worlds
                             slot.arrays.Dispose();
                             slot.arrayLengths.Dispose();
 
-                            slot.arrayTypes = default;
+                            slot.arrayElementTypes = default;
                             slot.arrays = default;
                             slot.arrayLengths = default;
                         }
@@ -2545,11 +2597,11 @@ namespace Worlds
                 chunk.RemoveEntity(entity);
 
                 //reset arrays
-                if (slot.arrayTypes.Count > 0)
+                if (slot.arrayElementTypes.Count > 0)
                 {
                     for (byte a = 0; a < BitSet.Capacity; a++)
                     {
-                        if (slot.arrayTypes == a)
+                        if (slot.arrayElementTypes == a)
                         {
                             slot.arrays[a].Dispose();
                         }
@@ -2558,7 +2610,7 @@ namespace Worlds
                     slot.arrays.Dispose();
                     slot.arrayLengths.Dispose();
 
-                    slot.arrayTypes = default;
+                    slot.arrayElementTypes = default;
                     slot.arrays = default;
                     slot.arrayLengths = default;
                 }
@@ -2711,29 +2763,29 @@ namespace Worlds
                 slot.state = EntitySlot.State.Enabled;
 
                 //put entity into correct chunk
-                Dictionary<BitSet, ComponentChunk> components = GetComponentChunks(world);
-                if (!components.TryGetValue(definition.ComponentTypesMask, out ComponentChunk chunk))
+                Dictionary<Definition, ComponentChunk> components = GetComponentChunks(world);
+                if (!components.TryGetValue(definition, out ComponentChunk chunk))
                 {
-                    chunk = new(definition.ComponentTypesMask, schema);
-                    components.Add(definition.ComponentTypesMask, chunk);
+                    chunk = new(definition, schema);
+                    components.Add(definition, chunk);
                 }
 
                 slot.componentChunk = chunk;
 
                 //add arrays
-                if (definition.ArrayTypesMask != default(BitSet))
+                if (definition.ArrayElementTypes != default(BitSet))
                 {
                     slot.arrayLengths = new(BitSet.Capacity);
-                    slot.arrayTypes = definition.ArrayTypesMask;
+                    slot.arrayElementTypes = definition.ArrayElementTypes;
                     slot.arrays = new(BitSet.Capacity);
                     for (byte a = 0; a < BitSet.Capacity; a++)
                     {
-                        if (slot.arrayTypes == a)
+                        if (slot.arrayElementTypes == a)
                         {
-                            ArrayType arrayType = new(a);
-                            ushort arrayElementSize = schema.GetSize(arrayType);
-                            slot.arrays[arrayType] = new(arrayElementSize); //todo: not sure why this is initialized to 1 at first tbh
-                            slot.arrayLengths[arrayType] = 0;
+                            ArrayElementType arrayElementType = new(a);
+                            ushort arrayElementSize = schema.GetSize(arrayElementType);
+                            slot.arrays[arrayElementType] = new(arrayElementSize); //todo: not sure why this is initialized to 1 at first tbh
+                            slot.arrayLengths[arrayElementType] = 0;
                         }
                     }
                 }
@@ -2789,69 +2841,69 @@ namespace Worlds
             /// <summary>
             /// Creates an array of the given <paramref name="arrayElementType"/> for the given <paramref name="entity"/>.
             /// </summary>
-            public static Allocation CreateArray(Implementation* world, uint entity, ArrayType arrayElementType, ushort arrayElementSize, uint length)
+            public static Allocation CreateArray(Implementation* world, uint entity, ArrayElementType arrayElementType, ushort arrayElementSize, uint length)
             {
                 Allocations.ThrowIfNull(world);
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfArrayIsAlreadyPresent(world, entity, arrayElementType);
 
                 ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
-                if (slot.arrayTypes.Count == 0)
+                if (slot.arrayElementTypes.Count == 0)
                 {
                     slot.arrays = new(BitSet.Capacity);
                     slot.arrayLengths = new(BitSet.Capacity);
                 }
 
                 Allocation newArray = new(arrayElementSize * length);
-                slot.arrayTypes |= arrayElementType;
+                slot.arrayElementTypes |= arrayElementType;
                 slot.arrays[arrayElementType] = newArray;
                 slot.arrayLengths[arrayElementType] = length;
                 return slot.arrays[arrayElementType];
             }
 
             /// <summary>
-            /// Checks if the given <paramref name="entity"/> contains an array of the given <paramref name="arrayType"/>.
+            /// Checks if the given <paramref name="entity"/> contains an array of the given <paramref name="arrayElementType"/>.
             /// </summary>
-            public static bool ContainsArray(Implementation* world, uint entity, ArrayType arrayType)
+            public static bool ContainsArray(Implementation* world, uint entity, ArrayElementType arrayElementType)
             {
                 Allocations.ThrowIfNull(world);
                 ThrowIfEntityIsMissing(world, entity);
 
                 ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
-                return slot.arrayTypes == arrayType;
+                return slot.arrayElementTypes == arrayElementType;
             }
 
             /// <summary>
-            /// Retrieves the array of the given <paramref name="arrayType"/> for the given <paramref name="entity"/>.
+            /// Retrieves the array of the given <paramref name="arrayElementType"/> for the given <paramref name="entity"/>.
             /// </summary>
-            public static Allocation GetArray(Implementation* world, uint entity, ArrayType arrayType, out uint length)
+            public static Allocation GetArray(Implementation* world, uint entity, ArrayElementType arrayElementType, out uint length)
             {
                 Allocations.ThrowIfNull(world);
                 ThrowIfEntityIsMissing(world, entity);
-                ThrowIfArrayIsMissing(world, entity, arrayType);
+                ThrowIfArrayIsMissing(world, entity, arrayElementType);
 
                 ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
-                length = slot.arrayLengths[arrayType];
-                return slot.arrays[arrayType];
+                length = slot.arrayLengths[arrayElementType];
+                return slot.arrays[arrayElementType];
             }
 
             /// <summary>
-            /// Retrieves the length of the array of the given <paramref name="arrayType"/> for the given <paramref name="entity"/>.
+            /// Retrieves the length of the array of the given <paramref name="arrayElementType"/> for the given <paramref name="entity"/>.
             /// </summary>
-            public static uint GetArrayLength(Implementation* world, uint entity, ArrayType arrayType)
+            public static uint GetArrayLength(Implementation* world, uint entity, ArrayElementType arrayElementType)
             {
                 Allocations.ThrowIfNull(world);
                 ThrowIfEntityIsMissing(world, entity);
-                ThrowIfArrayIsMissing(world, entity, arrayType);
+                ThrowIfArrayIsMissing(world, entity, arrayElementType);
 
                 ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
-                return slot.arrayLengths[arrayType];
+                return slot.arrayLengths[arrayElementType];
             }
 
             /// <summary>
             /// Resizes the array of the given <paramref name="arrayElementType"/> for the given <paramref name="entity"/>.
             /// </summary>
-            public static Allocation ResizeArray(Implementation* world, uint entity, ArrayType arrayElementType, ushort arrayElementSize, uint newLength)
+            public static Allocation ResizeArray(Implementation* world, uint entity, ArrayElementType arrayElementType, ushort arrayElementSize, uint newLength)
             {
                 Allocations.ThrowIfNull(world);
                 ThrowIfEntityIsMissing(world, entity);
@@ -2865,20 +2917,20 @@ namespace Worlds
             }
 
             /// <summary>
-            /// Destroys the array of the given <paramref name="arrayType"/> for the given <paramref name="entity"/>.
+            /// Destroys the array of the given <paramref name="arrayElementType"/> for the given <paramref name="entity"/>.
             /// </summary>
-            public static void DestroyArray(Implementation* world, uint entity, ArrayType arrayType)
+            public static void DestroyArray(Implementation* world, uint entity, ArrayElementType arrayElementType)
             {
                 Allocations.ThrowIfNull(world);
                 ThrowIfEntityIsMissing(world, entity);
-                ThrowIfArrayIsMissing(world, entity, arrayType);
+                ThrowIfArrayIsMissing(world, entity, arrayElementType);
 
                 ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
-                slot.arrays[arrayType].Dispose();
-                slot.arrayTypes &= arrayType;
-                slot.arrayLengths[arrayType] = 0;
+                slot.arrays[arrayElementType].Dispose();
+                slot.arrayElementTypes &= arrayElementType;
+                slot.arrayLengths[arrayElementType] = 0;
 
-                if (slot.arrayTypes.Count == 0)
+                if (slot.arrayElementTypes.Count == 0)
                 {
                     slot.arrays.Dispose();
                     slot.arrayLengths.Dispose();
@@ -2894,17 +2946,17 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfComponentAlreadyPresent(world, entity, componentType);
 
-                Dictionary<BitSet, ComponentChunk> components = GetComponentChunks(world);
+                Dictionary<Definition, ComponentChunk> components = GetComponentChunks(world);
                 ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
                 ComponentChunk previousChunk = slot.componentChunk;
-                BitSet newComponentTypes = previousChunk.TypesMask;
-                newComponentTypes |= componentType;
+                Definition newDefinition = previousChunk.Definition;
+                newDefinition.AddComponentType(componentType);
 
-                if (!components.TryGetValue(newComponentTypes, out ComponentChunk destinationChunk))
+                if (!components.TryGetValue(newDefinition, out ComponentChunk destinationChunk))
                 {
                     Schema schema = GetSchema(world);
-                    destinationChunk = new(newComponentTypes, schema);
-                    components.Add(newComponentTypes, destinationChunk);
+                    destinationChunk = new(newDefinition, schema);
+                    components.Add(newDefinition, destinationChunk);
                 }
 
                 slot.componentChunk = destinationChunk;
@@ -2931,11 +2983,11 @@ namespace Worlds
                 ThrowIfComponentMissing(world, entity, componentType);
 
                 Schema schema = GetSchema(world);
-                Dictionary<BitSet, ComponentChunk> components = GetComponentChunks(world);
+                Dictionary<Definition, ComponentChunk> components = GetComponentChunks(world);
                 ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
                 ComponentChunk previousChunk = slot.componentChunk;
-                BitSet newComponentTypes = previousChunk.TypesMask;
-                newComponentTypes &= componentType;
+                Definition newComponentTypes = previousChunk.Definition;
+                newComponentTypes.RemoveComponentType(componentType);
 
                 if (!components.TryGetValue(newComponentTypes, out ComponentChunk destinationChunk))
                 {
@@ -2948,6 +3000,54 @@ namespace Worlds
                 NotifyComponentRemoved(new(world), entity, componentType);
             }
 
+            public static void AddTag(Implementation* world, uint entity, TagType tagType)
+            {
+                Allocations.ThrowIfNull(world);
+                ThrowIfEntityIsMissing(world, entity);
+                ThrowIfTagAlreadyPresent(world, entity, tagType);
+
+                Dictionary<Definition, ComponentChunk> chunks = GetComponentChunks(world);
+                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                ComponentChunk previousChunk = slot.componentChunk;
+                Definition newDefinition = previousChunk.Definition;
+                newDefinition.AddTagType(tagType);
+
+                if (!chunks.TryGetValue(newDefinition, out ComponentChunk destinationChunk))
+                {
+                    Schema schema = GetSchema(world);
+                    destinationChunk = new(newDefinition, schema);
+                    chunks.Add(newDefinition, destinationChunk);
+                }
+
+                slot.componentChunk = destinationChunk;
+                uint index = previousChunk.MoveEntity(entity, destinationChunk);
+                NotifyTagAdded(new(world), entity, tagType);
+            }
+
+            public static void RemoveTag(Implementation* world, uint entity, TagType tagType)
+            {
+                Allocations.ThrowIfNull(world);
+                ThrowIfEntityIsMissing(world, entity);
+                ThrowIfTagIsMissing(world, entity, tagType);
+
+                Schema schema = GetSchema(world);
+                Dictionary<Definition, ComponentChunk> chunks = GetComponentChunks(world);
+                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                ComponentChunk previousChunk = slot.componentChunk;
+                Definition newComponentTypes = previousChunk.Definition;
+                newComponentTypes.RemoveTagType(tagType);
+
+                if (!chunks.TryGetValue(newComponentTypes, out ComponentChunk destinationChunk))
+                {
+                    destinationChunk = new(newComponentTypes, schema);
+                    chunks.Add(newComponentTypes, destinationChunk);
+                }
+
+                slot.componentChunk = destinationChunk;
+                previousChunk.MoveEntity(entity, destinationChunk);
+                NotifyTagRemoved(new(world), entity, tagType);
+            }
+
             /// <summary>
             /// Checks if the given <paramref name="entity"/> contains a component of the given <paramref name="componentType"/>.
             /// </summary>
@@ -2958,7 +3058,7 @@ namespace Worlds
 
                 uint index = entity - 1;
                 ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, index);
-                return slot.componentChunk.TypesMask == componentType;
+                return slot.componentChunk.Definition.ComponentTypes == componentType;
             }
 
             public static Allocation GetComponent(Implementation* world, uint entity, ComponentType componentType, ushort componentSize)
@@ -2988,14 +3088,24 @@ namespace Worlds
                 EntityParentChanged(world, entity, parent);
             }
 
-            internal static void NotifyComponentAdded(World world, uint entity, ComponentType type)
+            internal static void NotifyComponentAdded(World world, uint entity, ComponentType componentType)
             {
-                ComponentAdded(world, entity, type);
+                ComponentAdded(world, entity, componentType);
             }
 
-            internal static void NotifyComponentRemoved(World world, uint entity, ComponentType type)
+            internal static void NotifyComponentRemoved(World world, uint entity, ComponentType componentType)
             {
-                ComponentRemoved(world, entity, type);
+                ComponentRemoved(world, entity, componentType);
+            }
+
+            internal static void NotifyTagAdded(World world, uint entity, TagType tagType)
+            {
+                TagAdded(world, entity, tagType);
+            }
+
+            internal static void NotifyTagRemoved(World world, uint entity, TagType tagType)
+            {
+                TagRemoved(world, entity, tagType);
             }
         }
     }
@@ -3024,4 +3134,14 @@ namespace Worlds
     /// Delegate for when a component is removed from an entity.
     /// </summary>
     public delegate void ComponentRemovedCallback(World world, uint entity, ComponentType componentType);
+
+    /// <summary>
+    /// Delegate for when a tag is added to an entity.
+    /// </summary>
+    public delegate void TagAddedCallback(World world, uint entity, TagType tagType);
+
+    /// <summary>
+    /// Delegate for when a tag is removed from an entity.
+    /// </summary>
+    public delegate void TagRemovedCallback(World world, uint entity, TagType tagType);
 }

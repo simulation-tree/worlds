@@ -34,9 +34,10 @@ namespace Worlds
         public readonly uint Count => Implementation.GetCount(value);
 
         /// <summary>
-        /// Returns the <see cref="BitSet"/> representing the types of components in this chunk.
+        /// Returns the <see cref="Definition"/> representing the types of components, arrays and tags
+        /// this chunk is for.
         /// </summary>
-        public readonly BitSet TypesMask => Implementation.GetTypesMask(value);
+        public readonly Definition Definition => Implementation.GetDefinition(value);
 
         /// <summary>
         /// The schema that this chunk was created with.
@@ -59,25 +60,11 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Creates a new component chunk with the given <paramref name="componentTypes"/>.
+        /// Creates a new component chunk with the given <paramref name="definition"/>.
         /// </summary>
-        public ComponentChunk(BitSet componentTypes, Schema schema)
+        public ComponentChunk(Definition definition, Schema schema)
         {
-            value = Implementation.Allocate(componentTypes, schema);
-        }
-
-        /// <summary>
-        /// Creates a new component chunk with the given <paramref name="componentTypes"/>.
-        /// </summary>
-        public ComponentChunk(USpan<ComponentType> componentTypes, Schema schema)
-        {
-            BitSet typesMask = new();
-            for (byte i = 0; i < componentTypes.Length; i++)
-            {
-                typesMask |= componentTypes[i];
-            }
-
-            value = Implementation.Allocate(typesMask, schema);
+            value = Implementation.Allocate(definition, schema);
         }
 
         /// <inheritdoc/>
@@ -100,13 +87,13 @@ namespace Worlds
         public readonly uint ToString(USpan<char> buffer)
         {
             uint length = 0;
-            BitSet typeMask = TypesMask;
+            BitSet componentTypes = Definition.ComponentTypes;
             for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                if (typeMask == i)
+                if (componentTypes == i)
                 {
-                    ComponentType type = new(i);
-                    length += type.ToString(buffer.Slice(length));
+                    ComponentType componentType = new(i);
+                    length += componentType.ToString(Schema, buffer.Slice(length));
                     buffer[length++] = ',';
                     buffer[length++] = ' ';
                 }
@@ -130,29 +117,11 @@ namespace Worlds
 
         public readonly override int GetHashCode()
         {
-            return TypesMask.GetHashCode();
+            return Definition.GetHashCode();
         }
 
         /// <summary>
-        /// Copies the types of components this chunk stores to the given <paramref name="buffer"/>.
-        /// </summary>
-        public readonly byte CopyTypesTo(USpan<ComponentType> buffer)
-        {
-            BitSet typeMask = TypesMask;
-            byte count = 0;
-            for (byte c = 0; c < BitSet.Capacity; c++)
-            {
-                if (typeMask == c)
-                {
-                    buffer[count++] = new(c);
-                }
-            }
-
-            return count;
-        }
-
-        /// <summary>
-        /// Adds the given <paramref name="entity"/> into this chunk and returns its referrable index.
+        /// Adds the given <paramref name="entity"/> into this chunk and returns its referable index.
         /// </summary>
         public readonly uint AddEntity(uint entity)
         {
@@ -256,11 +225,11 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Retrieves the list of all components of the given <paramref name="type"/>.
+        /// Retrieves the list of all components of the given <paramref name="componentType"/>.
         /// </summary>
-        public readonly List* GetComponents(ComponentType type)
+        public readonly List* GetComponents(ComponentType componentType)
         {
-            return Implementation.GetComponents(value, type);
+            return Implementation.GetComponents(value, componentType);
         }
 
         /// <summary>
@@ -297,11 +266,11 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Retrieves the pointer for the specific component of the type <paramref name="type"/> at <paramref name="index"/>.
+        /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> at <paramref name="index"/>.
         /// </summary>
-        public readonly Allocation GetComponent(uint index, ComponentType type, ushort componentSize)
+        public readonly Allocation GetComponent(uint index, ComponentType componentType, ushort componentSize)
         {
-            List* components = GetComponents(type);
+            List* components = GetComponents(componentType);
             nint address = List.GetStartAddress(components);
             return new(address + index * componentSize);
         }
@@ -773,30 +742,29 @@ namespace Worlds
             private List<uint> entities;
             private Array<nint> componentArrays;
             private readonly Array<byte> typeIndices;
-            private readonly BitSet typeMask;
+            private readonly Definition definition;
             private readonly Schema.Implementation* schema;
 
-            private Implementation(BitSet componentTypesMask, Array<nint> componentArrays, Array<byte> typeIndices, Schema schema)
+            private Implementation(Definition definition, Array<nint> componentArrays, Array<byte> typeIndices, Schema schema)
             {
                 entities = new(4);
                 this.typeIndices = typeIndices;
                 this.componentArrays = componentArrays;
-                typeMask = componentTypesMask;
+                this.definition = definition;
                 this.schema = (Schema.Implementation*)schema.Pointer;
             }
 
             /// <summary>
-            /// Allocates a new <see cref="Implementation"/> with the given <paramref name="componentTypesMask"/>.
+            /// Allocates a new <see cref="Implementation"/> with the given <paramref name="definition"/>.
             /// </summary>
-            public static Implementation* Allocate(BitSet componentTypesMask, Schema schema)
+            public static Implementation* Allocate(Definition definition, Schema schema)
             {
                 Array<nint> componentArrays = new(BitSet.Capacity);
-                USpan<ComponentType> componentTypes = stackalloc ComponentType[BitSet.Capacity];
                 USpan<byte> typeIndices = stackalloc byte[BitSet.Capacity];
                 byte typeCount = 0;
                 for (byte c = 0; c < BitSet.Capacity; c++)
                 {
-                    if (componentTypesMask == c)
+                    if (definition.ComponentTypes == c)
                     {
                         ComponentType componentType = new(c);
                         ushort componentSize = schema.GetSize(componentType);
@@ -806,7 +774,7 @@ namespace Worlds
                 }
 
                 Implementation* chunk = Allocations.Allocate<Implementation>();
-                chunk[0] = new(componentTypesMask, componentArrays, new(typeIndices.Slice(0, typeCount)), schema);
+                chunk[0] = new(definition, componentArrays, new(typeIndices.Slice(0, typeCount)), schema);
                 return chunk;
             }
 
@@ -853,13 +821,14 @@ namespace Worlds
             }
 
             /// <summary>
-            /// Retrieves the <see cref="BitSet"/> representing the types of components in the chunk.
+            /// Retrieves the <see cref="Definition"/> representing the types of components, arrays and tags
+            /// this chunk is for.
             /// </summary>
-            public static BitSet GetTypesMask(Implementation* chunk)
+            public static Definition GetDefinition(Implementation* chunk)
             {
                 Allocations.ThrowIfNull(chunk);
 
-                return chunk->typeMask;
+                return chunk->definition;
             }
 
             /// <summary>
@@ -1601,7 +1570,7 @@ namespace Worlds
             [Conditional("DEBUG")]
             private static void ThrowIfComponentTypeIsMissing(Implementation* chunk, ComponentType componentType)
             {
-                if (chunk->typeMask != componentType)
+                if (chunk->definition.ComponentTypes != componentType)
                 {
                     throw new ArgumentException($"Component type `{componentType}` is missing from the chunk");
                 }

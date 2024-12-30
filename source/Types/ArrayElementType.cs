@@ -6,7 +6,7 @@ namespace Worlds
     /// <summary>
     /// Represents an unmanaged array type usable with entities.
     /// </summary>
-    public readonly struct ArrayType : IEquatable<ArrayType>
+    public readonly struct ArrayElementType : IEquatable<ArrayElementType>
     {
         /// <summary>
         /// Index of the array type within a <see cref="BitSet"/>.
@@ -18,7 +18,7 @@ namespace Worlds
         /// Not supported.
         /// </summary>
         [Obsolete("Default constructor not supported", true)]
-        public ArrayType()
+        public ArrayElementType()
         {
             throw new NotSupportedException();
         }
@@ -27,7 +27,7 @@ namespace Worlds
         /// <summary>
         /// Initializes an existing array type.
         /// </summary>
-        public ArrayType(byte value)
+        public ArrayElementType(byte value)
         {
             this.index = value;
         }
@@ -43,9 +43,27 @@ namespace Worlds
         /// <summary>
         /// Builds a string representation of this array type.
         /// </summary>
-        public readonly uint ToString(USpan<char> buffer)
+        public readonly string ToString(Schema schema)
         {
-            return index.ToString(buffer);
+            USpan<char> buffer = stackalloc char[256];
+            uint length = ToString(schema, buffer);
+            return buffer.Slice(0, length).ToString();
+        }
+
+        /// <summary>
+        /// Writes the index of this array type to the <paramref name="destination"/>.
+        /// </summary>
+        public readonly uint ToString(USpan<char> destination)
+        {
+            return index.ToString(destination);
+        }
+
+        /// <summary>
+        /// Writes a string representation of this array type to the <paramref name="destination"/>.
+        /// </summary>
+        public readonly uint ToString(Schema schema, USpan<char> destination)
+        {
+            return schema.GetLayout(this).ToString(destination);
         }
 
         /// <inheritdoc/>
@@ -55,7 +73,7 @@ namespace Worlds
         }
 
         /// <inheritdoc/>
-        public readonly bool Equals(ArrayType other)
+        public readonly bool Equals(ArrayElementType other)
         {
             return index == other.index;
         }
@@ -63,7 +81,7 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return index.GetHashCode();
+            return index;
         }
 
         /// <summary>
@@ -74,19 +92,19 @@ namespace Worlds
             return schema.GetLayout(this);
         }
 
-        public static bool operator ==(ArrayType left, ArrayType right)
+        public static bool operator ==(ArrayElementType left, ArrayElementType right)
         {
             return left.Equals(right);
         }
 
-        public static bool operator !=(ArrayType left, ArrayType right)
+        public static bool operator !=(ArrayElementType left, ArrayElementType right)
         {
             return !(left == right);
         }
 
-        public static implicit operator byte(ArrayType type)
+        public static implicit operator byte(ArrayElementType arrayElementType)
         {
-            return type.index;
+            return arrayElementType.index;
         }
     }
 }

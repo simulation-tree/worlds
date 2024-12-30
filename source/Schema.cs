@@ -34,7 +34,7 @@ namespace Worlds
             {
                 for (byte a = 0; a < BitSet.Capacity; a++)
                 {
-                    TypeLayout typeLayout = GetLayout(new ArrayType(a));
+                    TypeLayout typeLayout = GetLayout(new ArrayElementType(a));
                     if (typeLayout != default)
                     {
                         yield return typeLayout;
@@ -77,13 +77,16 @@ namespace Worlds
             return schema->sizes.Read<ushort>(componentType.index * 2u);
         }
 
-        public readonly ushort GetSize(ArrayType arrayElementType)
+        public readonly ushort GetSize(ArrayElementType arrayElementType)
         {
             ThrowIfArrayElementIsMissing(arrayElementType);
 
             return schema->sizes.Read<ushort>(BitSet.Capacity * 2 + arrayElementType.index * 2u);
         }
 
+        /// <summary>
+        /// Retrieves the type layout for the given <paramref name="componentType"/>.
+        /// </summary>
         public readonly TypeLayout GetLayout(ComponentType componentType)
         {
             ThrowIfComponentIsMissing(componentType);
@@ -91,11 +94,24 @@ namespace Worlds
             return Implementation.GetComponentLayouts(schema)[componentType];
         }
 
-        public readonly TypeLayout GetLayout(ArrayType arrayElementType)
+        /// <summary>
+        /// Retrieves the type layout for the given <paramref name="arrayElementType"/>.
+        /// </summary>
+        public readonly TypeLayout GetLayout(ArrayElementType arrayElementType)
         {
             ThrowIfArrayElementIsMissing(arrayElementType);
 
             return Implementation.GetArrayLayouts(schema)[arrayElementType];
+        }
+
+        /// <summary>
+        /// Retrieves the type layout for the given <paramref name="tagType"/>.
+        /// </summary>
+        public readonly TypeLayout GetLayout(TagType tagType)
+        {
+            ThrowIfTagIsMissing(tagType);
+
+            return Implementation.GetTagLayouts(schema)[tagType];
         }
 
         public readonly TypeLayout GetComponentLayout<T>() where T : unmanaged
@@ -124,7 +140,7 @@ namespace Worlds
         {
             for (byte a = 0; a < BitSet.Capacity; a++)
             {
-                ArrayType arrayElementType = new(a);
+                ArrayElementType arrayElementType = new(a);
                 TypeLayout layout = GetLayout(arrayElementType);
                 if (layout.FullName == fullTypeName)
                 {
@@ -167,14 +183,32 @@ namespace Worlds
             schema->arrays++;
         }
 
+        public readonly void RegisterTag<T>() where T : unmanaged
+        {
+            ThrowIfTooManyTags();
+            ThrowIfTagAlreadyRegistered<T>();
+
+            USpan<TypeLayout> typeLayouts = Implementation.GetTagLayouts(schema);
+            TypeLayout typeLayout = TypeLayout.Get<T>();
+            typeLayouts[schema->tags] = typeLayout;
+            schema->tagIndices.Add(typeLayout.GetHashCode(), schema->tags);
+            schema->tagExistence.Write(schema->tags, true);
+            schema->tags++;
+        }
+
         public readonly bool Contains(ComponentType componentType)
         {
             return GetSize(componentType) != default;
         }
 
-        public readonly bool Contains(ArrayType arrayElementType)
+        public readonly bool Contains(ArrayElementType arrayElementType)
         {
             return GetSize(arrayElementType) != default;
+        }
+
+        public readonly bool Contains(TagType tagType)
+        {
+            return schema->tagExistence.Read<bool>(tagType.index);
         }
 
         public readonly bool ContainsComponent(FixedString fullTypeName)
@@ -196,11 +230,29 @@ namespace Worlds
         {
             for (byte a = 0; a < BitSet.Capacity; a++)
             {
-                ArrayType arrayElementType = new(a);
+                ArrayElementType arrayElementType = new(a);
                 TypeLayout typeLayout = GetLayout(arrayElementType);
                 if (typeLayout.FullName == fullTypeName)
                 {
                     return true;
+                }
+            }
+
+            return false;
+        }
+
+        public readonly bool ContainsTag(FixedString fullTypeName)
+        {
+            for (byte t = 0; t < BitSet.Capacity; t++)
+            {
+                TagType tagType = new(t);
+                if (Contains(tagType))
+                {
+                    TypeLayout typeLayout = GetLayout(tagType);
+                    if (typeLayout.FullName == fullTypeName)
+                    {
+                        return true;
+                    }
                 }
             }
 
@@ -226,11 +278,25 @@ namespace Worlds
             return schema->arrayElementIndices.ContainsKey(hashCode);
         }
 
-        public readonly ArrayType GetArrayElement<T>() where T : unmanaged
+        public readonly ArrayElementType GetArrayElement<T>() where T : unmanaged
         {
             ThrowIfArrayElementIsMissing<T>();
 
             return new(schema->arrayElementIndices[TypeLayoutHashCodeCache<T>.value]);
+        }
+
+        public readonly TagType GetTag<T>() where T : unmanaged
+        {
+            ThrowIfTagIsMissing<T>();
+
+            int hashCode = TypeLayoutHashCodeCache<T>.value;
+            return new(schema->tagIndices[hashCode]);
+        }
+
+        public readonly bool ContainsTag<T>() where T : unmanaged
+        {
+            int hashCode = TypeLayoutHashCodeCache<T>.value;
+            return schema->tagIndices.ContainsKey(hashCode);
         }
 
         public readonly BitSet GetComponents<T1>() where T1 : unmanaged
@@ -383,6 +449,66 @@ namespace Worlds
             return new(GetArrayElement<T1>(), GetArrayElement<T2>(), GetArrayElement<T3>(), GetArrayElement<T4>(), GetArrayElement<T5>(), GetArrayElement<T6>(), GetArrayElement<T7>(), GetArrayElement<T8>(), GetArrayElement<T9>(), GetArrayElement<T10>(), GetArrayElement<T11>(), GetArrayElement<T12>());
         }
 
+        public readonly BitSet GetTags<T1>() where T1 : unmanaged
+        {
+            return new(GetTag<T1>());
+        }
+
+        public readonly BitSet GetTags<T1, T2>() where T1 : unmanaged where T2 : unmanaged
+        {
+            return new(GetTag<T1>(), GetTag<T2>());
+        }
+
+        public readonly BitSet GetTags<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+        {
+            return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>());
+        }
+
+        public readonly BitSet GetTags<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+        {
+            return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>());
+        }
+
+        public readonly BitSet GetTags<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
+        {
+            return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>());
+        }
+
+        public readonly BitSet GetTags<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
+        {
+            return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>(), GetTag<T6>());
+        }
+
+        public readonly BitSet GetTags<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
+        {
+            return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>(), GetTag<T6>(), GetTag<T7>());
+        }
+
+        public readonly BitSet GetTags<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
+        {
+            return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>(), GetTag<T6>(), GetTag<T7>(), GetTag<T8>());
+        }
+
+        public readonly BitSet GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
+        {
+            return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>(), GetTag<T6>(), GetTag<T7>(), GetTag<T8>(), GetTag<T9>());
+        }
+
+        public readonly BitSet GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
+        {
+            return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>(), GetTag<T6>(), GetTag<T7>(), GetTag<T8>(), GetTag<T9>(), GetTag<T10>());
+        }
+
+        public readonly BitSet GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
+        {
+            return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>(), GetTag<T6>(), GetTag<T7>(), GetTag<T8>(), GetTag<T9>(), GetTag<T10>(), GetTag<T11>());
+        }
+
+        public readonly BitSet GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
+        {
+            return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>(), GetTag<T6>(), GetTag<T7>(), GetTag<T8>(), GetTag<T9>(), GetTag<T10>(), GetTag<T11>(), GetTag<T12>());
+        }
+
         public static Schema Create()
         {
             return new(Implementation.Allocate());
@@ -393,7 +519,7 @@ namespace Worlds
         {
             if (schema->components >= BitSet.Capacity)
             {
-                throw new Exception("Too many components");
+                throw new Exception("Too many components types registered");
             }
         }
 
@@ -402,7 +528,16 @@ namespace Worlds
         {
             if (schema->arrays >= BitSet.Capacity)
             {
-                throw new Exception("Too many arrays");
+                throw new Exception("Too many arrays element types registered");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfTooManyTags()
+        {
+            if (schema->tags >= BitSet.Capacity)
+            {
+                throw new Exception("Too many tag types registered");
             }
         }
 
@@ -426,12 +561,12 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfArrayElementIsMissing(ArrayType arrayType)
+        private readonly void ThrowIfArrayElementIsMissing(ArrayElementType arrayElementTypes)
         {
-            ushort arrayElementSize = schema->sizes.Read<ushort>(BitSet.Capacity * 2 + arrayType.index * 2u);
+            ushort arrayElementSize = schema->sizes.Read<ushort>(BitSet.Capacity * 2 + arrayElementTypes.index * 2u);
             if (arrayElementSize == default)
             {
-                throw new Exception($"Array element size for `{arrayType}` is missing from schema");
+                throw new Exception($"Array element size for `{arrayElementTypes}` is missing from schema");
             }
         }
 
@@ -441,6 +576,24 @@ namespace Worlds
             if (!ContainsArrayElement<T>())
             {
                 throw new Exception($"Array element `{typeof(T).FullName}` is missing from schema");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfTagIsMissing(TagType tagType)
+        {
+            if (!Contains(tagType))
+            {
+                throw new Exception($"Tag `{tagType}` is missing from schema");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfTagIsMissing<T>() where T : unmanaged
+        {
+            if (!ContainsTag<T>())
+            {
+                throw new Exception($"Tag `{typeof(T).FullName}` is missing from schema");
             }
         }
 
@@ -459,6 +612,15 @@ namespace Worlds
             if (ContainsArrayElement<T>())
             {
                 throw new Exception($"Array element `{typeof(T).FullName}` is already registered in schema");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfTagAlreadyRegistered<T>() where T : unmanaged
+        {
+            if (ContainsTag<T>())
+            {
+                throw new Exception($"Tag `{typeof(T).FullName}` is already registered in schema");
             }
         }
 
@@ -481,10 +643,12 @@ namespace Worlds
         {
             writer.WriteValue(schema->components);
             writer.WriteValue(schema->arrays);
+            writer.WriteValue(schema->tags);
             USpan<ushort> componentSizes = Implementation.GetComponentSizes(schema);
             USpan<ushort> arrayElementSizes = Implementation.GetArrayElementSizes(schema);
             USpan<TypeLayout> componentLayouts = Implementation.GetComponentLayouts(schema);
             USpan<TypeLayout> arrayLayouts = Implementation.GetArrayLayouts(schema);
+            USpan<TypeLayout> tagLayouts = Implementation.GetTagLayouts(schema);
             for (byte i = 0; i < BitSet.Capacity; i++)
             {
                 ushort componentSize = componentSizes[i];
@@ -502,6 +666,13 @@ namespace Worlds
                     writer.WriteValue(arrayElementSizes[i]);
                     writer.WriteObject(arrayLayouts[i]);
                 }
+
+                bool hasTag = schema->tagExistence.Read<bool>(i);
+                writer.WriteValue(hasTag);
+                if (hasTag)
+                {
+                    writer.WriteObject(tagLayouts[i]);
+                }
             }
         }
 
@@ -510,10 +681,12 @@ namespace Worlds
             schema = Implementation.Allocate();
             schema->components = reader.ReadValue<byte>();
             schema->arrays = reader.ReadValue<byte>();
+            schema->tags = reader.ReadValue<byte>();
             USpan<ushort> componentSizes = Implementation.GetComponentSizes(schema);
             USpan<ushort> arrayElementSizes = Implementation.GetArrayElementSizes(schema);
             USpan<TypeLayout> componentLayouts = Implementation.GetComponentLayouts(schema);
             USpan<TypeLayout> arrayLayouts = Implementation.GetArrayLayouts(schema);
+            USpan<TypeLayout> tagLayouts = Implementation.GetTagLayouts(schema);
             for (byte i = 0; i < BitSet.Capacity; i++)
             {
                 bool hasComponent = reader.ReadValue<bool>();
@@ -533,6 +706,15 @@ namespace Worlds
                     arrayLayouts[i] = typeLayout;
                     schema->arrayElementIndices.Add(typeLayout.GetHashCode(), i);
                 }
+
+                bool hasTag = reader.ReadValue<bool>();
+                schema->tagExistence.Write(i, hasTag);
+                if (hasTag)
+                {
+                    TypeLayout typeLayout = reader.ReadObject<TypeLayout>();
+                    tagLayouts[i] = typeLayout;
+                    schema->tagIndices.Add(typeLayout.GetHashCode(), i);
+                }
             }
         }
 
@@ -550,25 +732,31 @@ namespace Worlds
         {
             public byte components;
             public byte arrays;
+            public byte tags;
             public readonly Allocation sizes;
+            public readonly Allocation tagExistence;
             public readonly Allocation typeLayouts;
             public readonly Dictionary<int, byte> componentIndices;
             public readonly Dictionary<int, byte> arrayElementIndices;
+            public readonly Dictionary<int, byte> tagIndices;
 
-            private Implementation(Allocation sizes, Allocation typeLayouts)
+            private Implementation(Allocation sizes, Allocation tagExistence, Allocation typeLayouts)
             {
                 this.sizes = sizes;
+                this.tagExistence = tagExistence;
                 this.typeLayouts = typeLayouts;
                 this.componentIndices = new(BitSet.Capacity);
                 this.arrayElementIndices = new(BitSet.Capacity);
+                this.tagIndices = new(BitSet.Capacity);
             }
 
             public static Implementation* Allocate()
             {
                 Allocation sizes = new(BitSet.Capacity * 2 * 2, true);
-                Allocation typeLayouts = new((uint)sizeof(TypeLayout) * BitSet.Capacity * 2, true);
+                Allocation tagExistence = new(BitSet.Capacity, true);
+                Allocation typeLayouts = new((uint)sizeof(TypeLayout) * BitSet.Capacity * 3, true);
                 Implementation* schema = Allocations.Allocate<Implementation>();
-                *schema = new(sizes, typeLayouts);
+                *schema = new(sizes, tagExistence, typeLayouts);
                 schema->components = 0;
                 schema->arrays = 0;
                 return schema;
@@ -578,9 +766,11 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(schema);
 
+                schema->tagIndices.Dispose();
                 schema->componentIndices.Dispose();
                 schema->arrayElementIndices.Dispose();
                 schema->sizes.Dispose();
+                schema->tagExistence.Dispose();
                 schema->typeLayouts.Dispose();
                 Allocations.Free(ref schema);
             }
@@ -589,8 +779,10 @@ namespace Worlds
             {
                 destination->components = source->components;
                 destination->arrays = source->arrays;
+                destination->tags = source->tags;
                 source->sizes.CopyTo(destination->sizes, BitSet.Capacity * 2 * 2);
-                source->typeLayouts.CopyTo(destination->typeLayouts, (uint)sizeof(TypeLayout) * BitSet.Capacity * 2);
+                source->tagExistence.CopyTo(destination->tagExistence, BitSet.Capacity);
+                source->typeLayouts.CopyTo(destination->typeLayouts, (uint)sizeof(TypeLayout) * BitSet.Capacity * 3);
                 destination->componentIndices.Clear();
                 foreach ((int hashCode, byte index) in source->componentIndices)
                 {
@@ -601,6 +793,12 @@ namespace Worlds
                 foreach ((int hashCode, byte index) in source->arrayElementIndices)
                 {
                     destination->arrayElementIndices.Add(hashCode, index);
+                }
+
+                destination->tagIndices.Clear();
+                foreach ((int hashCode, byte index) in source->tagIndices)
+                {
+                    destination->tagIndices.Add(hashCode, index);
                 }
             }
 
@@ -622,6 +820,11 @@ namespace Worlds
             public static USpan<TypeLayout> GetArrayLayouts(Implementation* schema)
             {
                 return schema->typeLayouts.AsSpan<TypeLayout>(BitSet.Capacity, BitSet.Capacity);
+            }
+
+            public static USpan<TypeLayout> GetTagLayouts(Implementation* schema)
+            {
+                return schema->typeLayouts.AsSpan<TypeLayout>(BitSet.Capacity * 2, BitSet.Capacity);
             }
         }
 

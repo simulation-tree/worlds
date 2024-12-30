@@ -91,5 +91,26 @@ namespace Worlds.Tests
             Assert.That(loadedSchema.ContainsComponent<float>(), Is.True);
             Assert.That(loadedSchema.ContainsComponent<char>(), Is.True);
         }
+
+        [Test]
+        public void VerifyTagsGetSaved() 
+        {
+            using Schema schema = new();
+            schema.RegisterTag<bool>();
+            schema.RegisterTag<byte>();
+            schema.RegisterComponent<bool>();
+            schema.RegisterArrayElement<byte>();
+
+            using BinaryWriter writer = new();
+            writer.WriteObject(schema);
+
+            using BinaryReader reader = new(writer);
+            using Schema loadedSchema = reader.ReadObject<Schema>();
+
+            Assert.That(loadedSchema.ContainsTag<bool>(), Is.True);
+            Assert.That(loadedSchema.ContainsTag<byte>(), Is.True);
+            Assert.That(loadedSchema.ContainsComponent<bool>(), Is.True);
+            Assert.That(loadedSchema.ContainsArrayElement<byte>(), Is.True);
+        }
     }
 }

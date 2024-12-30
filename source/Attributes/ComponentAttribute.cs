@@ -16,10 +16,18 @@ namespace Worlds
     }
 
     /// <summary>
-    /// States that the decorated type is an <see cref="ArrayType"/>.
+    /// States that the decorated type is an <see cref="ArrayElementType"/>.
     /// </summary>
     [AttributeUsage(AttributeTargets.Struct)]
-    public class ArrayAttribute : TypeAttribute
+    public class ArrayElementAttribute : TypeAttribute
+    {
+    }
+
+    /// <summary>
+    /// States that the decorated type is a <see cref="TagType"/>.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Struct)]
+    public class TagAttribute : TypeAttribute
     {
     }
 }

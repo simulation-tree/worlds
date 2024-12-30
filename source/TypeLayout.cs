@@ -80,6 +80,7 @@ namespace Worlds
             variables.CopyTo(Variables);
         }
 
+        /// <inheritdoc/>
         public readonly override string ToString()
         {
             USpan<char> buffer = stackalloc char[256];
@@ -87,21 +88,17 @@ namespace Worlds
             return buffer.Slice(0, length).ToString();
         }
 
+        /// <summary>
+        /// Writes a string representation of this type layout to <paramref name="destination"/>.
+        /// </summary>
         public readonly uint ToString(USpan<char> destination)
         {
-            uint length = fullName.CopyTo(destination);
-            destination[length++] = ' ';
-            destination[length++] = '(';
-            destination[length++] = 's';
-            destination[length++] = 'i';
-            destination[length++] = 'z';
-            destination[length++] = 'e';
-            destination[length++] = '=';
-            length += size.ToString(destination.Slice(length));
-            destination[length++] = ')';
-            return length;
+            return fullName.CopyTo(destination);
         }
 
+        /// <summary>
+        /// Checks if this type layout matches <typeparamref name="T"/>.
+        /// </summary>
         public readonly bool Is<T>() where T : unmanaged
         {
             int index = systemTypes.IndexOf(typeof(T));
@@ -113,6 +110,9 @@ namespace Worlds
             return false;
         }
 
+        /// <summary>
+        /// Checks if <typeparamref name="T"/> is registered.
+        /// </summary>
         public static bool IsRegistered<T>() where T : unmanaged
         {
             return systemTypes.Contains(typeof(T));
@@ -381,16 +381,19 @@ namespace Worlds
             }
         }
 
+        /// <inheritdoc/>
         public readonly override bool Equals(object? obj)
         {
             return obj is TypeLayout layout && Equals(layout);
         }
 
+        /// <inheritdoc/>
         public readonly bool Equals(TypeLayout other)
         {
             return fullName.Equals(other.fullName) && count == other.count && Variables.SequenceEqual(other.Variables);
         }
 
+        /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
             unchecked
