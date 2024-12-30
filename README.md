@@ -4,7 +4,7 @@ Entities themselves are stored within these _worlds_, which can be serialized, d
 
 ### Initializing
 To use this library, all of the component and array types that will be used need to be registered ahead of time.
-This is done by decorating them with either `[Component]` or `[Array]` (or both), and utilizing the `TypeLayoutRegistry` class
+This is done by decorating them with either `[Component]` or `[ArrayElement]` (or both), and utilizing the `TypeLayoutRegistry` class
 to register the layouts first. And then creating a schema with `SchemaRegistry.Get()` for each world to use:
 ```cs
 private static void Main()
@@ -27,15 +27,17 @@ be registered with both `TypeLayout` and `Schema`:
 ```cs
 private static void Main()
 {
-    TypeLayout.Register<MyComponent>("MyComponent");
-    TypeLayout.Register<IsPlayer>("IsPlayer");
-    TypeLayout.Register<MyReference>("MyReference");
-    TypeLayout.Register<char>("char");
+    TypeLayout.Register<MyComponent>();
+    TypeLayout.Register<IsPlayer>();
+    TypeLayout.Register<MyReference>();
+    TypeLayout.Register<char>();
+    TypeLayout.Register<IsThing>();
     Schema schema = SchemaRegistry.Get();
     schema.RegisterComponent<MyComponent>();
     schema.RegisterComponent<IsPlayer>();
     schema.RegisterComponent<MyReference>();
     schema.RegisterArrayElement<char>();
+    schema.RegisterTag<IsThing>();
     using World world = new(schema);
     //...
 }
@@ -123,6 +125,20 @@ void Do()
         sum += component.value;
     }
 }
+```
+
+### Tagging entities
+Entities can be tagged with tag types:
+```cs
+[Tag]
+public struct IsThing
+{
+}
+
+uint entity = world.CreateEntity();
+world.AddTag<IsThing>(entity);
+
+Assert.That(world.Contains<IsThing>(entity), Is.True);
 ```
 
 ### Relationship references to other entities

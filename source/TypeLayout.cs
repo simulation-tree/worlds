@@ -118,202 +118,208 @@ namespace Worlds
             return systemTypes.Contains(typeof(T));
         }
 
-        public unsafe static void Register<T>(FixedString fullName, USpan<Variable> variables) where T : unmanaged
+        public unsafe static void Register<T>() where T : unmanaged
         {
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
-            TypeLayout layout = new(fullName, size, variables);
+            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
+            TypeLayout layout = new(fullName, size, []);
             systemTypes.Add(typeof(T));
             all.Add(layout);
             nameToType.Add(fullName.GetHashCode(), layout);
         }
 
-        public unsafe static void Register<T>(string fullName) where T : unmanaged
+        public unsafe static void Register<T>(Variable var1) where T : unmanaged
         {
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
-            TypeLayout layout = new(fullName, size, []);
-            systemTypes.Add(typeof(T));
-            all.Add(layout);
-            nameToType.Add(new FixedString(fullName).GetHashCode(), layout);
-        }
-
-        public unsafe static void Register<T>(string fullName, Variable var1) where T : unmanaged
-        {
-            ThrowIfAlreadyRegistered<T>();
-
-            ushort size = (ushort)sizeof(T);
+            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
             TypeLayout layout = new(fullName, size, [var1]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(new FixedString(fullName).GetHashCode(), layout);
+            nameToType.Add(fullName.GetHashCode(), layout);
         }
 
-        public unsafe static void Register<T>(string fullName, Variable var1, Variable var2) where T : unmanaged
+        public unsafe static void Register<T>(Variable var1, Variable var2) where T : unmanaged
         {
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
+            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
             TypeLayout layout = new(fullName, size, [var1, var2]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(new FixedString(fullName).GetHashCode(), layout);
+            nameToType.Add(fullName.GetHashCode(), layout);
         }
 
-        public unsafe static void Register<T>(string fullName, Variable var1, Variable var2, Variable var3) where T : unmanaged
+        public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3) where T : unmanaged
         {
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
+            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
             TypeLayout layout = new(fullName, size, [var1, var2, var3]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(new FixedString(fullName).GetHashCode(), layout);
+            nameToType.Add(fullName.GetHashCode(), layout);
         }
 
-        public unsafe static void Register<T>(string fullName, Variable var1, Variable var2, Variable var3, Variable var4) where T : unmanaged
+        public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4) where T : unmanaged
         {
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
+            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(new FixedString(fullName).GetHashCode(), layout);
+            nameToType.Add(fullName.GetHashCode(), layout);
         }
 
-        public unsafe static void Register<T>(string fullName, Variable var1, Variable var2, Variable var3, Variable var4, Variable var5) where T : unmanaged
+        public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5) where T : unmanaged
         {
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
+            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(new FixedString(fullName).GetHashCode(), layout);
+            nameToType.Add(fullName.GetHashCode(), layout);
         }
 
-        public unsafe static void Register<T>(string fullName, Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6) where T : unmanaged
+        public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6) where T : unmanaged
         {
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
+            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(new FixedString(fullName).GetHashCode(), layout);
+            nameToType.Add(fullName.GetHashCode(), layout);
         }
 
-        public unsafe static void Register<T>(string fullName, Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7) where T : unmanaged
+        public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7) where T : unmanaged
         {
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
+            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6, var7]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(new FixedString(fullName).GetHashCode(), layout);
+            nameToType.Add(fullName.GetHashCode(), layout);
         }
 
-        public unsafe static void Register<T>(string fullName, Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8) where T : unmanaged
+        public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8) where T : unmanaged
         {
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
+            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6, var7, var8]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(new FixedString(fullName).GetHashCode(), layout);
+            nameToType.Add(fullName.GetHashCode(), layout);
         }
 
-        public unsafe static void Register<T>(string fullName, Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9) where T : unmanaged
+        public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9) where T : unmanaged
         {
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
+            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6, var7, var8, var9]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(new FixedString(fullName).GetHashCode(), layout);
+            nameToType.Add(fullName.GetHashCode(), layout);
         }
 
-        public unsafe static void Register<T>(string fullName, Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9, Variable var10) where T : unmanaged
+        public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9, Variable var10) where T : unmanaged
         {
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
+            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6, var7, var8, var9, var10]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(new FixedString(fullName).GetHashCode(), layout);
+            nameToType.Add(fullName.GetHashCode(), layout);
         }
 
-        public unsafe static void Register<T>(string fullName, Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9, Variable var10, Variable var11) where T : unmanaged
+        public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9, Variable var10, Variable var11) where T : unmanaged
         {
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
+            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(new FixedString(fullName).GetHashCode(), layout);
+            nameToType.Add(fullName.GetHashCode(), layout);
         }
 
-        public unsafe static void Register<T>(string fullName, Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9, Variable var10, Variable var11, Variable var12) where T : unmanaged
+        public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9, Variable var10, Variable var11, Variable var12) where T : unmanaged
         {
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
+            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(new FixedString(fullName).GetHashCode(), layout);
+            nameToType.Add(fullName.GetHashCode(), layout);
         }
 
-        public unsafe static void Register<T>(string fullName, Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9, Variable var10, Variable var11, Variable var12, Variable var13) where T : unmanaged
+        public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9, Variable var10, Variable var11, Variable var12, Variable var13) where T : unmanaged
         {
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
+            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12, var13]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(new FixedString(fullName).GetHashCode(), layout);
+            nameToType.Add(fullName.GetHashCode(), layout);
         }
 
-        public unsafe static void Register<T>(string fullName, Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9, Variable var10, Variable var11, Variable var12, Variable var13, Variable var14) where T : unmanaged
+        public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9, Variable var10, Variable var11, Variable var12, Variable var13, Variable var14) where T : unmanaged
         {
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
+            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12, var13, var14]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(new FixedString(fullName).GetHashCode(), layout);
+            nameToType.Add(fullName.GetHashCode(), layout);
         }
 
-        public unsafe static void Register<T>(string fullName, Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9, Variable var10, Variable var11, Variable var12, Variable var13, Variable var14, Variable var15) where T : unmanaged
+        public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9, Variable var10, Variable var11, Variable var12, Variable var13, Variable var14, Variable var15) where T : unmanaged
         {
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
+            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12, var13, var14, var15]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(new FixedString(fullName).GetHashCode(), layout);
+            nameToType.Add(fullName.GetHashCode(), layout);
         }
 
-        public unsafe static void Register<T>(string fullName, Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9, Variable var10, Variable var11, Variable var12, Variable var13, Variable var14, Variable var15, Variable var16) where T : unmanaged
+        public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9, Variable var10, Variable var11, Variable var12, Variable var13, Variable var14, Variable var15, Variable var16) where T : unmanaged
         {
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
+            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12, var13, var14, var15, var16]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(new FixedString(fullName).GetHashCode(), layout);
+            nameToType.Add(fullName.GetHashCode(), layout);
         }
 
         public static TypeLayout Get<T>() where T : unmanaged
