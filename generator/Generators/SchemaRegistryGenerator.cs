@@ -79,17 +79,17 @@ namespace Worlds.TypeTableGenerator
 
         private static void AppendComponentRegistration(ITypeSymbol componentType)
         {
-            source.AppendLine($"schema.RegisterComponent<{componentType.ToDisplayString()}>();");
+            source.AppendLine($"schema.RegisterComponent<{componentType.GetFullTypeName()}>();");
         }
 
         private static void AppendArrayElementRegistration(ITypeSymbol arrayElementType)
         {
-            source.AppendLine($"schema.RegisterArrayElement<{arrayElementType.ToDisplayString()}>();");
+            source.AppendLine($"schema.RegisterArrayElement<{arrayElementType.GetFullTypeName()}>();");
         }
 
         private static void AppendTagRegistration(ITypeSymbol tagType)
         {
-            source.AppendLine($"schema.RegisterTag<{tagType.ToDisplayString()}>();");
+            source.AppendLine($"schema.RegisterTag<{tagType.GetFullTypeName()}>();");
         }
     }
 }

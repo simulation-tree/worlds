@@ -155,5 +155,66 @@ namespace Worlds.TypeTableGenerator
                 }
             }
         }
+
+        public static string GetFullTypeName(this ITypeSymbol symbol)
+        {
+            SpecialType special = symbol.SpecialType;
+            if (special == SpecialType.System_Boolean)
+            {
+                return "System.Boolean";
+            }
+            else if (special == SpecialType.System_Byte)
+            {
+                return "System.Byte";
+            }
+            else if (special == SpecialType.System_SByte)
+            {
+                return "System.SByte";
+            }
+            else if (special == SpecialType.System_Int16)
+            {
+                return "System.Int16";
+            }
+            else if (special == SpecialType.System_UInt16)
+            {
+                return "System.UInt16";
+            }
+            else if (special == SpecialType.System_Int32)
+            {
+                return "System.Int32";
+            }
+            else if (special == SpecialType.System_UInt32)
+            {
+                return "System.UInt32";
+            }
+            else if (special == SpecialType.System_Int64)
+            {
+                return "System.Int64";
+            }
+            else if (special == SpecialType.System_UInt64)
+            {
+                return "System.UInt64";
+            }
+            else if (special == SpecialType.System_Single)
+            {
+                return "System.Single";
+            }
+            else if (special == SpecialType.System_Double)
+            {
+                return "System.Double";
+            }
+            else if (special == SpecialType.System_Decimal)
+            {
+                return "System.Decimal";
+            }
+            else if (special == SpecialType.System_Char)
+            {
+                return "System.Char";
+            }
+            else
+            {
+                return symbol.ToDisplayString();
+            }
+        }
     }
 }

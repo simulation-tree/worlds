@@ -92,7 +92,7 @@ namespace Worlds.TypeTableGenerator
                             }
 
                             //skip pointer types
-                            string typeFullName = type.ToDisplayString();
+                            string typeFullName = type.GetFullTypeName();
                             if (typeFullName.Contains("*"))
                             {
                                 continue;
@@ -163,72 +163,72 @@ namespace Worlds.TypeTableGenerator
                                 registeredChar = true;
                             }
 
-                            AppendLayoutRegistration(type);
+                            AppendLayoutRegistration(type, type.GetFullTypeName());
                         }
 
                         if (!registeredBoolean)
                         {
-                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.Boolean") ?? throw new());
+                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.Boolean") ?? throw new(), "System.Boolean");
                         }
 
                         if (!registeredByte)
                         {
-                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.Byte") ?? throw new());
+                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.Byte") ?? throw new(), "System.Byte");
                         }
 
                         if (!registeredSByte)
                         {
-                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.SByte") ?? throw new());
+                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.SByte") ?? throw new(), "System.SByte");
                         }
 
                         if (!registeredInt16)
                         {
-                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.Int16") ?? throw new());
+                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.Int16") ?? throw new(), "System.Int16");
                         }
 
                         if (!registeredUInt16)
                         {
-                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.UInt16") ?? throw new());
+                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.UInt16") ?? throw new(), "System.UInt16");
                         }
 
                         if (!registeredInt32)
                         {
-                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.Int32") ?? throw new());
+                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.Int32") ?? throw new(), "System.Int32");
                         }
 
                         if (!registeredUInt32)
                         {
-                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.UInt32") ?? throw new());
+                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.UInt32") ?? throw new(), "System.UInt32");
                         }
 
                         if (!registeredInt64)
                         {
-                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.Int64") ?? throw new());
+                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.Int64") ?? throw new(), "System.Int64");
                         }
 
                         if (!registeredUInt64)
                         {
-                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.UInt64") ?? throw new());
+                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.UInt64") ?? throw new(), "System.UInt64");
                         }
 
                         if (!registeredSingle)
                         {
-                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.Single") ?? throw new());
+                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.Single") ?? throw new(), "System.Single");
                         }
 
                         if (!registeredDouble)
                         {
-                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.Double") ?? throw new());
+                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.Double") ?? throw new(), "System.Double");
                         }
 
                         if (!registeredDecimal)
                         {
-                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.Decimal") ?? throw new());
+                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.Decimal") ?? throw new(), "System.Decimal");
                         }
 
                         if (!registeredChar)
                         {
-                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.Char") ?? throw new());
+                            AppendLayoutRegistration(compilation.GetTypeByMetadataName("System.Char") ?? throw new(), "System.Char");
                         }
                     }
                     source.EndGroup();
@@ -239,9 +239,8 @@ namespace Worlds.TypeTableGenerator
             return source.ToString();
         }
 
-        private static void AppendLayoutRegistration(ITypeSymbol type)
+        private static void AppendLayoutRegistration(ITypeSymbol type, string fullName)
         {
-            string fullName = type.ToDisplayString();
             if (fullName.EndsWith("e__FixedBuffer"))
             {
                 return;
@@ -253,7 +252,7 @@ namespace Worlds.TypeTableGenerator
                 variables.Append("new(\"");
                 variables.Append(field.Name);
                 variables.Append("\", \"");
-                string variableTypeName = field.Type.ToDisplayString();
+                string variableTypeName = field.Type.GetFullTypeName();
                 if (field.IsFixedSizeBuffer)
                 {
                     variableTypeName = variableTypeName.TrimEnd('*');

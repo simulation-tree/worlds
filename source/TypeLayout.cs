@@ -118,6 +118,11 @@ namespace Worlds
             return systemTypes.Contains(typeof(T));
         }
 
+        public static bool IsRegistered(FixedString fullTypeName)
+        {
+            return nameToType.ContainsKey(fullTypeName.GetHashCode());
+        }
+
         public unsafe static void Register<T>() where T : unmanaged
         {
             ThrowIfAlreadyRegistered<T>();

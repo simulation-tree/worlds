@@ -24,6 +24,28 @@ namespace Worlds.Tests
         }
 
         [Test]
+        public void PrimitiveTypesAreAvailable()
+        {
+            Assert.That(TypeLayout.IsRegistered<bool>(), Is.True);
+            Assert.That(TypeLayout.IsRegistered<byte>(), Is.True);
+            Assert.That(TypeLayout.IsRegistered<sbyte>(), Is.True);
+            Assert.That(TypeLayout.IsRegistered<short>(), Is.True);
+            Assert.That(TypeLayout.IsRegistered<ushort>(), Is.True);
+            Assert.That(TypeLayout.IsRegistered<int>(), Is.True);
+            Assert.That(TypeLayout.IsRegistered<uint>(), Is.True);
+            Assert.That(TypeLayout.IsRegistered<long>(), Is.True);
+            Assert.That(TypeLayout.IsRegistered<ulong>(), Is.True);
+            Assert.That(TypeLayout.IsRegistered<float>(), Is.True);
+            Assert.That(TypeLayout.IsRegistered<double>(), Is.True);
+            Assert.That(TypeLayout.IsRegistered<char>(), Is.True);
+
+            Assert.That(TypeLayout.IsRegistered(typeof(bool).FullName ?? typeof(bool).Name), Is.True);
+            Assert.That(TypeLayout.IsRegistered(typeof(byte).FullName ?? typeof(byte).Name), Is.True);
+            Assert.That(TypeLayout.IsRegistered(typeof(sbyte).FullName ?? typeof(sbyte).Name), Is.True);
+            Assert.That(TypeLayout.IsRegistered(typeof(short).FullName ?? typeof(short).Name), Is.True);
+        }
+
+        [Test]
         public void SerializeTypes()
         {
             TypeLayout a = TypeLayout.Get<Stress>();
