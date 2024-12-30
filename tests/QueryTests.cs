@@ -351,7 +351,7 @@ namespace Worlds.Tests
             results.Clear();
             stopwatch.Restart();
             {
-                Dictionary<Definition, ComponentChunk> chunks = world.ComponentChunks;
+                Dictionary<Definition, ComponentChunk> chunks = world.Chunks;
                 foreach (Definition key in chunks.Keys)
                 {
                     if ((key.ComponentTypes & componentTypes) == componentTypes)

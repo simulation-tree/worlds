@@ -343,6 +343,12 @@ namespace Worlds
             return this;
         }
 
+        public Definition RemoveArrayElementType(ArrayElementType arrayElementType)
+        {
+            arrayElementTypes &= arrayElementType;
+            return this;
+        }
+
         /// <summary>
         /// Adds the specified <typeparamref name="A1"/> array type to this definition.
         /// </summary>

@@ -755,6 +755,16 @@ namespace Worlds
             /// Modifies components.
             /// </summary>
             SetComponent,
+            
+            /// <summary>
+            /// Adds tags.
+            /// </summary>
+            AddTag,
+
+            /// <summary>
+            /// Removes tags.
+            /// </summary>
+            RemoveTag,
 
             /// <summary>
             /// Creates arrays.

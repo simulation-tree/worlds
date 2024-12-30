@@ -21,7 +21,7 @@ namespace Worlds
         /// <summary>
         /// The chunk that this entity slot belongs to.
         /// </summary>
-        public ComponentChunk componentChunk;
+        public ComponentChunk chunk;
 
         /// <summary>
         /// Number of children.
@@ -47,11 +47,6 @@ namespace Worlds
         /// All arrays stored.
         /// </summary>
         public Array<Allocation> arrays;
-
-        /// <summary>
-        /// Mask of array types this entity slot contains.
-        /// </summary>
-        public BitSet arrayElementTypes;
 
         /// <summary>
         /// Lengths of arrays.

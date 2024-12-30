@@ -392,7 +392,7 @@ namespace Worlds
         /// </summary>
         public readonly Enumerator GetEnumerator()
         {
-            Dictionary<Definition, ComponentChunk> chunks = world.ComponentChunks;
+            Dictionary<Definition, ComponentChunk> chunks = world.Chunks;
             Definition include = new(includeComponents, includeArrayElements, includeTags);
             return new(include, exclude, chunks, world.Schema);
         }

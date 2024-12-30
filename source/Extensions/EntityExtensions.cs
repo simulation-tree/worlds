@@ -249,14 +249,14 @@ namespace Worlds
             World world = entity.World;
             uint value = entity.Value;
             ref EntitySlot slot = ref world.Slots[value - 1];
+            Definition currentDefinition = slot.chunk.Definition;
 
             //add missing components
-            BitSet componentTypes = slot.componentChunk.Definition.ComponentTypes;
-            if ((componentTypes & definition.ComponentTypes) != definition.ComponentTypes)
+            if ((currentDefinition.ComponentTypes & definition.ComponentTypes) != definition.ComponentTypes)
             {
                 for (byte c = 0; c < BitSet.Capacity; c++)
                 {
-                    if (definition.ComponentTypes == c && componentTypes != c)
+                    if (definition.ComponentTypes == c && currentDefinition.ComponentTypes != c)
                     {
                         ComponentType componentType = new(c);
                         world.AddComponent(value, componentType);
@@ -265,11 +265,11 @@ namespace Worlds
             }
 
             //add missing arrays
-            if ((slot.arrayElementTypes & definition.ArrayElementTypes) != definition.ArrayElementTypes)
+            if ((currentDefinition.ArrayElementTypes & definition.ArrayElementTypes) != definition.ArrayElementTypes)
             {
                 for (byte a = 0; a < BitSet.Capacity; a++)
                 {
-                    if (definition.ArrayElementTypes == a && slot.arrayElementTypes != a)
+                    if (definition.ArrayElementTypes == a && currentDefinition.ArrayElementTypes != a)
                     {
                         ArrayElementType arrayElementType = new(a);
                         world.CreateArray(value, arrayElementType);
@@ -278,12 +278,11 @@ namespace Worlds
             }
 
             //add missing tags
-            BitSet tagTypes = slot.componentChunk.Definition.TagTypes;
-            if ((tagTypes & definition.TagTypes) != definition.TagTypes)
+            if ((currentDefinition.TagTypes & definition.TagTypes) != definition.TagTypes)
             {
                 for (byte t = 0; t < BitSet.Capacity; t++)
                 {
-                    if (definition.TagTypes == t && tagTypes != t)
+                    if (definition.TagTypes == t && currentDefinition.TagTypes != t)
                     {
                         TagType tagType = new(t);
                         world.AddTag(value, tagType);
@@ -309,8 +308,18 @@ namespace Worlds
             World world = entity.World;
             uint value = entity.Value;
             ref EntitySlot slot = ref world.Slots[value - 1];
-            BitSet componentTypes = slot.componentChunk.Definition.ComponentTypes;
-            return (componentTypes & definition.ComponentTypes) == definition.ComponentTypes && (slot.arrayElementTypes & definition.ArrayElementTypes) == definition.ArrayElementTypes;
+            Definition currentDefinition = slot.chunk.Definition;
+            if ((currentDefinition.ComponentTypes & definition.ComponentTypes) != definition.ComponentTypes)
+            {
+                return false;
+            }
+
+            if ((currentDefinition.ArrayElementTypes & definition.ArrayElementTypes) != definition.ArrayElementTypes)
+            {
+                return false;
+            }
+
+            return (currentDefinition.TagTypes & definition.TagTypes) == definition.TagTypes;
         }
 
         /// <summary>
