@@ -121,7 +121,7 @@ public static class SharedFunctions
         for (uint i = 1; i <= count + 1; i++)
         {
             builder.Append("            ");
-            builder.Append("public readonly ComponentType c");
+            builder.Append("private readonly ComponentType c");
             builder.Append(i);
             builder.Append(";\n");
         }
@@ -142,6 +142,59 @@ public static class SharedFunctions
             builder.Append(GenericTypePrefix);
             builder.Append(i);
             builder.Append(">();\n");
+        }
+
+        builder.Length -= 1;
+        return builder.ToString();
+    }
+
+    public static string GetRefIndexingComponent(uint count)
+    {
+        StringBuilder builder = new();
+        for (uint i = 1; i <= count + 1; i++)
+        {
+            builder.Append("ref span");
+            builder.Append(i);
+            builder.Append("[entityIndex - 1]");
+            builder.Append(", ");
+        }
+
+        builder.Length -= 2;
+        return builder.ToString();
+    }
+
+    public static string DeclareComponentSpans(uint count)
+    {
+        StringBuilder builder = new();
+        for (uint i = 1; i <= count + 1; i++)
+        {
+            builder.Append("            ");
+            builder.Append("private USpan<");
+            builder.Append(GenericTypePrefix);
+            builder.Append(i);
+            builder.Append("> span");
+            builder.Append(i);
+            builder.Append(";\n");
+        }
+
+        builder.Length -= 1;
+        return builder.ToString();
+    }
+
+    public static string AssignComponentSpans(uint count)
+    {
+        StringBuilder builder = new();
+        for (uint i = 1; i <= count + 1; i++)
+        {
+            builder.Append("                ");
+            builder.Append("span");
+            builder.Append(i);
+            builder.Append(" = chunk.GetComponents<");
+            builder.Append(GenericTypePrefix);
+            builder.Append(i);
+            builder.Append(">(c");
+            builder.Append(i);
+            builder.Append(");\n");
         }
 
         builder.Length -= 1;

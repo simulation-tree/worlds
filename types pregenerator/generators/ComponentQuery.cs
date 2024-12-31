@@ -15,7 +15,10 @@ public static class ComponentQuery
             source = source.Replace("{{TypeConstraints}}", SharedFunctions.GetTypeConstraints(i));
             source = source.Replace("{{DeclareComponentTypeFields}}", SharedFunctions.DeclareComponentTypeFields(i));
             source = source.Replace("{{AssignComponentTypeFields}}", SharedFunctions.AssignComponentTypeFields(i));
+            source = source.Replace("{{AssignComponentSpans}}", SharedFunctions.AssignComponentSpans(i));
             source = source.Replace("{{TypeParameters}}", SharedFunctions.GetTypeParameters(i));
+            source = source.Replace("{{RefIndexingComponent}}", SharedFunctions.GetRefIndexingComponent(i));
+            source = source.Replace("{{DeclareComponentSpans}}", SharedFunctions.DeclareComponentSpans(i));
             File.WriteAllText($"{TypeName}{i + 1}.cs", source);
         }
     }

@@ -403,35 +403,49 @@ namespace Worlds
 
             private readonly Allocation chunks;
             private readonly uint chunkCount;
-            public readonly ComponentType c1;
-            public readonly ComponentType c2;
-            public readonly ComponentType c3;
-            public readonly ComponentType c4;
-            public readonly ComponentType c5;
-            public readonly ComponentType c6;
-            public readonly ComponentType c7;
-            public readonly ComponentType c8;
-            public readonly ComponentType c9;
-            public readonly ComponentType c10;
-            public readonly ComponentType c11;
-            public readonly ComponentType c12;
-            public readonly ComponentType c13;
-            public readonly ComponentType c14;
-            public readonly ComponentType c15;
-            private uint entityCount;
+            private readonly ComponentType c1;
+            private readonly ComponentType c2;
+            private readonly ComponentType c3;
+            private readonly ComponentType c4;
+            private readonly ComponentType c5;
+            private readonly ComponentType c6;
+            private readonly ComponentType c7;
+            private readonly ComponentType c8;
+            private readonly ComponentType c9;
+            private readonly ComponentType c10;
+            private readonly ComponentType c11;
+            private readonly ComponentType c12;
+            private readonly ComponentType c13;
+            private readonly ComponentType c14;
+            private readonly ComponentType c15;
             private uint entityIndex;
             private uint chunkIndex;
-            private Chunk.Implementation* chunk;
+            private USpan<uint> entities;
+            private USpan<C1> span1;
+            private USpan<C2> span2;
+            private USpan<C3> span3;
+            private USpan<C4> span4;
+            private USpan<C5> span5;
+            private USpan<C6> span6;
+            private USpan<C7> span7;
+            private USpan<C8> span8;
+            private USpan<C9> span9;
+            private USpan<C10> span10;
+            private USpan<C11> span11;
+            private USpan<C12> span12;
+            private USpan<C13> span13;
+            private USpan<C14> span14;
+            private USpan<C15> span15;
 
             /// <summary>
             /// Current result.
             /// </summary>
-            public readonly Chunk.Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15> Current => Chunk.Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15>(chunk, entityIndex - 1, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15);
+            public readonly Chunk.Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15> Current => new(entities[entityIndex - 1], ref span1[entityIndex - 1], ref span2[entityIndex - 1], ref span3[entityIndex - 1], ref span4[entityIndex - 1], ref span5[entityIndex - 1], ref span6[entityIndex - 1], ref span7[entityIndex - 1], ref span8[entityIndex - 1], ref span9[entityIndex - 1], ref span10[entityIndex - 1], ref span11[entityIndex - 1], ref span12[entityIndex - 1], ref span13[entityIndex - 1], ref span14[entityIndex - 1], ref span15[entityIndex - 1]);
 
             internal Enumerator(Definition include, Definition exclude, Dictionary<Definition, Chunk> allChunks, Schema schema)
             {
                 chunkCount = 0;
-                USpan<nint> chunksBuffer = stackalloc nint[(int)allChunks.Count];
+                USpan<Chunk> chunksBuffer = stackalloc Chunk[(int)allChunks.Count];
                 foreach (Definition key in allChunks.Keys)
                 {
                     //check if chunk contains inclusion
@@ -469,13 +483,12 @@ namespace Worlds
                     Chunk chunk = allChunks[key];
                     if (chunk.Count > 0)
                     {
-                        chunksBuffer[chunkCount++] = chunk.Address;
+                        chunksBuffer[chunkCount++] = chunk;
                     }
                 }
 
                 entityIndex = 0;
                 chunkIndex = 0;
-                entityCount = 0;
                 if (chunkCount > 0)
                 {
                     c1 = schema.GetComponent<C1>();
@@ -495,8 +508,7 @@ namespace Worlds
                     c15 = schema.GetComponent<C15>();
                     chunks = new(NativeMemory.Alloc(chunkCount * stride));
                     chunks.CopyFrom(chunksBuffer.Pointer, stride * chunkCount);
-                    chunk = (Chunk.Implementation*)chunksBuffer[0];
-                    entityCount = Chunk.Implementation.GetCount(chunk);
+                    UpdateChunkFields(ref chunksBuffer[0]);
                 }
             }
 
@@ -505,7 +517,7 @@ namespace Worlds
             /// </summary>
             public bool MoveNext()
             {
-                if (entityIndex < entityCount)
+                if (entityIndex < entities.Length)
                 {
                     entityIndex++;
                     return true;
@@ -515,8 +527,7 @@ namespace Worlds
                     chunkIndex++;
                     if (chunkIndex < chunkCount)
                     {
-                        chunk = (Chunk.Implementation*)chunks.Read<nint>(chunkIndex * stride);
-                        entityCount = Chunk.Implementation.GetCount(chunk);
+                        UpdateChunkFields(ref chunks.Read<Chunk>(chunkIndex * stride));
                         entityIndex = 1;
                         return true;
                     }
@@ -525,6 +536,26 @@ namespace Worlds
                         return false;
                     }
                 }
+            }
+
+            private void UpdateChunkFields(ref Chunk chunk)
+            {
+                entities = chunk.Entities;
+                span1 = chunk.GetComponents<C1>(c1);
+                span2 = chunk.GetComponents<C2>(c2);
+                span3 = chunk.GetComponents<C3>(c3);
+                span4 = chunk.GetComponents<C4>(c4);
+                span5 = chunk.GetComponents<C5>(c5);
+                span6 = chunk.GetComponents<C6>(c6);
+                span7 = chunk.GetComponents<C7>(c7);
+                span8 = chunk.GetComponents<C8>(c8);
+                span9 = chunk.GetComponents<C9>(c9);
+                span10 = chunk.GetComponents<C10>(c10);
+                span11 = chunk.GetComponents<C11>(c11);
+                span12 = chunk.GetComponents<C12>(c12);
+                span13 = chunk.GetComponents<C13>(c13);
+                span14 = chunk.GetComponents<C14>(c14);
+                span15 = chunk.GetComponents<C15>(c15);
             }
 
             public readonly void Dispose()

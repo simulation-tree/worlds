@@ -1,5 +1,4 @@
 ﻿using Collections;
-using Collections.Implementations;
 using System;
 using System.Diagnostics;
 using Unmanaged;
@@ -38,22 +37,22 @@ namespace Worlds
         /// <summary>
         /// All entity slots in the world.
         /// </summary>
-        public readonly List<EntitySlot> Slots => Implementation.GetEntitySlots(value);
+        public readonly List<EntitySlot> Slots => value->slots;
 
         /// <summary>
         /// All previously used entities that are now free.
         /// </summary>
-        public readonly List<uint> Free => Implementation.GetFreeEntities(value);
+        public readonly List<uint> Free => value->freeEntities;
 
         /// <summary>
         /// All chunks in the world.
         /// </summary>
-        public readonly Dictionary<Definition, Chunk> Chunks => Implementation.GetChunks(value);
+        public readonly Dictionary<Definition, Chunk> Chunks => value->chunks;
 
         /// <summary>
         /// The schema containing all component and array types.
         /// </summary>
-        public readonly Schema Schema => Implementation.GetSchema(value);
+        public readonly Schema Schema => value->schema;
 
         /// <summary>
         /// All entities that exist in the world.
@@ -269,7 +268,7 @@ namespace Worlds
         {
             Schema schema = new();
             value = Implementation.Allocate(schema);
-            List<EntitySlot> slots = Implementation.GetEntitySlots(value);
+            List<EntitySlot> slots = value->slots;
             using Schema loadedSchema = reader.ReadObject<Schema>();
             schema.CopyFrom(loadedSchema);
 
@@ -2303,10 +2302,18 @@ namespace Worlds
             /// </summary>
             public static event TagRemovedCallback TagRemoved = delegate { };
 
-            private List* slots;
-            private List* freeEntities;
-            private Dictionary* chunks;
-            private Schema.Implementation* schema;
+            public readonly List<EntitySlot> slots;
+            public readonly List<uint> freeEntities;
+            public readonly Dictionary<Definition, Chunk> chunks;
+            public readonly Schema schema;
+
+            private Implementation(List<EntitySlot> slots, List<uint> freeEntities, Dictionary<Definition, Chunk> chunks, Schema schema)
+            {
+                this.slots = slots;
+                this.freeEntities = freeEntities;
+                this.chunks = chunks;
+                this.schema = schema;
+            }
 
             /// <summary>
             /// Throws an <see cref="NullReferenceException"/> if the given <paramref name="entity"/> is missing.
@@ -2322,13 +2329,12 @@ namespace Worlds
                 }
 
                 uint position = entity - 1;
-                uint count = List.GetCountRef(world->slots);
-                if (position >= count)
+                if (position >= world->slots.Count)
                 {
                     throw new NullReferenceException($"Entity `{entity}` not found");
                 }
 
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, position);
+                ref EntitySlot slot = ref world->slots[position];
                 if (slot.state == EntitySlot.State.Destroyed)
                 {
                     throw new NullReferenceException($"Entity `{entity}` not found");
@@ -2342,7 +2348,7 @@ namespace Worlds
             [Conditional("DEBUG")]
             public static void ThrowIfReferenceIsMissing(Implementation* world, uint entity, rint reference)
             {
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 if (reference.value > slot.referenceCount + 1 || reference.value == 0)
                 {
                     throw new NullReferenceException($"Reference `{reference}` not found on entity `{entity}`");
@@ -2357,7 +2363,7 @@ namespace Worlds
             [Conditional("DEBUG")]
             public static void ThrowIfReferenceIsMissing(Implementation* world, uint entity, uint referencedEntity)
             {
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 if (slot.referenceCount > 0)
                 {
                     if (!slot.references.Contains(referencedEntity))
@@ -2380,10 +2386,10 @@ namespace Worlds
                 }
 
                 uint position = entity - 1;
-                uint count = List.GetCountRef(world->slots);
+                uint count = world->slots.Count;
                 if (position < count)
                 {
-                    ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, position);
+                    ref EntitySlot slot = ref world->slots[position];
                     if (slot.state != EntitySlot.State.Destroyed)
                     {
                         throw new InvalidOperationException($"Entity `{entity}` already present");
@@ -2398,11 +2404,11 @@ namespace Worlds
             [Conditional("DEBUG")]
             public static void ThrowIfComponentMissing(Implementation* world, uint entity, ComponentType componentType)
             {
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 BitSet componentTypes = slot.chunk.Definition.ComponentTypes;
                 if (componentTypes != componentType)
                 {
-                    throw new NullReferenceException($"Component `{componentType.ToString(GetSchema(world))}` not found on `{entity}`");
+                    throw new NullReferenceException($"Component `{componentType.ToString(world->schema)}` not found on `{entity}`");
                 }
             }
 
@@ -2413,31 +2419,31 @@ namespace Worlds
             [Conditional("DEBUG")]
             public static void ThrowIfComponentAlreadyPresent(Implementation* world, uint entity, ComponentType componentType)
             {
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 BitSet componentTypes = slot.chunk.Definition.ComponentTypes;
                 if (componentTypes == componentType)
                 {
-                    throw new InvalidOperationException($"Component `{componentType.ToString(GetSchema(world))}` already present on `{entity}`");
+                    throw new InvalidOperationException($"Component `{componentType.ToString(world->schema)}` already present on `{entity}`");
                 }
             }
 
             [Conditional("DEBUG")]
             public static void ThrowIfTagAlreadyPresent(Implementation* world, uint entity, TagType tagType)
             {
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 if (slot.chunk.Definition.TagTypes == tagType)
                 {
-                    throw new InvalidOperationException($"Tag `{tagType.ToString(GetSchema(world))}` already present on `{entity}`");
+                    throw new InvalidOperationException($"Tag `{tagType.ToString(world->schema)}` already present on `{entity}`");
                 }
             }
 
             [Conditional("DEBUG")]
             public static void ThrowIfTagIsMissing(Implementation* world, uint entity, TagType tagType)
             {
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 if (slot.chunk.Definition.TagTypes != tagType)
                 {
-                    throw new NullReferenceException($"Tag `{tagType.ToString(GetSchema(world))}` not found on `{entity}`");
+                    throw new NullReferenceException($"Tag `{tagType.ToString(world->schema)}` not found on `{entity}`");
                 }
             }
 
@@ -2449,10 +2455,10 @@ namespace Worlds
             [Conditional("DEBUG")]
             public static void ThrowIfArrayIsMissing(Implementation* world, uint entity, ArrayElementType arrayElementType)
             {
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 if (slot.chunk.Definition.ArrayElementTypes != arrayElementType)
                 {
-                    throw new NullReferenceException($"Array of type `{arrayElementType.ToString(GetSchema(world))}` not found on entity `{entity}`");
+                    throw new NullReferenceException($"Array of type `{arrayElementType.ToString(world->schema)}` not found on entity `{entity}`");
                 }
             }
 
@@ -2464,48 +2470,11 @@ namespace Worlds
             [Conditional("DEBUG")]
             public static void ThrowIfArrayIsAlreadyPresent(Implementation* world, uint entity, ArrayElementType arrayElementType)
             {
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 if (slot.chunk.Definition.ArrayElementTypes == arrayElementType)
                 {
-                    throw new InvalidOperationException($"Array of type `{arrayElementType.ToString(GetSchema(world))}` already present on `{entity}`");
+                    throw new InvalidOperationException($"Array of type `{arrayElementType.ToString(world->schema)}` already present on `{entity}`");
                 }
-            }
-
-            /// <summary>
-            /// Retrieves entity slots list.
-            /// </summary>
-            public static List<EntitySlot> GetEntitySlots(Implementation* world)
-            {
-                Allocations.ThrowIfNull(world);
-
-                return new(world->slots);
-            }
-
-            /// <summary>
-            /// Retrieves free entities list.
-            /// </summary>
-            public static List<uint> GetFreeEntities(Implementation* world)
-            {
-                Allocations.ThrowIfNull(world);
-
-                return new(world->freeEntities);
-            }
-
-            /// <summary>
-            /// Retrieves chunks dictionary.
-            /// </summary>
-            public static Dictionary<Definition, Chunk> GetChunks(Implementation* world)
-            {
-                Allocations.ThrowIfNull(world);
-
-                return new(world->chunks);
-            }
-
-            public static Schema GetSchema(Implementation* world)
-            {
-                Allocations.ThrowIfNull(world);
-
-                return new(world->schema);
             }
 
             /// <summary>
@@ -2513,18 +2482,15 @@ namespace Worlds
             /// </summary>
             public static Implementation* Allocate(Schema schema)
             {
-                List* slots = List.Allocate<EntitySlot>(4);
-                List* freeEntities = List.Allocate<uint>(4);
-                Dictionary* chunks = Dictionary.Allocate<Definition, Chunk>(4);
+                List<EntitySlot> slots = new(4);
+                List<uint> freeEntities = new(4);
+                Dictionary<Definition, Chunk> chunks = new(4);
 
                 Chunk defaultChunk = new(schema);
-                Dictionary.TryAdd(chunks, default(Definition), defaultChunk);
+                chunks.Add(default, defaultChunk);
 
                 Implementation* world = Allocations.Allocate<Implementation>();
-                world->slots = slots;
-                world->freeEntities = freeEntities;
-                world->chunks = chunks;
-                world->schema = (Schema.Implementation*)schema.Pointer;
+                *world = new(slots, freeEntities, chunks, schema);
                 return world;
             }
 
@@ -2536,10 +2502,10 @@ namespace Worlds
                 Allocations.ThrowIfNull(world);
 
                 ClearEntities(world);
-                Schema.Implementation.Free(ref world->schema);
-                List.Free(ref world->slots);
-                List.Free(ref world->freeEntities);
-                Dictionary.Free(ref world->chunks);
+                world->schema.Dispose();
+                world->slots.Dispose();
+                world->freeEntities.Dispose();
+                world->chunks.Dispose();
                 Allocations.Free(ref world);
             }
 
@@ -2551,7 +2517,7 @@ namespace Worlds
                 Allocations.ThrowIfNull(world);
 
                 //clear slots
-                List<EntitySlot> slots = GetEntitySlots(world);
+                List<EntitySlot> slots = world->slots;
                 uint slotCount = slots.Count;
                 for (uint s = 0; s < slotCount; s++)
                 {
@@ -2593,7 +2559,7 @@ namespace Worlds
                 }
 
                 //clear chunks
-                Dictionary<Definition, Chunk> chunks = GetChunks(world);
+                Dictionary<Definition, Chunk> chunks = world->chunks;
                 foreach (Definition key in chunks.Keys)
                 {
                     Chunk chunk = chunks[key];
@@ -2604,7 +2570,7 @@ namespace Worlds
                 slots.Clear();
 
                 //clear free entities
-                List.Clear(world->freeEntities);
+                world->freeEntities.Clear();
             }
 
             /// <summary>
@@ -2615,7 +2581,7 @@ namespace Worlds
                 Allocations.ThrowIfNull(world);
                 ThrowIfEntityIsMissing(world, entity);
 
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 if (slot.childCount > 0)
                 {
                     //destroy or orphan the children
@@ -2632,7 +2598,7 @@ namespace Worlds
                         for (uint i = 0; i < slot.childCount; i++)
                         {
                             uint child = slot.children[i];
-                            ref EntitySlot childSlot = ref List.GetRef<EntitySlot>(world->slots, child - 1);
+                            ref EntitySlot childSlot = ref world->slots[child - 1];
                             childSlot.parent = default;
                         }
                     }
@@ -2676,7 +2642,7 @@ namespace Worlds
                 slot.parent = default;
                 slot.chunk = default;
                 slot.state = EntitySlot.State.Destroyed;
-                List.Add(world->freeEntities, entity);
+                world->freeEntities.Add(entity);
                 NotifyDestruction(new(world), entity);
             }
 
@@ -2688,7 +2654,7 @@ namespace Worlds
                 Allocations.ThrowIfNull(world);
                 ThrowIfEntityIsMissing(world, entity);
 
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 return slot.parent;
             }
 
@@ -2705,7 +2671,7 @@ namespace Worlds
                     throw new InvalidOperationException("Entity cannot be its own parent");
                 }
 
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 if (slot.parent == parent)
                 {
                     return false;
@@ -2714,7 +2680,7 @@ namespace Worlds
                 //remove from previous parent children
                 if (slot.parent != default)
                 {
-                    ref EntitySlot previousParentSlot = ref List.GetRef<EntitySlot>(world->slots, slot.parent - 1);
+                    ref EntitySlot previousParentSlot = ref world->slots[slot.parent - 1];
                     if (previousParentSlot.childCount > 0)
                     {
                         if (previousParentSlot.children.TryRemoveBySwapping(entity))
@@ -2748,7 +2714,7 @@ namespace Worlds
                     if (slot.parent != parent)
                     {
                         slot.parent = parent;
-                        ref EntitySlot newParentSlot = ref List.GetRef<EntitySlot>(world->slots, parent - 1);
+                        ref EntitySlot newParentSlot = ref world->slots[parent - 1];
                         if (newParentSlot.childCount == 0)
                         {
                             newParentSlot.children = new(1);
@@ -2775,13 +2741,13 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(world);
 
-                if (List.GetCountRef(world->freeEntities) > 0)
+                if (world->freeEntities.Count > 0)
                 {
-                    return List.GetRef<uint>(world->freeEntities, 0);
+                    return world->freeEntities[0];
                 }
                 else
                 {
-                    return List.GetCountRef(world->slots) + 1;
+                    return world->slots.Count + 1;
                 }
             }
 
@@ -2794,15 +2760,17 @@ namespace Worlds
                 Allocations.ThrowIfNull(world);
                 ThrowIfEntityIsAlreadyPresent(world, newEntity);
 
-                List<EntitySlot> slots = GetEntitySlots(world);
-                List<uint> freeEntities = GetFreeEntities(world);
-                Schema schema = GetSchema(world);
+                List<EntitySlot> slots = world->slots;
+                List<uint> freeEntities = world->freeEntities;
+                Schema schema = world->schema;
 
                 //make sure islands of free entities dont exist
-                while (newEntity > slots.Count + 1)
+                uint slotCount = slots.Count;
+                while (newEntity > slotCount + 1)
                 {
-                    EntitySlot freeSlot = new(slots.Count + 1);
+                    EntitySlot freeSlot = new(slotCount + 1);
                     slots.Add(freeSlot);
+                    slotCount++;
                     freeEntities.Add(freeSlot.entity);
                 }
 
@@ -2820,7 +2788,7 @@ namespace Worlds
                 slot.state = EntitySlot.State.Enabled;
 
                 //put entity into correct chunk
-                Dictionary<Definition, Chunk> chunks = GetChunks(world);
+                Dictionary<Definition, Chunk> chunks = world->chunks;
                 if (!chunks.TryGetValue(definition, out Chunk destinationChunk))
                 {
                     destinationChunk = new(definition, schema);
@@ -2885,12 +2853,12 @@ namespace Worlds
                 Allocations.ThrowIfNull(world);
 
                 uint position = entity - 1;
-                if (position >= List.GetCountRef(world->slots))
+                if (position >= world->slots.Count)
                 {
                     return false;
                 }
 
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, position);
+                ref EntitySlot slot = ref world->slots[position];
                 return slot.entity == entity;
             }
 
@@ -2903,7 +2871,7 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfArrayIsAlreadyPresent(world, entity, arrayElementType);
 
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 Chunk oldChunk = slot.chunk;
                 Definition oldDefinition = oldChunk.Definition;
                 if (oldDefinition.ArrayElementTypes == default(BitSet))
@@ -2915,10 +2883,10 @@ namespace Worlds
                 Definition newDefinition = oldDefinition;
                 newDefinition.AddArrayElementType(arrayElementType);
 
-                Dictionary<Definition, Chunk> chunks = GetChunks(world);
+                Dictionary<Definition, Chunk> chunks = world->chunks;
                 if (!chunks.TryGetValue(newDefinition, out Chunk destinationChunk))
                 {
-                    destinationChunk = new(newDefinition, GetSchema(world));
+                    destinationChunk = new(newDefinition, world->schema);
                     chunks.Add(newDefinition, destinationChunk);
                 }
 
@@ -2939,7 +2907,7 @@ namespace Worlds
                 Allocations.ThrowIfNull(world);
                 ThrowIfEntityIsMissing(world, entity);
 
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 return slot.chunk.Definition.ArrayElementTypes == arrayElementType;
             }
 
@@ -2952,7 +2920,7 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfArrayIsMissing(world, entity, arrayElementType);
 
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 length = slot.arrayLengths[arrayElementType];
                 return slot.arrays[arrayElementType];
             }
@@ -2966,7 +2934,7 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfArrayIsMissing(world, entity, arrayElementType);
 
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 return slot.arrayLengths[arrayElementType];
             }
 
@@ -2979,7 +2947,7 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfArrayIsMissing(world, entity, arrayElementType);
 
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 ref Allocation array = ref slot.arrays[arrayElementType];
                 Allocation.Resize(ref array, arrayElementSize * newLength);
                 slot.arrayLengths[arrayElementType] = newLength;
@@ -2995,7 +2963,7 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfArrayIsMissing(world, entity, arrayElementType);
 
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 slot.arrays[arrayElementType].Dispose();
                 slot.arrayLengths[arrayElementType] = 0;
 
@@ -3010,10 +2978,10 @@ namespace Worlds
                     slot.arrayLengths.Dispose();
                 }
 
-                Dictionary<Definition, Chunk> chunks = GetChunks(world);
+                Dictionary<Definition, Chunk> chunks = world->chunks;
                 if (!chunks.TryGetValue(newDefinition, out Chunk destinationChunk))
                 {
-                    destinationChunk = new(newDefinition, GetSchema(world));
+                    destinationChunk = new(newDefinition, world->schema);
                     chunks.Add(newDefinition, destinationChunk);
                 }
 
@@ -3030,16 +2998,15 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfComponentAlreadyPresent(world, entity, componentType);
 
-                Dictionary<Definition, Chunk> chunks = GetChunks(world);
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                Dictionary<Definition, Chunk> chunks = world->chunks;
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 Chunk previousChunk = slot.chunk;
                 Definition newDefinition = previousChunk.Definition;
                 newDefinition.AddComponentType(componentType);
 
                 if (!chunks.TryGetValue(newDefinition, out Chunk destinationChunk))
                 {
-                    Schema schema = GetSchema(world);
-                    destinationChunk = new(newDefinition, schema);
+                    destinationChunk = new(newDefinition, world->schema);
                     chunks.Add(newDefinition, destinationChunk);
                 }
 
@@ -3053,7 +3020,7 @@ namespace Worlds
             /// </summary>
             public static void RemoveComponent<T>(Implementation* world, uint entity) where T : unmanaged
             {
-                ComponentType componentType = GetSchema(world).GetComponent<T>();
+                ComponentType componentType = world->schema.GetComponent<T>();
                 RemoveComponent(world, entity, componentType);
             }
 
@@ -3066,9 +3033,9 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfComponentMissing(world, entity, componentType);
 
-                Schema schema = GetSchema(world);
-                Dictionary<Definition, Chunk> chunks = GetChunks(world);
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                Schema schema = world->schema;
+                Dictionary<Definition, Chunk> chunks = world->chunks;
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 Chunk previousChunk = slot.chunk;
                 Definition newComponentTypes = previousChunk.Definition;
                 newComponentTypes.RemoveComponentType(componentType);
@@ -3090,15 +3057,15 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfTagAlreadyPresent(world, entity, tagType);
 
-                Dictionary<Definition, Chunk> chunks = GetChunks(world);
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                Dictionary<Definition, Chunk> chunks = world->chunks;
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 Chunk previousChunk = slot.chunk;
                 Definition newDefinition = previousChunk.Definition;
                 newDefinition.AddTagType(tagType);
 
                 if (!chunks.TryGetValue(newDefinition, out Chunk destinationChunk))
                 {
-                    Schema schema = GetSchema(world);
+                    Schema schema = world->schema;
                     destinationChunk = new(newDefinition, schema);
                     chunks.Add(newDefinition, destinationChunk);
                 }
@@ -3114,9 +3081,9 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfTagIsMissing(world, entity, tagType);
 
-                Schema schema = GetSchema(world);
-                Dictionary<Definition, Chunk> chunks = GetChunks(world);
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                Schema schema = world->schema;
+                Dictionary<Definition, Chunk> chunks = world->chunks;
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 Chunk previousChunk = slot.chunk;
                 Definition newComponentTypes = previousChunk.Definition;
                 newComponentTypes.RemoveTagType(tagType);
@@ -3140,8 +3107,8 @@ namespace Worlds
                 Allocations.ThrowIfNull(world);
                 ThrowIfEntityIsMissing(world, entity);
 
-                uint index = entity - 1;
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, index);
+                uint position = entity - 1;
+                ref EntitySlot slot = ref world->slots[position];
                 return slot.chunk.Definition.ComponentTypes == componentType;
             }
 
@@ -3151,7 +3118,7 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfComponentMissing(world, entity, componentType);
 
-                ref EntitySlot slot = ref List.GetRef<EntitySlot>(world->slots, entity - 1);
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 Chunk chunk = slot.chunk;
                 uint index = chunk.Entities.IndexOf(entity);
                 return chunk.GetComponent(index, componentType, componentSize);

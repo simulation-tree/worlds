@@ -26,23 +26,23 @@ namespace Worlds
         /// <summary>
         /// Returns the entities in this chunk.
         /// </summary>
-        public readonly USpan<uint> Entities => Implementation.GetEntities(value).AsSpan();
+        public readonly USpan<uint> Entities => value->entities.AsSpan();
 
         /// <summary>
         /// Amount of entities stored in this chunk.
         /// </summary>
-        public readonly uint Count => Implementation.GetCount(value);
+        public readonly uint Count => value->entities.Count;
 
         /// <summary>
         /// Returns the <see cref="Definition"/> representing the types of components, arrays and tags
         /// this chunk is for.
         /// </summary>
-        public readonly Definition Definition => Implementation.GetDefinition(value);
+        public readonly Definition Definition => value->definition;
 
         /// <summary>
         /// The schema that this chunk was created with.
         /// </summary>
-        public readonly Schema Schema => Implementation.GetSchema(value);
+        public readonly Schema Schema => value->schema;
 
         public readonly uint this[uint index] => Entities[index];
 
@@ -151,9 +151,19 @@ namespace Worlds
             return Implementation.GetEntity<C1>(value, index);
         }
 
+        public readonly Entity<C1> GetEntity<C1>(uint index, ComponentType c1) where C1 : unmanaged
+        {
+            return Implementation.GetEntity<C1>(value, index, c1);
+        }
+
         public readonly Entity<C1, C2> GetEntity<C1, C2>(uint index) where C1 : unmanaged where C2 : unmanaged
         {
             return Implementation.GetEntity<C1, C2>(value, index);
+        }
+
+        public readonly Entity<C1, C2> GetEntity<C1, C2>(uint index, ComponentType c1, ComponentType c2) where C1 : unmanaged where C2 : unmanaged
+        {
+            return Implementation.GetEntity<C1, C2>(value, index, c1, c2);
         }
 
         public readonly Entity<C1, C2, C3> GetEntity<C1, C2, C3>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged
@@ -161,9 +171,19 @@ namespace Worlds
             return Implementation.GetEntity<C1, C2, C3>(value, index);
         }
 
+        public readonly Entity<C1, C2, C3> GetEntity<C1, C2, C3>(uint index, ComponentType c1, ComponentType c2, ComponentType c3) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged
+        {
+            return Implementation.GetEntity<C1, C2, C3>(value, index, c1, c2, c3);
+        }
+
         public readonly Entity<C1, C2, C3, C4> GetEntity<C1, C2, C3, C4>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged
         {
             return Implementation.GetEntity<C1, C2, C3, C4>(value, index);
+        }
+
+        public readonly Entity<C1, C2, C3, C4> GetEntity<C1, C2, C3, C4>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged
+        {
+            return Implementation.GetEntity<C1, C2, C3, C4>(value, index, c1, c2, c3, c4);
         }
 
         public readonly Entity<C1, C2, C3, C4, C5> GetEntity<C1, C2, C3, C4, C5>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged
@@ -171,9 +191,19 @@ namespace Worlds
             return Implementation.GetEntity<C1, C2, C3, C4, C5>(value, index);
         }
 
+        public readonly Entity<C1, C2, C3, C4, C5> GetEntity<C1, C2, C3, C4, C5>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged
+        {
+            return Implementation.GetEntity<C1, C2, C3, C4, C5>(value, index, c1, c2, c3, c4, c5);
+        }
+
         public readonly Entity<C1, C2, C3, C4, C5, C6> GetEntity<C1, C2, C3, C4, C5, C6>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged
         {
             return Implementation.GetEntity<C1, C2, C3, C4, C5, C6>(value, index);
+        }
+
+        public readonly Entity<C1, C2, C3, C4, C5, C6> GetEntity<C1, C2, C3, C4, C5, C6>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged
+        {
+            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6>(value, index, c1, c2, c3, c4, c5, c6);
         }
 
         public readonly Entity<C1, C2, C3, C4, C5, C6, C7> GetEntity<C1, C2, C3, C4, C5, C6, C7>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged
@@ -181,9 +211,19 @@ namespace Worlds
             return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7>(value, index);
         }
 
+        public readonly Entity<C1, C2, C3, C4, C5, C6, C7> GetEntity<C1, C2, C3, C4, C5, C6, C7>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6, ComponentType c7) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged
+        {
+            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7>(value, index, c1, c2, c3, c4, c5, c6, c7);
+        }
+
         public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged
         {
             return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8>(value, index);
+        }
+
+        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6, ComponentType c7, ComponentType c8) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged
+        {
+            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8>(value, index, c1, c2, c3, c4, c5, c6, c7, c8);
         }
 
         public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged
@@ -191,9 +231,19 @@ namespace Worlds
             return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9>(value, index);
         }
 
+        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6, ComponentType c7, ComponentType c8, ComponentType c9) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged
+        {
+            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9>(value, index, c1, c2, c3, c4, c5, c6, c7, c8, c9);
+        }
+
         public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged
         {
             return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10>(value, index);
+        }
+
+        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6, ComponentType c7, ComponentType c8, ComponentType c9, ComponentType c10) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged
+        {
+            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10>(value, index, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10);
         }
 
         public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged
@@ -201,9 +251,19 @@ namespace Worlds
             return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11>(value, index);
         }
 
+        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6, ComponentType c7, ComponentType c8, ComponentType c9, ComponentType c10, ComponentType c11) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged
+        {
+            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11>(value, index, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11);
+        }
+
         public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged
         {
             return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12>(value, index);
+        }
+
+        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6, ComponentType c7, ComponentType c8, ComponentType c9, ComponentType c10, ComponentType c11, ComponentType c12) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged
+        {
+            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12>(value, index, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12);
         }
 
         public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged
@@ -211,9 +271,19 @@ namespace Worlds
             return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13>(value, index);
         }
 
+        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6, ComponentType c7, ComponentType c8, ComponentType c9, ComponentType c10, ComponentType c11, ComponentType c12, ComponentType c13) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged
+        {
+            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13>(value, index, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13);
+        }
+
         public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged
         {
             return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14>(value, index);
+        }
+
+        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6, ComponentType c7, ComponentType c8, ComponentType c9, ComponentType c10, ComponentType c11, ComponentType c12, ComponentType c13, ComponentType c14) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged
+        {
+            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14>(value, index, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14);
         }
 
         public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged where C15 : unmanaged
@@ -221,9 +291,19 @@ namespace Worlds
             return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15>(value, index);
         }
 
+        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6, ComponentType c7, ComponentType c8, ComponentType c9, ComponentType c10, ComponentType c11, ComponentType c12, ComponentType c13, ComponentType c14, ComponentType c15) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged where C15 : unmanaged
+        {
+            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15>(value, index, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15);
+        }
+
         public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged where C15 : unmanaged where C16 : unmanaged
         {
             return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16>(value, index);
+        }
+
+        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6, ComponentType c7, ComponentType c8, ComponentType c9, ComponentType c10, ComponentType c11, ComponentType c12, ComponentType c13, ComponentType c14, ComponentType c15, ComponentType c16) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged where C15 : unmanaged where C16 : unmanaged
+        {
+            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16>(value, index, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16);
         }
 
         /// <summary>
@@ -244,9 +324,10 @@ namespace Worlds
             return list.AsSpan();
         }
 
-        public readonly List<T> GetComponents<T>(ComponentType componentType) where T : unmanaged
+        public readonly USpan<T> GetComponents<T>(ComponentType componentType) where T : unmanaged
         {
-            return new(GetComponents(componentType));
+            List<T> list = new(GetComponents(componentType));
+            return list.AsSpan();
         }
 
         /// <summary>
@@ -742,11 +823,11 @@ namespace Worlds
 
         public unsafe struct Implementation
         {
-            private List<uint> entities;
-            private Array<nint> componentArrays;
-            private readonly Array<byte> typeIndices;
-            private readonly Definition definition;
-            private readonly Schema.Implementation* schema;
+            public List<uint> entities;
+            public Array<nint> componentArrays;
+            public readonly Array<byte> typeIndices;
+            public readonly Definition definition;
+            public readonly Schema schema;
 
             private Implementation(Definition definition, Array<nint> componentArrays, Array<byte> typeIndices, Schema schema)
             {
@@ -754,7 +835,7 @@ namespace Worlds
                 this.typeIndices = typeIndices;
                 this.componentArrays = componentArrays;
                 this.definition = definition;
-                this.schema = (Schema.Implementation*)schema.Pointer;
+                this.schema = schema;
             }
 
             /// <summary>
@@ -800,38 +881,6 @@ namespace Worlds
                 chunk->componentArrays.Dispose();
                 chunk->typeIndices.Dispose();
                 Allocations.Free(ref chunk);
-            }
-
-            public static Schema GetSchema(Implementation* chunk)
-            {
-                Allocations.ThrowIfNull(chunk);
-
-                return new(chunk->schema);
-            }
-
-            public static uint GetCount(Implementation* chunk)
-            {
-                Allocations.ThrowIfNull(chunk);
-
-                return chunk->entities.Count;
-            }
-
-            public static List<uint> GetEntities(Implementation* chunk)
-            {
-                Allocations.ThrowIfNull(chunk);
-
-                return chunk->entities;
-            }
-
-            /// <summary>
-            /// Retrieves the <see cref="Definition"/> representing the types of components, arrays and tags
-            /// this chunk is for.
-            /// </summary>
-            public static Definition GetDefinition(Implementation* chunk)
-            {
-                Allocations.ThrowIfNull(chunk);
-
-                return chunk->definition;
             }
 
             /// <summary>
@@ -927,7 +976,7 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(chunk);
 
-                ComponentType c1 = GetSchema(chunk).GetComponent<C1>();
+                ComponentType c1 = chunk->schema.GetComponent<C1>();
                 return GetEntity<C1>(chunk, index, c1);
             }
 
@@ -944,7 +993,7 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(chunk);
 
-                Schema schema = GetSchema(chunk);
+                Schema schema = chunk->schema;
                 ComponentType c1 = schema.GetComponent<C1>();
                 ComponentType c2 = schema.GetComponent<C2>();
                 return GetEntity<C1, C2>(chunk, index, c1, c2);
@@ -965,7 +1014,7 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(chunk);
 
-                Schema schema = GetSchema(chunk);
+                Schema schema = chunk->schema;
                 ComponentType c1 = schema.GetComponent<C1>();
                 ComponentType c2 = schema.GetComponent<C2>();
                 ComponentType c3 = schema.GetComponent<C3>();
@@ -989,7 +1038,7 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(chunk);
 
-                Schema schema = GetSchema(chunk);
+                Schema schema = chunk->schema;
                 ComponentType c1 = schema.GetComponent<C1>();
                 ComponentType c2 = schema.GetComponent<C2>();
                 ComponentType c3 = schema.GetComponent<C3>();
@@ -1016,7 +1065,7 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(chunk);
 
-                Schema schema = GetSchema(chunk);
+                Schema schema = chunk->schema;
                 ComponentType c1 = schema.GetComponent<C1>();
                 ComponentType c2 = schema.GetComponent<C2>();
                 ComponentType c3 = schema.GetComponent<C3>();
@@ -1046,7 +1095,7 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(chunk);
 
-                Schema schema = GetSchema(chunk);
+                Schema schema = chunk->schema;
                 ComponentType c1 = schema.GetComponent<C1>();
                 ComponentType c2 = schema.GetComponent<C2>();
                 ComponentType c3 = schema.GetComponent<C3>();
@@ -1079,7 +1128,7 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(chunk);
 
-                Schema schema = GetSchema(chunk);
+                Schema schema = chunk->schema;
                 ComponentType c1 = schema.GetComponent<C1>();
                 ComponentType c2 = schema.GetComponent<C2>();
                 ComponentType c3 = schema.GetComponent<C3>();
@@ -1115,7 +1164,7 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(chunk);
 
-                Schema schema = GetSchema(chunk);
+                Schema schema = chunk->schema;
                 ComponentType c1 = schema.GetComponent<C1>();
                 ComponentType c2 = schema.GetComponent<C2>();
                 ComponentType c3 = schema.GetComponent<C3>();
@@ -1154,7 +1203,7 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(chunk);
 
-                Schema schema = GetSchema(chunk);
+                Schema schema = chunk->schema;
                 ComponentType c1 = schema.GetComponent<C1>();
                 ComponentType c2 = schema.GetComponent<C2>();
                 ComponentType c3 = schema.GetComponent<C3>();
@@ -1196,7 +1245,7 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(chunk);
 
-                Schema schema = GetSchema(chunk);
+                Schema schema = chunk->schema;
                 ComponentType c1 = schema.GetComponent<C1>();
                 ComponentType c2 = schema.GetComponent<C2>();
                 ComponentType c3 = schema.GetComponent<C3>();
@@ -1241,7 +1290,7 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(chunk);
 
-                Schema schema = GetSchema(chunk);
+                Schema schema = chunk->schema;
                 ComponentType c1 = schema.GetComponent<C1>();
                 ComponentType c2 = schema.GetComponent<C2>();
                 ComponentType c3 = schema.GetComponent<C3>();
@@ -1289,7 +1338,7 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(chunk);
 
-                Schema schema = GetSchema(chunk);
+                Schema schema = chunk->schema;
                 ComponentType c1 = schema.GetComponent<C1>();
                 ComponentType c2 = schema.GetComponent<C2>();
                 ComponentType c3 = schema.GetComponent<C3>();
@@ -1340,7 +1389,7 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(chunk);
 
-                Schema schema = GetSchema(chunk);
+                Schema schema = chunk->schema;
                 ComponentType c1 = schema.GetComponent<C1>();
                 ComponentType c2 = schema.GetComponent<C2>();
                 ComponentType c3 = schema.GetComponent<C3>();
@@ -1394,7 +1443,7 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(chunk);
 
-                Schema schema = GetSchema(chunk);
+                Schema schema = chunk->schema;
                 ComponentType c1 = schema.GetComponent<C1>();
                 ComponentType c2 = schema.GetComponent<C2>();
                 ComponentType c3 = schema.GetComponent<C3>();
@@ -1451,7 +1500,7 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(chunk);
 
-                Schema schema = GetSchema(chunk);
+                Schema schema = chunk->schema;
                 ComponentType c1 = schema.GetComponent<C1>();
                 ComponentType c2 = schema.GetComponent<C2>();
                 ComponentType c3 = schema.GetComponent<C3>();
@@ -1511,7 +1560,7 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(chunk);
 
-                Schema schema = GetSchema(chunk);
+                Schema schema = chunk->schema;
                 ComponentType c1 = schema.GetComponent<C1>();
                 ComponentType c2 = schema.GetComponent<C2>();
                 ComponentType c3 = schema.GetComponent<C3>();
