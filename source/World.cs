@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using Unmanaged;
+using Worlds.Functions;
 
 namespace Worlds
 {
@@ -10,7 +11,7 @@ namespace Worlds
     /// </summary>
     public unsafe struct World : IDisposable, IEquatable<World>, ISerializable
     {
-        internal Implementation* value;
+        private Implementation* value;
 
         /// <summary>
         /// Native address of the world.
@@ -266,104 +267,7 @@ namespace Worlds
 
         void ISerializable.Read(BinaryReader reader)
         {
-            Schema schema = new();
-            value = Implementation.Allocate(schema);
-            List<EntitySlot> slots = value->slots;
-            using Schema loadedSchema = reader.ReadObject<Schema>();
-            schema.CopyFrom(loadedSchema);
-
-            //create entities and fill them with components and arrays
-            uint entityCount = reader.ReadValue<uint>();
-            uint currentEntityId = 1;
-            using List<uint> temporaryEntities = new(4);
-            for (uint e = 0; e < entityCount; e++)
-            {
-                uint entityId = reader.ReadValue<uint>();
-                uint parentId = reader.ReadValue<uint>();
-
-                //skip through the island of free entities
-                uint catchup = entityId - currentEntityId;
-                for (uint i = 0; i < catchup; i++)
-                {
-                    uint temporaryEntity = CreateEntity();
-                    temporaryEntities.Add(temporaryEntity);
-                }
-
-                uint entity = CreateEntity();
-                if (parentId != default)
-                {
-                    ref EntitySlot slot = ref slots[entity - 1];
-                    slot.parent = parentId;
-                    Implementation.NotifyParentChange(this, entity, parentId);
-                }
-
-                //read components
-                byte componentCount = reader.ReadValue<byte>();
-                for (byte c = 0; c < componentCount; c++)
-                {
-                    ComponentType componentType = reader.ReadValue<ComponentType>();
-                    ushort componentSize = schema.GetSize(componentType);
-                    Allocation component = Implementation.AddComponent(value, entity, componentType, componentSize);
-                    reader.ReadSpan<byte>(componentSize).CopyTo(component, componentSize);
-                    Implementation.NotifyComponentAdded(this, entity, componentType);
-                }
-
-                //read arrays
-                byte arrayCount = reader.ReadValue<byte>();
-                for (uint a = 0; a < arrayCount; a++)
-                {
-                    ArrayElementType arrayElementType = reader.ReadValue<ArrayElementType>();
-                    uint arrayLength = reader.ReadValue<uint>();
-                    ushort arrayElementSize = schema.GetSize(arrayElementType);
-                    uint byteCount = arrayLength * arrayElementSize;
-                    Allocation array = Implementation.CreateArray(value, entity, arrayElementType, arrayElementSize, arrayLength);
-                    if (arrayLength > 0)
-                    {
-                        reader.ReadSpan<byte>(byteCount).CopyTo(array, byteCount);
-                    }
-                }
-
-                //read tags
-                byte tagCount = reader.ReadValue<byte>();
-                for (byte t = 0; t < tagCount; t++)
-                {
-                    TagType tagType = reader.ReadValue<TagType>();
-                    Implementation.AddTag(value, entity, tagType);
-                }
-
-                //read references
-                ushort referenceCount = reader.ReadValue<ushort>();
-                for (uint j = 0; j < referenceCount; j++)
-                {
-                    uint referencedEntity = reader.ReadValue<uint>();
-                    AddReference(entity, referencedEntity);
-                }
-
-                currentEntityId = entityId + 1;
-            }
-
-            //assign children
-            foreach (uint entity in Entities)
-            {
-                uint parent = GetParent(entity);
-                if (parent != default)
-                {
-                    ref EntitySlot parentSlot = ref slots[parent - 1];
-                    if (parentSlot.childCount == 0)
-                    {
-                        parentSlot.children = new(4);
-                    }
-
-                    parentSlot.children.Add(entity);
-                    parentSlot.childCount++;
-                }
-            }
-
-            //destroy temporary entities
-            for (uint i = 0; i < temporaryEntities.Count; i++)
-            {
-                Implementation.DestroyEntity(value, temporaryEntities[i]);
-            }
+            value = Implementation.Deserialize(reader);
         }
 
         /// <summary>
@@ -2507,6 +2411,146 @@ namespace Worlds
                 world->freeEntities.Dispose();
                 world->chunks.Dispose();
                 Allocations.Free(ref world);
+            }
+
+            /// <summary>
+            /// Deserializes a new <see cref="World"/> from the data in the given <paramref name="reader"/>.
+            /// <para>
+            /// The <paramref name="process"/> function is optional, and allows for reintepreting the
+            /// present types into ones that are compatible with the current runtime.
+            /// </para>
+            /// </summary>
+            public static Implementation* Deserialize(BinaryReader reader, ProcessSchema process = default)
+            {
+                Schema schema = new();
+                using Schema loadedSchema = reader.ReadObject<Schema>();
+                if (process != default)
+                {
+                    foreach (TypeLayout typeLayout in loadedSchema.ComponentTypes)
+                    {
+                        process.Invoke(schema, typeLayout, DataType.Component);
+                    }
+
+                    foreach (TypeLayout typeLayout in loadedSchema.ArrayElementTypes)
+                    {
+                        process.Invoke(schema, typeLayout, DataType.ArrayElement);
+                    }
+
+                    foreach (TypeLayout typeLayout in loadedSchema.TagTypes)
+                    {
+                        process.Invoke(schema, typeLayout, DataType.Tag);
+                    }
+                }
+                else
+                {
+                    schema.CopyFrom(loadedSchema);
+                }
+
+                Implementation* value = Allocate(schema);
+
+                //create entities and fill them with components and arrays
+                uint entityCount = reader.ReadValue<uint>();
+                uint currentEntityId = 1;
+                using List<uint> temporaryEntities = new(4);
+                for (uint e = 0; e < entityCount; e++)
+                {
+                    uint entity = reader.ReadValue<uint>();
+                    uint parent = reader.ReadValue<uint>();
+
+                    //skip through the island of free entities
+                    uint catchup = entity - currentEntityId;
+                    for (uint i = 0; i < catchup; i++)
+                    {
+                        uint temporaryEntity = GetNextEntity(value);
+                        InitializeEntity(value, default, temporaryEntity);
+                        temporaryEntities.Add(temporaryEntity);
+                    }
+
+                    InitializeEntity(value, default, entity);
+                    ref EntitySlot slot = ref value->slots[entity - 1];
+                    if (parent != default)
+                    {
+                        slot.parent = parent;
+                        NotifyParentChange(new(value), entity, parent);
+                    }
+
+                    //read components
+                    byte componentCount = reader.ReadValue<byte>();
+                    for (byte c = 0; c < componentCount; c++)
+                    {
+                        ComponentType componentType = reader.ReadValue<ComponentType>();
+                        ushort componentSize = loadedSchema.GetSize(componentType);
+                        Allocation component = AddComponent(value, entity, componentType, componentSize);
+                        reader.ReadSpan<byte>(componentSize).CopyTo(component, componentSize);
+                        NotifyComponentAdded(new(value), entity, componentType);
+                    }
+
+                    //read arrays
+                    byte arrayCount = reader.ReadValue<byte>();
+                    for (uint a = 0; a < arrayCount; a++)
+                    {
+                        ArrayElementType arrayElementType = reader.ReadValue<ArrayElementType>();
+                        uint arrayLength = reader.ReadValue<uint>();
+                        ushort arrayElementSize = loadedSchema.GetSize(arrayElementType);
+                        uint byteCount = arrayLength * arrayElementSize;
+                        Allocation array = CreateArray(value, entity, arrayElementType, arrayElementSize, arrayLength);
+                        if (arrayLength > 0)
+                        {
+                            reader.ReadSpan<byte>(byteCount).CopyTo(array, byteCount);
+                        }
+                    }
+
+                    //read tags
+                    byte tagCount = reader.ReadValue<byte>();
+                    for (byte t = 0; t < tagCount; t++)
+                    {
+                        TagType tagType = reader.ReadValue<TagType>();
+                        AddTag(value, entity, tagType);
+                    }
+
+                    //read references
+                    ushort referenceCount = reader.ReadValue<ushort>();
+                    if (referenceCount > 0)
+                    {
+                        slot.references = new(referenceCount);
+                        slot.references.AddDefault(referenceCount);
+                        slot.referenceCount = referenceCount;
+                        for (uint r = 0; r < referenceCount; r++)
+                        {
+                            uint referencedEntity = reader.ReadValue<uint>();
+                            slot.references[r] = referencedEntity;
+                        }
+                    }
+
+                    currentEntityId = entity + 1;
+                }
+
+                //assign children
+                for (uint i = 0; i < value->slots.Count; i++)
+                {
+                    uint childEntity = i + 1;
+                    ref EntitySlot childSlot = ref value->slots[i];
+                    uint parent = childSlot.parent;
+                    if (parent != default)
+                    {
+                        ref EntitySlot parentSlot = ref value->slots[parent - 1];
+                        if (parentSlot.childCount == 0)
+                        {
+                            parentSlot.children = new(4);
+                        }
+
+                        parentSlot.children.Add(childEntity);
+                        parentSlot.childCount++;
+                    }
+                }
+
+                //destroy temporary entities
+                for (uint i = 0; i < temporaryEntities.Count; i++)
+                {
+                    DestroyEntity(value, temporaryEntities[i]);
+                }
+
+                return value;
             }
 
             /// <summary>

@@ -43,6 +43,21 @@ namespace Worlds
             }
         }
 
+        public readonly System.Collections.Generic.IEnumerable<TypeLayout> TagTypes
+        {
+            get
+            {
+                for (byte t = 0; t < BitSet.Capacity; t++)
+                {
+                    TypeLayout typeLayout = GetLayout(new TagType(t));
+                    if (typeLayout != default)
+                    {
+                        yield return typeLayout;
+                    }
+                }
+            }
+        }
+
 #if NET
         public Schema()
         {
