@@ -75,11 +75,17 @@ namespace Worlds
             Implementation.Free(ref schema);
         }
 
+        /// <summary>
+        /// Copies the state of this schema into the <paramref name="destination"/>.
+        /// </summary>
         public readonly void CopyTo(Schema destination)
         {
             Implementation.CopyTo(schema, destination.schema);
         }
 
+        /// <summary>
+        /// Copies the state of the <paramref name="source"/> schema entirely.
+        /// </summary>
         public readonly void CopyFrom(Schema source)
         {
             Implementation.CopyTo(source.schema, schema);
@@ -733,6 +739,14 @@ namespace Worlds
             }
         }
 
+        /// <summary>
+        /// Resets the schema to its <c>default</c> state.
+        /// </summary>
+        public readonly void Clear()
+        {
+            Implementation.Clear(schema);
+        }
+
         public static bool operator ==(Schema left, Schema right)
         {
             return left.Equals(right);
@@ -788,6 +802,19 @@ namespace Worlds
                 schema->tagExistence.Dispose();
                 schema->typeLayouts.Dispose();
                 Allocations.Free(ref schema);
+            }
+
+            public static void Clear(Implementation* schema)
+            {
+                schema->components = 0;
+                schema->arrays = 0;
+                schema->tags = 0;
+                schema->componentIndices.Clear();
+                schema->arrayElementIndices.Clear();
+                schema->tagIndices.Clear();
+                schema->sizes.Clear(BitSet.Capacity * 2 * 2);
+                schema->tagExistence.Clear(BitSet.Capacity);
+                schema->typeLayouts.Clear((uint)sizeof(TypeLayout) * BitSet.Capacity * 3);
             }
 
             public static void CopyTo(Implementation* source, Implementation* destination)

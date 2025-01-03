@@ -144,7 +144,7 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Resets the world to default state.
+        /// Resets the world to <c>default</c> state.
         /// </summary>
         public readonly void Clear()
         {

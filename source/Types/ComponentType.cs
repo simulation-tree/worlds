@@ -63,7 +63,14 @@ namespace Worlds
         /// </summary>
         public readonly uint ToString(Schema schema, USpan<char> destination)
         {
-            return schema.GetLayout(this).ToString(destination);
+            if (schema.Contains(this))
+            {
+                return schema.GetLayout(this).ToString(destination);
+            }
+            else
+            {
+                return index.ToString(destination);
+            }
         }
 
         /// <inheritdoc/>

@@ -1624,7 +1624,7 @@ namespace Worlds
             {
                 if (chunk->definition.ComponentTypes != componentType)
                 {
-                    throw new ArgumentException($"Component type `{componentType}` is missing from the chunk");
+                    throw new ArgumentException($"Component type `{componentType.ToString(chunk->schema)}` is missing from the chunk");
                 }
             }
         }

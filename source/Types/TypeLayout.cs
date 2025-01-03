@@ -133,6 +133,7 @@ namespace Worlds
             systemTypes.Add(typeof(T));
             all.Add(layout);
             nameToType.Add(fullName.GetHashCode(), layout);
+            Cache<T>.value = layout;
         }
 
         public unsafe static void Register<T>(Variable var1) where T : unmanaged
@@ -145,6 +146,7 @@ namespace Worlds
             systemTypes.Add(typeof(T));
             all.Add(layout);
             nameToType.Add(fullName.GetHashCode(), layout);
+            Cache<T>.value = layout;
         }
 
         public unsafe static void Register<T>(Variable var1, Variable var2) where T : unmanaged
@@ -157,6 +159,7 @@ namespace Worlds
             systemTypes.Add(typeof(T));
             all.Add(layout);
             nameToType.Add(fullName.GetHashCode(), layout);
+            Cache<T>.value = layout;
         }
 
         public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3) where T : unmanaged
@@ -169,6 +172,7 @@ namespace Worlds
             systemTypes.Add(typeof(T));
             all.Add(layout);
             nameToType.Add(fullName.GetHashCode(), layout);
+            Cache<T>.value = layout;
         }
 
         public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4) where T : unmanaged
@@ -181,6 +185,7 @@ namespace Worlds
             systemTypes.Add(typeof(T));
             all.Add(layout);
             nameToType.Add(fullName.GetHashCode(), layout);
+            Cache<T>.value = layout;
         }
 
         public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5) where T : unmanaged
@@ -193,6 +198,7 @@ namespace Worlds
             systemTypes.Add(typeof(T));
             all.Add(layout);
             nameToType.Add(fullName.GetHashCode(), layout);
+            Cache<T>.value = layout;
         }
 
         public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6) where T : unmanaged
@@ -205,6 +211,7 @@ namespace Worlds
             systemTypes.Add(typeof(T));
             all.Add(layout);
             nameToType.Add(fullName.GetHashCode(), layout);
+            Cache<T>.value = layout;
         }
 
         public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7) where T : unmanaged
@@ -217,6 +224,7 @@ namespace Worlds
             systemTypes.Add(typeof(T));
             all.Add(layout);
             nameToType.Add(fullName.GetHashCode(), layout);
+            Cache<T>.value = layout;
         }
 
         public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8) where T : unmanaged
@@ -229,6 +237,7 @@ namespace Worlds
             systemTypes.Add(typeof(T));
             all.Add(layout);
             nameToType.Add(fullName.GetHashCode(), layout);
+            Cache<T>.value = layout;
         }
 
         public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9) where T : unmanaged
@@ -241,6 +250,7 @@ namespace Worlds
             systemTypes.Add(typeof(T));
             all.Add(layout);
             nameToType.Add(fullName.GetHashCode(), layout);
+            Cache<T>.value = layout;
         }
 
         public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9, Variable var10) where T : unmanaged
@@ -253,6 +263,7 @@ namespace Worlds
             systemTypes.Add(typeof(T));
             all.Add(layout);
             nameToType.Add(fullName.GetHashCode(), layout);
+            Cache<T>.value = layout;
         }
 
         public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9, Variable var10, Variable var11) where T : unmanaged
@@ -265,6 +276,7 @@ namespace Worlds
             systemTypes.Add(typeof(T));
             all.Add(layout);
             nameToType.Add(fullName.GetHashCode(), layout);
+            Cache<T>.value = layout;
         }
 
         public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9, Variable var10, Variable var11, Variable var12) where T : unmanaged
@@ -277,6 +289,7 @@ namespace Worlds
             systemTypes.Add(typeof(T));
             all.Add(layout);
             nameToType.Add(fullName.GetHashCode(), layout);
+            Cache<T>.value = layout;
         }
 
         public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9, Variable var10, Variable var11, Variable var12, Variable var13) where T : unmanaged
@@ -289,6 +302,7 @@ namespace Worlds
             systemTypes.Add(typeof(T));
             all.Add(layout);
             nameToType.Add(fullName.GetHashCode(), layout);
+            Cache<T>.value = layout;
         }
 
         public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9, Variable var10, Variable var11, Variable var12, Variable var13, Variable var14) where T : unmanaged
@@ -301,6 +315,7 @@ namespace Worlds
             systemTypes.Add(typeof(T));
             all.Add(layout);
             nameToType.Add(fullName.GetHashCode(), layout);
+            Cache<T>.value = layout;
         }
 
         public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9, Variable var10, Variable var11, Variable var12, Variable var13, Variable var14, Variable var15) where T : unmanaged
@@ -313,6 +328,7 @@ namespace Worlds
             systemTypes.Add(typeof(T));
             all.Add(layout);
             nameToType.Add(fullName.GetHashCode(), layout);
+            Cache<T>.value = layout;
         }
 
         public unsafe static void Register<T>(Variable var1, Variable var2, Variable var3, Variable var4, Variable var5, Variable var6, Variable var7, Variable var8, Variable var9, Variable var10, Variable var11, Variable var12, Variable var13, Variable var14, Variable var15, Variable var16) where T : unmanaged
@@ -325,6 +341,7 @@ namespace Worlds
             systemTypes.Add(typeof(T));
             all.Add(layout);
             nameToType.Add(fullName.GetHashCode(), layout);
+            Cache<T>.value = layout;
         }
 
         public static TypeLayout Get<T>() where T : unmanaged
@@ -407,23 +424,7 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            unchecked
-            {
-                int hashCode = 17;
-                for (byte i = 0; i < fullName.Length; i++)
-                {
-                    hashCode = hashCode * 31 + fullName[i];
-                }
-
-                hashCode = hashCode * 31 + size;
-                USpan<Variable> variables = Variables;
-                foreach (Variable variable in variables)
-                {
-                    hashCode = hashCode * 31 + variable.GetHashCode();
-                }
-
-                return hashCode;
-            }
+            return fullName.GetHashCode();
         }
 
         readonly void ISerializable.Write(BinaryWriter writer)
@@ -629,7 +630,7 @@ namespace Worlds
 
         internal static class Cache<T> where T : unmanaged
         {
-            public static readonly TypeLayout value = all[systemTypes.IndexOf(typeof(T))];
+            internal static TypeLayout value;
         }
     }
 }
