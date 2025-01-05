@@ -215,6 +215,11 @@ namespace Worlds
             return arrayElementTypes == schema.GetArrayElement<T>();
         }
 
+        public readonly bool ContainsTag<T>(Schema schema) where T : unmanaged
+        {
+            return tagTypes == schema.GetTag<T>();
+        }
+
         /// <summary>
         /// Adds the specified <paramref name="componentTypes"/> to this definition.
         /// </summary>

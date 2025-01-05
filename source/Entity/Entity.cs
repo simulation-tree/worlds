@@ -264,6 +264,11 @@ namespace Worlds
             world.RemoveComponent<T>(value);
         }
 
+        public readonly void AddTag<T>() where T : unmanaged
+        {
+            world.AddTag<T>(value);
+        }
+
         /// <summary>
         /// Interprets the entity as <typeparamref name="T"/>.
         /// </summary>
