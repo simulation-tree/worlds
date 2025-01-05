@@ -1,4 +1,5 @@
-﻿using Unmanaged;
+﻿using Collections;
+using Unmanaged;
 
 namespace Worlds.Tests
 {
@@ -133,6 +134,25 @@ namespace Worlds.Tests
             Assert.That(loadedSchema.ContainsTag<byte>(), Is.True);
             Assert.That(loadedSchema.ContainsComponent<bool>(), Is.True);
             Assert.That(loadedSchema.ContainsArrayElement<byte>(), Is.True);
+        }
+
+        [Test]
+        public void CheckNamesOfTypes()
+        {
+            Assert.That(TypeLayout.Get<bool>().Name.ToString(), Is.EqualTo("Boolean"));
+            Assert.That(TypeLayout.Get<bool>().FullName.ToString(), Is.EqualTo("System.Boolean"));
+            Assert.That(TypeLayout.Get<Apple>().Name.ToString(), Is.EqualTo("Apple"));
+            Assert.That(TypeLayout.Get<Apple>().FullName.ToString(), Is.EqualTo("Worlds.Tests.Apple"));
+        }
+
+        [Test]
+        public void GetFullNameOfType()
+        {
+            FixedString a = TypeLayout.GetFullName<Dictionary<Entity, Entity>>();
+            Assert.That(a.ToString(), Is.EqualTo("Collections.Dictionary<Worlds.Entity, Worlds.Entity>"));
+
+            FixedString b = TypeLayout.GetFullName<Dictionary<Entity, Dictionary<Entity, Entity>>>();
+            Assert.That(b.ToString(), Is.EqualTo("Collections.Dictionary<Worlds.Entity, Collections.Dictionary<Worlds.Entity, Worlds.Entity>>"));
         }
     }
 }

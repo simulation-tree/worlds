@@ -8,7 +8,7 @@ namespace Worlds
     [DebuggerTypeProxy(typeof(TypeLayoutDebugView))]
     public unsafe struct TypeLayout : IEquatable<TypeLayout>, ISerializable
     {
-        private static readonly Dictionary<int, TypeLayout> nameToType = new();
+        private static readonly Dictionary<long, TypeLayout> nameToType = new();
         private static readonly List<Type> systemTypes = new();
         private static readonly List<TypeLayout> all = new();
 
@@ -21,7 +21,7 @@ namespace Worlds
         private ushort size;
         private byte count;
 
-        private fixed byte data[(int)(Capacity * 260)];
+        private fixed byte data[(int)(Capacity * 264)];
 
         public readonly USpan<Variable> Variables
         {
@@ -120,7 +120,56 @@ namespace Worlds
 
         public static bool IsRegistered(FixedString fullTypeName)
         {
-            return nameToType.ContainsKey(fullTypeName.GetHashCode());
+            return nameToType.ContainsKey(fullTypeName.GetLongHashCode());
+        }
+
+        public static FixedString GetFullName<T>()
+        {
+            FixedString fullName = default;
+            AppendType(ref fullName, typeof(T));
+            return fullName;
+
+            static void AppendType(ref FixedString text, Type type)
+            {
+                Type? current = type;
+                string? currentNameSpace = current.Namespace;
+                while (current is not null)
+                {
+                    Type[] genericTypes = current.GenericTypeArguments;
+                    string name = current.Name;
+                    if (genericTypes.Length > 0)
+                    {
+                        text.Insert(0, '>');
+                        for (int i = genericTypes.Length - 1; i >= 0; i--)
+                        {
+                            AppendType(ref text, genericTypes[i]);
+                            if (i > 0)
+                            {
+                                text.Insert(0, ", ");
+                            }
+                        }
+
+                        text.Insert(0, '<');
+                        text.Insert(0, name[..name.IndexOf('`')]);
+                    }
+                    else
+                    {
+                        text.Insert(0, name);
+                    }
+
+                    current = current.DeclaringType;
+                    if (current is not null)
+                    {
+                        text.Insert(0, '.');
+                    }
+                }
+
+                if (currentNameSpace is not null)
+                {
+                    text.Insert(0, '.');
+                    text.Insert(0, currentNameSpace);
+                }
+            }
         }
 
         public unsafe static void Register<T>() where T : unmanaged
@@ -128,11 +177,11 @@ namespace Worlds
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
-            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
+            FixedString fullName = GetFullName<T>();
             TypeLayout layout = new(fullName, size, []);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(fullName.GetHashCode(), layout);
+            nameToType.Add(fullName.GetLongHashCode(), layout);
             Cache<T>.value = layout;
         }
 
@@ -141,11 +190,11 @@ namespace Worlds
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
-            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
+            FixedString fullName = GetFullName<T>();
             TypeLayout layout = new(fullName, size, [var1]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(fullName.GetHashCode(), layout);
+            nameToType.Add(fullName.GetLongHashCode(), layout);
             Cache<T>.value = layout;
         }
 
@@ -154,11 +203,11 @@ namespace Worlds
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
-            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
+            FixedString fullName = GetFullName<T>();
             TypeLayout layout = new(fullName, size, [var1, var2]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(fullName.GetHashCode(), layout);
+            nameToType.Add(fullName.GetLongHashCode(), layout);
             Cache<T>.value = layout;
         }
 
@@ -167,11 +216,11 @@ namespace Worlds
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
-            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
+            FixedString fullName = GetFullName<T>();
             TypeLayout layout = new(fullName, size, [var1, var2, var3]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(fullName.GetHashCode(), layout);
+            nameToType.Add(fullName.GetLongHashCode(), layout);
             Cache<T>.value = layout;
         }
 
@@ -180,11 +229,11 @@ namespace Worlds
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
-            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
+            FixedString fullName = GetFullName<T>();
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(fullName.GetHashCode(), layout);
+            nameToType.Add(fullName.GetLongHashCode(), layout);
             Cache<T>.value = layout;
         }
 
@@ -193,11 +242,11 @@ namespace Worlds
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
-            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
+            FixedString fullName = GetFullName<T>();
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(fullName.GetHashCode(), layout);
+            nameToType.Add(fullName.GetLongHashCode(), layout);
             Cache<T>.value = layout;
         }
 
@@ -206,11 +255,11 @@ namespace Worlds
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
-            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
+            FixedString fullName = GetFullName<T>();
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(fullName.GetHashCode(), layout);
+            nameToType.Add(fullName.GetLongHashCode(), layout);
             Cache<T>.value = layout;
         }
 
@@ -219,11 +268,11 @@ namespace Worlds
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
-            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
+            FixedString fullName = GetFullName<T>();
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6, var7]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(fullName.GetHashCode(), layout);
+            nameToType.Add(fullName.GetLongHashCode(), layout);
             Cache<T>.value = layout;
         }
 
@@ -232,11 +281,11 @@ namespace Worlds
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
-            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
+            FixedString fullName = GetFullName<T>();
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6, var7, var8]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(fullName.GetHashCode(), layout);
+            nameToType.Add(fullName.GetLongHashCode(), layout);
             Cache<T>.value = layout;
         }
 
@@ -245,11 +294,11 @@ namespace Worlds
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
-            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
+            FixedString fullName = GetFullName<T>();
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6, var7, var8, var9]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(fullName.GetHashCode(), layout);
+            nameToType.Add(fullName.GetLongHashCode(), layout);
             Cache<T>.value = layout;
         }
 
@@ -258,11 +307,11 @@ namespace Worlds
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
-            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
+            FixedString fullName = GetFullName<T>();
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6, var7, var8, var9, var10]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(fullName.GetHashCode(), layout);
+            nameToType.Add(fullName.GetLongHashCode(), layout);
             Cache<T>.value = layout;
         }
 
@@ -271,11 +320,11 @@ namespace Worlds
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
-            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
+            FixedString fullName = GetFullName<T>();
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(fullName.GetHashCode(), layout);
+            nameToType.Add(fullName.GetLongHashCode(), layout);
             Cache<T>.value = layout;
         }
 
@@ -284,11 +333,11 @@ namespace Worlds
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
-            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
+            FixedString fullName = GetFullName<T>();
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(fullName.GetHashCode(), layout);
+            nameToType.Add(fullName.GetLongHashCode(), layout);
             Cache<T>.value = layout;
         }
 
@@ -297,11 +346,11 @@ namespace Worlds
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
-            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
+            FixedString fullName = GetFullName<T>();
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12, var13]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(fullName.GetHashCode(), layout);
+            nameToType.Add(fullName.GetLongHashCode(), layout);
             Cache<T>.value = layout;
         }
 
@@ -310,11 +359,11 @@ namespace Worlds
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
-            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
+            FixedString fullName = GetFullName<T>();
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12, var13, var14]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(fullName.GetHashCode(), layout);
+            nameToType.Add(fullName.GetLongHashCode(), layout);
             Cache<T>.value = layout;
         }
 
@@ -323,11 +372,11 @@ namespace Worlds
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
-            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
+            FixedString fullName = GetFullName<T>();
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12, var13, var14, var15]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(fullName.GetHashCode(), layout);
+            nameToType.Add(fullName.GetLongHashCode(), layout);
             Cache<T>.value = layout;
         }
 
@@ -336,11 +385,11 @@ namespace Worlds
             ThrowIfAlreadyRegistered<T>();
 
             ushort size = (ushort)sizeof(T);
-            FixedString fullName = typeof(T).FullName ?? typeof(T).Name;
+            FixedString fullName = GetFullName<T>();
             TypeLayout layout = new(fullName, size, [var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12, var13, var14, var15, var16]);
             systemTypes.Add(typeof(T));
             all.Add(layout);
-            nameToType.Add(fullName.GetHashCode(), layout);
+            nameToType.Add(fullName.GetLongHashCode(), layout);
             Cache<T>.value = layout;
         }
 
@@ -355,7 +404,7 @@ namespace Worlds
         {
             ThrowIfTypeIsNotRegistered(fullName);
 
-            return Get(fullName.GetHashCode());
+            return Get(fullName.GetLongHashCode());
         }
 
         public static TypeLayout Get(USpan<char> fullName)
@@ -368,7 +417,7 @@ namespace Worlds
             return Get(new FixedString(fullName));
         }
 
-        public static TypeLayout Get(int fullNameHash)
+        public static TypeLayout Get(long fullNameHash)
         {
             return nameToType[fullNameHash];
         }
@@ -403,7 +452,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         public static void ThrowIfTypeIsNotRegistered(FixedString fullName)
         {
-            if (!nameToType.ContainsKey(fullName.GetHashCode()))
+            if (!nameToType.ContainsKey(fullName.GetLongHashCode()))
             {
                 throw new InvalidOperationException($"TypeLayout for {fullName} is not registered");
             }
@@ -488,7 +537,7 @@ namespace Worlds
         public struct Variable : IEquatable<Variable>, ISerializable
         {
             private FixedString name;
-            private int typeFullNameHash;
+            private long typeFullNameHash;
 
             public readonly FixedString Name => name;
             public readonly TypeLayout TypeLayout => Get(typeFullNameHash);
@@ -497,13 +546,13 @@ namespace Worlds
             public Variable(FixedString name, FixedString typeFullName)
             {
                 this.name = name;
-                typeFullNameHash = typeFullName.GetHashCode();
+                typeFullNameHash = typeFullName.GetLongHashCode();
             }
 
             public Variable(string name, string typeFullName)
             {
                 this.name = name;
-                typeFullNameHash = new FixedString(typeFullName).GetHashCode();
+                typeFullNameHash = new FixedString(typeFullName).GetLongHashCode();
             }
 
             public Variable(FixedString name, int typeFullNameHash)
@@ -550,7 +599,7 @@ namespace Worlds
                         hashCode = hashCode * 31 + name[i];
                     }
 
-                    hashCode = hashCode * 31 + typeFullNameHash;
+                    hashCode = hashCode * 31 + (int)typeFullNameHash;
                     return hashCode;
                 }
             }
@@ -576,7 +625,7 @@ namespace Worlds
                     name[i] = (char)reader.ReadValue<byte>();
                 }
 
-                typeFullNameHash = reader.ReadValue<int>();
+                typeFullNameHash = reader.ReadValue<long>();
             }
 
             public static bool operator ==(Variable left, Variable right)

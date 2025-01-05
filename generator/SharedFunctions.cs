@@ -34,7 +34,7 @@ namespace Worlds.TypeTableGenerator
                 walker.Visit(tree.GetRoot());
                 foreach (ITypeSymbol type in walker.types)
                 {
-                    CheckType(type);
+                    TryAddType(type);
                 }
             }
 
@@ -63,7 +63,7 @@ namespace Worlds.TypeTableGenerator
                         {
                             if (type.DeclaredAccessibility != Accessibility.Internal)
                             {
-                                CheckType(type);
+                                TryAddType(type);
 
                                 foreach (ISymbol member in type.GetMembers())
                                 {
@@ -75,7 +75,7 @@ namespace Worlds.TypeTableGenerator
                 }
             }
 
-            void CheckType(ITypeSymbol type)
+            void TryAddType(ITypeSymbol type)
             {
                 if (type.IsRefLikeType)
                 {
@@ -87,10 +87,12 @@ namespace Worlds.TypeTableGenerator
                     return;
                 }
 
-                bool isGeneric = type is INamedTypeSymbol namedType && namedType.IsGenericType;
-                if (isGeneric)
+                if (type is INamedTypeSymbol namedType)
                 {
-                    return;
+                    if (namedType.IsGenericType)
+                    {
+                        return;
+                    }
                 }
 
                 if (IsUnmanaged(type))
