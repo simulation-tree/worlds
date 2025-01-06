@@ -2253,7 +2253,11 @@ namespace Worlds
             public static void ThrowIfReferenceIsMissing(Implementation* world, uint entity, rint reference)
             {
                 ref EntitySlot slot = ref world->slots[entity - 1];
-                if (reference.value > slot.referenceCount + 1 || reference.value == 0)
+                if (reference.value > 0 && slot.referenceCount == 0)
+                {
+                    throw new NullReferenceException($"Reference `{reference}` not found on entity `{entity}`");
+                }
+                else if (reference.value > slot.referenceCount + 1 || reference.value == 0)
                 {
                     throw new NullReferenceException($"Reference `{reference}` not found on entity `{entity}`");
                 }
