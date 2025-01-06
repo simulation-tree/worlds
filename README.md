@@ -28,13 +28,13 @@ be registered with both `TypeLayout` and `Schema`:
 private static void Main()
 {
     TypeLayout.Register<MyComponent>();
-    TypeLayout.Register<IsPlayer>();
+    TypeLayout.Register<PlayerName>();
     TypeLayout.Register<MyReference>();
     TypeLayout.Register<char>();
     TypeLayout.Register<IsThing>();
     Schema schema = SchemaRegistry.Get();
     schema.RegisterComponent<MyComponent>();
-    schema.RegisterComponent<IsPlayer>();
+    schema.RegisterComponent<PlayerName>();
     schema.RegisterComponent<MyReference>();
     schema.RegisterArrayElement<char>();
     schema.RegisterTag<IsThing>();
@@ -172,11 +172,11 @@ uint oldSecondEntity = world.GetReference(oldFirstEntity, component.entityRefere
 ### Forming entity types
 A commonly reused pattern with components is to formalize them into types, where the
 type is qualified by components present on the entity. For example: if an entity
-contains an `IsPlayer` then its a player entity. This design is supported through the
+contains an `PlayerName` then its a player entity. This design is supported through the
 `IEntity` interface and its required `Definition` property:
 ```cs
 [Component]
-public struct IsPlayer(FixedString name)
+public struct PlayerName(FixedString name)
 {
     public FixedString name = name;
 }
@@ -185,16 +185,20 @@ public readonly struct Player : IEntity
 {
     public readonly Entity entity;
 
-    public readonly ref FixedString Name => ref entity.GetComponent<IsPlayer>().name;
+    public readonly ref FixedString Name => ref entity.GetComponent<PlayerName>().name;
 
     readonly uint IEntity.Value => entity.value;
     readonly World IEntity.World => entity.world;
-    readonly Definition IEntity.Definition => new Definition().AddComponentType<IsPlayer>();
+    
+    readonly void IEntity.Describe(ref Archetype archetype)
+    {
+        archetype.AddComponentType<PlayerName>();    
+    }
 
     public Player(World world, FixedString name)
     {
         this.entity = new(world);
-        entity.AddComponent(new IsPlayer(name));
+        entity.AddComponent(new PlayerName(name));
     }
 }
 
@@ -211,7 +215,7 @@ player.Name = "unnamed";
 
 //creating an entity, manually adding the components, then reinterpreting
 uint anotherEntity = world.CreateEntity();
-world.AddComponent(anotherEntity, new IsPlayer("unnamed"));
+world.AddComponent(anotherEntity, new PlayerName("unnamed"));
 Player anotherPlayer = new Entity(world, anotherEntity).As<Player>();
 ```
 
