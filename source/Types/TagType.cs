@@ -81,6 +81,11 @@ namespace Worlds
             return index;
         }
 
+        public readonly TypeLayout GetLayout(Schema schema)
+        {
+            return schema.GetLayout(this);
+        }
+
         /// <inheritdoc/>
         public static bool operator ==(TagType left, TagType right)
         {

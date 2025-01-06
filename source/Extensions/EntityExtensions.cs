@@ -371,6 +371,14 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Copies all <see cref="TagType"/>s this entity contains to the given <paramref name="destination"/>.
+        /// </summary>
+        public static byte CopyTagTypesTo<T>(this T entity, USpan<TagType> destination) where T : unmanaged, IEntity
+        {
+            return entity.World.CopyTagTypesTo(entity.Value, destination);
+        }
+
+        /// <summary>
         /// Retrieves an array of type <paramref name="arrayElementType"/> on this entity.
         /// </summary>
         public static Allocation GetArray<T>(this T entity, ArrayElementType arrayElementType) where T : unmanaged, IEntity
