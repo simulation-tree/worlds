@@ -297,7 +297,9 @@ namespace Worlds
         public static bool Is<T>(this T entity) where T : unmanaged, IEntity
         {
             Schema schema = entity.GetWorld().Schema;
-            return entity.Is(entity.GetDefinition(schema));
+            Archetype archetype = new(schema);
+            entity.Describe(ref archetype);
+            return entity.Is(archetype.definition);
         }
 
         /// <summary>
@@ -328,8 +330,9 @@ namespace Worlds
         public static async Task UntilCompliant<T>(this T entity, Update action, CancellationToken cancellation = default) where T : unmanaged, IEntity
         {
             World world = entity.World;
-            Definition definition = entity.GetDefinition(world.Schema);
-            while (!entity.Is(definition))
+            Archetype archetype = new(world.Schema);
+            entity.Describe(ref archetype);
+            while (!entity.Is(archetype.definition))
             {
                 await action(world, cancellation);
             }

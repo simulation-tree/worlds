@@ -23,9 +23,8 @@ namespace Worlds
         readonly World IEntity.World => world;
         readonly uint IEntity.Value => value;
 
-        readonly Definition IEntity.GetDefinition(Schema schema)
+        readonly void IEntity.Describe(ref Archetype archetype)
         {
-            return new();
         }
 
 #if NET
@@ -286,7 +285,9 @@ namespace Worlds
         /// </summary>
         public readonly T Become<T>() where T : unmanaged, IEntity
         {
-            this.Become(Definition.Get<T>(world.Schema));
+            Schema schema = world.Schema;
+            Definition definition = Archetype.Get<T>(schema).definition;
+            this.Become(definition);
             return As<T>();
         }
 
@@ -295,7 +296,8 @@ namespace Worlds
         /// </summary>
         public readonly bool Is<T>() where T : unmanaged, IEntity
         {
-            Definition definition = default(T).GetDefinition(world.Schema);
+            Schema schema = world.Schema;
+            Definition definition = Archetype.Get<T>(schema).definition;
             return this.Is(definition);
         }
 

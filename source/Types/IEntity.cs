@@ -18,8 +18,8 @@ namespace Worlds
         World World { get; }
 
         /// <summary>
-        /// Describes the components and arrays of the entity.
+        /// Describes the components, arrays and tags that compose this entity.
         /// </summary>
-        Definition GetDefinition(Schema schema);
+        void Describe(ref Archetype archetype);
     }
 }

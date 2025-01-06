@@ -12,9 +12,22 @@ namespace Worlds
         readonly World IEntity.World => entity.world;
         readonly uint IEntity.Value => entity.value;
 
-        readonly Definition IEntity.GetDefinition(Schema schema)
+        readonly void IEntity.Describe(ref Archetype archetype)
         {
-            return new(schema.GetComponents<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14>(), default, default);
+            archetype.AddComponentType<C1>();
+            archetype.AddComponentType<C2>();
+            archetype.AddComponentType<C3>();
+            archetype.AddComponentType<C4>();
+            archetype.AddComponentType<C5>();
+            archetype.AddComponentType<C6>();
+            archetype.AddComponentType<C7>();
+            archetype.AddComponentType<C8>();
+            archetype.AddComponentType<C9>();
+            archetype.AddComponentType<C10>();
+            archetype.AddComponentType<C11>();
+            archetype.AddComponentType<C12>();
+            archetype.AddComponentType<C13>();
+            archetype.AddComponentType<C14>();
         }
 
         public Entity(World world, uint existingEntity)

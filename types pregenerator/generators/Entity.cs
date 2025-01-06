@@ -18,6 +18,7 @@ public static class Entity
             source = source.Replace("{{TypeParameters}}", SharedFunctions.GetTypeParameters(i));
             source = source.Replace("{{DeclareComponentFields}}", SharedFunctions.DeclareComponentFields(i));
             source = source.Replace("{{AssignComponentFields}}", SharedFunctions.AssignComponentFields(i));
+            source = source.Replace("{{DescribeEntity}}", SharedFunctions.DescribeEntity(i));
             File.WriteAllText($"{TypeName}{i + 1}.cs", source);
         }
     }

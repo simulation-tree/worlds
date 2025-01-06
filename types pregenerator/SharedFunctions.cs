@@ -200,4 +200,20 @@ public static class SharedFunctions
         builder.Length -= 1;
         return builder.ToString();
     }
+
+    public static string DescribeEntity(uint count)
+    {
+        StringBuilder builder = new();
+        for (uint i = 1; i <= count + 1; i++)
+        {
+            builder.Append("            ");
+            builder.Append("archetype.AddComponentType<");
+            builder.Append(GenericTypePrefix);
+            builder.Append(i);
+            builder.Append(">();\n");
+        }
+
+        builder.Length -= 1;
+        return builder.ToString();
+    }
 }

@@ -528,59 +528,6 @@ namespace Worlds
             return this;
         }
 
-        /// <summary>
-        /// Retrieves the definition for the specified <typeparamref name="T"/> entity type.
-        /// </summary>
-        public static Definition Get<T>(Schema schema) where T : unmanaged, IEntity
-        {
-            return default(T).GetDefinition(schema);
-        }
-
-        public static Definition Get<T1, T2>(Schema schema) where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity
-        {
-            Definition t1 = default(T1).GetDefinition(schema);
-            Definition t2 = default(T2).GetDefinition(schema);
-            return new Definition(t1.componentTypes | t2.componentTypes, t1.arrayElementTypes | t2.arrayElementTypes, t1.tagTypes | t2.tagTypes);
-        }
-
-        public static Definition Get<T1, T2, T3>(Schema schema) where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity where T3 : unmanaged, IEntity
-        {
-            Definition t1 = default(T1).GetDefinition(schema);
-            Definition t2 = default(T2).GetDefinition(schema);
-            Definition t3 = default(T3).GetDefinition(schema);
-            return new Definition(t1.componentTypes | t2.componentTypes | t3.componentTypes, t1.arrayElementTypes | t2.arrayElementTypes | t3.arrayElementTypes, t1.tagTypes | t2.tagTypes | t3.tagTypes);
-        }
-
-        public static Definition Get<T1, T2, T3, T4>(Schema schema) where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity where T3 : unmanaged, IEntity where T4 : unmanaged, IEntity
-        {
-            Definition t1 = default(T1).GetDefinition(schema);
-            Definition t2 = default(T2).GetDefinition(schema);
-            Definition t3 = default(T3).GetDefinition(schema);
-            Definition t4 = default(T4).GetDefinition(schema);
-            return new Definition(t1.componentTypes | t2.componentTypes | t3.componentTypes | t4.componentTypes, t1.arrayElementTypes | t2.arrayElementTypes | t3.arrayElementTypes | t4.arrayElementTypes, t1.tagTypes | t2.tagTypes | t3.tagTypes | t4.tagTypes);
-        }
-
-        public static Definition Get<T1, T2, T3, T4, T5>(Schema schema) where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity where T3 : unmanaged, IEntity where T4 : unmanaged, IEntity where T5 : unmanaged, IEntity
-        {
-            Definition t1 = default(T1).GetDefinition(schema);
-            Definition t2 = default(T2).GetDefinition(schema);
-            Definition t3 = default(T3).GetDefinition(schema);
-            Definition t4 = default(T4).GetDefinition(schema);
-            Definition t5 = default(T5).GetDefinition(schema);
-            return new Definition(t1.componentTypes | t2.componentTypes | t3.componentTypes | t4.componentTypes | t5.componentTypes, t1.arrayElementTypes | t2.arrayElementTypes | t3.arrayElementTypes | t4.arrayElementTypes | t5.arrayElementTypes, t1.tagTypes | t2.tagTypes | t3.tagTypes | t4.tagTypes | t5.tagTypes);
-        }
-
-        public static Definition Get<T1, T2, T3, T4, T5, T6>(Schema schema) where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity where T3 : unmanaged, IEntity where T4 : unmanaged, IEntity where T5 : unmanaged, IEntity where T6 : unmanaged, IEntity
-        {
-            Definition t1 = default(T1).GetDefinition(schema);
-            Definition t2 = default(T2).GetDefinition(schema);
-            Definition t3 = default(T3).GetDefinition(schema);
-            Definition t4 = default(T4).GetDefinition(schema);
-            Definition t5 = default(T5).GetDefinition(schema);
-            Definition t6 = default(T6).GetDefinition(schema);
-            return new Definition(t1.componentTypes | t2.componentTypes | t3.componentTypes | t4.componentTypes | t5.componentTypes | t6.componentTypes, t1.arrayElementTypes | t2.arrayElementTypes | t3.arrayElementTypes | t4.arrayElementTypes | t5.arrayElementTypes | t6.arrayElementTypes, t1.tagTypes | t2.tagTypes | t3.tagTypes | t4.tagTypes | t5.tagTypes | t6.tagTypes);
-        }
-
         public static bool operator ==(Definition a, Definition b)
         {
             return a.Equals(b);

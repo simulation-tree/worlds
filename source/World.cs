@@ -696,7 +696,7 @@ namespace Worlds
             EntityExtensions.ThrowIfTypeLayoutMismatches<T>();
 
             Dictionary<Definition, Chunk> chunks = Chunks;
-            Definition definition = default(T).GetDefinition(Schema);
+            Definition definition = Archetype.Get<T>(Schema).definition;
             if (definition.ArrayElementTypes != default(BitSet))
             {
                 if (onlyEnabled)
@@ -1999,7 +1999,7 @@ namespace Worlds
         public readonly uint CountEntities<T>(bool onlyEnabled = false) where T : unmanaged, IEntity
         {
             Dictionary<Definition, Chunk> chunks = Chunks;
-            Definition definition = default(T).GetDefinition(Schema);
+            Definition definition = Archetype.Get<T>(Schema).definition;
             uint count = 0;
             if (definition.ArrayElementTypes != default(BitSet))
             {
