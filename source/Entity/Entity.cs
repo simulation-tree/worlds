@@ -7,7 +7,7 @@ namespace Worlds
     /// <summary>
     /// Represents an entity in the simulation relative to a <see cref="World"/>.
     /// </summary>
-    [DebuggerTypeProxy(typeof(DebugView))]
+    [DebuggerTypeProxy(typeof(EntityDebugView))]
     public readonly struct Entity : IEntity, IEquatable<Entity>
     {
         /// <summary>
@@ -336,29 +336,53 @@ namespace Worlds
             return entity.value;
         }
 
-        internal class DebugView
+        internal class EntityDebugView
         {
 #if DEBUG
             public readonly uint value;
             public readonly World world;
             public readonly Entity parent;
             public readonly StackTrace creationStackTrace;
-            public readonly ComponentType[] componentTypes;
-            public readonly ArrayElementType[] arrayTypes;
+            public readonly Type[] componentTypes;
+            public readonly Type[] arrayElementTypes;
+            public readonly Type[] tagTypes;
             public readonly Entity[] references;
 
-            public DebugView(Entity entity)
+            public EntityDebugView(Entity entity)
             {
                 value = entity.GetEntityValue();
                 world = entity.GetWorld();
                 parent = entity.GetParent();
                 creationStackTrace = World.Implementation.createStackTraces[entity];
+                
+                Schema schema = world.Schema;
                 USpan<ComponentType> componentTypeBuffer = stackalloc ComponentType[BitSet.Capacity];
                 uint bufferLength = entity.CopyComponentTypesTo(componentTypeBuffer);
-                componentTypes = componentTypeBuffer.Slice(0, bufferLength).ToArray();
-                USpan<ArrayElementType> arrayTypeBuffer = stackalloc ArrayElementType[BitSet.Capacity];
-                bufferLength = entity.CopyArrayElementTypesTo(arrayTypeBuffer);
-                arrayTypes = arrayTypeBuffer.Slice(0, bufferLength).ToArray();
+                ComponentType[] componentTypes = componentTypeBuffer.Slice(0, bufferLength).ToArray();
+                this.componentTypes = new Type[componentTypes.Length];
+                for (int i = 0; i < componentTypes.Length; i++)
+                {
+                    this.componentTypes[i] = componentTypes[i].GetLayout(schema).SystemType;
+                }
+
+                USpan<ArrayElementType> arrayElementTypeBuffer = stackalloc ArrayElementType[BitSet.Capacity];
+                bufferLength = entity.CopyArrayElementTypesTo(arrayElementTypeBuffer);
+                ArrayElementType[] arrayElementTypes = arrayElementTypeBuffer.Slice(0, bufferLength).ToArray();
+                this.arrayElementTypes = new Type[arrayElementTypes.Length];
+                for (int i = 0; i < arrayElementTypes.Length; i++)
+                {
+                    this.arrayElementTypes[i] = arrayElementTypes[i].GetLayout(schema).SystemType;
+                }
+
+                USpan<TagType> tagTypeBuffer = stackalloc TagType[BitSet.Capacity];
+                bufferLength = entity.CopyTagTypesTo(tagTypeBuffer);
+                TagType[] tagTypes = tagTypeBuffer.Slice(0, bufferLength).ToArray();
+                this.tagTypes = new Type[tagTypes.Length];
+                for (int i = 0; i < tagTypes.Length; i++)
+                {
+                    this.tagTypes[i] = tagTypes[i].GetLayout(schema).SystemType;
+                }
+
                 references = new Entity[entity.GetReferenceCount()];
                 for (uint i = 0; i < references.Length; i++)
                 {

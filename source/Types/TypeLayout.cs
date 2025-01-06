@@ -35,6 +35,25 @@ namespace Worlds
         }
 
         /// <summary>
+        /// The underlying system type that this layout represents.
+        /// </summary>
+        public readonly Type SystemType
+        {
+            get
+            {
+                for (int i = 0; i < systemTypes.Count; i++)
+                {
+                    if (all[i] == this)
+                    {
+                        return systemTypes[i];
+                    }
+                }
+
+                throw new InvalidOperationException($"System type not found for {this}");
+            }
+        }
+
+        /// <summary>
         /// Full name of the type including the namespace.
         /// </summary>
         public readonly FixedString FullName => fullName;
