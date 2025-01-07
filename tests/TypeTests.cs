@@ -154,5 +154,14 @@ namespace Worlds.Tests
             FixedString b = TypeLayout.GetFullName<Dictionary<Entity, Dictionary<Entity, Entity>>>();
             Assert.That(b.ToString(), Is.EqualTo("Collections.Dictionary<Worlds.Entity, Collections.Dictionary<Worlds.Entity, Worlds.Entity>>"));
         }
+
+        [Test]
+        public void CreateObjectFromTypeLayout()
+        {
+            TypeLayout layout = TypeLayout.Get<Stress>();
+            object instance = layout.Create();
+            Assert.That(instance, Is.InstanceOf<Stress>());
+            Assert.That((Stress)instance, Is.EqualTo(default(Stress)));
+        }
     }
 }

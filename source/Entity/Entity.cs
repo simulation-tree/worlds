@@ -343,8 +343,8 @@ namespace Worlds
             public readonly World world;
             public readonly Entity parent;
             public readonly StackTrace creationStackTrace;
-            public readonly Type[] componentTypes;
-            public readonly Type[] arrayElementTypes;
+            public readonly object[] componentTypes;
+            public readonly object[][] arrayElementTypes;
             public readonly Type[] tagTypes;
             public readonly Entity[] references;
 
@@ -359,19 +359,19 @@ namespace Worlds
                 USpan<ComponentType> componentTypeBuffer = stackalloc ComponentType[BitSet.Capacity];
                 uint bufferLength = entity.CopyComponentTypesTo(componentTypeBuffer);
                 ComponentType[] componentTypes = componentTypeBuffer.Slice(0, bufferLength).ToArray();
-                this.componentTypes = new Type[componentTypes.Length];
+                this.componentTypes = new object[componentTypes.Length];
                 for (int i = 0; i < componentTypes.Length; i++)
                 {
-                    this.componentTypes[i] = componentTypes[i].GetLayout(schema).SystemType;
+                    this.componentTypes[i] = world.GetComponentObject(entity, componentTypes[i]);
                 }
 
                 USpan<ArrayElementType> arrayElementTypeBuffer = stackalloc ArrayElementType[BitSet.Capacity];
                 bufferLength = entity.CopyArrayElementTypesTo(arrayElementTypeBuffer);
                 ArrayElementType[] arrayElementTypes = arrayElementTypeBuffer.Slice(0, bufferLength).ToArray();
-                this.arrayElementTypes = new Type[arrayElementTypes.Length];
+                this.arrayElementTypes = new object[arrayElementTypes.Length][];
                 for (int i = 0; i < arrayElementTypes.Length; i++)
                 {
-                    this.arrayElementTypes[i] = arrayElementTypes[i].GetLayout(schema).SystemType;
+                    this.arrayElementTypes[i] = world.GetArrayObject(entity, arrayElementTypes[i]);
                 }
 
                 USpan<TagType> tagTypeBuffer = stackalloc TagType[BitSet.Capacity];

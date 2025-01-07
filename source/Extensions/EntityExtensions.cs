@@ -309,6 +309,8 @@ namespace Worlds
         {
             World world = entity.World;
             uint value = entity.Value;
+            World.Implementation.ThrowIfEntityIsMissing(world, value);
+
             ref EntitySlot slot = ref world.Slots[value - 1];
             Definition currentDefinition = slot.chunk.Definition;
             if ((currentDefinition.ComponentTypes & definition.ComponentTypes) != definition.ComponentTypes)

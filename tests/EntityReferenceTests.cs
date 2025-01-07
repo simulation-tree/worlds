@@ -61,5 +61,18 @@
             uint entity = world.CreateEntity();
             Assert.That(world.ContainsReference(entity, default(rint)), Is.False);
         }
+
+        [Test]
+        public void CloneEntityWithOneReference()
+        {
+            using World world = CreateWorld();
+            uint a = world.CreateEntity();
+            uint b = world.CreateEntity();
+            rint reference = world.AddReference(a, b);
+            Assert.That(world.GetReferenceCount(a), Is.EqualTo(1));
+            uint c = world.CloneEntity(a);
+            Assert.That(world.GetReferenceCount(c), Is.EqualTo(1));
+            Assert.That(world.GetReference(c, reference), Is.EqualTo(world.GetReference(a, reference)));
+        }
     }
 }

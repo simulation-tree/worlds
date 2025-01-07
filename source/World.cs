@@ -1564,6 +1564,14 @@ namespace Worlds
             return slot.chunk.Definition.ArrayElementTypes;
         }
 
+        public readonly BitSet GetTagTypes(uint entity)
+        {
+            Implementation.ThrowIfEntityIsMissing(value, entity);
+
+            ref EntitySlot slot = ref Slots[entity - 1];
+            return slot.chunk.Definition.TagTypes;
+        }
+
         /// <summary>
         /// Creates a new uninitialized array with the given <paramref name="length"/> and <paramref name="arrayElementType"/>.
         /// </summary>
@@ -1853,6 +1861,27 @@ namespace Worlds
             return component.AsSpan<byte>(0, componentSize);
         }
 
+        public readonly object GetComponentObject(uint entity, ComponentType componentType)
+        {
+            TypeLayout layout = componentType.GetLayout(Schema);
+            USpan<byte> bytes = GetComponentBytes(entity, componentType);
+            return layout.Create(bytes);
+        }
+
+        public readonly object[] GetArrayObject(uint entity, ArrayElementType arrayElementType)
+        {
+            TypeLayout layout = arrayElementType.GetLayout(Schema);
+            Allocation array = GetArray(entity, arrayElementType, out uint length);
+            object[] arrayObject = new object[length];
+            for (uint i = 0; i < length; i++)
+            {
+                USpan<byte> bytes = array.AsSpan<byte>(i * layout.Size, layout.Size);
+                arrayObject[i] = layout.Create(bytes);
+            }
+
+            return arrayObject;
+        }
+
         /// <summary>
         /// Attempts to retrieve a reference to the component of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
         /// </summary>
@@ -2131,6 +2160,32 @@ namespace Worlds
             }
         }
 
+        public readonly void CopyTagsTo(uint sourceEntity, World destinationWorld, uint destinationEntity)
+        {
+            BitSet tagTypes = GetTagTypes(sourceEntity);
+            for (byte t = 0; t < BitSet.Capacity; t++)
+            {
+                if (tagTypes == t)
+                {
+                    TagType tagType = new(t);
+                    if (!destinationWorld.ContainsTag(destinationEntity, tagType))
+                    {
+                        destinationWorld.AddTag(destinationEntity, tagType);
+                    }
+                }
+            }
+        }
+
+        public readonly void CopyReferencesTo(uint sourceEntity, World destinationWorld, uint destinationEntity)
+        {
+            uint referenceCount = GetReferenceCount(sourceEntity);
+            for (uint r = 1; r <= referenceCount; r++)
+            {
+                uint referencedEntity = GetReference(sourceEntity, (rint)r);
+                destinationWorld.AddReference(destinationEntity, referencedEntity);
+            }
+        }
+
         /// <summary>
         /// Creates a perfect replica of this entity.
         /// </summary>
@@ -2139,6 +2194,8 @@ namespace Worlds
             uint clone = CreateEntity();
             CopyComponentsTo(entity, this, clone);
             CopyArraysTo(entity, this, clone);
+            CopyTagsTo(entity, this, clone);
+            CopyReferencesTo(entity, this, clone);
             return clone;
         }
 
@@ -2217,6 +2274,17 @@ namespace Worlds
                 this.freeEntities = freeEntities;
                 this.chunks = chunks;
                 this.schema = schema;
+            }
+
+            /// <summary>
+            /// Throws an <see cref="NullReferenceException"/> if the given <paramref name="entity"/> is missing.
+            /// </summary>
+            /// <exception cref="InvalidOperationException"></exception>
+            /// <exception cref="NullReferenceException"></exception>
+            [Conditional("DEBUG")]
+            public static void ThrowIfEntityIsMissing(World world, uint entity)
+            {
+                ThrowIfEntityIsMissing(world.value, entity);
             }
 
             /// <summary>
@@ -2596,12 +2664,14 @@ namespace Worlds
                         {
                             slot.children.Dispose();
                             slot.children = default;
+                            slot.childCount = 0;
                         }
 
                         if (slot.referenceCount > 0)
                         {
                             slot.references.Dispose();
                             slot.references = default;
+                            slot.referenceCount = 0;
                         }
                     }
                 }
@@ -2653,15 +2723,16 @@ namespace Worlds
 
                     slot.children.Dispose();
                     slot.children = default;
+                    slot.childCount = 0;
                 }
 
                 if (slot.referenceCount > 0)
                 {
                     slot.references.Dispose();
                     slot.references = default;
+                    slot.referenceCount = 0;
                 }
 
-                slot.referenceCount = 0;
                 ref Chunk chunk = ref slot.chunk;
 
                 //reset arrays
