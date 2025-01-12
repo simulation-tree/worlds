@@ -56,6 +56,28 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Iterates through all entities that are <typeparamref name="T"/>.
+        /// </summary>
+        public static System.Collections.Generic.IEnumerable<T> GetAll<T>(this World world) where T : unmanaged, IEntity
+        {
+            Dictionary<Definition, Chunk> chunks = world.Chunks;
+            Schema schema = world.Schema;
+            Definition definition = Archetype.Get<T>(schema).definition;
+            foreach (Definition key in chunks.Keys)
+            {
+                if (key.ComponentTypes.ContainsAll(definition.ComponentTypes) && key.ArrayElementTypes.ContainsAll(definition.ArrayElementTypes) && key.TagTypes.ContainsAll(definition.TagTypes))
+                {
+                    Chunk chunk = chunks[key];
+                    for (uint e = 0; e < chunk.Count; e++)
+                    {
+                        Entity entity = new(world, chunk[e]);
+                        yield return entity.As<T>();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Finds all entities that contain all of the given component types and
         /// adds them to the given list.
         /// </summary>
