@@ -27,8 +27,8 @@
             uint entity4 = secondWorld.CreateEntity(); //2
             secondWorld.Append(firstWorld); //1->2 becomes 3->4
 
-            secondWorld.GetFirstEntityContainingComponent<ComponentThatReferences>(out entity1);
-            secondWorld.GetFirstEntityContainingComponent<ReferencedEntity>(out entity2);
+            secondWorld.GetFirstComponent<ComponentThatReferences>(out entity1);
+            secondWorld.GetFirstComponent<ReferencedEntity>(out entity2);
             Assert.That(secondWorld.GetReference(entity1, component.reference), Is.EqualTo(entity2));
         }
 
@@ -49,8 +49,8 @@
             }
 
             secondWorld.Append(firstWorld);
-            secondWorld.GetFirstEntityContainingComponent<Integer>(out parent);
-            secondWorld.GetFirstEntityContainingComponent<Float>(out child);
+            secondWorld.GetFirstComponent<Integer>(out parent);
+            secondWorld.GetFirstComponent<Float>(out child);
             Assert.That(secondWorld.GetParent(child), Is.EqualTo(parent));
         }
 

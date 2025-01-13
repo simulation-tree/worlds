@@ -130,23 +130,167 @@ namespace Worlds.Tests
             world.AddComponent(b, new Cherry("pie"));
             world.AddComponent(c, new Cherry("fortune"));
             world.SetEnabled(a, false);
-            System.Collections.Generic.List<Cherry> values = [];
-            foreach (uint entity in world.GetAllContaining<Cherry>(true))
-            {
-                values.Add(world.GetComponent<Cherry>(entity));
-            }
 
-            Assert.That(values.Count, Is.EqualTo(2));
-            Assert.That(values.Contains(new Cherry("pie")), Is.True);
-            Assert.That(values.Contains(new Cherry("fortune")), Is.True);
-            values.Clear();
+            using List<Cherry> results = new();
+
+            //check with this method
             foreach (uint entity in world.GetAllContaining<Cherry>())
             {
-                values.Add(world.GetComponent<Cherry>(entity));
+                results.Add(world.GetComponent<Cherry>(entity));
             }
 
-            Assert.That(values.Count, Is.EqualTo(3));
-            Assert.That(values.Contains(new Cherry("apple")), Is.True);
+            Assert.That(results.Count, Is.EqualTo(2));
+            Assert.That(results.Contains(new Cherry("pie")), Is.True);
+            Assert.That(results.Contains(new Cherry("fortune")), Is.True);
+
+            results.Clear();
+
+            //check with a query
+            ComponentQuery<Cherry> query = new(world);
+            query.ExcludeDisabled(true);
+            foreach (var r in query)
+            {
+                results.Add(r.component1);
+            }
+
+            Assert.That(results.Count, Is.EqualTo(2));
+            Assert.That(results.Contains(new Cherry("pie")), Is.True);
+            Assert.That(results.Contains(new Cherry("fortune")), Is.True);
+
+            results.Clear();
+
+            //check if all get included with the method
+            foreach (uint entity in world.GetAllContaining<Cherry>(false))
+            {
+                results.Add(world.GetComponent<Cherry>(entity));
+            }
+
+            Assert.That(results.Count, Is.EqualTo(3));
+            Assert.That(results.Contains(new Cherry("apple")), Is.True);
+
+            results.Clear();
+
+            //check if all get included with a query
+            query.ExcludeDisabled(false);
+            foreach (var r in query)
+            {
+                results.Add(r.component1);
+            }
+
+            Assert.That(results.Count, Is.EqualTo(3));
+            Assert.That(results.Contains(new Cherry("apple")), Is.True);
+        }
+
+        [Test]
+        public void QueryDescendantsOfDisabledEntity()
+        {
+            using World world = CreateWorld();
+            uint a = world.CreateEntity();
+            uint b = world.CreateEntity();
+            uint c = world.CreateEntity();
+            uint parent = world.CreateEntity();
+            world.AddComponent(parent, new Apple(1));
+            world.AddComponent(a, new Apple(2));
+            world.AddComponent(b, new Apple(3));
+            world.AddComponent(c, new Apple(4));
+            world.SetParent(a, parent);
+            world.SetParent(b, a);
+            world.SetEnabled(parent, false);
+            uint d = world.CreateEntity();
+            world.AddComponent(d, new Apple(5));
+            world.SetParent(d, b);
+
+            Assert.That(world.IsEnabled(parent), Is.EqualTo(false));
+            Assert.That(world.IsEnabled(a), Is.EqualTo(false));
+            Assert.That(world.IsLocallyEnabled(a), Is.EqualTo(true));
+            Assert.That(world.IsEnabled(b), Is.EqualTo(false));
+            Assert.That(world.IsLocallyEnabled(b), Is.EqualTo(true));
+            Assert.That(world.IsEnabled(c), Is.EqualTo(true));
+            Assert.That(world.IsEnabled(d), Is.EqualTo(false));
+            Assert.That(world.IsLocallyEnabled(d), Is.EqualTo(true));
+
+            using List<Apple> results = new();
+            ComponentQuery<Apple> query = new(world);
+            foreach (var r in query)
+            {
+                results.Add(r.component1);
+            }
+
+            Assert.That(results.Count, Is.EqualTo(5));
+            Assert.That(results.Contains(new Apple(1)), Is.True);
+            Assert.That(results.Contains(new Apple(2)), Is.True);
+            Assert.That(results.Contains(new Apple(3)), Is.True);
+            Assert.That(results.Contains(new Apple(4)), Is.True);
+            Assert.That(results.Contains(new Apple(5)), Is.True);
+
+            results.Clear();
+            query.ExcludeDisabled(true);
+            foreach (var r in query)
+            {
+                results.Add(r.component1);
+            }
+
+            Assert.That(results.Count, Is.EqualTo(1));
+            Assert.That(results.Contains(new Apple(4)), Is.True);
+        }
+
+        [Test]
+        public void QueryAgainstRedisabledDescendants()
+        {
+            using World world = CreateWorld();
+            uint parent = world.CreateEntity();
+            uint child = world.CreateEntity();
+            uint grandChild = world.CreateEntity();
+            world.SetParent(child, parent);
+            world.SetParent(grandChild, child);
+
+            world.AddComponent(parent, new Another(1));
+            world.AddComponent(child, new Another(2));
+            world.AddComponent(grandChild, new Another(3));
+            world.SetEnabled(parent, false);
+            world.SetEnabled(child, false);
+            world.SetEnabled(grandChild, false);
+
+            Assert.That(world.IsEnabled(parent), Is.False);
+            Assert.That(world.IsEnabled(child), Is.False);
+            Assert.That(world.IsEnabled(grandChild), Is.False);
+
+            using List<Another> results = new();
+            ComponentQuery<Another> query = new(world);
+            foreach (var r in query)
+            {
+                results.Add(r.component1);
+            }
+
+            Assert.That(results.Count, Is.EqualTo(3));
+
+            query.ExcludeDisabled(true);
+            results.Clear();
+            foreach (var r in query)
+            {
+                results.Add(r.component1);
+            }
+
+            Assert.That(results.Count, Is.EqualTo(0));
+
+            world.SetEnabled(parent, true);
+
+            results.Clear();
+            foreach (var r in query)
+            {
+                results.Add(r.component1);
+            }
+
+            Assert.That(results.Count, Is.EqualTo(3));
+
+            world.SetEnabled(parent, false);
+            results.Clear();
+            foreach (var r in query)
+            {
+                results.Add(r.component1);
+            }
+
+            Assert.That(results.Count, Is.EqualTo(0));
         }
 
         [Test]
@@ -162,13 +306,14 @@ namespace Worlds.Tests
             world.DestroyEntity(entity1);
             world.AddComponent(entity2, new Berry(5));
             world.DestroyEntity(entity2);
-            System.Collections.Generic.List<(uint, Cherry)> found = new();
+
+            using List<(uint, Cherry)> results = new();
             foreach (uint entity in world.GetAllContaining<Cherry>())
             {
-                found.Add((entity, world.GetComponent<Cherry>(entity)));
+                results.Add((entity, world.GetComponent<Cherry>(entity)));
             }
 
-            Assert.That(found.Count, Is.EqualTo(0));
+            Assert.That(results.Count, Is.EqualTo(0));
         }
 
         [Test]
@@ -190,18 +335,31 @@ namespace Worlds.Tests
             uint entity5 = world.CreateEntity();
             world.AddComponent(entity5, component1);
             world.AddComponent(entity5, another2);
-            using List<SimpleComponent> buffer = new(4);
+
+            using List<SimpleComponent> simpleComponents = new(4);
             using List<uint> entities = new(4);
-            world.Fill(buffer, entities);
-            Assert.That(buffer.Count, Is.EqualTo(3));
-            var entitiesSpan = entities.AsSpan();
+            foreach (uint entity in world.GetAllContaining<SimpleComponent>())
+            {
+                simpleComponents.Add(world.GetComponent<SimpleComponent>(entity));
+                entities.Add(entity);
+            }
+
+            Assert.That(simpleComponents.Count, Is.EqualTo(3));
+            Assert.That(simpleComponents.Count, Is.EqualTo(entities.Count));
             Assert.That(entities.Contains(entity1), Is.True);
             Assert.That(entities.Contains(entity2), Is.True);
             Assert.That(entities.Contains(entity5), Is.True);
             entities.Clear();
-            using List<Another> anotherBuffer = new(4);
-            world.Fill(anotherBuffer, entities);
-            Assert.That(anotherBuffer.Count, Is.EqualTo(3));
+
+            using List<Another> anothers = new(4);
+            foreach (uint entity in world.GetAllContaining<Another>())
+            {
+                anothers.Add(world.GetComponent<Another>(entity));
+                entities.Add(entity);
+            }
+
+            Assert.That(anothers.Count, Is.EqualTo(entities.Count));
+            Assert.That(anothers.Count, Is.EqualTo(3));
             Assert.That(entities.Contains(entity3), Is.True);
             Assert.That(entities.Contains(entity4), Is.True);
             Assert.That(entities.Contains(entity5), Is.True);

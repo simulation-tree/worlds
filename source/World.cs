@@ -666,168 +666,114 @@ namespace Worlds
 
             List<EntitySlot> slots = Slots;
             ref EntitySlot slot = ref slots[entity - 1];
+            EntitySlotState newState;
             if (slot.parent != default)
             {
                 ref EntitySlot parentSlot = ref slots[slot.parent - 1];
                 if (parentSlot.state == EntitySlotState.Disabled || parentSlot.state == EntitySlotState.DisabledButLocallyEnabled)
                 {
-                    slot.state = EntitySlotState.DisabledButLocallyEnabled;
+                    newState = enabled ? EntitySlotState.DisabledButLocallyEnabled : EntitySlotState.Disabled;
                 }
                 else
                 {
-                    slot.state = enabled ? EntitySlotState.Enabled : EntitySlotState.Disabled;
+                    newState = enabled ? EntitySlotState.Enabled : EntitySlotState.Disabled;
                 }
             }
             else
             {
-                slot.state = enabled ? EntitySlotState.Enabled : EntitySlotState.Disabled;
+                newState = enabled ? EntitySlotState.Enabled : EntitySlotState.Disabled;
             }
 
-            using List<uint> stack = new(4);
-            for (uint i = 0; i < slot.childCount; i++)
+            //if (newState != slot.state) //todo: this needs cleanup
             {
-                uint child = slot.children[i];
-                stack.Add(child);
-            }
+                slot.state = newState;
 
-            EntitySlotState slotState = slot.state;
-            while (stack.Count > 0)
-            {
-                entity = stack.RemoveAt(0);
-                slot = ref slots[entity - 1];
-                if (enabled && slot.state == EntitySlotState.DisabledButLocallyEnabled)
+                //move to different chunk
+                Dictionary<Definition, Chunk> chunks = Chunks;
+                Chunk oldChunk = slot.chunk;
+                Definition oldDefinition = oldChunk.Definition;
+                bool oldEnabled = !oldDefinition.TagTypes.Contains(TagType.Disabled);
+                bool newEnabled = newState == EntitySlotState.Enabled;
+                if (oldEnabled != newEnabled)
                 {
-                    slot.state = EntitySlotState.Enabled;
-                }
-                else if (!enabled && slot.state == EntitySlotState.Enabled)
-                {
-                    slot.state = EntitySlotState.DisabledButLocallyEnabled;
-                }
-
-                for (uint i = 0; i < slot.childCount; i++)
-                {
-                    uint child = slot.children[i];
-                    stack.Add(child);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Retrieves the first entity that complies with type <typeparamref name="T"/>.
-        /// </summary>
-        public readonly bool TryGetFirst<T>(out T entity, bool onlyEnabled = false) where T : unmanaged, IEntity
-        {
-            EntityExtensions.ThrowIfTypeLayoutMismatches<T>();
-
-            Dictionary<Definition, Chunk> chunks = Chunks;
-            Definition definition = Archetype.Get<T>(Schema).definition;
-            if (definition.ArrayElementTypes != default(BitSet))
-            {
-                if (onlyEnabled)
-                {
-                    foreach (Definition key in chunks.Keys)
+                    Definition newDefinition = oldDefinition;
+                    if (newEnabled)
                     {
-                        if ((key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
+                        newDefinition.RemoveTagType(TagType.Disabled);
+                    }
+                    else
+                    {
+                        newDefinition.AddTagType(TagType.Disabled);
+                    }
+
+                    if (!chunks.TryGetValue(newDefinition, out Chunk newChunk))
+                    {
+                        newChunk = new Chunk(newDefinition, Schema);
+                        chunks.Add(newDefinition, newChunk);
+                    }
+
+                    slot.chunk = newChunk;
+                    oldChunk.MoveEntity(entity, newChunk);
+                }
+
+                //modify descendants
+                if (slot.childCount > 0)
+                {
+                    using List<uint> stack = new(slot.childCount * 2u);
+                    for (uint i = 0; i < slot.childCount; i++)
+                    {
+                        uint child = slot.children[i];
+                        stack.Add(child);
+                    }
+
+                    EntitySlotState slotState = slot.state;
+                    while (stack.Count > 0)
+                    {
+                        entity = stack.RemoveAt(0);
+                        slot = ref slots[entity - 1];
+                        if (enabled && slot.state == EntitySlotState.DisabledButLocallyEnabled)
                         {
-                            Chunk chunk = chunks[key];
-                            USpan<uint> entities = chunk.Entities;
-                            for (uint e = 0; e < entities.Length; e++)
+                            slot.state = EntitySlotState.Enabled;
+                        }
+                        else if (!enabled && slot.state == EntitySlotState.Enabled)
+                        {
+                            slot.state = EntitySlotState.DisabledButLocallyEnabled;
+                        }
+
+                        //move descentant to proper chunk
+                        oldChunk = slot.chunk;
+                        oldDefinition = oldChunk.Definition;
+                        oldEnabled = !oldDefinition.TagTypes.Contains(TagType.Disabled);
+                        newEnabled = slot.state == EntitySlotState.Enabled;
+                        if (oldEnabled != enabled)
+                        {
+                            Definition newDefinition = oldDefinition;
+                            if (enabled)
                             {
-                                uint entityValue = entities[e];
-                                BitSet arrayElementTypes = GetArrayElementTypes(entityValue);
-                                if ((definition.ArrayElementTypes & arrayElementTypes) == arrayElementTypes)
-                                {
-                                    if (IsEnabled(entityValue))
-                                    {
-                                        entity = new Entity(this, entityValue).As<T>();
-                                        return true;
-                                    }
-                                }
+                                newDefinition.RemoveTagType(TagType.Disabled);
                             }
-                        }
-                    }
-                }
-                else
-                {
-                    foreach (Definition key in chunks.Keys)
-                    {
-                        if ((key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
-                        {
-                            Chunk chunk = chunks[key];
-                            USpan<uint> entities = chunk.Entities;
-                            for (uint e = 0; e < entities.Length; e++)
+                            else
                             {
-                                uint entityValue = entities[e];
-                                BitSet arrayElementTypes = GetArrayElementTypes(entityValue);
-                                if ((definition.ArrayElementTypes & arrayElementTypes) == arrayElementTypes)
-                                {
-                                    entity = new Entity(this, entityValue).As<T>();
-                                    return true;
-                                }
+                                newDefinition.AddTagType(TagType.Disabled);
                             }
-                        }
-                    }
-                }
-            }
-            else
-            {
-                if (!onlyEnabled)
-                {
-                    foreach (Definition key in chunks.Keys)
-                    {
-                        Chunk chunk = chunks[key];
-                        USpan<uint> entities = chunk.Entities;
-                        if (entities.Length > 0 && (key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
-                        {
-                            uint entityValue = entities[0];
-                            entity = new Entity(this, entityValue).As<T>();
-                            return true;
-                        }
-                    }
-                }
-                else
-                {
-                    foreach (Definition key in chunks.Keys)
-                    {
-                        if ((key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
-                        {
-                            Chunk chunk = chunks[key];
-                            USpan<uint> entities = chunk.Entities;
-                            for (uint e = 0; e < entities.Length; e++)
+
+                            if (!chunks.TryGetValue(newDefinition, out Chunk newChunk))
                             {
-                                uint entityValue = chunk.Entities[e];
-                                if (IsEnabled(entityValue))
-                                {
-                                    entity = new Entity(this, entityValue).As<T>();
-                                    return true;
-                                }
+                                newChunk = new Chunk(newDefinition, Schema);
+                                chunks.Add(newDefinition, newChunk);
                             }
+
+                            slot.chunk = newChunk;
+                            oldChunk.MoveEntity(entity, newChunk);
+                        }
+
+                        for (uint i = 0; i < slot.childCount; i++)
+                        {
+                            uint child = slot.children[i];
+                            stack.Add(child);
                         }
                     }
                 }
-            }
-
-            entity = default;
-            return false;
-        }
-
-        /// <summary>
-        /// Retrieves the first entity that complies with the type.
-        /// </summary>
-        public readonly T GetFirst<T>(bool onlyEnabled = false) where T : unmanaged, IEntity
-        {
-            ThrowIfEntityDoesntExist<T>(onlyEnabled);
-
-            TryGetFirst(out T entity, onlyEnabled);
-            return entity;
-        }
-
-        [Conditional("DEBUG")]
-        private readonly void ThrowIfEntityDoesntExist<T>(bool onlyEnabled) where T : unmanaged, IEntity
-        {
-            if (!TryGetFirst(out T _, onlyEnabled))
-            {
-                throw new NullReferenceException($"No entity of type `{typeof(T)}` exists");
             }
         }
 
@@ -859,7 +805,7 @@ namespace Worlds
         /// <summary>
         /// Attempts to retrieve the first entity found with a component of type <typeparamref name="T"/>.
         /// </summary>
-        public readonly bool TryGetFirstEntityContainingComponent<T>(out uint entity) where T : unmanaged
+        public readonly bool TryGetFirstComponent<T>(out uint entity) where T : unmanaged
         {
             Dictionary<Definition, Chunk> chunks = Chunks;
             ComponentType componentType = Schema.GetComponent<T>();
@@ -883,7 +829,7 @@ namespace Worlds
         /// <summary>
         /// Attempts to retrieve the first found entity and component of type <typeparamref name="T"/>.
         /// </summary>
-        public readonly ref T TryGetFirstEntityContainingComponent<T>(out uint entity, out bool contains) where T : unmanaged
+        public readonly ref T TryGetFirstComponent<T>(out uint entity, out bool contains) where T : unmanaged
         {
             Dictionary<Definition, Chunk> chunks = Chunks;
             Schema schema = Schema;
@@ -941,7 +887,7 @@ namespace Worlds
         /// </para>
         /// </summary>
         /// <exception cref="NullReferenceException"></exception>
-        public readonly ref T GetFirstEntityContainingComponent<T>(out uint entity) where T : unmanaged
+        public readonly ref T GetFirstComponent<T>(out uint entity) where T : unmanaged
         {
             Dictionary<Definition, Chunk> chunks = Chunks;
             Schema schema = Schema;
@@ -2004,124 +1950,6 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Counts how many entities there are with component of type <typeparamref name="T"/>.
-        /// </summary>
-        public readonly uint CountEntitiesWithComponent<T>(bool onlyEnabled = false) where T : unmanaged
-        {
-            ComponentType componentType = Schema.GetComponent<T>();
-            return CountEntitiesWithComponent(componentType, onlyEnabled);
-        }
-
-        /// <summary>
-        /// Counts how many entities there are with component of the given <paramref name="componentType"/>.
-        /// </summary>
-        public readonly uint CountEntitiesWithComponent(ComponentType componentType, bool onlyEnabled = false)
-        {
-            uint count = 0;
-            Dictionary<Definition, Chunk> chunks = Chunks;
-            foreach (Definition key in chunks.Keys)
-            {
-                if (key.ComponentTypes == componentType)
-                {
-                    Chunk chunk = chunks[key];
-                    USpan<uint> entities = chunk.Entities;
-                    if (!onlyEnabled)
-                    {
-                        count += entities.Length;
-                    }
-                    else
-                    {
-                        for (uint e = 0; e < entities.Length; e++)
-                        {
-                            uint entity = entities[e];
-                            if (IsEnabled(entity))
-                            {
-                                count++;
-                            }
-                        }
-                    }
-                }
-            }
-
-            return count;
-        }
-
-        /// <summary>
-        /// Counts how many entities comply with type <typeparamref name="T"/>.
-        /// </summary>
-        public readonly uint CountEntities<T>(bool onlyEnabled = false) where T : unmanaged, IEntity
-        {
-            Dictionary<Definition, Chunk> chunks = Chunks;
-            Definition definition = Archetype.Get<T>(Schema).definition;
-            uint count = 0;
-            if (definition.ArrayElementTypes != default(BitSet))
-            {
-                foreach (Definition key in chunks.Keys)
-                {
-                    if ((key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
-                    {
-                        Chunk chunk = chunks[key];
-                        USpan<uint> entities = chunk.Entities;
-                        for (uint e = 0; e < entities.Length; e++)
-                        {
-                            uint entity = entities[e];
-                            BitSet arrayElementTypes = GetArrayElementTypes(entity);
-                            if ((definition.ArrayElementTypes & arrayElementTypes) == arrayElementTypes)
-                            {
-                                if (onlyEnabled)
-                                {
-                                    if (IsEnabled(entity))
-                                    {
-                                        count++;
-                                    }
-                                }
-                                else
-                                {
-                                    count++;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            else
-            {
-                if (!onlyEnabled)
-                {
-                    foreach (Definition key in chunks.Keys)
-                    {
-                        if ((key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
-                        {
-                            Chunk chunk = chunks[key];
-                            count += chunk.Entities.Length;
-                        }
-                    }
-                }
-                else
-                {
-                    foreach (Definition key in chunks.Keys)
-                    {
-                        if ((key.ComponentTypes & definition.ComponentTypes) == definition.ComponentTypes)
-                        {
-                            Chunk chunk = chunks[key];
-                            USpan<uint> entities = chunk.Entities;
-                            for (uint e = 0; e < entities.Length; e++)
-                            {
-                                uint entity = entities[e];
-                                if (IsEnabled(entity))
-                                {
-                                    count++;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            return count;
-        }
-
-        /// <summary>
         /// Copies components from the source entity onto the destination.
         /// <para>Components will be added if the destination entity doesnt
         /// contain them. Existing component data will be overwritten.</para>
@@ -2835,11 +2663,6 @@ namespace Worlds
                             }
                         }
                     }
-
-                    if (slot.state == EntitySlotState.DisabledButLocallyEnabled)
-                    {
-                        slot.state = EntitySlotState.Enabled;
-                    }
                 }
 
                 if (parent == default || !ContainsEntity(world, parent))
@@ -2847,6 +2670,39 @@ namespace Worlds
                     if (slot.parent != default)
                     {
                         slot.parent = default;
+                        Dictionary<Definition, Chunk> chunks = world->chunks;
+                        Chunk oldChunk = slot.chunk;
+                        Definition oldDefinition = oldChunk.Definition;
+
+                        if (slot.state == EntitySlotState.DisabledButLocallyEnabled)
+                        {
+                            slot.state = EntitySlotState.Enabled;
+                        }
+
+                        //move to different chunk if disabled state changed
+                        bool enabled = slot.state == EntitySlotState.Enabled;
+                        if (oldDefinition.TagTypes.Contains(TagType.Disabled) == enabled)
+                        {
+                            Definition newDefinition = oldDefinition;
+                            if (enabled)
+                            {
+                                newDefinition.RemoveTagType(TagType.Disabled);
+                            }
+                            else
+                            {
+                                newDefinition.AddTagType(TagType.Disabled);
+                            }
+
+                            if (!chunks.TryGetValue(newDefinition, out Chunk destinationChunk))
+                            {
+                                destinationChunk = new(newDefinition, world->schema);
+                                chunks.Add(newDefinition, destinationChunk);
+                            }
+
+                            slot.chunk = destinationChunk;
+                            oldChunk.MoveEntity(entity, destinationChunk);
+                        }
+
                         NotifyParentChange(new(world), entity, default);
                     }
 
@@ -2857,6 +2713,11 @@ namespace Worlds
                     if (slot.parent != parent)
                     {
                         slot.parent = parent;
+                        Dictionary<Definition, Chunk> chunks = world->chunks;
+                        Chunk oldChunk = slot.chunk;
+                        Definition oldDefinition = oldChunk.Definition;
+
+                        //add to children list
                         ref EntitySlot newParentSlot = ref world->slots[parent - 1];
                         if (newParentSlot.childCount == 0)
                         {
@@ -2867,7 +2728,34 @@ namespace Worlds
                         newParentSlot.childCount++;
                         if (newParentSlot.state == EntitySlotState.Disabled || newParentSlot.state == EntitySlotState.DisabledButLocallyEnabled)
                         {
-                            slot.state = EntitySlotState.DisabledButLocallyEnabled;
+                            if (slot.state == EntitySlotState.Enabled)
+                            {
+                                slot.state = EntitySlotState.DisabledButLocallyEnabled;
+                            }
+                        }
+
+                        //move to different chunk if disabled state changed
+                        bool enabled = slot.state == EntitySlotState.Enabled;
+                        if (oldDefinition.TagTypes.Contains(TagType.Disabled) == enabled)
+                        {
+                            Definition newDefinition = oldDefinition;
+                            if (enabled)
+                            {
+                                newDefinition.RemoveTagType(TagType.Disabled);
+                            }
+                            else
+                            {
+                                newDefinition.AddTagType(TagType.Disabled);
+                            }
+
+                            if (!chunks.TryGetValue(newDefinition, out Chunk destinationChunk))
+                            {
+                                destinationChunk = new(newDefinition, world->schema);
+                                chunks.Add(newDefinition, destinationChunk);
+                            }
+
+                            slot.chunk = destinationChunk;
+                            oldChunk.MoveEntity(entity, destinationChunk);
                         }
 
                         NotifyParentChange(new(world), entity, parent);

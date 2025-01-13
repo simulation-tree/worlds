@@ -26,6 +26,20 @@ namespace Worlds
             includeComponents = world.Schema.GetComponents<C1, C2, C3, C4>();
             this.world = world;
         }
+
+        public ComponentQuery<C1, C2, C3, C4> ExcludeDisabled(bool should)
+        {
+            if (should)
+            {
+                exclude.AddTagType(TagType.Disabled);
+            }
+            else
+            {
+                exclude.RemoveTagType(TagType.Disabled);
+            }
+
+            return this;
+        }
         
         public ComponentQuery<C1, C2, C3, C4> IncludeArray<T>() where T : unmanaged
         {

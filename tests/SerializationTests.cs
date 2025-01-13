@@ -75,7 +75,7 @@ namespace Worlds.Tests
             using World loadedWorld = reader.ReadObject<World>();
             world.Append(loadedWorld);
 
-            world.TryGetFirstEntityContainingComponent<Prefab>(out uint prefabEntity, out _);
+            world.TryGetFirstComponent<Prefab>(out uint prefabEntity, out _);
             Assert.That(prefabEntity, Is.Not.EqualTo((uint)0));
             Assert.That(world.ContainsEntity(prefabEntity), Is.True);
             Assert.That(world.ContainsEntity(prefabEntity + 1), Is.True);

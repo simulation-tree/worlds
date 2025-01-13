@@ -6,6 +6,11 @@ namespace Worlds
     public readonly struct TagType : IEquatable<TagType>
     {
         /// <summary>
+        /// Tag type stating that the entity is disabled.
+        /// </summary>
+        public static readonly TagType Disabled = new(BitSet.Capacity);
+
+        /// <summary>
         /// Index of the tag type within a <see cref="BitSet"/>.
         /// </summary>
         public readonly byte index;

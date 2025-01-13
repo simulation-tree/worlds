@@ -151,6 +151,86 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Checks if the bit at position <paramref name="index"/> is 1.
+        /// </summary>
+        public readonly bool Contains(byte index)
+        {
+#if USE_VECTOR256
+            int longIndex = index / 64;
+            int bitIndex = index % 64;
+            return (data.GetElement(longIndex) & 1UL << bitIndex) != 0;
+#else
+            return index switch
+            {
+                < 64 => (a & 1UL << index) != 0,
+                < 128 => (b & 1UL << index - 64) != 0,
+                < 192 => (c & 1UL << index - 128) != 0,
+                _ => (d & 1UL << index - 192) != 0,
+            };
+#endif
+        }
+
+        /// <summary>
+        /// Sets the bit at position <paramref name="index"/> to 1.
+        /// </summary>
+        public void Set(byte index)
+        {
+#if USE_VECTOR256
+            int longIndex = index / 64;
+            int bitIndex = index % 64;
+            ulong slot = data.GetElement(longIndex);
+            slot |= 1UL << bitIndex;
+            data = data.WithElement(longIndex, slot);
+#else
+            switch (index)
+            {
+                case < 64:
+                    a |= 1UL << index;
+                    break;
+                case < 128:
+                    b |= 1UL << index - 64;
+                    break;
+                case < 192:
+                    c |= 1UL << index - 128;
+                    break;
+                default:
+                    d |= 1UL << index - 192;
+                    break;
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Resets the bit at position <paramref name="index"/> to 0.
+        /// </summary>
+        public void Clear(byte index)
+        {
+#if USE_VECTOR256
+            int longIndex = index / 64;
+            int bitIndex = index % 64;
+            ulong slot = data.GetElement(longIndex);
+            slot &= ~(1UL << bitIndex);
+            data = data.WithElement(longIndex, slot);
+#else
+            switch (index)
+            {
+                case < 64:
+                    a &= ~(1UL << index);
+                    break;
+                case < 128:
+                    b &= ~(1UL << index - 64);
+                    break;
+                case < 192:
+                    c &= ~(1UL << index - 128);
+                    break;
+                default:
+                    d &= ~(1UL << index - 192);
+                    break;
+            }
+#endif
+        }
+
+        /// <summary>
         /// Retrieves a cheap hashcode prone to collisions.
         /// </summary>
         public readonly override int GetHashCode()

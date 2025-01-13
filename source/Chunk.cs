@@ -34,7 +34,7 @@ namespace Worlds
         public readonly uint Count => value->entities.Count;
 
         /// <summary>
-        /// Returns the <see cref="Definition"/> representing the types of components, arrays and tags
+        /// Returns the definition representing the types of components, arrays and tags
         /// this chunk is for.
         /// </summary>
         public readonly Definition Definition => value->definition;

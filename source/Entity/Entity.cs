@@ -342,45 +342,45 @@ namespace Worlds
             public readonly uint value;
             public readonly World world;
             public readonly Entity parent;
+            public readonly Entity[] children;
+            public readonly bool enabled;
             public readonly StackTrace creationStackTrace;
-            public readonly object[] componentTypes;
-            public readonly object[][] arrayElementTypes;
-            public readonly Type[] tagTypes;
+            public readonly object[] components;
+            public readonly object[][] arrays;
+            public readonly Type[] tags;
             public readonly Entity[] references;
 
             public EntityDebugView(Entity entity)
             {
                 value = entity.GetEntityValue();
                 world = entity.GetWorld();
+                enabled = entity.IsEnabled();
                 parent = entity.GetParent();
                 creationStackTrace = World.Implementation.createStackTraces[entity];
                 
                 Schema schema = world.Schema;
                 USpan<ComponentType> componentTypeBuffer = stackalloc ComponentType[BitSet.Capacity];
                 uint bufferLength = entity.CopyComponentTypesTo(componentTypeBuffer);
-                ComponentType[] componentTypes = componentTypeBuffer.Slice(0, bufferLength).ToArray();
-                this.componentTypes = new object[componentTypes.Length];
-                for (int i = 0; i < componentTypes.Length; i++)
+                components = new object[bufferLength];
+                for (uint i = 0; i < bufferLength; i++)
                 {
-                    this.componentTypes[i] = world.GetComponentObject(entity, componentTypes[i]);
+                    components[i] = world.GetComponentObject(entity, componentTypeBuffer[i]);
                 }
 
                 USpan<ArrayElementType> arrayElementTypeBuffer = stackalloc ArrayElementType[BitSet.Capacity];
                 bufferLength = entity.CopyArrayElementTypesTo(arrayElementTypeBuffer);
-                ArrayElementType[] arrayElementTypes = arrayElementTypeBuffer.Slice(0, bufferLength).ToArray();
-                this.arrayElementTypes = new object[arrayElementTypes.Length][];
-                for (int i = 0; i < arrayElementTypes.Length; i++)
+                arrays = new object[bufferLength][];
+                for (uint i = 0; i < bufferLength; i++)
                 {
-                    this.arrayElementTypes[i] = world.GetArrayObject(entity, arrayElementTypes[i]);
+                    arrays[i] = world.GetArrayObject(entity, arrayElementTypeBuffer[i]);
                 }
 
                 USpan<TagType> tagTypeBuffer = stackalloc TagType[BitSet.Capacity];
                 bufferLength = entity.CopyTagTypesTo(tagTypeBuffer);
-                TagType[] tagTypes = tagTypeBuffer.Slice(0, bufferLength).ToArray();
-                this.tagTypes = new Type[tagTypes.Length];
-                for (int i = 0; i < tagTypes.Length; i++)
+                tags = new Type[bufferLength];
+                for (uint i = 0; i < bufferLength; i++)
                 {
-                    this.tagTypes[i] = tagTypes[i].GetLayout(schema).SystemType;
+                    tags[i] = tagTypeBuffer[i].GetLayout(schema).SystemType;
                 }
 
                 references = new Entity[entity.GetReferenceCount()];
@@ -388,6 +388,13 @@ namespace Worlds
                 {
                     rint reference = new(i + 1);
                     references[i] = new(world, entity.GetReference(reference));
+                }
+
+                USpan<uint> children = entity.GetChildren();
+                this.children = new Entity[children.Length];
+                for (uint i = 0; i < children.Length; i++)
+                {
+                    this.children[i] = new(world, children[i]);
                 }
             }
 #endif

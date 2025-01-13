@@ -175,6 +175,19 @@ namespace Worlds.Tests
         }
 
         [Test]
+        public void DisabledEntityWithReferences()
+        {
+            using World world = CreateWorld();
+            uint entity = world.CreateEntity();
+            uint other = world.CreateEntity();
+            rint reference = world.AddReference(entity, other);
+            world.AddComponent(entity, new ComponentThatReferences(reference));
+            Assert.That(world.GetComponent<ComponentThatReferences>(entity).reference, Is.EqualTo(reference));
+            world.SetEnabled(entity, false);
+            Assert.That(world.GetComponent<ComponentThatReferences>(entity).reference, Is.EqualTo(reference));
+        }
+
+        [Test]
         public void EnablingAndDisabling()
         {
             using World world = CreateWorld();
@@ -196,14 +209,31 @@ namespace Worlds.Tests
             using World world = CreateWorld();
             uint parent = world.CreateEntity();
             uint child = world.CreateEntity();
+            world.AddComponent(child, new Another(1234567890));
             world.SetParent(child, parent);
             world.SetEnabled(parent, false);
+            Assert.That(world.GetComponent<Another>(child).data, Is.EqualTo(1234567890));
             Assert.That(world.IsEnabled(parent), Is.False);
             Assert.That(world.IsEnabled(child), Is.False);
             Assert.That(world.IsLocallyEnabled(child), Is.True);
+            Chunk chunk = world.GetChunk(child);
+            Assert.That(chunk.Definition.TagTypes.Contains(TagType.Disabled), Is.True);
             world.SetEnabled(parent, true);
             Assert.That(world.IsEnabled(parent), Is.True);
             Assert.That(world.IsEnabled(child), Is.True);
+            chunk = world.GetChunk(child);
+            Assert.That(chunk.Definition.TagTypes.Contains(TagType.Disabled), Is.False);
+
+            world.SetEnabled(child, false);
+            Assert.That(world.IsEnabled(child), Is.False);
+            chunk = world.GetChunk(child);
+            Assert.That(chunk.Definition.TagTypes.Contains(TagType.Disabled), Is.True);
+
+            world.SetEnabled(parent, false);
+            world.SetEnabled(child, true);
+            Assert.That(world.IsEnabled(child), Is.False);
+            chunk = world.GetChunk(child);
+            Assert.That(chunk.Definition.TagTypes.Contains(TagType.Disabled), Is.True);
         }
 
         [Test]
@@ -217,8 +247,28 @@ namespace Worlds.Tests
             Assert.That(world.GetParent(child), Is.EqualTo(parent));
             Assert.That(world.IsEnabled(child), Is.EqualTo(false));
             Assert.That(world.IsLocallyEnabled(child), Is.EqualTo(true));
+            uint grandChild = world.CreateEntity();
+            world.SetParent(grandChild, child);
+            Assert.That(world.IsEnabled(grandChild), Is.EqualTo(false));
+            Assert.That(world.IsLocallyEnabled(grandChild), Is.EqualTo(true));
             world.SetEnabled(parent, true);
             Assert.That(world.IsEnabled(child), Is.EqualTo(true));
+            Assert.That(world.IsEnabled(grandChild), Is.EqualTo(true));
+            world.SetEnabled(parent, false);
+            Assert.That(world.IsEnabled(child), Is.EqualTo(false));
+            Assert.That(world.IsEnabled(grandChild), Is.EqualTo(false));
+        }
+
+        [Test]
+        public void RecreateDisabledEntity()
+        {
+            using World world = CreateWorld();
+            uint entity = world.CreateEntity();
+            world.SetEnabled(entity, false);
+            world.DestroyEntity(entity);
+            uint another = world.CreateEntity();
+            Assert.That(entity, Is.EqualTo(another));
+            Assert.That(world.IsEnabled(entity), Is.True);
         }
 
         [Test]
