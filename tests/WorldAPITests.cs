@@ -191,6 +191,37 @@ namespace Worlds.Tests
         }
 
         [Test]
+        public void DisablingParentDisablesChildToo()
+        {
+            using World world = CreateWorld();
+            uint parent = world.CreateEntity();
+            uint child = world.CreateEntity();
+            world.SetParent(child, parent);
+            world.SetEnabled(parent, false);
+            Assert.That(world.IsEnabled(parent), Is.False);
+            Assert.That(world.IsEnabled(child), Is.False);
+            Assert.That(world.IsLocallyEnabled(child), Is.True);
+            world.SetEnabled(parent, true);
+            Assert.That(world.IsEnabled(parent), Is.True);
+            Assert.That(world.IsEnabled(child), Is.True);
+        }
+
+        [Test]
+        public void ParentingToDisabledEntity()
+        {
+            using World world = CreateWorld();
+            uint parent = world.CreateEntity();
+            uint child = world.CreateEntity();
+            world.SetEnabled(parent, false);
+            world.SetParent(child, parent);
+            Assert.That(world.GetParent(child), Is.EqualTo(parent));
+            Assert.That(world.IsEnabled(child), Is.EqualTo(false));
+            Assert.That(world.IsLocallyEnabled(child), Is.EqualTo(true));
+            world.SetEnabled(parent, true);
+            Assert.That(world.IsEnabled(child), Is.EqualTo(true));
+        }
+
+        [Test]
         public void DestroyEntityWithArray()
         {
             World world = CreateWorld();

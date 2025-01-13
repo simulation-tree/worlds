@@ -641,50 +641,74 @@ namespace Worlds
             Implementation.ThrowIfEntityIsMissing(value, entity);
 
             ref EntitySlot slot = ref Slots[entity - 1];
-            return slot.state == EntitySlot.State.Enabled;
+            return slot.state == EntitySlotState.Enabled;
         }
 
         /// <summary>
         /// Checks if the given entity is enabled regardless
         /// of the entity hierarchy.
         /// </summary>
-        public readonly bool IsSelfEnabled(uint entity)
+        public readonly bool IsLocallyEnabled(uint entity)
         {
             Implementation.ThrowIfEntityIsMissing(value, entity);
 
             ref EntitySlot slot = ref Slots[entity - 1];
-            return slot.state == EntitySlot.State.Enabled || slot.state == EntitySlot.State.EnabledButDisabledDueToAncestor;
+            return slot.state == EntitySlotState.Enabled || slot.state == EntitySlotState.DisabledButLocallyEnabled;
         }
 
         /// <summary>
-        /// Assigns the enabled state of the given <paramref name="entity"/>.
+        /// Assigns the enabled state of the given <paramref name="entity"/>
+        /// and its descendants to the given <paramref name="enabled"/>.
         /// </summary>
-        public readonly void SetEnabled(uint entity, bool state)
+        public readonly void SetEnabled(uint entity, bool enabled)
         {
             Implementation.ThrowIfEntityIsMissing(value, entity);
 
-            ref EntitySlot slot = ref Slots[entity - 1];
+            List<EntitySlot> slots = Slots;
+            ref EntitySlot slot = ref slots[entity - 1];
             if (slot.parent != default)
             {
-                EntitySlot.State parentState = Slots[slot.parent - 1].state;
-                if (parentState == EntitySlot.State.Disabled || parentState == EntitySlot.State.EnabledButDisabledDueToAncestor)
+                ref EntitySlot parentSlot = ref slots[slot.parent - 1];
+                if (parentSlot.state == EntitySlotState.Disabled || parentSlot.state == EntitySlotState.DisabledButLocallyEnabled)
                 {
-                    slot.state = state ? EntitySlot.State.EnabledButDisabledDueToAncestor : EntitySlot.State.Disabled;
+                    slot.state = EntitySlotState.DisabledButLocallyEnabled;
                 }
                 else
                 {
-                    slot.state = state ? EntitySlot.State.Enabled : EntitySlot.State.Disabled;
+                    slot.state = enabled ? EntitySlotState.Enabled : EntitySlotState.Disabled;
                 }
             }
             else
             {
-                slot.state = state ? EntitySlot.State.Enabled : EntitySlot.State.Disabled;
+                slot.state = enabled ? EntitySlotState.Enabled : EntitySlotState.Disabled;
             }
 
+            using List<uint> stack = new(4);
             for (uint i = 0; i < slot.childCount; i++)
             {
                 uint child = slot.children[i];
-                SetEnabled(child, state);
+                stack.Add(child);
+            }
+
+            EntitySlotState slotState = slot.state;
+            while (stack.Count > 0)
+            {
+                entity = stack.RemoveAt(0);
+                slot = ref slots[entity - 1];
+                if (enabled && slot.state == EntitySlotState.DisabledButLocallyEnabled)
+                {
+                    slot.state = EntitySlotState.Enabled;
+                }
+                else if (!enabled && slot.state == EntitySlotState.Enabled)
+                {
+                    slot.state = EntitySlotState.DisabledButLocallyEnabled;
+                }
+
+                for (uint i = 0; i < slot.childCount; i++)
+                {
+                    uint child = slot.children[i];
+                    stack.Add(child);
+                }
             }
         }
 
@@ -2307,7 +2331,7 @@ namespace Worlds
                 }
 
                 ref EntitySlot slot = ref world->slots[position];
-                if (slot.state == EntitySlot.State.Destroyed)
+                if (slot.state == EntitySlotState.Free)
                 {
                     throw new NullReferenceException($"Entity `{entity}` not found");
                 }
@@ -2366,7 +2390,7 @@ namespace Worlds
                 if (position < count)
                 {
                     ref EntitySlot slot = ref world->slots[position];
-                    if (slot.state != EntitySlot.State.Destroyed)
+                    if (slot.state != EntitySlotState.Free)
                     {
                         throw new InvalidOperationException($"Entity `{entity}` already present");
                     }
@@ -2638,7 +2662,7 @@ namespace Worlds
                 for (uint s = 0; s < slotCount; s++)
                 {
                     ref EntitySlot slot = ref slots[s];
-                    if (slot.state != EntitySlot.State.Destroyed)
+                    if (slot.state != EntitySlotState.Free)
                     {
                         Definition definition = slot.chunk.Definition;
                         bool hasArrays = false;
@@ -2760,7 +2784,7 @@ namespace Worlds
                 slot.entity = default;
                 slot.parent = default;
                 slot.chunk = default;
-                slot.state = EntitySlot.State.Destroyed;
+                slot.state = EntitySlotState.Free;
                 world->freeEntities.Add(entity);
                 NotifyDestruction(new(world), entity);
             }
@@ -2812,9 +2836,9 @@ namespace Worlds
                         }
                     }
 
-                    if (slot.state == EntitySlot.State.EnabledButDisabledDueToAncestor)
+                    if (slot.state == EntitySlotState.DisabledButLocallyEnabled)
                     {
-                        slot.state = EntitySlot.State.Enabled;
+                        slot.state = EntitySlotState.Enabled;
                     }
                 }
 
@@ -2841,9 +2865,9 @@ namespace Worlds
 
                         newParentSlot.children.Add(entity);
                         newParentSlot.childCount++;
-                        if (newParentSlot.state == EntitySlot.State.Disabled || newParentSlot.state == EntitySlot.State.EnabledButDisabledDueToAncestor)
+                        if (newParentSlot.state == EntitySlotState.Disabled || newParentSlot.state == EntitySlotState.DisabledButLocallyEnabled)
                         {
-                            slot.state = EntitySlot.State.EnabledButDisabledDueToAncestor;
+                            slot.state = EntitySlotState.DisabledButLocallyEnabled;
                         }
 
                         NotifyParentChange(new(world), entity, parent);
@@ -2904,7 +2928,7 @@ namespace Worlds
 
                 ref EntitySlot slot = ref slots[newEntity - 1];
                 slot.entity = newEntity;
-                slot.state = EntitySlot.State.Enabled;
+                slot.state = EntitySlotState.Enabled;
 
                 //put entity into correct chunk
                 Dictionary<Definition, Chunk> chunks = world->chunks;

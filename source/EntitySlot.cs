@@ -56,7 +56,7 @@ namespace Worlds
         /// <summary>
         /// State of the entity.
         /// </summary>
-        public State state;
+        public EntitySlotState state;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EntitySlot"/> struct.
@@ -64,32 +64,6 @@ namespace Worlds
         public EntitySlot(uint entity)
         {
             this.entity = entity;
-        }
-
-        /// <summary>
-        /// Enabled state of an entity.
-        /// </summary>
-        public enum State : byte
-        {
-            /// <summary>
-            /// Entity is enabled.
-            /// </summary>
-            Enabled,
-
-            /// <summary>
-            /// Entity is disabled.
-            /// </summary>
-            Disabled,
-
-            /// <summary>
-            /// Entity is destroyed.
-            /// </summary>
-            Destroyed,
-
-            /// <summary>
-            /// Entity is enabled on its own, but disabled because of an ancestor.
-            /// </summary>
-            EnabledButDisabledDueToAncestor
         }
     }
 }
