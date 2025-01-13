@@ -92,7 +92,7 @@ namespace Worlds
             BitSet componentTypes = Definition.ComponentTypes;
             for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                if (componentTypes == i)
+                if (componentTypes.Contains(i))
                 {
                     ComponentType componentType = new(i);
                     length += componentType.ToString(Schema, buffer.Slice(length));
@@ -848,7 +848,7 @@ namespace Worlds
                 byte typeCount = 0;
                 for (byte c = 0; c < BitSet.Capacity; c++)
                 {
-                    if (definition.ComponentTypes == c)
+                    if (definition.ComponentTypes.Contains(c))
                     {
                         ComponentType componentType = new(c);
                         ushort componentSize = schema.GetSize(componentType);
@@ -1622,7 +1622,7 @@ namespace Worlds
             [Conditional("DEBUG")]
             private static void ThrowIfComponentTypeIsMissing(Implementation* chunk, ComponentType componentType)
             {
-                if (chunk->definition.ComponentTypes != componentType)
+                if (!chunk->definition.ComponentTypes.Contains(componentType))
                 {
                     throw new ArgumentException($"Component type `{componentType.ToString(chunk->schema)}` is missing from the chunk");
                 }

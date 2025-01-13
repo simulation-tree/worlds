@@ -60,7 +60,7 @@ namespace Worlds
             uint length = 0;
             for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                if (componentTypes == i)
+                if (componentTypes.Contains(i))
                 {
                     ComponentType componentType = new(i);
                     length += componentType.ToString(buffer.Slice(length));
@@ -71,7 +71,7 @@ namespace Worlds
 
             for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                if (arrayElementTypes == i)
+                if (arrayElementTypes.Contains(i))
                 {
                     ArrayElementType arrayElementType = new(i);
                     length += arrayElementType.ToString(buffer.Slice(length));
@@ -96,7 +96,7 @@ namespace Worlds
             uint length = 0;
             for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                if (componentTypes == i)
+                if (componentTypes.Contains(i))
                 {
                     ComponentType componentType = new(i);
                     length += componentType.ToString(schema, buffer.Slice(length));
@@ -107,7 +107,7 @@ namespace Worlds
 
             for (byte i = 0; i < BitSet.Capacity; i++)
             {
-                if (arrayElementTypes == i)
+                if (arrayElementTypes.Contains(i))
                 {
                     ArrayElementType arrayElementType = new(i);
                     length += arrayElementType.ToString(schema, buffer.Slice(length));
@@ -133,7 +133,7 @@ namespace Worlds
             byte count = 0;
             for (byte c = 0; c < BitSet.Capacity; c++)
             {
-                if (componentTypes == c)
+                if (componentTypes.Contains(c))
                 {
                     destination[count] = new(c);
                     count++;
@@ -152,7 +152,7 @@ namespace Worlds
             byte count = 0;
             for (byte a = 0; a < BitSet.Capacity; a++)
             {
-                if (arrayElementTypes == a)
+                if (arrayElementTypes.Contains(a))
                 {
                     destination[count] = new(a);
                     count++;
@@ -171,7 +171,7 @@ namespace Worlds
             byte count = 0;
             for (byte t = 0; t < BitSet.Capacity; t++)
             {
-                if (tagTypes == t)
+                if (tagTypes.Contains(t))
                 {
                     destination[count] = new(t);
                     count++;
@@ -204,7 +204,7 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsComponent<T>(Schema schema) where T : unmanaged
         {
-            return componentTypes == schema.GetComponent<T>();
+            return componentTypes.Contains(schema.GetComponent<T>());
         }
 
         /// <summary>
@@ -212,12 +212,12 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsArray<T>(Schema schema) where T : unmanaged
         {
-            return arrayElementTypes == schema.GetArrayElement<T>();
+            return arrayElementTypes.Contains(schema.GetArrayElement<T>());
         }
 
         public readonly bool ContainsTag<T>(Schema schema) where T : unmanaged
         {
-            return tagTypes == schema.GetTag<T>();
+            return tagTypes.Contains(schema.GetTag<T>());
         }
 
         /// <summary>
@@ -227,7 +227,7 @@ namespace Worlds
         {
             foreach (ComponentType componentType in componentTypes)
             {
-                this.componentTypes |= componentType;
+                this.componentTypes.Set(componentType);
             }
 
             return this;
@@ -240,7 +240,7 @@ namespace Worlds
         {
             foreach (ArrayElementType arrayElementType in arrayElementTypes)
             {
-                this.arrayElementTypes |= arrayElementType;
+                this.arrayElementTypes.Set(arrayElementType);
             }
 
             return this;
@@ -251,13 +251,13 @@ namespace Worlds
         /// </summary>
         public Definition AddComponentType(ComponentType componentType)
         {
-            componentTypes |= componentType;
+            componentTypes.Set(componentType);
             return this;
         }
 
         public Definition RemoveComponentType(ComponentType componentType)
         {
-            componentTypes &= componentType;
+            componentTypes.Clear(componentType);
             return this;
         }
 
@@ -266,7 +266,7 @@ namespace Worlds
         /// </summary>
         public Definition AddComponentType<C1>(Schema schema) where C1 : unmanaged
         {
-            componentTypes |= schema.GetComponent<C1>();
+            componentTypes.Set(schema.GetComponent<C1>());
             return this;
         }
 
@@ -344,13 +344,13 @@ namespace Worlds
         /// </summary>
         public Definition AddArrayElementType(ArrayElementType arrayElementType)
         {
-            arrayElementTypes |= arrayElementType;
+            arrayElementTypes.Set(arrayElementType);
             return this;
         }
 
         public Definition RemoveArrayElementType(ArrayElementType arrayElementType)
         {
-            arrayElementTypes &= arrayElementType;
+            arrayElementTypes.Clear(arrayElementType);
             return this;
         }
 
@@ -446,19 +446,19 @@ namespace Worlds
 
         public Definition AddTagType(TagType tagType)
         {
-            tagTypes |= tagType;
+            tagTypes.Set(tagType);
             return this;
         }
 
         public Definition RemoveTagType(TagType tagType)
         {
-            tagTypes &= tagType;
+            tagTypes.Clear(tagType);
             return this;
         }
 
         public Definition AddTagType<T>(Schema schema) where T : unmanaged
         {
-            tagTypes |= schema.GetTag<T>();
+            tagTypes.Set(schema.GetTag<T>());
             return this;
         }
 

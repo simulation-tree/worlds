@@ -256,7 +256,7 @@ namespace Worlds
             {
                 for (byte c = 0; c < BitSet.Capacity; c++)
                 {
-                    if (definition.ComponentTypes == c && currentDefinition.ComponentTypes != c)
+                    if (definition.ComponentTypes.Contains(c) && !currentDefinition.ComponentTypes.Contains(c))
                     {
                         ComponentType componentType = new(c);
                         world.AddComponent(value, componentType);
@@ -269,7 +269,7 @@ namespace Worlds
             {
                 for (byte a = 0; a < BitSet.Capacity; a++)
                 {
-                    if (definition.ArrayElementTypes == a && currentDefinition.ArrayElementTypes != a)
+                    if (definition.ArrayElementTypes.Contains(a) && !currentDefinition.ArrayElementTypes.Contains(a))
                     {
                         ArrayElementType arrayElementType = new(a);
                         world.CreateArray(value, arrayElementType);
@@ -282,7 +282,7 @@ namespace Worlds
             {
                 for (byte t = 0; t < BitSet.Capacity; t++)
                 {
-                    if (definition.TagTypes == t && currentDefinition.TagTypes != t)
+                    if (definition.TagTypes.Contains(t) && !currentDefinition.TagTypes.Contains(t))
                     {
                         TagType tagType = new(t);
                         world.AddTag(value, tagType);

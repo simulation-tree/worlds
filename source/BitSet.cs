@@ -87,7 +87,7 @@ namespace Worlds
             for (uint i = 0; i < positions.Length; i++)
             {
                 byte index = positions[i];
-                this |= index;
+                Set(index);
             }
         }
 
@@ -107,7 +107,7 @@ namespace Worlds
             uint count = 0;
             for (byte i = 0; i < Capacity; i++)
             {
-                if (this == i)
+                if (Contains(i))
                 {
                     buffer[count++] = '1';
                 }
@@ -347,127 +347,6 @@ namespace Worlds
             result.d = ~result.d;
 #endif
             return result;
-        }
-
-        /// <summary>
-        /// Assigns the bit at position <paramref name="index"/> to 1.
-        /// </summary>
-        public static BitSet operator |(BitSet mask, byte index)
-        {
-#if USE_VECTOR256
-            int longIndex = index / 64;
-            int bitIndex = index % 64;
-            ulong slot = mask.data.GetElement(longIndex);
-            slot |= 1UL << bitIndex;
-            mask.data = mask.data.WithElement(longIndex, slot);
-#else
-            switch (index)
-            {
-                case < 64:
-                    left.a |= 1UL << index;
-                    break;
-                case < 128:
-                    left.b |= 1UL << index - 64;
-                    break;
-                case < 192:
-                    left.c |= 1UL << index - 128;
-                    break;
-                default:
-                    left.d |= 1UL << index - 192;
-                    break;
-            }
-#endif
-            return mask;
-        }
-
-        /// <summary>
-        /// Clears the bit at position <paramref name="index"/>.
-        /// </summary>
-        public static BitSet operator &(BitSet mask, byte index)
-        {
-#if USE_VECTOR256
-            int longIndex = index / 64;
-            int bitIndex = index % 64;
-            ulong slot = mask.data.GetElement(longIndex);
-            slot &= ~(1UL << bitIndex);
-            mask.data = mask.data.WithElement(longIndex, slot);
-#else
-            switch (index)
-            {
-                case < 64:
-                    left.a &= ~(1UL << index);
-                    break;
-                case < 128:
-                    left.b &= ~(1UL << index - 64);
-                    break;
-                case < 192:
-                    left.c &= ~(1UL << index - 128);
-                    break;
-                default:
-                    left.d &= ~(1UL << index - 192);
-                    break;
-            }
-#endif
-            return mask;
-        }
-
-        /// <summary>
-        /// Performs a bitwise XOR operation on the bit at position <paramref name="index"/>.
-        /// </summary>
-        public static bool operator ^(BitSet mask, byte index)
-        {
-#if USE_VECTOR256
-            int longIndex = index / 64;
-            int bitIndex = index % 64;
-            ulong slot = mask.data.GetElement(longIndex);
-            slot ^= 1UL << bitIndex;
-            mask.data = mask.data.WithElement(longIndex, slot);
-            return (slot & 1UL << bitIndex) != 0;
-#else
-            switch (index)
-            {
-                case < 64:
-                    left.a ^= 1UL << index;
-                    return (left.a & 1UL << index) != 0;
-                case < 128:
-                    left.b ^= 1UL << index - 64;
-                    return (left.b & 1UL << index - 64) != 0;
-                case < 192:
-                    left.c ^= 1UL << index - 128;
-                    return (left.c & 1UL << index - 128) != 0;
-                default:
-                    left.d ^= 1UL << index - 192;
-                    return (left.d & 1UL << index - 192) != 0;
-            }
-#endif
-        }
-
-        /// <summary>
-        /// Checks if the bit set contains the bit at position <paramref name="index"/>.
-        /// </summary>
-        public static bool operator ==(BitSet mask, byte index)
-        {
-#if USE_VECTOR256
-            int longIndex = index / 64;
-            int bitIndex = index % 64;
-            return (mask.data.GetElement(longIndex) & 1UL << bitIndex) != 0;
-#else
-            return index switch
-            {
-                < 64 => (left.a & 1UL << index) != 0,
-                < 128 => (left.b & 1UL << index - 64) != 0,
-                < 192 => (left.c & 1UL << index - 128) != 0,
-                _ => (left.d & 1UL << index - 192) != 0,
-            };
-#endif
-        }
-
-        /// <summary>
-        /// Checks if the bit at position <paramref name="index"/> is not set.
-        /// </summary>
-        public static bool operator !=(BitSet mask, byte index)
-        {
-            return !(mask == index);
         }
     }
 }

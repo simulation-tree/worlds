@@ -43,7 +43,7 @@ namespace Worlds
         
         public ComponentQuery<C1> IncludeArray<T>() where T : unmanaged
         {
-            includeArrayElements |= world.Schema.GetArrayElement<T>();
+            includeArrayElements.Set(world.Schema.GetArrayElement<T>());
             return this;
         }
 
@@ -115,7 +115,7 @@ namespace Worlds
 
         public ComponentQuery<C1> IncludeTag<T>() where T : unmanaged
         {
-            includeTags |= world.Schema.GetTag<T>();
+            includeTags.Set(world.Schema.GetTag<T>());
             return this;
         }
 
