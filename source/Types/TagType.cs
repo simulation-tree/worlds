@@ -8,10 +8,10 @@ namespace Worlds
         /// <summary>
         /// Tag type stating that the entity is disabled.
         /// </summary>
-        public static readonly TagType Disabled = new(BitSet.Capacity);
+        public static readonly TagType Disabled = new(BitMask.Capacity);
 
         /// <summary>
-        /// Index of the tag type within a <see cref="BitSet"/>.
+        /// Index of the tag type within a <see cref="BitMask"/>.
         /// </summary>
         public readonly byte index;
 

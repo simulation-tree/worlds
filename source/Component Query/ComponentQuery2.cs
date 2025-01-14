@@ -7,9 +7,9 @@ namespace Worlds
 {
     public struct ComponentQuery<C1, C2> where C1 : unmanaged where C2 : unmanaged
     {
-        private readonly BitSet includeComponents;
-        private BitSet includeArrayElements;
-        private BitSet includeTags;
+        private readonly BitMask includeComponents;
+        private BitMask includeArrayElements;
+        private BitMask includeTags;
         private Definition exclude;
         private readonly World world;
 

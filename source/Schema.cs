@@ -17,7 +17,7 @@ namespace Worlds
         {
             get
             {
-                for (byte c = 0; c < BitSet.Capacity; c++)
+                for (byte c = 0; c < BitMask.Capacity; c++)
                 {
                     TypeLayout typeLayout = GetLayout(new ComponentType(c));
                     if (typeLayout != default)
@@ -32,7 +32,7 @@ namespace Worlds
         {
             get
             {
-                for (byte a = 0; a < BitSet.Capacity; a++)
+                for (byte a = 0; a < BitMask.Capacity; a++)
                 {
                     TypeLayout typeLayout = GetLayout(new ArrayElementType(a));
                     if (typeLayout != default)
@@ -47,7 +47,7 @@ namespace Worlds
         {
             get
             {
-                for (byte t = 0; t < BitSet.Capacity; t++)
+                for (byte t = 0; t < BitMask.Capacity; t++)
                 {
                     TypeLayout typeLayout = GetLayout(new TagType(t));
                     if (typeLayout != default)
@@ -102,7 +102,7 @@ namespace Worlds
         {
             ThrowIfArrayElementIsMissing(arrayElementType);
 
-            return schema->sizes.Read<ushort>(BitSet.Capacity * 2 + arrayElementType.index * 2u);
+            return schema->sizes.Read<ushort>(BitMask.Capacity * 2 + arrayElementType.index * 2u);
         }
 
         /// <summary>
@@ -142,7 +142,7 @@ namespace Worlds
 
         public readonly bool TryGetComponentLayout(FixedString fullTypeName, out TypeLayout typeLayout)
         {
-            for (byte c = 0; c < BitSet.Capacity; c++)
+            for (byte c = 0; c < BitMask.Capacity; c++)
             {
                 ComponentType componentType = new(c);
                 TypeLayout layout = GetLayout(componentType);
@@ -159,7 +159,7 @@ namespace Worlds
 
         public readonly bool TryGetArrayElementLayout(FixedString fullTypeName, out TypeLayout typeLayout)
         {
-            for (byte a = 0; a < BitSet.Capacity; a++)
+            for (byte a = 0; a < BitMask.Capacity; a++)
             {
                 ArrayElementType arrayElementType = new(a);
                 TypeLayout layout = GetLayout(arrayElementType);
@@ -234,7 +234,7 @@ namespace Worlds
 
         public readonly bool ContainsComponent(FixedString fullTypeName)
         {
-            for (byte c = 0; c < BitSet.Capacity; c++)
+            for (byte c = 0; c < BitMask.Capacity; c++)
             {
                 ComponentType componentType = new(c);
                 TypeLayout typeLayout = GetLayout(componentType);
@@ -249,7 +249,7 @@ namespace Worlds
 
         public readonly bool ContainsArrayElement(FixedString fullTypeName)
         {
-            for (byte a = 0; a < BitSet.Capacity; a++)
+            for (byte a = 0; a < BitMask.Capacity; a++)
             {
                 ArrayElementType arrayElementType = new(a);
                 TypeLayout typeLayout = GetLayout(arrayElementType);
@@ -264,7 +264,7 @@ namespace Worlds
 
         public readonly bool ContainsTag(FixedString fullTypeName)
         {
-            for (byte t = 0; t < BitSet.Capacity; t++)
+            for (byte t = 0; t < BitMask.Capacity; t++)
             {
                 TagType tagType = new(t);
                 if (Contains(tagType))
@@ -320,212 +320,212 @@ namespace Worlds
             return schema->tagIndices.ContainsKey(hashCode);
         }
 
-        public readonly BitSet GetComponents<T1>() where T1 : unmanaged
+        public readonly BitMask GetComponents<T1>() where T1 : unmanaged
         {
             return new(GetComponent<T1>());
         }
 
-        public readonly BitSet GetComponents<T1, T2>() where T1 : unmanaged where T2 : unmanaged
+        public readonly BitMask GetComponents<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
             return new(GetComponent<T1>(), GetComponent<T2>());
         }
 
-        public readonly BitSet GetComponents<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+        public readonly BitMask GetComponents<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
             return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>());
         }
 
-        public readonly BitSet GetComponents<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+        public readonly BitMask GetComponents<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
             return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>());
         }
 
-        public readonly BitSet GetComponents<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
+        public readonly BitMask GetComponents<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
             return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>());
         }
 
-        public readonly BitSet GetComponents<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
+        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
             return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>());
         }
 
-        public readonly BitSet GetComponents<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
+        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
             return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>());
         }
 
-        public readonly BitSet GetComponents<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
+        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
             return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>(), GetComponent<T8>());
         }
 
-        public readonly BitSet GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
+        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
             return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>(), GetComponent<T8>(), GetComponent<T9>());
         }
 
-        public readonly BitSet GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
+        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
             return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>(), GetComponent<T8>(), GetComponent<T9>(), GetComponent<T10>());
         }
 
-        public readonly BitSet GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
+        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
             return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>(), GetComponent<T8>(), GetComponent<T9>(), GetComponent<T10>(), GetComponent<T11>());
         }
 
-        public readonly BitSet GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
+        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
             return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>(), GetComponent<T8>(), GetComponent<T9>(), GetComponent<T10>(), GetComponent<T11>(), GetComponent<T12>());
         }
 
-        public readonly BitSet GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged
+        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged
         {
             return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>(), GetComponent<T8>(), GetComponent<T9>(), GetComponent<T10>(), GetComponent<T11>(), GetComponent<T12>(), GetComponent<T13>());
         }
 
-        public readonly BitSet GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged
+        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged
         {
             return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>(), GetComponent<T8>(), GetComponent<T9>(), GetComponent<T10>(), GetComponent<T11>(), GetComponent<T12>(), GetComponent<T13>(), GetComponent<T14>());
         }
 
-        public readonly BitSet GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged
+        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged
         {
             return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>(), GetComponent<T8>(), GetComponent<T9>(), GetComponent<T10>(), GetComponent<T11>(), GetComponent<T12>(), GetComponent<T13>(), GetComponent<T14>(), GetComponent<T15>());
         }
 
-        public readonly BitSet GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged
+        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged
         {
             return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>(), GetComponent<T8>(), GetComponent<T9>(), GetComponent<T10>(), GetComponent<T11>(), GetComponent<T12>(), GetComponent<T13>(), GetComponent<T14>(), GetComponent<T15>(), GetComponent<T16>());
         }
 
-        public readonly BitSet GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged where T17 : unmanaged
+        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged where T17 : unmanaged
         {
             return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>(), GetComponent<T8>(), GetComponent<T9>(), GetComponent<T10>(), GetComponent<T11>(), GetComponent<T12>(), GetComponent<T13>(), GetComponent<T14>(), GetComponent<T15>(), GetComponent<T16>(), GetComponent<T17>());
         }
 
-        public readonly BitSet GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged where T17 : unmanaged where T18 : unmanaged
+        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged where T17 : unmanaged where T18 : unmanaged
         {
             return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>(), GetComponent<T8>(), GetComponent<T9>(), GetComponent<T10>(), GetComponent<T11>(), GetComponent<T12>(), GetComponent<T13>(), GetComponent<T14>(), GetComponent<T15>(), GetComponent<T16>(), GetComponent<T17>(), GetComponent<T18>());
         }
 
-        public readonly BitSet GetArrayElements<T1>() where T1 : unmanaged
+        public readonly BitMask GetArrayElements<T1>() where T1 : unmanaged
         {
             return new(GetArrayElement<T1>());
         }
 
-        public readonly BitSet GetArrayElements<T1, T2>() where T1 : unmanaged where T2 : unmanaged
+        public readonly BitMask GetArrayElements<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
             return new(GetArrayElement<T1>(), GetArrayElement<T2>());
         }
 
-        public readonly BitSet GetArrayElements<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+        public readonly BitMask GetArrayElements<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
             return new(GetArrayElement<T1>(), GetArrayElement<T2>(), GetArrayElement<T3>());
         }
 
-        public readonly BitSet GetArrayElements<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+        public readonly BitMask GetArrayElements<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
             return new(GetArrayElement<T1>(), GetArrayElement<T2>(), GetArrayElement<T3>(), GetArrayElement<T4>());
         }
 
-        public readonly BitSet GetArrayElements<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
+        public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
             return new(GetArrayElement<T1>(), GetArrayElement<T2>(), GetArrayElement<T3>(), GetArrayElement<T4>(), GetArrayElement<T5>());
         }
 
-        public readonly BitSet GetArrayElements<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
+        public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
             return new(GetArrayElement<T1>(), GetArrayElement<T2>(), GetArrayElement<T3>(), GetArrayElement<T4>(), GetArrayElement<T5>(), GetArrayElement<T6>());
         }
 
-        public readonly BitSet GetArrayElements<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
+        public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
             return new(GetArrayElement<T1>(), GetArrayElement<T2>(), GetArrayElement<T3>(), GetArrayElement<T4>(), GetArrayElement<T5>(), GetArrayElement<T6>(), GetArrayElement<T7>());
         }
 
-        public readonly BitSet GetArrayElements<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
+        public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
             return new(GetArrayElement<T1>(), GetArrayElement<T2>(), GetArrayElement<T3>(), GetArrayElement<T4>(), GetArrayElement<T5>(), GetArrayElement<T6>(), GetArrayElement<T7>(), GetArrayElement<T8>());
         }
 
-        public readonly BitSet GetArrayElements<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
+        public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
             return new(GetArrayElement<T1>(), GetArrayElement<T2>(), GetArrayElement<T3>(), GetArrayElement<T4>(), GetArrayElement<T5>(), GetArrayElement<T6>(), GetArrayElement<T7>(), GetArrayElement<T8>(), GetArrayElement<T9>());
         }
 
-        public readonly BitSet GetArrayElements<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
+        public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
             return new(GetArrayElement<T1>(), GetArrayElement<T2>(), GetArrayElement<T3>(), GetArrayElement<T4>(), GetArrayElement<T5>(), GetArrayElement<T6>(), GetArrayElement<T7>(), GetArrayElement<T8>(), GetArrayElement<T9>(), GetArrayElement<T10>());
         }
 
-        public readonly BitSet GetArrayElements<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
+        public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
             return new(GetArrayElement<T1>(), GetArrayElement<T2>(), GetArrayElement<T3>(), GetArrayElement<T4>(), GetArrayElement<T5>(), GetArrayElement<T6>(), GetArrayElement<T7>(), GetArrayElement<T8>(), GetArrayElement<T9>(), GetArrayElement<T10>(), GetArrayElement<T11>());
         }
 
-        public readonly BitSet GetArrayElements<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
+        public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
             return new(GetArrayElement<T1>(), GetArrayElement<T2>(), GetArrayElement<T3>(), GetArrayElement<T4>(), GetArrayElement<T5>(), GetArrayElement<T6>(), GetArrayElement<T7>(), GetArrayElement<T8>(), GetArrayElement<T9>(), GetArrayElement<T10>(), GetArrayElement<T11>(), GetArrayElement<T12>());
         }
 
-        public readonly BitSet GetTags<T1>() where T1 : unmanaged
+        public readonly BitMask GetTags<T1>() where T1 : unmanaged
         {
             return new(GetTag<T1>());
         }
 
-        public readonly BitSet GetTags<T1, T2>() where T1 : unmanaged where T2 : unmanaged
+        public readonly BitMask GetTags<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
             return new(GetTag<T1>(), GetTag<T2>());
         }
 
-        public readonly BitSet GetTags<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+        public readonly BitMask GetTags<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
             return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>());
         }
 
-        public readonly BitSet GetTags<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+        public readonly BitMask GetTags<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
             return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>());
         }
 
-        public readonly BitSet GetTags<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
+        public readonly BitMask GetTags<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
             return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>());
         }
 
-        public readonly BitSet GetTags<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
+        public readonly BitMask GetTags<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
             return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>(), GetTag<T6>());
         }
 
-        public readonly BitSet GetTags<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
+        public readonly BitMask GetTags<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
             return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>(), GetTag<T6>(), GetTag<T7>());
         }
 
-        public readonly BitSet GetTags<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
+        public readonly BitMask GetTags<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
             return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>(), GetTag<T6>(), GetTag<T7>(), GetTag<T8>());
         }
 
-        public readonly BitSet GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
+        public readonly BitMask GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
             return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>(), GetTag<T6>(), GetTag<T7>(), GetTag<T8>(), GetTag<T9>());
         }
 
-        public readonly BitSet GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
+        public readonly BitMask GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
             return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>(), GetTag<T6>(), GetTag<T7>(), GetTag<T8>(), GetTag<T9>(), GetTag<T10>());
         }
 
-        public readonly BitSet GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
+        public readonly BitMask GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
             return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>(), GetTag<T6>(), GetTag<T7>(), GetTag<T8>(), GetTag<T9>(), GetTag<T10>(), GetTag<T11>());
         }
 
-        public readonly BitSet GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
+        public readonly BitMask GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
             return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>(), GetTag<T6>(), GetTag<T7>(), GetTag<T8>(), GetTag<T9>(), GetTag<T10>(), GetTag<T11>(), GetTag<T12>());
         }
@@ -538,7 +538,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfTooManyComponents()
         {
-            if (schema->components >= BitSet.Capacity)
+            if (schema->components >= BitMask.Capacity)
             {
                 throw new Exception("Too many components types registered");
             }
@@ -547,7 +547,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfTooManyArrays()
         {
-            if (schema->arrays >= BitSet.Capacity)
+            if (schema->arrays >= BitMask.Capacity)
             {
                 throw new Exception("Too many arrays element types registered");
             }
@@ -556,7 +556,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfTooManyTags()
         {
-            if (schema->tags >= BitSet.Capacity)
+            if (schema->tags >= BitMask.Capacity)
             {
                 throw new Exception("Too many tag types registered");
             }
@@ -584,7 +584,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfArrayElementIsMissing(ArrayElementType arrayElementTypes)
         {
-            ushort arrayElementSize = schema->sizes.Read<ushort>(BitSet.Capacity * 2 + arrayElementTypes.index * 2u);
+            ushort arrayElementSize = schema->sizes.Read<ushort>(BitMask.Capacity * 2 + arrayElementTypes.index * 2u);
             if (arrayElementSize == default)
             {
                 throw new Exception($"Array element size for `{arrayElementTypes}` is missing from schema");
@@ -670,7 +670,7 @@ namespace Worlds
             USpan<TypeLayout> componentLayouts = Implementation.GetComponentLayouts(schema);
             USpan<TypeLayout> arrayLayouts = Implementation.GetArrayLayouts(schema);
             USpan<TypeLayout> tagLayouts = Implementation.GetTagLayouts(schema);
-            for (byte i = 0; i < BitSet.Capacity; i++)
+            for (byte i = 0; i < BitMask.Capacity; i++)
             {
                 ushort componentSize = componentSizes[i];
                 writer.WriteValue(componentSize != default);
@@ -708,7 +708,7 @@ namespace Worlds
             USpan<TypeLayout> componentLayouts = Implementation.GetComponentLayouts(schema);
             USpan<TypeLayout> arrayLayouts = Implementation.GetArrayLayouts(schema);
             USpan<TypeLayout> tagLayouts = Implementation.GetTagLayouts(schema);
-            for (byte i = 0; i < BitSet.Capacity; i++)
+            for (byte i = 0; i < BitMask.Capacity; i++)
             {
                 bool hasComponent = reader.ReadValue<bool>();
                 if (hasComponent)
@@ -774,16 +774,16 @@ namespace Worlds
                 this.sizes = sizes;
                 this.tagExistence = tagExistence;
                 this.typeLayouts = typeLayouts;
-                this.componentIndices = new(BitSet.Capacity);
-                this.arrayElementIndices = new(BitSet.Capacity);
-                this.tagIndices = new(BitSet.Capacity);
+                this.componentIndices = new(BitMask.Capacity);
+                this.arrayElementIndices = new(BitMask.Capacity);
+                this.tagIndices = new(BitMask.Capacity);
             }
 
             public static Implementation* Allocate()
             {
-                Allocation sizes = new(BitSet.Capacity * 2 * 2, true);
-                Allocation tagExistence = new(BitSet.Capacity, true);
-                Allocation typeLayouts = new((uint)sizeof(TypeLayout) * BitSet.Capacity * 3, true);
+                Allocation sizes = new(BitMask.Capacity * 2 * 2, true);
+                Allocation tagExistence = new(BitMask.Capacity, true);
+                Allocation typeLayouts = new((uint)sizeof(TypeLayout) * BitMask.Capacity * 3, true);
                 Implementation* schema = Allocations.Allocate<Implementation>();
                 *schema = new(sizes, tagExistence, typeLayouts);
                 schema->components = 0;
@@ -812,9 +812,9 @@ namespace Worlds
                 schema->componentIndices.Clear();
                 schema->arrayElementIndices.Clear();
                 schema->tagIndices.Clear();
-                schema->sizes.Clear(BitSet.Capacity * 2 * 2);
-                schema->tagExistence.Clear(BitSet.Capacity);
-                schema->typeLayouts.Clear((uint)sizeof(TypeLayout) * BitSet.Capacity * 3);
+                schema->sizes.Clear(BitMask.Capacity * 2 * 2);
+                schema->tagExistence.Clear(BitMask.Capacity);
+                schema->typeLayouts.Clear((uint)sizeof(TypeLayout) * BitMask.Capacity * 3);
             }
 
             public static void CopyTo(Implementation* source, Implementation* destination)
@@ -822,9 +822,9 @@ namespace Worlds
                 destination->components = source->components;
                 destination->arrays = source->arrays;
                 destination->tags = source->tags;
-                source->sizes.CopyTo(destination->sizes, BitSet.Capacity * 2 * 2);
-                source->tagExistence.CopyTo(destination->tagExistence, BitSet.Capacity);
-                source->typeLayouts.CopyTo(destination->typeLayouts, (uint)sizeof(TypeLayout) * BitSet.Capacity * 3);
+                source->sizes.CopyTo(destination->sizes, BitMask.Capacity * 2 * 2);
+                source->tagExistence.CopyTo(destination->tagExistence, BitMask.Capacity);
+                source->typeLayouts.CopyTo(destination->typeLayouts, (uint)sizeof(TypeLayout) * BitMask.Capacity * 3);
                 destination->componentIndices.Clear();
                 foreach ((int hashCode, byte index) in source->componentIndices)
                 {
@@ -846,27 +846,27 @@ namespace Worlds
 
             public static USpan<ushort> GetComponentSizes(Implementation* schema)
             {
-                return schema->sizes.AsSpan<ushort>(0, BitSet.Capacity);
+                return schema->sizes.AsSpan<ushort>(0, BitMask.Capacity);
             }
 
             public static USpan<ushort> GetArrayElementSizes(Implementation* schema)
             {
-                return schema->sizes.AsSpan<ushort>(BitSet.Capacity, BitSet.Capacity);
+                return schema->sizes.AsSpan<ushort>(BitMask.Capacity, BitMask.Capacity);
             }
 
             public static USpan<TypeLayout> GetComponentLayouts(Implementation* schema)
             {
-                return schema->typeLayouts.AsSpan<TypeLayout>(0, BitSet.Capacity);
+                return schema->typeLayouts.AsSpan<TypeLayout>(0, BitMask.Capacity);
             }
 
             public static USpan<TypeLayout> GetArrayLayouts(Implementation* schema)
             {
-                return schema->typeLayouts.AsSpan<TypeLayout>(BitSet.Capacity, BitSet.Capacity);
+                return schema->typeLayouts.AsSpan<TypeLayout>(BitMask.Capacity, BitMask.Capacity);
             }
 
             public static USpan<TypeLayout> GetTagLayouts(Implementation* schema)
             {
-                return schema->typeLayouts.AsSpan<TypeLayout>(BitSet.Capacity * 2, BitSet.Capacity);
+                return schema->typeLayouts.AsSpan<TypeLayout>(BitMask.Capacity * 2, BitMask.Capacity);
             }
         }
 

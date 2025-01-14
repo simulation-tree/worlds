@@ -254,7 +254,7 @@ namespace Worlds
             //add missing components
             if ((currentDefinition.ComponentTypes & definition.ComponentTypes) != definition.ComponentTypes)
             {
-                for (byte c = 0; c < BitSet.Capacity; c++)
+                for (byte c = 0; c < BitMask.Capacity; c++)
                 {
                     if (definition.ComponentTypes.Contains(c) && !currentDefinition.ComponentTypes.Contains(c))
                     {
@@ -267,7 +267,7 @@ namespace Worlds
             //add missing arrays
             if ((currentDefinition.ArrayElementTypes & definition.ArrayElementTypes) != definition.ArrayElementTypes)
             {
-                for (byte a = 0; a < BitSet.Capacity; a++)
+                for (byte a = 0; a < BitMask.Capacity; a++)
                 {
                     if (definition.ArrayElementTypes.Contains(a) && !currentDefinition.ArrayElementTypes.Contains(a))
                     {
@@ -280,7 +280,7 @@ namespace Worlds
             //add missing tags
             if ((currentDefinition.TagTypes & definition.TagTypes) != definition.TagTypes)
             {
-                for (byte t = 0; t < BitSet.Capacity; t++)
+                for (byte t = 0; t < BitMask.Capacity; t++)
                 {
                     if (definition.TagTypes.Contains(t) && !currentDefinition.TagTypes.Contains(t))
                     {

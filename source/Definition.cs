@@ -8,29 +8,29 @@ namespace Worlds
     /// </summary>
     public struct Definition : IEquatable<Definition>
     {
-        private BitSet componentTypes;
-        private BitSet arrayElementTypes;
-        private BitSet tagTypes;
+        private BitMask componentTypes;
+        private BitMask arrayElementTypes;
+        private BitMask tagTypes;
 
         /// <summary>
         /// Mask of component types in this definition.
         /// </summary>
-        public readonly BitSet ComponentTypes => componentTypes;
+        public readonly BitMask ComponentTypes => componentTypes;
 
         /// <summary>
         /// Mask of array types in this definition.
         /// </summary>
-        public readonly BitSet ArrayElementTypes => arrayElementTypes;
+        public readonly BitMask ArrayElementTypes => arrayElementTypes;
 
         /// <summary>
         /// Mask of tag types in this definition.
         /// </summary>
-        public readonly BitSet TagTypes => tagTypes;
+        public readonly BitMask TagTypes => tagTypes;
 
         /// <summary>
-        /// Creates a new definition with the exact component and array <see cref="BitSet"/> values.
+        /// Creates a new definition with the exact component and array <see cref="BitMask"/> values.
         /// </summary>
-        public Definition(BitSet componentTypes, BitSet arrayElementTypes, BitSet tagTypes)
+        public Definition(BitMask componentTypes, BitMask arrayElementTypes, BitMask tagTypes)
         {
             this.componentTypes = componentTypes;
             this.arrayElementTypes = arrayElementTypes;
@@ -58,7 +58,7 @@ namespace Worlds
         public readonly uint ToString(USpan<char> buffer)
         {
             uint length = 0;
-            for (byte i = 0; i < BitSet.Capacity; i++)
+            for (byte i = 0; i < BitMask.Capacity; i++)
             {
                 if (componentTypes.Contains(i))
                 {
@@ -69,7 +69,7 @@ namespace Worlds
                 }
             }
 
-            for (byte i = 0; i < BitSet.Capacity; i++)
+            for (byte i = 0; i < BitMask.Capacity; i++)
             {
                 if (arrayElementTypes.Contains(i))
                 {
@@ -94,7 +94,7 @@ namespace Worlds
         public readonly uint ToString(Schema schema, USpan<char> buffer)
         {
             uint length = 0;
-            for (byte i = 0; i < BitSet.Capacity; i++)
+            for (byte i = 0; i < BitMask.Capacity; i++)
             {
                 if (componentTypes.Contains(i))
                 {
@@ -105,7 +105,7 @@ namespace Worlds
                 }
             }
 
-            for (byte i = 0; i < BitSet.Capacity; i++)
+            for (byte i = 0; i < BitMask.Capacity; i++)
             {
                 if (arrayElementTypes.Contains(i))
                 {
@@ -131,7 +131,7 @@ namespace Worlds
         public readonly byte CopyComponentTypesTo(USpan<ComponentType> destination)
         {
             byte count = 0;
-            for (byte c = 0; c < BitSet.Capacity; c++)
+            for (byte c = 0; c < BitMask.Capacity; c++)
             {
                 if (componentTypes.Contains(c))
                 {
@@ -150,7 +150,7 @@ namespace Worlds
         public readonly byte CopyArrayElementTypesTo(USpan<ArrayElementType> destination)
         {
             byte count = 0;
-            for (byte a = 0; a < BitSet.Capacity; a++)
+            for (byte a = 0; a < BitMask.Capacity; a++)
             {
                 if (arrayElementTypes.Contains(a))
                 {
@@ -169,7 +169,7 @@ namespace Worlds
         public readonly byte CopyTagTypesTo(USpan<TagType> destination)
         {
             byte count = 0;
-            for (byte t = 0; t < BitSet.Capacity; t++)
+            for (byte t = 0; t < BitMask.Capacity; t++)
             {
                 if (tagTypes.Contains(t))
                 {

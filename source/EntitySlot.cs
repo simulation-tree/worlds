@@ -57,13 +57,5 @@ namespace Worlds
         /// State of the entity.
         /// </summary>
         public EntitySlotState state;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="EntitySlot"/> struct.
-        /// </summary>
-        public EntitySlot(uint entity)
-        {
-            this.entity = entity;
-        }
     }
 }

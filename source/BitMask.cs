@@ -17,12 +17,12 @@ namespace Worlds
     /// Represents a 256 bit mask.
     /// </summary>
     [StructLayout(LayoutKind.Explicit)]
-    public unsafe struct BitSet : IEquatable<BitSet>
+    public struct BitMask : IEquatable<BitMask>
     {
         /// <summary>
         /// Maximum amount of bits in the bit set.
         /// </summary>
-        public const byte Capacity = 0xFF;
+        public const byte Capacity = 255;
 
 #if USE_VECTOR256
         [FieldOffset(0)]
@@ -60,7 +60,7 @@ namespace Worlds
 #else
                     for (byte index = 0; index < Capacity; index++)
                     {
-                        if (this == index)
+                        if (Contains(index))
                         {
                             count++;
                         }
@@ -74,7 +74,7 @@ namespace Worlds
         /// <summary>
         /// Creates a bit set with 1s set at positions in <paramref name="positions"/>.
         /// </summary>
-        public BitSet(params USpan<byte> positions)
+        public BitMask(params USpan<byte> positions)
         {
 #if !USE_VECTOR256
             a = default;
@@ -95,8 +95,8 @@ namespace Worlds
         public readonly override string ToString()
         {
             USpan<char> buffer = stackalloc char[Capacity];
-            uint count = ToString(buffer);
-            return buffer.ToString();
+            uint length = ToString(buffer);
+            return buffer.Slice(0, length).ToString();
         }
 
         /// <summary>
@@ -104,26 +104,29 @@ namespace Worlds
         /// </summary>
         public readonly uint ToString(USpan<char> buffer)
         {
-            uint count = 0;
+            uint length = 0;
             for (byte i = 0; i < Capacity; i++)
             {
                 if (Contains(i))
                 {
-                    buffer[count++] = '1';
-                }
-                else
-                {
-                    buffer[count++] = '0';
+                    length += i.ToString(buffer.Slice(length));
+                    buffer[length++] = ',';
+                    buffer[length++] = ' ';
                 }
             }
 
-            return count;
+            if (length > 0)
+            {
+                length -= 2;
+            }
+
+            return length;
         }
 
         /// <summary>
         /// Checks if this bit set contains all bits of the <paramref name="other"/> bit set.
         /// </summary>
-        public readonly bool ContainsAll(BitSet other)
+        public readonly bool ContainsAll(BitMask other)
         {
 #if USE_VECTOR256
             return (data & other.data) == other.data;
@@ -138,7 +141,7 @@ namespace Worlds
         /// <summary>
         /// Checks if this bit set contains any of the bits of the <paramref name="other"/> bit set.
         /// </summary>
-        public readonly bool ContainsAny(BitSet other)
+        public readonly bool ContainsAny(BitMask other)
         {
 #if USE_VECTOR256
             return !(data & other.data).Equals(default);
@@ -173,7 +176,7 @@ namespace Worlds
         /// <summary>
         /// Sets the bit at position <paramref name="index"/> to 1.
         /// </summary>
-        public void Set(byte index)
+        public BitMask Set(byte index)
         {
 #if USE_VECTOR256
             int longIndex = index / 64;
@@ -198,12 +201,13 @@ namespace Worlds
                     break;
             }
 #endif
+            return this;
         }
 
         /// <summary>
         /// Resets the bit at position <paramref name="index"/> to 0.
         /// </summary>
-        public void Clear(byte index)
+        public BitMask Clear(byte index)
         {
 #if USE_VECTOR256
             int longIndex = index / 64;
@@ -228,6 +232,7 @@ namespace Worlds
                     break;
             }
 #endif
+            return this;
         }
 
         /// <summary>
@@ -249,11 +254,11 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override bool Equals(object? obj)
         {
-            return obj is BitSet set && Equals(set);
+            return obj is BitMask set && Equals(set);
         }
 
         /// <inheritdoc/>
-        public readonly bool Equals(BitSet other)
+        public readonly bool Equals(BitMask other)
         {
 #if USE_VECTOR256
             return data == other.data;
@@ -271,12 +276,12 @@ namespace Worlds
             }
         }
 
-        public static bool operator ==(BitSet left, BitSet right)
+        public static bool operator ==(BitMask left, BitMask right)
         {
             return left.Equals(right);
         }
 
-        public static bool operator !=(BitSet left, BitSet right)
+        public static bool operator !=(BitMask left, BitMask right)
         {
             return !(left == right);
         }
@@ -284,9 +289,9 @@ namespace Worlds
         /// <summary>
         /// Performs a bitwise OR operation on two bit sets.
         /// </summary>
-        public static BitSet operator |(BitSet left, BitSet right)
+        public static BitMask operator |(BitMask left, BitMask right)
         {
-            BitSet result = left;
+            BitMask result = left;
 #if USE_VECTOR256
             result.data |= right.data;
 #else
@@ -301,9 +306,9 @@ namespace Worlds
         /// <summary>
         /// Performs a bitwise AND operation on two bit sets.
         /// </summary>
-        public static BitSet operator &(BitSet left, BitSet right)
+        public static BitMask operator &(BitMask left, BitMask right)
         {
-            BitSet result = left;
+            BitMask result = left;
 #if USE_VECTOR256
             result.data &= right.data;
 #else
@@ -318,9 +323,9 @@ namespace Worlds
         /// <summary>
         /// Performs a bitwise XOR operation on two bit sets.
         /// </summary>
-        public static BitSet operator ^(BitSet left, BitSet right)
+        public static BitMask operator ^(BitMask left, BitMask right)
         {
-            BitSet result = left;
+            BitMask result = left;
 #if USE_VECTOR256
             result.data ^= right.data;
 #else
@@ -335,9 +340,9 @@ namespace Worlds
         /// <summary>
         /// Inverts the bit set.
         /// </summary>
-        public static BitSet operator ~(BitSet mask)
+        public static BitMask operator ~(BitMask mask)
         {
-            BitSet result = mask;
+            BitMask result = mask;
 #if USE_VECTOR256
             result.data = ~result.data;
 #else

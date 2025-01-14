@@ -83,9 +83,10 @@ namespace Worlds
             get
             {
                 uint i = 0;
-                for (uint s = 0; s < Slots.Count; s++)
+                List<EntitySlot> slots = Slots;
+                for (uint s = 0; s < slots.Count; s++)
                 {
-                    EntitySlot description = Slots[s];
+                    ref EntitySlot description = ref slots[s];
                     if (!Free.Contains(description.entity))
                     {
                         if (i == index)
@@ -200,7 +201,7 @@ namespace Worlds
             writer.WriteValue(Count);
             for (uint s = 0; s < slots.Count; s++)
             {
-                EntitySlot slot = slots[s];
+                ref EntitySlot slot = ref slots[s];
                 uint entity = slot.entity;
                 if (!Free.Contains(entity))
                 {
@@ -212,7 +213,7 @@ namespace Worlds
                     Definition definition = chunk.Definition;
                     uint localEntity = chunk.Entities.IndexOf(entity);
                     writer.WriteValue(definition.ComponentTypes.Count); //todo: why not serialize the bitset directly?
-                    for (byte c = 0; c < BitSet.Capacity; c++)
+                    for (byte c = 0; c < BitMask.Capacity; c++)
                     {
                         if (definition.ComponentTypes.Contains(c))
                         {
@@ -226,7 +227,7 @@ namespace Worlds
 
                     //write arrays
                     writer.WriteValue(definition.ArrayElementTypes.Count);
-                    for (byte a = 0; a < BitSet.Capacity; a++)
+                    for (byte a = 0; a < BitMask.Capacity; a++)
                     {
                         if (definition.ArrayElementTypes.Contains(a))
                         {
@@ -245,7 +246,7 @@ namespace Worlds
 
                     //write tags
                     writer.WriteValue(definition.TagTypes.Count);
-                    for (byte t = 0; t < BitSet.Capacity; t++)
+                    for (byte t = 0; t < BitMask.Capacity; t++)
                     {
                         if (definition.TagTypes.Contains(t))
                         {
@@ -275,10 +276,12 @@ namespace Worlds
         /// </summary>
         public readonly void Append(World sourceWorld)
         {
-            uint start = Slots.Count;
+            List<EntitySlot> destinationSlots = Slots;
+            List<EntitySlot> sourceSlots = sourceWorld.Slots;
+            uint start = destinationSlots.Count;
             uint entityIndex = 1;
             Schema schema = Schema;
-            foreach (EntitySlot sourceSlot in sourceWorld.Slots)
+            foreach (EntitySlot sourceSlot in sourceSlots)
             {
                 uint sourceEntity = sourceSlot.entity;
                 if (!sourceWorld.Free.Contains(sourceEntity))
@@ -293,7 +296,7 @@ namespace Worlds
                     Chunk sourceChunk = sourceSlot.chunk;
                     Definition sourceDefinition = sourceChunk.Definition;
                     uint sourceIndex = sourceChunk.Entities.IndexOf(sourceEntity);
-                    for (byte c = 0; c < BitSet.Capacity; c++)
+                    for (byte c = 0; c < BitMask.Capacity; c++)
                     {
                         if (sourceDefinition.ComponentTypes.Contains(c))
                         {
@@ -307,7 +310,7 @@ namespace Worlds
                     }
 
                     //add arrays
-                    for (byte a = 0; a < BitSet.Capacity; a++)
+                    for (byte a = 0; a < BitMask.Capacity; a++)
                     {
                         if (sourceDefinition.ArrayElementTypes.Contains(a))
                         {
@@ -324,7 +327,7 @@ namespace Worlds
                     }
 
                     //add tags
-                    for (byte t = 0; t < BitSet.Capacity; t++)
+                    for (byte t = 0; t < BitMask.Capacity; t++)
                     {
                         if (sourceDefinition.TagTypes.Contains(t))
                         {
@@ -337,7 +340,7 @@ namespace Worlds
 
             //assign references last
             entityIndex = 1;
-            foreach (EntitySlot sourceSlot in sourceWorld.Slots)
+            foreach (EntitySlot sourceSlot in sourceSlots)
             {
                 uint sourceEntity = sourceSlot.entity;
                 if (!sourceWorld.Free.Contains(sourceEntity))
@@ -455,7 +458,7 @@ namespace Worlds
             }
             else if (instruction.type == Instruction.Type.RemoveReference)
             {
-                rint reference = new((uint)instruction.A);
+                rint reference = (rint)instruction.A;
                 for (uint i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
@@ -1318,7 +1321,7 @@ namespace Worlds
 
             slot.references.Add(referencedEntity);
             slot.referenceCount++;
-            return new(slot.referenceCount);
+            return (rint)slot.referenceCount;
         }
 
         /// <summary>
@@ -1338,7 +1341,7 @@ namespace Worlds
             Implementation.ThrowIfReferenceIsMissing(value, entity, reference);
 
             ref EntitySlot slot = ref Slots[entity - 1];
-            slot.references[reference.value - 1] = referencedEntity;
+            slot.references[(ushort)reference - 1u] = referencedEntity;
         }
 
         /// <summary>
@@ -1399,7 +1402,7 @@ namespace Worlds
             Implementation.ThrowIfReferenceIsMissing(value, entity, reference);
 
             ref EntitySlot slot = ref Slots[entity - 1];
-            return slot.references[reference.value - 1];
+            return slot.references[(ushort)reference - 1u];
         }
 
         /// <summary>
@@ -1412,7 +1415,7 @@ namespace Worlds
 
             ref EntitySlot slot = ref Slots[entity - 1];
             uint index = slot.references.IndexOf(referencedEntity);
-            return new(index + 1);
+            return (rint)(index + 1);
         }
 
         /// <summary>
@@ -1423,7 +1426,7 @@ namespace Worlds
             Implementation.ThrowIfEntityIsMissing(value, entity);
 
             ref EntitySlot slot = ref Slots[entity - 1];
-            uint index = position.value - 1;
+            uint index = (ushort)position - 1u;
             if (index < slot.referenceCount)
             {
                 referencedEntity = slot.references[index];
@@ -1445,7 +1448,7 @@ namespace Worlds
             Implementation.ThrowIfReferenceIsMissing(value, entity, reference);
 
             ref EntitySlot slot = ref Slots[entity - 1];
-            slot.references.RemoveAt(reference.value - 1);
+            slot.references.RemoveAt((ushort)reference - 1u);
             slot.referenceCount--;
 
             if (slot.referenceCount == 0)
@@ -1510,9 +1513,9 @@ namespace Worlds
             Implementation.ThrowIfEntityIsMissing(value, entity);
 
             ref EntitySlot slot = ref Slots[entity - 1];
-            BitSet arrayElementTypes = slot.chunk.Definition.ArrayElementTypes;
+            BitMask arrayElementTypes = slot.chunk.Definition.ArrayElementTypes;
             byte count = 0;
-            for (byte a = 0; a < BitSet.Capacity; a++)
+            for (byte a = 0; a < BitMask.Capacity; a++)
             {
                 if (arrayElementTypes.Contains(a))
                 {
@@ -1526,7 +1529,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the types of all arrays on this entity.
         /// </summary>
-        public readonly BitSet GetArrayElementTypes(uint entity)
+        public readonly BitMask GetArrayElementTypes(uint entity)
         {
             Implementation.ThrowIfEntityIsMissing(value, entity);
 
@@ -1534,7 +1537,7 @@ namespace Worlds
             return slot.chunk.Definition.ArrayElementTypes;
         }
 
-        public readonly BitSet GetTagTypes(uint entity)
+        public readonly BitMask GetTagTypes(uint entity)
         {
             Implementation.ThrowIfEntityIsMissing(value, entity);
 
@@ -1822,7 +1825,7 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Fetches the component from this entity as a span of bytes.
+        /// Fetches the bytes of a component from the given <paramref name="entity"/>.
         /// </summary>
         public readonly USpan<byte> GetComponentBytes(uint entity, ComponentType componentType)
         {
@@ -1831,6 +1834,9 @@ namespace Worlds
             return component.AsSpan<byte>(0, componentSize);
         }
 
+        /// <summary>
+        /// Retrieves the component from the given <paramref name="entity"/> as an <see cref="object"/>.
+        /// </summary>
         public readonly object GetComponentObject(uint entity, ComponentType componentType)
         {
             TypeLayout layout = componentType.GetLayout(Schema);
@@ -1838,14 +1844,18 @@ namespace Worlds
             return layout.Create(bytes);
         }
 
+        /// <summary>
+        /// Retrieves the array from the given <paramref name="entity"/> as <see cref="object"/>s.
+        /// </summary>
         public readonly object[] GetArrayObject(uint entity, ArrayElementType arrayElementType)
         {
             TypeLayout layout = arrayElementType.GetLayout(Schema);
             Allocation array = GetArray(entity, arrayElementType, out uint length);
+            ushort size = layout.Size;
             object[] arrayObject = new object[length];
             for (uint i = 0; i < length; i++)
             {
-                USpan<byte> bytes = array.AsSpan<byte>(i * layout.Size, layout.Size);
+                USpan<byte> bytes = array.AsSpan<byte>(i * size, size);
                 arrayObject[i] = layout.Create(bytes);
             }
 
@@ -1917,7 +1927,7 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Returns the main chunk that contains the given entity.
+        /// Returns the chunk that contains the given <paramref name="entity"/>.
         /// </summary>
         public readonly Chunk GetChunk(uint entity)
         {
@@ -1932,15 +1942,15 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsComponentChunk(USpan<ComponentType> componentTypes)
         {
-            BitSet bitSet = new();
+            BitMask mask = new();
             for (uint i = 0; i < componentTypes.Length; i++)
             {
-                bitSet.Set(componentTypes[i]);
+                mask.Set(componentTypes[i]);
             }
 
             foreach (Definition key in Chunks.Keys)
             {
-                if ((key.ComponentTypes & bitSet) == bitSet)
+                if ((key.ComponentTypes & mask) == mask)
                 {
                     return true;
                 }
@@ -1958,12 +1968,12 @@ namespace Worlds
         {
             Implementation.ThrowIfEntityIsMissing(value, sourceEntity);
 
-            EntitySlot sourceSlot = Slots[sourceEntity - 1];
+            ref EntitySlot sourceSlot = ref Slots[sourceEntity - 1];
             Chunk sourceChunk = sourceSlot.chunk;
             Definition sourceComponentTypes = sourceChunk.Definition;
             uint sourceIndex = sourceChunk.Entities.IndexOf(sourceEntity);
             Schema schema = Schema;
-            for (byte c = 0; c < BitSet.Capacity; c++)
+            for (byte c = 0; c < BitMask.Capacity; c++)
             {
                 if (sourceComponentTypes.ComponentTypes.Contains(c))
                 {
@@ -1989,8 +1999,8 @@ namespace Worlds
         public readonly void CopyArraysTo(uint sourceEntity, World destinationWorld, uint destinationEntity)
         {
             Schema schema = Schema;
-            BitSet arrayElementTypes = GetArrayElementTypes(sourceEntity);
-            for (byte a = 0; a < BitSet.Capacity; a++)
+            BitMask arrayElementTypes = GetArrayElementTypes(sourceEntity);
+            for (byte a = 0; a < BitMask.Capacity; a++)
             {
                 if (arrayElementTypes.Contains(a))
                 {
@@ -2014,8 +2024,8 @@ namespace Worlds
 
         public readonly void CopyTagsTo(uint sourceEntity, World destinationWorld, uint destinationEntity)
         {
-            BitSet tagTypes = GetTagTypes(sourceEntity);
-            for (byte t = 0; t < BitSet.Capacity; t++)
+            BitMask tagTypes = GetTagTypes(sourceEntity);
+            for (byte t = 0; t < BitMask.Capacity; t++)
             {
                 if (tagTypes.Contains(t))
                 {
@@ -2233,7 +2243,7 @@ namespace Worlds
             public static void ThrowIfComponentMissing(Implementation* world, uint entity, ComponentType componentType)
             {
                 ref EntitySlot slot = ref world->slots[entity - 1];
-                BitSet componentTypes = slot.chunk.Definition.ComponentTypes;
+                BitMask componentTypes = slot.chunk.Definition.ComponentTypes;
                 if (!componentTypes.Contains(componentType))
                 {
                     throw new NullReferenceException($"Component `{componentType.ToString(world->schema)}` not found on `{entity}`");
@@ -2248,7 +2258,7 @@ namespace Worlds
             public static void ThrowIfComponentAlreadyPresent(Implementation* world, uint entity, ComponentType componentType)
             {
                 ref EntitySlot slot = ref world->slots[entity - 1];
-                BitSet componentTypes = slot.chunk.Definition.ComponentTypes;
+                BitMask componentTypes = slot.chunk.Definition.ComponentTypes;
                 if (componentTypes.Contains(componentType))
                 {
                     throw new InvalidOperationException($"Component `{componentType.ToString(world->schema)}` already present on `{entity}`");
@@ -2494,7 +2504,7 @@ namespace Worlds
                     {
                         Definition definition = slot.chunk.Definition;
                         bool hasArrays = false;
-                        for (byte a = 0; a < BitSet.Capacity; a++)
+                        for (byte a = 0; a < BitMask.Capacity; a++)
                         {
                             if (definition.ArrayElementTypes.Contains(a))
                             {
@@ -2591,7 +2601,7 @@ namespace Worlds
                 Definition definition = chunk.Definition;
                 if (definition.ArrayElementTypes.Count > 0)
                 {
-                    for (byte a = 0; a < BitSet.Capacity; a++)
+                    for (byte a = 0; a < BitMask.Capacity; a++)
                     {
                         if (definition.ArrayElementTypes.Contains(a))
                         {
@@ -2799,7 +2809,8 @@ namespace Worlds
                 uint slotCount = slots.Count;
                 while (newEntity > slotCount + 1)
                 {
-                    EntitySlot freeSlot = new(slotCount + 1);
+                    EntitySlot freeSlot = default;
+                    freeSlot.entity = slotCount + 1;
                     slots.Add(freeSlot);
                     slotCount++;
                     freeEntities.Add(freeSlot.entity);
@@ -2831,9 +2842,9 @@ namespace Worlds
                 //add arrays
                 if (definition.ArrayElementTypes != default)
                 {
-                    slot.arrayLengths = new(BitSet.Capacity);
-                    slot.arrays = new(BitSet.Capacity);
-                    for (byte a = 0; a < BitSet.Capacity; a++)
+                    slot.arrayLengths = new(BitMask.Capacity);
+                    slot.arrays = new(BitMask.Capacity);
+                    for (byte a = 0; a < BitMask.Capacity; a++)
                     {
                         if (definition.ArrayElementTypes.Contains(a))
                         {
@@ -2905,10 +2916,10 @@ namespace Worlds
                 ref EntitySlot slot = ref world->slots[entity - 1];
                 Chunk oldChunk = slot.chunk;
                 Definition oldDefinition = oldChunk.Definition;
-                if (oldDefinition.ArrayElementTypes == default(BitSet))
+                if (oldDefinition.ArrayElementTypes == default(BitMask))
                 {
-                    slot.arrays = new(BitSet.Capacity);
-                    slot.arrayLengths = new(BitSet.Capacity);
+                    slot.arrays = new(BitMask.Capacity);
+                    slot.arrayLengths = new(BitMask.Capacity);
                 }
 
                 Definition newDefinition = oldDefinition;
@@ -3003,7 +3014,7 @@ namespace Worlds
                 Definition newDefinition = oldDefinition;
                 newDefinition.RemoveArrayElementType(arrayElementType);
 
-                if (newDefinition.ArrayElementTypes == default(BitSet))
+                if (newDefinition.ArrayElementTypes == default(BitMask))
                 {
                     slot.arrays.Dispose();
                     slot.arrayLengths.Dispose();

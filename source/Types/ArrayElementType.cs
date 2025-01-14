@@ -9,7 +9,7 @@ namespace Worlds
     public readonly struct ArrayElementType : IEquatable<ArrayElementType>
     {
         /// <summary>
-        /// Index of the array type within a <see cref="BitSet"/>.
+        /// Index of the array type within a <see cref="BitMask"/>.
         /// </summary>
         public readonly byte index;
 

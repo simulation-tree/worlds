@@ -359,7 +359,7 @@ namespace Worlds
                 creationStackTrace = World.Implementation.createStackTraces[entity];
                 
                 Schema schema = world.Schema;
-                USpan<ComponentType> componentTypeBuffer = stackalloc ComponentType[BitSet.Capacity];
+                USpan<ComponentType> componentTypeBuffer = stackalloc ComponentType[BitMask.Capacity];
                 uint bufferLength = entity.CopyComponentTypesTo(componentTypeBuffer);
                 components = new object[bufferLength];
                 for (uint i = 0; i < bufferLength; i++)
@@ -367,7 +367,7 @@ namespace Worlds
                     components[i] = world.GetComponentObject(entity, componentTypeBuffer[i]);
                 }
 
-                USpan<ArrayElementType> arrayElementTypeBuffer = stackalloc ArrayElementType[BitSet.Capacity];
+                USpan<ArrayElementType> arrayElementTypeBuffer = stackalloc ArrayElementType[BitMask.Capacity];
                 bufferLength = entity.CopyArrayElementTypesTo(arrayElementTypeBuffer);
                 arrays = new object[bufferLength][];
                 for (uint i = 0; i < bufferLength; i++)
@@ -375,7 +375,7 @@ namespace Worlds
                     arrays[i] = world.GetArrayObject(entity, arrayElementTypeBuffer[i]);
                 }
 
-                USpan<TagType> tagTypeBuffer = stackalloc TagType[BitSet.Capacity];
+                USpan<TagType> tagTypeBuffer = stackalloc TagType[BitMask.Capacity];
                 bufferLength = entity.CopyTagTypesTo(tagTypeBuffer);
                 tags = new Type[bufferLength];
                 for (uint i = 0; i < bufferLength; i++)
@@ -384,9 +384,9 @@ namespace Worlds
                 }
 
                 references = new Entity[entity.GetReferenceCount()];
-                for (uint i = 0; i < references.Length; i++)
+                for (ushort i = 0; i < references.Length; i++)
                 {
-                    rint reference = new(i + 1);
+                    rint reference = (rint)(i + 1u);
                     references[i] = new(world, entity.GetReference(reference));
                 }
 

@@ -7,7 +7,7 @@ namespace Worlds
 {
     public static class EnumerableExtensions
     {
-        public static System.Collections.Generic.IEnumerable<uint> GetAllContaining(this World world, BitSet componentTypes, bool onlyEnabled = true)
+        public static System.Collections.Generic.IEnumerable<uint> GetAllContaining(this World world, BitMask componentTypes, bool onlyEnabled = true)
         {
             Dictionary<Definition, Chunk> chunks = world.Chunks;
             foreach (Definition key in chunks.Keys)
@@ -29,13 +29,13 @@ namespace Worlds
 
         public static System.Collections.Generic.IEnumerable<uint> GetAllContaining(this World world, ComponentType componentType, bool onlyEnabled = true)
         {
-            BitSet componentTypes = new(componentType);
+            BitMask componentTypes = new(componentType);
             return GetAllContaining(world, componentTypes, onlyEnabled);
         }
 
         public static System.Collections.Generic.IEnumerable<uint> GetAllContaining<C1>(this World world, bool onlyEnabled = true) where C1 : unmanaged
         {
-            BitSet componentTypes = new(world.Schema.GetComponent<C1>());
+            BitMask componentTypes = new(world.Schema.GetComponent<C1>());
             return GetAllContaining(world, componentTypes, onlyEnabled);
         }
 

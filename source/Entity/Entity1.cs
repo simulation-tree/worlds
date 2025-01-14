@@ -1,10 +1,8 @@
 using System;
-using System.Diagnostics;
 using Unmanaged;
 
 namespace Worlds
 {
-    [DebuggerTypeProxy(typeof(Entity<>.DebugView))]
     public readonly struct Entity<C1> : IEntity, IEquatable<Entity<C1>> where C1 : unmanaged
     {
         private readonly Entity entity;
@@ -75,42 +73,6 @@ namespace Worlds
         public static implicit operator Entity(Entity<C1> entity)
         {
             return entity.entity;
-        }
-
-        internal class DebugView
-        {
-#if DEBUG
-            public readonly uint value;
-            public readonly World world;
-            public readonly Entity parent;
-            public readonly StackTrace creationStackTrace;
-            public readonly ComponentType[] componentTypes;
-            public readonly ArrayElementType[] arrayElementTypes;
-            public readonly Entity[] references;
-            public readonly C1 c1;
-
-            public DebugView(Entity<C1> entity)
-            {
-                value = entity.GetEntityValue();
-                world = entity.GetWorld();
-                parent = entity.GetParent();
-                creationStackTrace = World.Implementation.createStackTraces[entity];
-                USpan<ComponentType> componentBuffer = stackalloc ComponentType[BitSet.Capacity];
-                uint bufferLength = entity.CopyComponentTypesTo(componentBuffer);
-                componentTypes = componentBuffer.Slice(0, bufferLength).ToArray();
-                USpan<ArrayElementType> arrayBuffer = stackalloc ArrayElementType[BitSet.Capacity];
-                bufferLength = entity.CopyArrayElementTypesTo(arrayBuffer);
-                arrayElementTypes = arrayBuffer.Slice(0, bufferLength).ToArray();
-                references = new Entity[entity.GetReferenceCount()];
-                for (uint i = 0; i < references.Length; i++)
-                {
-                    rint reference = new(i + 1);
-                    references[i] = new(world, entity.GetReference(reference));
-                }
-
-                c1 = entity.AsEntity().GetComponent<C1>();
-            }
-#endif
         }
     }
 }

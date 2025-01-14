@@ -9,7 +9,7 @@ namespace Worlds
     public readonly struct ComponentType : IEquatable<ComponentType>
     {
         /// <summary>
-        /// Index of the component type within a <see cref="BitSet"/>.
+        /// Index of the component type within a <see cref="BitMask"/>.
         /// </summary>
         public readonly byte index;
 

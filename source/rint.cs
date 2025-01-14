@@ -6,15 +6,23 @@ using Unmanaged;
 namespace Worlds
 {
     /// <summary>
-    /// A <see cref="uint"/> type that refers to a reference local to its entity.
-    /// <para>Can be explicitly cast from and into a <see cref="uint"/> value.
+    /// A <see cref="ushort"/> type that refers to a reference local to its entity.
+    /// <para>Can be explicitly cast from and into a <see cref="ushort"/> value.
     /// </para>
     /// </summary>
     public readonly struct rint : IEquatable<rint>
     {
-        internal readonly uint value;
+        internal readonly ushort value;
 
-        internal rint(uint value)
+#if NET
+        [Obsolete("Default constructor not supported", true)]
+        public rint()
+        {
+            throw new NotSupportedException();
+        }
+#endif
+
+        private rint(ushort value)
         {
             this.value = value;
         }
@@ -66,13 +74,13 @@ namespace Worlds
         }
 
         /// <inheritdoc/>
-        public static explicit operator uint(rint value)
+        public static explicit operator ushort(rint value)
         {
             return value.value;
         }
 
         /// <inheritdoc/>
-        public static explicit operator rint(uint value)
+        public static explicit operator rint(ushort value)
         {
             return new rint(value);
         }

@@ -462,8 +462,8 @@ namespace Worlds.Tests
         public void BenchmarkMethods()
         {
             using World world = CreateWorld();
-            BitSet componentTypes = world.Schema.GetComponents<Apple, Berry, Cherry>();
-            BitSet otherComponentTypes = world.Schema.GetComponents<Apple, Berry>();
+            BitMask componentTypes = world.Schema.GetComponents<Apple, Berry, Cherry>();
+            BitMask otherComponentTypes = world.Schema.GetComponents<Apple, Berry>();
             ComponentType appleType = world.Schema.GetComponent<Apple>();
             ComponentType berryType = world.Schema.GetComponent<Berry>();
             ComponentType cherryType = world.Schema.GetComponent<Cherry>();

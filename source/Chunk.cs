@@ -89,8 +89,8 @@ namespace Worlds
         public readonly uint ToString(USpan<char> buffer)
         {
             uint length = 0;
-            BitSet componentTypes = Definition.ComponentTypes;
-            for (byte i = 0; i < BitSet.Capacity; i++)
+            BitMask componentTypes = Definition.ComponentTypes;
+            for (byte i = 0; i < BitMask.Capacity; i++)
             {
                 if (componentTypes.Contains(i))
                 {
@@ -843,10 +843,10 @@ namespace Worlds
             /// </summary>
             public static Implementation* Allocate(Definition definition, Schema schema)
             {
-                Array<nint> componentArrays = new(BitSet.Capacity);
-                USpan<byte> typeIndices = stackalloc byte[BitSet.Capacity];
+                Array<nint> componentArrays = new(BitMask.Capacity);
+                USpan<byte> typeIndices = stackalloc byte[BitMask.Capacity];
                 byte typeCount = 0;
-                for (byte c = 0; c < BitSet.Capacity; c++)
+                for (byte c = 0; c < BitMask.Capacity; c++)
                 {
                     if (definition.ComponentTypes.Contains(c))
                     {
