@@ -10,22 +10,8 @@ namespace Worlds.TypeTableGenerator
         public const string ComponentAttribute = "Worlds.ComponentAttribute";
         public const string ArrayElementAttribute = "Worlds.ArrayElementAttribute";
         public const string TagAttribute = "Worlds.TagAttribute";
-        public const string ComponentType = "Worlds.ComponentType";
-        public const string ArrayElementType = "Worlds.ArrayElementType";
-        public const string TagType = "Worlds.TagType";
-        public const string TypeLayout = "Worlds.TypeLayout";
 
         public static void CollectTypeSymbols(this Compilation compilation, HashSet<ITypeSymbol> componentTypes, HashSet<ITypeSymbol> arrayElementTypes, HashSet<ITypeSymbol> tagTypes)
-        {
-            CollectTypeSymbols(compilation, componentTypes, arrayElementTypes, tagTypes, []);
-        }
-
-        public static void CollectTypeSymbols(this Compilation compilation, HashSet<ITypeSymbol> types)
-        {
-            CollectTypeSymbols(compilation, [], [], [], types);
-        }
-
-        public static void CollectTypeSymbols(this Compilation compilation, HashSet<ITypeSymbol> componentTypes, HashSet<ITypeSymbol> arrayElementTypes, HashSet<ITypeSymbol> tagTypes, HashSet<ITypeSymbol> types)
         {
             foreach (SyntaxTree tree in compilation.SyntaxTrees)
             {
@@ -112,9 +98,11 @@ namespace Worlds.TypeTableGenerator
                         {
                             tagTypes.Add(type);
                         }
-
-                        types.Add(type);
                     }
+                }
+                else
+                {
+                    //todo: emit an analyzer warning saying that the type isnt a value type
                 }
             }
         }

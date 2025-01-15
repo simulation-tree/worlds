@@ -12,7 +12,7 @@
 		<Title>Simulation</Title>
 		<Authors>popcron</Authors>
 		<Company>game-simulations</Company>
-		<Description>Efficient native data storage</Description>
+		<Description>Native ECS library</Description>
 		<RepositoryUrl>https://github.com/game-simulations/worlds</RepositoryUrl>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageTags>ecs;native</PackageTags>
@@ -28,6 +28,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\collections\source\Collections.csproj" />
+		<ProjectReference Include="..\..\types\source\Types.csproj" />
 		<ProjectReference Include="..\..\unmanaged\source\Unmanaged.csproj" />
 	</ItemGroup>
 
