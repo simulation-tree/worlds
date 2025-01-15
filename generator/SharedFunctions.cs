@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using Types.Generator;
 
 namespace Worlds.TypeTableGenerator
 {
