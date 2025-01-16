@@ -2247,6 +2247,7 @@ namespace Worlds
                 BitMask componentTypes = slot.chunk.Definition.ComponentTypes;
                 if (!componentTypes.Contains(componentType))
                 {
+                    Entity thisEntity = new(new(world), entity);
                     throw new NullReferenceException($"Component `{componentType.ToString(world->schema)}` not found on `{entity}`");
                 }
             }

@@ -47,11 +47,17 @@ namespace Worlds
             default(T).Describe(ref this);
         }
 
+        /// <summary>
+        /// Adds the component of type <typeparamref name="T"/> to the definition.
+        /// </summary>
         public void AddComponentType<T>() where T : unmanaged
         {
             definition.AddComponentType<T>(schema);
         }
 
+        /// <summary>
+        /// Adds <paramref name="componentType"/> to the definition.
+        /// </summary>
         public void AddComponentType(ComponentType componentType)
         {
             definition.AddComponentType(componentType);
