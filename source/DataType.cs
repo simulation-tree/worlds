@@ -1,7 +1,7 @@
 ﻿namespace Worlds
 {
     /// <summary>
-    /// Describes types that can be found on an entity.
+    /// Describes the type of data found on an entity.
     /// </summary>
     public enum DataType : byte
     {
