@@ -356,6 +356,35 @@ namespace Worlds
             }
         }
 
+        /// <summary>
+        /// Adds a function that listens to whenever an entity is either created, or destroyed.
+        /// </summary>
+        public readonly void ListenToEntityCreationOrDestruction(EntityCreatedOrDestroyed function, ulong userData = default)
+        {
+            value->entityCreatedOrDestroyed.Add((function, userData));
+        }
+
+        /// <summary>
+        /// Adds a function that listens to when data on an entity changes.
+        /// <para>
+        /// Components added or removed,
+        /// arrays created, destroyed or resized,
+        /// tags added or removed.
+        /// </para>
+        /// </summary>
+        public readonly void ListenToEntityDataChanges(EntityDataChanged function, ulong userData = default)
+        {
+            value->entityDataChanged.Add((function, userData));
+        }
+
+        /// <summary>
+        /// Adds a function that listens to when an entity's parent changes.
+        /// </summary>
+        public readonly void ListenToEntityParentChanges(EntityParentChanged function, ulong userData = default)
+        {
+            value->entityParentChanged.Add((function, userData));
+        }
+
         private readonly void Perform(Instruction instruction, List<uint> selection, List<uint> entities)
         {
             Schema schema = Schema;
@@ -1656,7 +1685,7 @@ namespace Worlds
 
             ArrayElementType arrayElementType = Schema.GetArrayElement<T>();
             Implementation.ThrowIfArrayIsMissing(value, entity, arrayElementType);
-            Allocation array = Implementation.GetArray(value, entity, arrayElementType, out uint arrayLength);
+            Allocation array = Implementation.GetArray(value, entity, arrayElementType, out _);
             return ref array.Read<T>(index * (uint)sizeof(T));
         }
 
@@ -2085,51 +2114,19 @@ namespace Worlds
         /// <summary>
         /// Opaque pointer implementation of a <see cref="World"/>.
         /// </summary>
-        public unsafe struct Implementation
+        public readonly unsafe struct Implementation
         {
 #if DEBUG
             internal static readonly System.Collections.Generic.Dictionary<Entity, StackTrace> createStackTraces = new();
 #endif
 
-            /// <summary>
-            /// Invoked after any entity is created.
-            /// </summary>
-            public static event EntityCreatedCallback EntityCreated = delegate { };
-
-            /// <summary>
-            /// Invoked after any entity is destroyed.
-            /// </summary>
-            public static event EntityDestroyedCallback EntityDestroyed = delegate { };
-
-            /// <summary>
-            /// Invoked after any entity's parent is changed.
-            /// </summary>
-            public static event EntityParentChangedCallback EntityParentChanged = delegate { };
-
-            /// <summary>
-            /// Invoked after any component is added to any entity.
-            /// </summary>
-            public static event ComponentAddedCallback ComponentAdded = delegate { };
-
-            /// <summary>
-            /// Invoked after any component is removed from any entity.
-            /// </summary>
-            public static event ComponentRemovedCallback ComponentRemoved = delegate { };
-
-            /// <summary>
-            /// Invoked after any tag is added to any entity.
-            /// </summary>
-            public static event TagAddedCallback TagAdded = delegate { };
-
-            /// <summary>
-            /// Invoked after any tag is removed from any entity.
-            /// </summary>
-            public static event TagRemovedCallback TagRemoved = delegate { };
-
             public readonly List<EntitySlot> slots;
             public readonly List<uint> freeEntities;
             public readonly Dictionary<Definition, Chunk> chunks;
             public readonly Schema schema;
+            public readonly List<(EntityCreatedOrDestroyed, ulong)> entityCreatedOrDestroyed;
+            public readonly List<(EntityParentChanged, ulong)> entityParentChanged;
+            public readonly List<(EntityDataChanged, ulong)> entityDataChanged;
 
             private Implementation(List<EntitySlot> slots, List<uint> freeEntities, Dictionary<Definition, Chunk> chunks, Schema schema)
             {
@@ -2137,6 +2134,9 @@ namespace Worlds
                 this.freeEntities = freeEntities;
                 this.chunks = chunks;
                 this.schema = schema;
+                entityCreatedOrDestroyed = new(4);
+                entityParentChanged = new(4);
+                entityDataChanged = new(4);
             }
 
             /// <summary>
@@ -2341,6 +2341,9 @@ namespace Worlds
                 Allocations.ThrowIfNull(world);
 
                 ClearEntities(world);
+                world->entityCreatedOrDestroyed.Dispose();
+                world->entityParentChanged.Dispose();
+                world->entityDataChanged.Dispose();
                 world->schema.Dispose();
                 world->slots.Dispose();
                 world->freeEntities.Dispose();
@@ -2405,8 +2408,9 @@ namespace Worlds
                     ref EntitySlot slot = ref value->slots[entity - 1];
                     if (parent != default)
                     {
+                        uint oldParent = slot.parent;
                         slot.parent = parent;
-                        NotifyParentChange(new(value), entity, parent);
+                        NotifyParentChange(new(value), entity, oldParent, parent);
                     }
 
                     //read components
@@ -2641,20 +2645,20 @@ namespace Worlds
             }
 
             /// <summary>
-            /// Assigns the given <paramref name="parent"/> to the given <paramref name="entity"/>.
+            /// Assigns the given <paramref name="newParent"/> to the given <paramref name="entity"/>.
             /// </summary>
-            public static bool SetParent(Implementation* world, uint entity, uint parent)
+            public static bool SetParent(Implementation* world, uint entity, uint newParent)
             {
                 Allocations.ThrowIfNull(world);
                 ThrowIfEntityIsMissing(world, entity);
 
-                if (entity == parent)
+                if (entity == newParent)
                 {
                     throw new InvalidOperationException("Entity cannot be its own parent");
                 }
 
                 ref EntitySlot slot = ref world->slots[entity - 1];
-                if (slot.parent == parent)
+                if (slot.parent == newParent)
                 {
                     return false;
                 }
@@ -2676,10 +2680,11 @@ namespace Worlds
                     }
                 }
 
-                if (parent == default || !ContainsEntity(world, parent))
+                if (newParent == default || !ContainsEntity(world, newParent))
                 {
                     if (slot.parent != default)
                     {
+                        uint oldParent = slot.parent;
                         slot.parent = default;
                         Dictionary<Definition, Chunk> chunks = world->chunks;
                         Chunk oldChunk = slot.chunk;
@@ -2714,22 +2719,23 @@ namespace Worlds
                             oldChunk.MoveEntity(entity, destinationChunk);
                         }
 
-                        NotifyParentChange(new(world), entity, default);
+                        NotifyParentChange(new(world), entity, oldParent, default);
                     }
 
                     return false;
                 }
                 else
                 {
-                    if (slot.parent != parent)
+                    if (slot.parent != newParent)
                     {
-                        slot.parent = parent;
+                        uint oldParent = slot.parent;
+                        slot.parent = newParent;
                         Dictionary<Definition, Chunk> chunks = world->chunks;
                         Chunk oldChunk = slot.chunk;
                         Definition oldDefinition = oldChunk.Definition;
 
                         //add to children list
-                        ref EntitySlot newParentSlot = ref world->slots[parent - 1];
+                        ref EntitySlot newParentSlot = ref world->slots[newParent - 1];
                         if (newParentSlot.childCount == 0)
                         {
                             newParentSlot.children = new(1);
@@ -2769,7 +2775,7 @@ namespace Worlds
                             oldChunk.MoveEntity(entity, destinationChunk);
                         }
 
-                        NotifyParentChange(new(world), entity, parent);
+                        NotifyParentChange(new(world), entity, oldParent, newParent);
                     }
 
                     return true;
@@ -2917,7 +2923,7 @@ namespace Worlds
                 ref EntitySlot slot = ref world->slots[entity - 1];
                 Chunk oldChunk = slot.chunk;
                 Definition oldDefinition = oldChunk.Definition;
-                if (oldDefinition.ArrayElementTypes == default(BitMask))
+                if (oldDefinition.ArrayElementTypes == default)
                 {
                     slot.arrays = new(BitMask.Capacity);
                     slot.arrayLengths = new(BitMask.Capacity);
@@ -2939,6 +2945,7 @@ namespace Worlds
                 Allocation newArray = new(arrayElementSize * length);
                 slot.arrays[arrayElementType] = newArray;
                 slot.arrayLengths[arrayElementType] = length;
+                NotifyArrayCreated(new(world), entity, arrayElementType);
                 return slot.arrays[arrayElementType];
             }
 
@@ -2994,6 +3001,7 @@ namespace Worlds
                 ref Allocation array = ref slot.arrays[arrayElementType];
                 Allocation.Resize(ref array, arrayElementSize * newLength);
                 slot.arrayLengths[arrayElementType] = newLength;
+                NotifyArrayResized(new(world), entity, arrayElementType);
                 return array;
             }
 
@@ -3015,7 +3023,7 @@ namespace Worlds
                 Definition newDefinition = oldDefinition;
                 newDefinition.RemoveArrayElementType(arrayElementType);
 
-                if (newDefinition.ArrayElementTypes == default(BitMask))
+                if (newDefinition.ArrayElementTypes == default)
                 {
                     slot.arrays.Dispose();
                     slot.arrayLengths.Dispose();
@@ -3030,6 +3038,7 @@ namespace Worlds
 
                 slot.chunk = destinationChunk;
                 oldChunk.MoveEntity(entity, destinationChunk);
+                NotifyArrayDestroyed(new(world), entity, arrayElementType);
             }
 
             /// <summary>
@@ -3169,73 +3178,93 @@ namespace Worlds
 
             internal static void NotifyCreation(World world, uint entity)
             {
-                EntityCreated(world, entity);
+                List<(EntityCreatedOrDestroyed, ulong)> events = world.value->entityCreatedOrDestroyed;
+                foreach ((EntityCreatedOrDestroyed callback, ulong userData) in events)
+                {
+                    callback.Invoke(world, entity, ChangeType.Added, userData);
+                }
             }
 
             internal static void NotifyDestruction(World world, uint entity)
             {
-                EntityDestroyed(world, entity);
+                List<(EntityCreatedOrDestroyed, ulong)> events = world.value->entityCreatedOrDestroyed;
+                foreach ((EntityCreatedOrDestroyed callback, ulong userData) in events)
+                {
+                    callback.Invoke(world, entity, ChangeType.Removed, userData);
+                }
             }
 
-            internal static void NotifyParentChange(World world, uint entity, uint parent)
+            internal static void NotifyParentChange(World world, uint entity, uint oldParent, uint newParent)
             {
-                EntityParentChanged(world, entity, parent);
+                List<(EntityParentChanged, ulong)> events = world.value->entityParentChanged;
+                foreach ((EntityParentChanged callback, ulong userData) in events)
+                {
+                    callback.Invoke(world, entity, oldParent, newParent, userData);
+                }
             }
 
             internal static void NotifyComponentAdded(World world, uint entity, ComponentType componentType)
             {
-                ComponentAdded(world, entity, componentType);
+                List<(EntityDataChanged, ulong)> events = world.value->entityDataChanged;
+                foreach ((EntityDataChanged callback, ulong userData) in events)
+                {
+                    callback.Invoke(world, entity, componentType, DataType.Component, ChangeType.Added, userData);
+                }
             }
 
             internal static void NotifyComponentRemoved(World world, uint entity, ComponentType componentType)
             {
-                ComponentRemoved(world, entity, componentType);
+                List<(EntityDataChanged, ulong)> events = world.value->entityDataChanged;
+                foreach ((EntityDataChanged callback, ulong userData) in events)
+                {
+                    callback.Invoke(world, entity, componentType, DataType.Component, ChangeType.Removed, userData);
+                }
+            }
+
+            internal static void NotifyArrayCreated(World world, uint entity, ArrayElementType arrayElementType)
+            {
+                List<(EntityDataChanged, ulong)> events = world.value->entityDataChanged;
+                foreach ((EntityDataChanged callback, ulong userData) in events)
+                {
+                    callback.Invoke(world, entity, arrayElementType, DataType.ArrayElement, ChangeType.Added, userData);
+                }
+            }
+
+            internal static void NotifyArrayDestroyed(World world, uint entity, ArrayElementType arrayElementType)
+            {
+                List<(EntityDataChanged, ulong)> events = world.value->entityDataChanged;
+                foreach ((EntityDataChanged callback, ulong userData) in events)
+                {
+                    callback.Invoke(world, entity, arrayElementType, DataType.ArrayElement, ChangeType.Removed, userData);
+                }
+            }
+
+            internal static void NotifyArrayResized(World world, uint entity, ArrayElementType arrayElementType)
+            {
+                List<(EntityDataChanged, ulong)> events = world.value->entityDataChanged;
+                foreach ((EntityDataChanged callback, ulong userData) in events)
+                {
+                    callback.Invoke(world, entity, arrayElementType, DataType.ArrayElement, ChangeType.Modified, userData);
+                }
             }
 
             internal static void NotifyTagAdded(World world, uint entity, TagType tagType)
             {
-                TagAdded(world, entity, tagType);
+                List<(EntityDataChanged, ulong)> events = world.value->entityDataChanged;
+                foreach ((EntityDataChanged callback, ulong userData) in events)
+                {
+                    callback.Invoke(world, entity, tagType, DataType.Tag, ChangeType.Added, userData);
+                }
             }
 
             internal static void NotifyTagRemoved(World world, uint entity, TagType tagType)
             {
-                TagRemoved(world, entity, tagType);
+                List<(EntityDataChanged, ulong)> events = world.value->entityDataChanged;
+                foreach ((EntityDataChanged callback, ulong userData) in events)
+                {
+                    callback.Invoke(world, entity, tagType, DataType.Tag, ChangeType.Removed, userData);
+                }
             }
         }
     }
-
-    /// <summary>
-    /// Delegate for when an entity is created.
-    /// </summary>
-    public delegate void EntityCreatedCallback(World world, uint entity);
-
-    /// <summary>
-    /// Delegate for when an entity is destroyed.
-    /// </summary>
-    public delegate void EntityDestroyedCallback(World world, uint entity);
-
-    /// <summary>
-    /// Delegate for when an entity is enabled or disabled.
-    /// </summary>
-    public delegate void EntityParentChangedCallback(World world, uint entity, uint parent);
-
-    /// <summary>
-    /// Delegate for when a component is added to an entity.
-    /// </summary>
-    public delegate void ComponentAddedCallback(World world, uint entity, ComponentType componentType);
-
-    /// <summary>
-    /// Delegate for when a component is removed from an entity.
-    /// </summary>
-    public delegate void ComponentRemovedCallback(World world, uint entity, ComponentType componentType);
-
-    /// <summary>
-    /// Delegate for when a tag is added to an entity.
-    /// </summary>
-    public delegate void TagAddedCallback(World world, uint entity, TagType tagType);
-
-    /// <summary>
-    /// Delegate for when a tag is removed from an entity.
-    /// </summary>
-    public delegate void TagRemovedCallback(World world, uint entity, TagType tagType);
 }
