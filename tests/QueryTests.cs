@@ -63,7 +63,7 @@ namespace Worlds.Tests
             world.AddTag<IsThing>(b);
 
             ComponentQuery<Apple> appleThingQuery = new(world);
-            appleThingQuery.IncludeTag<IsThing>();
+            appleThingQuery.RequireTag<IsThing>();
 
             using List<Apple> apples = new();
             foreach (var r in appleThingQuery)

@@ -234,6 +234,15 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Adds the given <paramref name="arrayElementTypes"/> bit mask to this definition.
+        /// </summary>
+        public Definition AddArrayElementTypes(BitMask arrayElementTypes)
+        {
+            this.arrayElementTypes |= arrayElementTypes;
+            return this;
+        }
+
+        /// <summary>
         /// Adds the specified <paramref name="arrayElementTypes"/> to this definition.
         /// </summary>
         public Definition AddArrayElementTypes(USpan<ArrayElementType> arrayElementTypes)
@@ -267,6 +276,15 @@ namespace Worlds
         public Definition AddComponentType<C1>(Schema schema) where C1 : unmanaged
         {
             componentTypes.Set(schema.GetComponent<C1>());
+            return this;
+        }
+
+        /// <summary>
+        /// Adds the components from the given <paramref name="componentTypes"/> bit mask.
+        /// </summary>
+        public Definition AddComponentTypes(BitMask componentTypes)
+        {
+            this.componentTypes |= componentTypes;
             return this;
         }
 
