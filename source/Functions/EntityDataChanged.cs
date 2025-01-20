@@ -4,9 +4,9 @@ namespace Worlds.Functions
 {
     public unsafe readonly struct EntityDataChanged : IEquatable<EntityDataChanged>
     {
-        private readonly delegate* unmanaged<World, uint, byte, DataType, ChangeType, ulong, void> function;
+        private readonly delegate* unmanaged<World, uint, DataType, ChangeType, ulong, void> function;
 
-        public EntityDataChanged(delegate* unmanaged<World, uint, byte, DataType, ChangeType, ulong, void> function)
+        public EntityDataChanged(delegate* unmanaged<World, uint, DataType, ChangeType, ulong, void> function)
         {
             this.function = function;
         }
@@ -26,9 +26,9 @@ namespace Worlds.Functions
             return ((nint)function).GetHashCode();
         }
 
-        public readonly void Invoke(World world, uint entity, byte type, DataType dataType, ChangeType change, ulong userData)
+        public readonly void Invoke(World world, uint entity, DataType type, ChangeType change, ulong userData)
         {
-            function(world, entity, type, dataType, change, userData);
+            function(world, entity, type, change, userData);
         }
 
         public static bool operator ==(EntityDataChanged left, EntityDataChanged right)

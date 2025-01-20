@@ -27,7 +27,7 @@ namespace Worlds.Functions
             return ((nint)function).GetHashCode();
         }
 
-        public readonly void Invoke(Schema schema, TypeLayout typeLayout, DataType type)
+        public readonly void Invoke(Schema schema, TypeLayout typeLayout, DataType.Kind type)
         {
             function(new Input(schema, typeLayout, type));
         }
@@ -46,10 +46,11 @@ namespace Worlds.Functions
         {
             public readonly Schema schema;
             public readonly TypeLayout typeLayout;
-            public readonly DataType type;
+            public readonly DataType.Kind type;
 
-            public Input(Schema schema, TypeLayout typeLayout, DataType type)
+            public Input(Schema schema, TypeLayout typeLayout, DataType.Kind type)
             {
+                this.schema = schema;
                 this.typeLayout = typeLayout;
                 this.type = type;
             }

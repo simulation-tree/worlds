@@ -213,6 +213,14 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves the bytes of this entity's component of type <paramref name="componentType"/>.
+        /// </summary>
+        public static USpan<byte> GetComponentBytes<T>(this T entity, DataType componentType) where T : unmanaged, IEntity
+        {
+            return entity.World.GetComponentBytes(entity.Value, componentType);
+        }
+
+        /// <summary>
         /// Removes the component of the given <paramref name="componentType"/> from the entity.
         /// </summary>
         public static void RemoveComponent<T>(this T entity, ComponentType componentType) where T : unmanaged, IEntity
@@ -401,6 +409,15 @@ namespace Worlds
         /// </summary>
         /// <returns>Newly resized array.</returns>
         public static Allocation ResizeArray<T>(this T entity, ArrayElementType arrayElementType, uint newLength) where T : unmanaged, IEntity
+        {
+            return entity.World.ResizeArray(entity.Value, arrayElementType, newLength);
+        }
+
+        /// <summary>
+        /// Resizes the array of type <paramref name="arrayElementType"/> to the given <paramref name="newLength"/>.
+        /// </summary>
+        /// <returns>Newly resized array.</returns>
+        public static Allocation ResizeArray<T>(this T entity, DataType arrayElementType, uint newLength) where T : unmanaged, IEntity
         {
             return entity.World.ResizeArray(entity.Value, arrayElementType, newLength);
         }

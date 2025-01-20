@@ -106,6 +106,27 @@ namespace Worlds
             return schema->sizes.Read<ushort>(BitMask.Capacity * 2 + arrayElementType.index * 2u);
         }
 
+        public readonly DataType GetDataType(ComponentType componentType)
+        {
+            ThrowIfComponentIsMissing(componentType);
+
+            return new(componentType, GetSize(componentType));
+        }
+
+        public readonly DataType GetDataType(ArrayElementType arrayElementType)
+        {
+            ThrowIfArrayElementIsMissing(arrayElementType);
+
+            return new(arrayElementType, GetSize(arrayElementType));
+        }
+
+        public readonly DataType GetDataType(TagType tagType)
+        {
+            ThrowIfTagIsMissing(tagType);
+
+            return new(tagType);
+        }
+
         /// <summary>
         /// Retrieves the type layout for the given <paramref name="componentType"/>.
         /// </summary>
@@ -294,6 +315,12 @@ namespace Worlds
             return new(schema->componentIndices[TypeLayoutHashCodeCache<T>.value]);
         }
 
+        public readonly DataType GetComponentDataType<T>() where T : unmanaged
+        {
+            ComponentType componentType = GetComponent<T>();
+            return new(componentType, (ushort)sizeof(T));
+        }
+
         public readonly bool ContainsArrayElement<T>() where T : unmanaged
         {
             int hashCode = TypeLayoutHashCodeCache<T>.value;
@@ -307,12 +334,23 @@ namespace Worlds
             return new(schema->arrayElementIndices[TypeLayoutHashCodeCache<T>.value]);
         }
 
+        public readonly DataType GetArrayElementDataType<T>() where T : unmanaged
+        {
+            ArrayElementType arrayElementType = GetArrayElement<T>();
+            return new(arrayElementType, (ushort)sizeof(T));
+        }
+
         public readonly TagType GetTag<T>() where T : unmanaged
         {
             ThrowIfTagIsMissing<T>();
 
             int hashCode = TypeLayoutHashCodeCache<T>.value;
             return new(schema->tagIndices[hashCode]);
+        }
+
+        public readonly DataType GetTagDataType<T>() where T : unmanaged
+        {
+            return GetDataType(GetTag<T>());
         }
 
         public readonly bool ContainsTag<T>() where T : unmanaged

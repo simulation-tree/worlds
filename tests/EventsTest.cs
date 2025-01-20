@@ -70,18 +70,18 @@ namespace Worlds.Tests
             Assert.That(events[0].added, Is.False);
 
             [UnmanagedCallersOnly]
-            static void OnComponentChanged(World world, uint entity, byte type, DataType dataType, ChangeType changeType, ulong userData)
+            static void OnComponentChanged(World world, uint entity, DataType type, ChangeType changeType, ulong userData)
             {
-                if (dataType == DataType.Component)
+                if (type.IsComponent)
                 {
                     List<(uint, ComponentType, bool)> events = new((void*)userData);
                     if (changeType == ChangeType.Added)
                     {
-                        events.Add((entity, new(type), true));
+                        events.Add((entity, type.ComponentType, true));
                     }
                     else
                     {
-                        events.Add((entity, new(type), false));
+                        events.Add((entity, type.ComponentType, false));
                     }
                 }
             }

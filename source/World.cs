@@ -498,13 +498,14 @@ namespace Worlds
             else if (instruction.type == Instruction.Type.AddComponent)
             {
                 ComponentType componentType = new((byte)instruction.A);
+                DataType dataType = schema.GetDataType(componentType);
                 Allocation allocation = new((void*)(nint)instruction.B);
-                ushort componentSize = schema.GetSize(componentType);
+                ushort componentSize = dataType.Size;
                 USpan<byte> componentData = allocation.AsSpan<byte>(0, componentSize);
                 for (uint i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
-                    AddComponent(entity, componentType, componentData);
+                    AddComponent(entity, dataType, componentData);
                 }
             }
             else if (instruction.type == Instruction.Type.RemoveComponent)
@@ -520,12 +521,13 @@ namespace Worlds
             {
                 ComponentType componentType = new((byte)instruction.A);
                 Allocation allocation = new((void*)(nint)instruction.B);
-                ushort componentSize = schema.GetSize(componentType);
+                DataType dataType = schema.GetDataType(componentType);
+                ushort componentSize = dataType.Size;
                 USpan<byte> componentBytes = allocation.AsSpan<byte>(0, componentSize);
                 for (uint i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
-                    SetComponent(entity, componentType, componentBytes);
+                    SetComponent(entity, dataType, componentBytes);
                 }
             }
             else if (instruction.type == Instruction.Type.AddTag)
@@ -549,13 +551,14 @@ namespace Worlds
             else if (instruction.type == Instruction.Type.CreateArray)
             {
                 ArrayElementType arrayElementType = new((byte)instruction.A);
-                ushort arrayElementSize = schema.GetSize(arrayElementType);
+                DataType dataType = schema.GetDataType(arrayElementType);
+                ushort arrayElementSize = dataType.Size;
                 Allocation allocation = new((void*)(nint)instruction.B);
                 uint count = (uint)instruction.C;
                 for (uint i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
-                    Allocation newArray = CreateArray(entity, arrayElementType, count);
+                    Allocation newArray = CreateArray(entity, dataType, count);
                     allocation.CopyTo(newArray, count * arrayElementSize);
                 }
             }
@@ -752,17 +755,13 @@ namespace Worlds
                 //modify descendants
                 if (slot.childCount > 0)
                 {
-                    using List<uint> stack = new(slot.childCount * 2u);
-                    for (uint i = 0; i < slot.childCount; i++)
-                    {
-                        uint child = slot.children[i];
-                        stack.Add(child);
-                    }
+                    using Stack<uint> stack = new(slot.childCount * 2u);
+                    stack.PushRange(slot.GetChildren());
 
                     EntitySlotState slotState = slot.state;
                     while (stack.Count > 0)
                     {
-                        entity = stack.RemoveAt(0);
+                        entity = stack.Pop();
                         slot = ref slots[entity - 1];
                         if (enabled && slot.state == EntitySlotState.DisabledButLocallyEnabled)
                         {
@@ -800,10 +799,9 @@ namespace Worlds
                             oldChunk.MoveEntity(entity, newChunk);
                         }
 
-                        for (uint i = 0; i < slot.childCount; i++)
+                        if (slot.childCount > 0)
                         {
-                            uint child = slot.children[i];
-                            stack.Add(child);
+                            stack.PushRange(slot.GetChildren());
                         }
                     }
                 }
@@ -1585,6 +1583,15 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Creates a new uninitialized array with the given <paramref name="length"/> and <paramref name="arrayElementType"/>.
+        /// </summary>
+        public readonly Allocation CreateArray(uint entity, DataType arrayElementType, uint length = 0)
+        {
+            ushort arrayElementSize = arrayElementType.Size;
+            return Implementation.CreateArray(value, entity, arrayElementType, arrayElementSize, length);
+        }
+
+        /// <summary>
         /// Creates a new uninitialized array on this <paramref name="entity"/>.
         /// </summary>
         public readonly USpan<T> CreateArray<T>(uint entity, uint length = 0) where T : unmanaged
@@ -1656,6 +1663,15 @@ namespace Worlds
         public readonly Allocation ResizeArray(uint entity, ArrayElementType arrayElementType, uint newLength)
         {
             ushort arrayElementSize = Schema.GetSize(arrayElementType);
+            return Implementation.ResizeArray(value, entity, arrayElementType, arrayElementSize, newLength);
+        }
+
+        /// <summary>
+        /// Resizes the array of type <paramref name="arrayElementType"/> on the given <paramref name="entity"/>.
+        /// </summary>
+        public readonly Allocation ResizeArray(uint entity, DataType arrayElementType, uint newLength)
+        {
+            ushort arrayElementSize = arrayElementType.Size;
             return Implementation.ResizeArray(value, entity, arrayElementType, arrayElementSize, newLength);
         }
 
@@ -1739,12 +1755,34 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Adds a new default component with the given type.
+        /// </summary>
+        public readonly void AddComponent(uint entity, DataType componentType)
+        {
+            ushort componentSize = componentType.Size;
+            Implementation.AddComponent(value, entity, componentType, componentSize);
+            Implementation.NotifyComponentAdded(this, entity, componentType);
+        }
+
+        /// <summary>
         /// Adds a new component of the given <paramref name="componentType"/> with <paramref name="source"/> bytes
         /// to <paramref name="entity"/>.
         /// </summary>
         public readonly void AddComponent(uint entity, ComponentType componentType, USpan<byte> source)
         {
             ushort componentSize = Schema.GetSize(componentType);
+            Allocation component = Implementation.AddComponent(value, entity, componentType, componentSize);
+            source.CopyTo(component, Math.Min(componentSize, source.Length));
+            Implementation.NotifyComponentAdded(this, entity, componentType);
+        }
+
+        /// <summary>
+        /// Adds a new component of the given <paramref name="componentType"/> with <paramref name="source"/> bytes
+        /// to <paramref name="entity"/>.
+        /// </summary>
+        public readonly void AddComponent(uint entity, DataType componentType, USpan<byte> source)
+        {
+            ushort componentSize = componentType.Size;
             Allocation component = Implementation.AddComponent(value, entity, componentType, componentSize);
             source.CopyTo(component, Math.Min(componentSize, source.Length));
             Implementation.NotifyComponentAdded(this, entity, componentType);
@@ -1855,6 +1893,16 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves the component of the given <paramref name="componentType"/> from the given <paramref name="entity"/>
+        /// as a pointer.
+        /// </summary>
+        public readonly Allocation GetComponent(uint entity, DataType componentType)
+        {
+            ushort componentSize = componentType.Size;
+            return Implementation.GetComponent(value, entity, componentType, componentSize);
+        }
+
+        /// <summary>
         /// Fetches the bytes of a component from the given <paramref name="entity"/>.
         /// </summary>
         public readonly USpan<byte> GetComponentBytes(uint entity, ComponentType componentType)
@@ -1865,11 +1913,30 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Fetches the bytes of a component from the given <paramref name="entity"/>.
+        /// </summary>
+        public readonly USpan<byte> GetComponentBytes(uint entity, DataType componentType)
+        {
+            ushort componentSize = componentType.Size;
+            Allocation component = Implementation.GetComponent(value, entity, componentType, componentSize);
+            return component.AsSpan<byte>(0, componentSize);
+        }
+
+        /// <summary>
         /// Retrieves the component from the given <paramref name="entity"/> as an <see cref="object"/>.
         /// </summary>
         public readonly object GetComponentObject(uint entity, ComponentType componentType)
         {
             TypeLayout layout = componentType.GetLayout(Schema);
+            USpan<byte> bytes = GetComponentBytes(entity, componentType);
+            return layout.Create(bytes);
+        }
+        /// <summary>
+        /// Retrieves the component from the given <paramref name="entity"/> as an <see cref="object"/>.
+        /// </summary>
+        public readonly object GetComponentObject(uint entity, DataType componentType)
+        {
+            TypeLayout layout = componentType.ComponentType.GetLayout(Schema);
             USpan<byte> bytes = GetComponentBytes(entity, componentType);
             return layout.Create(bytes);
         }
@@ -1951,6 +2018,15 @@ namespace Worlds
         /// Assigns the given <paramref name="componentData"/> to the given <paramref name="entity"/>.
         /// </summary>
         public readonly void SetComponent(uint entity, ComponentType componentType, USpan<byte> componentData)
+        {
+            USpan<byte> bytes = GetComponentBytes(entity, componentType);
+            componentData.CopyTo(bytes);
+        }
+
+        /// <summary>
+        /// Assigns the given <paramref name="componentData"/> to the given <paramref name="entity"/>.
+        /// </summary>
+        public readonly void SetComponent(uint entity, DataType componentType, USpan<byte> componentData)
         {
             USpan<byte> bytes = GetComponentBytes(entity, componentType);
             componentData.CopyTo(bytes);
@@ -2367,17 +2443,17 @@ namespace Worlds
                 {
                     foreach (TypeLayout typeLayout in loadedSchema.ComponentTypes)
                     {
-                        process.Invoke(schema, typeLayout, DataType.Component);
+                        process.Invoke(schema, typeLayout, DataType.Kind.Component);
                     }
 
                     foreach (TypeLayout typeLayout in loadedSchema.ArrayElementTypes)
                     {
-                        process.Invoke(schema, typeLayout, DataType.ArrayElement);
+                        process.Invoke(schema, typeLayout, DataType.Kind.ArrayElement);
                     }
 
                     foreach (TypeLayout typeLayout in loadedSchema.TagTypes)
                     {
-                        process.Invoke(schema, typeLayout, DataType.Tag);
+                        process.Invoke(schema, typeLayout, DataType.Kind.Tag);
                     }
                 }
                 else
@@ -2570,20 +2646,22 @@ namespace Worlds
                 ref EntitySlot slot = ref world->slots[entity - 1];
                 if (slot.childCount > 0)
                 {
+                    USpan<uint> children = slot.GetChildren();
+
                     //destroy or orphan the children
                     if (destroyChildren)
                     {
-                        for (uint i = 0; i < slot.childCount; i++)
+                        for (uint i = 0; i < children.Length; i++)
                         {
-                            uint child = slot.children[i];
+                            uint child = children[i];
                             DestroyEntity(world, child, true);
                         }
                     }
                     else
                     {
-                        for (uint i = 0; i < slot.childCount; i++)
+                        for (uint i = 0; i < children.Length; i++)
                         {
-                            uint child = slot.children[i];
+                            uint child = children[i];
                             ref EntitySlot childSlot = ref world->slots[child - 1];
                             childSlot.parent = default;
                         }
@@ -3086,7 +3164,6 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfComponentMissing(world, entity, componentType);
 
-                Schema schema = world->schema;
                 Dictionary<Definition, Chunk> chunks = world->chunks;
                 ref EntitySlot slot = ref world->slots[entity - 1];
                 Chunk previousChunk = slot.chunk;
@@ -3095,6 +3172,7 @@ namespace Worlds
 
                 if (!chunks.TryGetValue(newComponentTypes, out Chunk destinationChunk))
                 {
+                    Schema schema = world->schema;
                     destinationChunk = new(newComponentTypes, schema);
                     chunks.Add(newComponentTypes, destinationChunk);
                 }
@@ -3134,7 +3212,6 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfTagIsMissing(world, entity, tagType);
 
-                Schema schema = world->schema;
                 Dictionary<Definition, Chunk> chunks = world->chunks;
                 ref EntitySlot slot = ref world->slots[entity - 1];
                 Chunk previousChunk = slot.chunk;
@@ -3143,6 +3220,7 @@ namespace Worlds
 
                 if (!chunks.TryGetValue(newComponentTypes, out Chunk destinationChunk))
                 {
+                    Schema schema = world->schema;
                     destinationChunk = new(newComponentTypes, schema);
                     chunks.Add(newComponentTypes, destinationChunk);
                 }
@@ -3207,63 +3285,70 @@ namespace Worlds
             internal static void NotifyComponentAdded(World world, uint entity, ComponentType componentType)
             {
                 List<(EntityDataChanged, ulong)> events = world.value->entityDataChanged;
+                DataType type = world.Schema.GetDataType(componentType);
                 foreach ((EntityDataChanged callback, ulong userData) in events)
                 {
-                    callback.Invoke(world, entity, componentType, DataType.Component, ChangeType.Added, userData);
+                    callback.Invoke(world, entity, type, ChangeType.Added, userData);
                 }
             }
 
             internal static void NotifyComponentRemoved(World world, uint entity, ComponentType componentType)
             {
                 List<(EntityDataChanged, ulong)> events = world.value->entityDataChanged;
+                DataType type = world.Schema.GetDataType(componentType);
                 foreach ((EntityDataChanged callback, ulong userData) in events)
                 {
-                    callback.Invoke(world, entity, componentType, DataType.Component, ChangeType.Removed, userData);
+                    callback.Invoke(world, entity, type, ChangeType.Removed, userData);
                 }
             }
 
             internal static void NotifyArrayCreated(World world, uint entity, ArrayElementType arrayElementType)
             {
                 List<(EntityDataChanged, ulong)> events = world.value->entityDataChanged;
+                DataType type = world.Schema.GetDataType(arrayElementType);
                 foreach ((EntityDataChanged callback, ulong userData) in events)
                 {
-                    callback.Invoke(world, entity, arrayElementType, DataType.ArrayElement, ChangeType.Added, userData);
+                    callback.Invoke(world, entity, type, ChangeType.Added, userData);
                 }
             }
 
             internal static void NotifyArrayDestroyed(World world, uint entity, ArrayElementType arrayElementType)
             {
                 List<(EntityDataChanged, ulong)> events = world.value->entityDataChanged;
+                DataType type = world.Schema.GetDataType(arrayElementType);
                 foreach ((EntityDataChanged callback, ulong userData) in events)
                 {
-                    callback.Invoke(world, entity, arrayElementType, DataType.ArrayElement, ChangeType.Removed, userData);
+                    callback.Invoke(world, entity, type, ChangeType.Removed, userData);
                 }
             }
 
             internal static void NotifyArrayResized(World world, uint entity, ArrayElementType arrayElementType)
             {
                 List<(EntityDataChanged, ulong)> events = world.value->entityDataChanged;
+                DataType type = world.Schema.GetDataType(arrayElementType);
                 foreach ((EntityDataChanged callback, ulong userData) in events)
                 {
-                    callback.Invoke(world, entity, arrayElementType, DataType.ArrayElement, ChangeType.Modified, userData);
+                    callback.Invoke(world, entity, type, ChangeType.Modified, userData);
                 }
             }
 
             internal static void NotifyTagAdded(World world, uint entity, TagType tagType)
             {
                 List<(EntityDataChanged, ulong)> events = world.value->entityDataChanged;
+                DataType type = world.Schema.GetDataType(tagType);
                 foreach ((EntityDataChanged callback, ulong userData) in events)
                 {
-                    callback.Invoke(world, entity, tagType, DataType.Tag, ChangeType.Added, userData);
+                    callback.Invoke(world, entity, type, ChangeType.Added, userData);
                 }
             }
 
             internal static void NotifyTagRemoved(World world, uint entity, TagType tagType)
             {
                 List<(EntityDataChanged, ulong)> events = world.value->entityDataChanged;
+                DataType type = world.Schema.GetDataType(tagType);
                 foreach ((EntityDataChanged callback, ulong userData) in events)
                 {
-                    callback.Invoke(world, entity, tagType, DataType.Tag, ChangeType.Removed, userData);
+                    callback.Invoke(world, entity, type, ChangeType.Removed, userData);
                 }
             }
         }

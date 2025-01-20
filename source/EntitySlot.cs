@@ -57,5 +57,10 @@ namespace Worlds
         /// State of the entity.
         /// </summary>
         public EntitySlotState state;
+
+        public readonly USpan<uint> GetChildren()
+        {
+            return children.AsSpan(0, childCount);
+        }
     }
 }
