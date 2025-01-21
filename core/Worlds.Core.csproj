@@ -3,20 +3,20 @@
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
 		<ImplicitUsings>disable</ImplicitUsings>
-		<IncludeBuildOutput>false</IncludeBuildOutput>
-		<IncludeContentInPack>true</IncludeContentInPack>
-		<NoWarn>$(NoWarn);NU5128</NoWarn>
 		<Nullable>enable</Nullable>
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
-		<Title>Worlds</Title>
+		<IsAotCompatible>True</IsAotCompatible>
+		<WarningLevel>8</WarningLevel>
+		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+		<Title>Worlds Core</Title>
 		<Authors>popcron</Authors>
 		<Company>game-simulations</Company>
-		<Description>Native C# library for ECS</Description>
+		<Description>Native ECS library</Description>
 		<RepositoryUrl>https://github.com/game-simulations/worlds</RepositoryUrl>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<IsAotCompatible>True</IsAotCompatible>
-		<IsTrimmable>True</IsTrimmable>
+		<PackageTags>ecs;native</PackageTags>
+		<NoWarn>1701;1702;CS1591</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -27,9 +27,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\analyzer\Worlds.Analyzer.csproj" />
-		<ProjectReference Include="..\generator\Worlds.Generator.csproj" />
-		<ProjectReference Include="..\core\Worlds.Core.csproj" />
+		<ProjectReference Include="..\..\collections\source\Collections.csproj" />
+		<ProjectReference Include="..\..\types\core\Types.Core.csproj" />
+		<ProjectReference Include="..\..\unmanaged\source\Unmanaged.csproj" />
 	</ItemGroup>
 
 </Project>

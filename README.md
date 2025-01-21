@@ -32,12 +32,14 @@ private static void Main()
     TypeLayout.Register<MyReference>();
     TypeLayout.Register<char>();
     TypeLayout.Register<IsThing>();
+
     Schema schema = SchemaRegistry.Get();
     schema.RegisterComponent<MyComponent>();
     schema.RegisterComponent<PlayerName>();
     schema.RegisterComponent<MyReference>();
     schema.RegisterArrayElement<char>();
     schema.RegisterTag<IsThing>();
+    
     using World world = new(schema);
     //...
 }

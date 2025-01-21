@@ -12,7 +12,7 @@ namespace Worlds.Tests
 
         public static World CreateWorld()
         {
-            World world = new(SchemaRegistry.Get());
+            World world = new(CreateSchema());
             return world;
         }
 

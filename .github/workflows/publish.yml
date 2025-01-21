@@ -47,8 +47,14 @@ jobs:
       - name: Build Generator
         run: dotnet build "${{ github.event.repository.name }}/generator" -c Release /p:Version=${VERSION}
       
+      - name: Build Analyzer
+        run: dotnet build "${{ github.event.repository.name }}/analyzer" -c Release /p:Version=${VERSION}
+
       - name: Build Source
         run: dotnet build "${{ github.event.repository.name }}/source" -c Release /p:Version=${VERSION}
+
+      - name: Build Core
+        run: dotnet build "${{ github.event.repository.name }}/core" -c Release /p:Version=${VERSION}
 
       - name: Test
         run: dotnet test "${{ github.event.repository.name }}/tests" -c Release
@@ -56,14 +62,30 @@ jobs:
       - name: Pack Generator
         run: dotnet pack "${{ github.event.repository.name }}/generator" -c Release /p:Version=${VERSION} --no-build --output .
 
+      - name: Pack Analyzer
+        run: dotnet pack "${{ github.event.repository.name }}/analyzer" -c Release /p:Version=${VERSION} --no-build --output .
+
       - name: Pack Source
         run: dotnet pack "${{ github.event.repository.name }}/source" -c Release /p:Version=${VERSION} --no-build --output .
+
+      - name: Pack Core
+        run: dotnet pack "${{ github.event.repository.name }}/core" -c Release /p:Version=${VERSION} --no-build --output .
 
       - name: Add source
         run: dotnet nuget add source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --name github --username ${{ github.repository_owner }} --password ${{ github.token }} --store-password-in-clear-text
       
       - name: Push Generator
-        run: dotnet nuget push Worlds.TypeTableGenerator.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
+        run: dotnet nuget push Worlds.Generator.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
+        env:
+          NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
+
+      - name: Push Analyzer
+        run: dotnet nuget push Worlds.Analyzer.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
+        env:
+          NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
+
+      - name: Push Core
+        run: dotnet nuget push Worlds.Core.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
         env:
           NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
 

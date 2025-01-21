@@ -7,6 +7,9 @@
 		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
 		<DevelopmentDependency>true</DevelopmentDependency>
 		<IncludeSymbols>false</IncludeSymbols>
+		<Title>Worlds Generator</Title>
+		<Authors>popcron</Authors>
+		<Company>game-simulations</Company>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -19,7 +22,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\types\generator\Types.Generator.csproj" />
+		<ProjectReference Include="..\..\types\generator\Types.Generator.csproj" />
 	</ItemGroup>
-	
+
 </Project>

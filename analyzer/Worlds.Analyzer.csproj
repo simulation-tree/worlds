@@ -5,6 +5,10 @@
 		<LangVersion>Latest</LangVersion>
 		<Nullable>enable</Nullable>
 		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+		<Title>Worlds Analyzer</Title>
+		<Authors>popcron</Authors>
+		<Company>game-simulations</Company>
+		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
 	</PropertyGroup>
 
 	<ItemGroup>
