@@ -17,6 +17,7 @@
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<IsAotCompatible>True</IsAotCompatible>
 		<IsTrimmable>True</IsTrimmable>
+		<NoStandardLib>true</NoStandardLib>
 	</PropertyGroup>
 
 	<ItemGroup>
