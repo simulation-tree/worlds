@@ -9,6 +9,7 @@
 		<Authors>popcron</Authors>
 		<Company>game-simulations</Company>
 		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+		<RepositoryUrl>https://github.com/game-simulations/worlds</RepositoryUrl>
 	</PropertyGroup>
 
 	<ItemGroup>
