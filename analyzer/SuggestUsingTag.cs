@@ -61,7 +61,14 @@ namespace Worlds.Analyzer
 
                     if (!structNode.Modifiers.Any(SyntaxKind.PartialKeyword))
                     {
-                        context.ReportDiagnostic(Diagnostic.Create(rule, structNode.Identifier.GetLocation(), type.Name));
+                        try
+                        {
+                            Location location = structNode.Identifier.GetLocation();
+                            context.ReportDiagnostic(Diagnostic.Create(rule, location, type.Name));
+                        }
+                        catch
+                        {
+                        }
                     }
                 }
             }
