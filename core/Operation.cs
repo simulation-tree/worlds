@@ -11,12 +11,12 @@ namespace Worlds
     [DebuggerTypeProxy(typeof(OperationDebugView))]
     public unsafe struct Operation : IDisposable
     {
-        private UnsafeOperation* operation;
+        private Implementation* operation;
 
         /// <summary>
         /// Amount of instructions stored.
         /// </summary>
-        public readonly uint Count => UnsafeOperation.GetCount(operation);
+        public readonly uint Count => operation->count;
 
         /// <summary>
         /// Checks if there are any entities selected.
@@ -56,7 +56,7 @@ namespace Worlds
             {
                 ThrowIfOutOfRange(index);
 
-                return UnsafeOperation.GetInstructions(operation)[index];
+                return Implementation.GetInstructions(operation)[index];
             }
         }
 
@@ -71,7 +71,7 @@ namespace Worlds
         /// </summary>
         public Operation()
         {
-            operation = UnsafeOperation.Allocate(0);
+            operation = Implementation.Allocate(0);
         }
 #endif
         /// <summary>
@@ -79,10 +79,10 @@ namespace Worlds
         /// </summary>
         public Operation(uint initialCapacity = 0)
         {
-            operation = UnsafeOperation.Allocate(initialCapacity);
+            operation = Implementation.Allocate(initialCapacity);
         }
 
-        internal Operation(UnsafeOperation* operation)
+        internal Operation(Implementation* operation)
         {
             this.operation = operation;
         }
@@ -95,7 +95,7 @@ namespace Worlds
             Allocations.ThrowIfNull(operation);
 
             Clear();
-            UnsafeOperation.Free(ref operation);
+            Implementation.Free(ref operation);
         }
 
         /// <summary>
@@ -106,7 +106,7 @@ namespace Worlds
         {
             Allocations.ThrowIfNull(operation);
 
-            return UnsafeOperation.GetInstructions(operation);
+            return Implementation.GetInstructions(operation);
         }
 
         /// <inheritdoc/>
@@ -124,23 +124,47 @@ namespace Worlds
         {
             uint thisLength = Count;
             uint length = 0;
-            length += "Operation".AsUSpan().CopyTo(buffer);
+            buffer[length++] = 'O';
+            buffer[length++] = 'p';
+            buffer[length++] = 'e';
+            buffer[length++] = 'r';
+            buffer[length++] = 'a';
+            buffer[length++] = 't';
+            buffer[length++] = 'i';
+            buffer[length++] = 'o';
+            buffer[length++] = 'n';
+            buffer[length++] = ' ';
+            buffer[length++] = '(';
             if (thisLength == 0)
             {
-                length += "(Empty)".AsUSpan().CopyTo(buffer.Slice(length));
-            }
-            else if (thisLength == 1)
-            {
-                length += "(1 instruction)".AsUSpan().CopyTo(buffer.Slice(length));
+                buffer[length++] = 'E';
+                buffer[length++] = 'm';
+                buffer[length++] = 'p';
+                buffer[length++] = 't';
+                buffer[length++] = 'y';
             }
             else
             {
-                buffer[length++] = '(';
                 length += thisLength.ToString(buffer.Slice(length));
                 buffer[length++] = ' ';
-                length += "instructions)".AsUSpan().CopyTo(buffer.Slice(length));
+                buffer[length++] = 'i';
+                buffer[length++] = 'n';
+                buffer[length++] = 's';
+                buffer[length++] = 't';
+                buffer[length++] = 'r';
+                buffer[length++] = 'u';
+                buffer[length++] = 'c';
+                buffer[length++] = 't';
+                buffer[length++] = 'i';
+                buffer[length++] = 'o';
+                buffer[length++] = 'n';
+                if (thisLength > 1)
+                {
+                    buffer[length++] = 's';
+                }
             }
 
+            buffer[length++] = ')';
             return length;
         }
 
@@ -303,7 +327,7 @@ namespace Worlds
         {
             Allocations.ThrowIfNull(operation);
 
-            UnsafeOperation.ClearInstructions(operation);
+            Implementation.ClearInstructions(operation);
         }
 
         /// <summary>
@@ -550,7 +574,7 @@ namespace Worlds
         {
             Allocations.ThrowIfNull(operation);
 
-            UnsafeOperation.AddInstruction(operation, instruction);
+            Implementation.AddInstruction(operation, instruction);
         }
 
         public readonly void InsertInstructionAt(Instruction instruction, uint index)
@@ -558,7 +582,7 @@ namespace Worlds
             Allocations.ThrowIfNull(operation);
             ThrowIfPastRange(index);
 
-            UnsafeOperation.InsertInstructionAt(operation, instruction, index);
+            Implementation.InsertInstructionAt(operation, instruction, index);
         }
 
         /// <summary>
@@ -570,7 +594,7 @@ namespace Worlds
             ThrowIfOutOfRange(index);
             ThrowIfNoInstructions();
 
-            UnsafeOperation.RemoveInstructionAt(operation, index);
+            Implementation.RemoveInstructionAt(operation, index);
         }
 
         /// <summary>
@@ -662,23 +686,23 @@ namespace Worlds
         /// <summary>
         /// Opaque pointer implementation of an <see cref="Operation"/>.
         /// </summary>
-        internal unsafe struct UnsafeOperation
+        internal unsafe struct Implementation
         {
-            private uint count;
-            private uint capacity;
+            public uint count;
+            public uint capacity;
             private Allocation list;
 
-            public static UnsafeOperation* Allocate(uint initialCapacity)
+            public static Implementation* Allocate(uint initialCapacity)
             {
                 initialCapacity = Allocations.GetNextPowerOf2(Math.Max(1, initialCapacity));
-                UnsafeOperation* operation = (UnsafeOperation*)Allocations.Allocate(TypeInfo<UnsafeOperation>.size);
+                Implementation* operation = Allocations.Allocate<Implementation>();
                 operation->count = 0;
                 operation->capacity = initialCapacity;
-                operation->list = new(TypeInfo<Instruction>.size * initialCapacity);
+                operation->list = new((uint)sizeof(Instruction) * initialCapacity);
                 return operation;
             }
 
-            public static void Free(ref UnsafeOperation* operation)
+            public static void Free(ref Implementation* operation)
             {
                 Allocations.ThrowIfNull(operation);
 
@@ -686,28 +710,14 @@ namespace Worlds
                 Allocations.Free(ref operation);
             }
 
-            public static uint GetCount(UnsafeOperation* operation)
-            {
-                Allocations.ThrowIfNull(operation);
-
-                return operation->count;
-            }
-
-            public static uint GetCapacity(UnsafeOperation* operation)
-            {
-                Allocations.ThrowIfNull(operation);
-
-                return operation->capacity;
-            }
-
-            public static USpan<Instruction> GetInstructions(UnsafeOperation* operation)
+            public static USpan<Instruction> GetInstructions(Implementation* operation)
             {
                 Allocations.ThrowIfNull(operation);
 
                 return operation->list.AsSpan<Instruction>(0, operation->count);
             }
 
-            public static void AddInstruction(UnsafeOperation* operation, Instruction instruction)
+            public static void AddInstruction(Implementation* operation, Instruction instruction)
             {
                 Allocations.ThrowIfNull(operation);
 
@@ -725,7 +735,7 @@ namespace Worlds
                 count++;
             }
 
-            public static void InsertInstructionAt(UnsafeOperation* operation, Instruction instruction, uint index)
+            public static void InsertInstructionAt(Implementation* operation, Instruction instruction, uint index)
             {
                 Allocations.ThrowIfNull(operation);
 
@@ -752,7 +762,7 @@ namespace Worlds
                 count++;
             }
 
-            public static void ClearInstructions(UnsafeOperation* operation)
+            public static void ClearInstructions(Implementation* operation)
             {
                 Allocations.ThrowIfNull(operation);
 
@@ -767,7 +777,7 @@ namespace Worlds
                 count = 0;
             }
 
-            public static void RemoveInstructionAt(UnsafeOperation* operation, uint index)
+            public static void RemoveInstructionAt(Implementation* operation, uint index)
             {
                 Allocations.ThrowIfNull(operation);
 
