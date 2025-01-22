@@ -1,4 +1,5 @@
 ﻿using Collections;
+using System;
 using Types;
 using Unmanaged;
 
@@ -20,7 +21,7 @@ namespace Worlds.Tests
             world.AddComponent(c, new Cherry("Goodbye, World!"));
             world.DestroyEntity(temporary);
             uint list = world.CreateEntity();
-            world.CreateArray(list, "Well hello there list".AsUSpan().As<Character>());
+            world.CreateArray(list, new USpan<char>("Well hello there list").As<Character>());
 
             using List<uint> oldEntities = new(world.Entities);
             using List<(uint, Apple)> apples = new();

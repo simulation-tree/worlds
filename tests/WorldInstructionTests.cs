@@ -155,7 +155,7 @@ namespace Worlds.Tests
             using Operation operation = new();
             operation.CreateEntity();
             operation.CreateArray<Character>((uint)testString.Length, schema);
-            operation.SetArrayElements(0, testString.AsUSpan().As<Character>(), schema);
+            operation.SetArrayElements(0, new USpan<char>(testString).As<Character>(), schema);
 
             using World world = CreateWorld();
             world.Perform(operation);
@@ -204,7 +204,7 @@ namespace Worlds.Tests
             using Schema schema = CreateSchema();
             using Operation operation = new();
             Operation.SelectedEntity newEntity = operation.CreateEntity();
-            newEntity.CreateArray("abcd".AsUSpan().As<Character>(), schema);
+            newEntity.CreateArray(new USpan<char>("abcd").As<Character>(), schema);
 
             using World world = CreateWorld();
             world.Perform(operation);
