@@ -1,5 +1,4 @@
 ﻿using System;
-using Types;
 
 namespace Worlds
 {
@@ -7,7 +6,7 @@ namespace Worlds
     /// States that the decorated type is a <see cref="TagType"/>.
     /// </summary>
     [AttributeUsage(AttributeTargets.Struct)]
-    public class TagAttribute : TypeAttribute
+    public class TagAttribute : Attribute
     {
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System;
-using Types;
 
 namespace Worlds
 {
@@ -7,7 +6,7 @@ namespace Worlds
     /// States that the decorated type is an <see cref="ArrayElementType"/>.
     /// </summary>
     [AttributeUsage(AttributeTargets.Struct)]
-    public class ArrayElementAttribute : TypeAttribute
+    public class ArrayElementAttribute : Attribute
     {
     }
 }
