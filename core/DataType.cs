@@ -210,10 +210,10 @@ namespace Worlds
         /// </summary>
         public enum Kind : byte
         {
-            Unknown,
-            Component,
-            ArrayElement,
-            Tag
+            Unknown = 0,
+            Component = 1,
+            ArrayElement = 2,
+            Tag = 3
         }
     }
 }

@@ -1,5 +1,5 @@
-﻿using Unmanaged.Tests;
-using Types;
+﻿using Types;
+using Unmanaged.Tests;
 
 namespace Worlds.Tests
 {
@@ -7,7 +7,7 @@ namespace Worlds.Tests
     {
         static WorldTests()
         {
-            TypeLayoutRegistry.RegisterAll();
+            TypeRegistry.Load<Worlds.Tests.TypeBank>();
         }
 
         public static World CreateWorld()
@@ -18,7 +18,9 @@ namespace Worlds.Tests
 
         public static Schema CreateSchema()
         {
-            return SchemaRegistry.Get();
+            Schema schema = new();
+            schema.Load<SchemaBank>();
+            return schema;
         }
     }
 }

@@ -1,8 +1,10 @@
 ﻿using Collections;
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Types;
 using Unmanaged;
+using Worlds.Functions;
 
 namespace Worlds
 {
@@ -106,6 +108,33 @@ namespace Worlds
             return schema->sizes.Read<ushort>(BitMask.Capacity * 2 + arrayElementType.index * 2u);
         }
 
+        /// <summary>
+        /// Loads all types from the given bank into the schema.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public readonly void Load<T>() where T : unmanaged, ISchemaBank
+        {
+            T bank = default;
+            bank.Load(new(this, &Register));
+        }
+
+        [UnmanagedCallersOnly]
+        private static void Register(RegisterDataType.Input input)
+        {
+            if (input.kind == DataType.Kind.Component)
+            {
+                input.schema.RegisterComponent(input.type);
+            }
+            else if (input.kind == DataType.Kind.ArrayElement)
+            {
+                input.schema.RegisterArrayElement(input.type);
+            }
+            else if (input.kind == DataType.Kind.Tag)
+            {
+                input.schema.RegisterTag(input.type);
+            }
+        }
+
         public readonly DataType GetDataType(ComponentType componentType)
         {
             ThrowIfComponentIsMissing(componentType);
@@ -162,79 +191,91 @@ namespace Worlds
             return GetLayout(GetComponent<T>());
         }
 
-        public readonly bool TryGetComponentLayout(FixedString fullTypeName, out TypeLayout typeLayout)
+        public readonly bool TryGetComponentLayout(FixedString fullTypeName, out TypeLayout componentType)
         {
+            USpan<TypeLayout> types = Implementation.GetComponentLayouts(schema);
             for (byte c = 0; c < BitMask.Capacity; c++)
             {
-                ComponentType componentType = new(c);
-                TypeLayout layout = GetLayout(componentType);
+                TypeLayout layout = types[c];
                 if (layout.FullName == fullTypeName)
                 {
-                    typeLayout = layout;
+                    componentType = layout;
                     return true;
                 }
             }
 
-            typeLayout = default;
+            componentType = default;
             return false;
         }
 
-        public readonly bool TryGetArrayElementLayout(FixedString fullTypeName, out TypeLayout typeLayout)
+        public readonly bool TryGetArrayElementLayout(FixedString fullTypeName, out TypeLayout arrayElementType)
         {
+            USpan<TypeLayout> types = Implementation.GetArrayLayouts(schema);
             for (byte a = 0; a < BitMask.Capacity; a++)
             {
-                ArrayElementType arrayElementType = new(a);
-                TypeLayout layout = GetLayout(arrayElementType);
-                if (layout.FullName == fullTypeName)
+                TypeLayout type = types[a];
+                if (type.FullName == fullTypeName)
                 {
-                    typeLayout = layout;
+                    arrayElementType = type;
                     return true;
                 }
             }
 
-            typeLayout = default;
+            arrayElementType = default;
             return false;
         }
 
         public readonly void RegisterComponent<T>() where T : unmanaged
         {
+            RegisterComponent(TypeRegistry.Get<T>());
+        }
+
+        public readonly void RegisterComponent(TypeLayout type)
+        {
             ThrowIfTooManyComponents();
-            ThrowIfComponentAlreadyRegistered<T>();
+            ThrowIfComponentAlreadyRegistered(type);
 
             USpan<TypeLayout> typeLayouts = Implementation.GetComponentLayouts(schema);
             USpan<ushort> componentSizes = Implementation.GetComponentSizes(schema);
-            TypeLayout typeLayout = TypeLayout.Get<T>();
-            typeLayouts[schema->components] = typeLayout;
-            componentSizes[schema->components] = (ushort)sizeof(T);
-            int hashCode = typeLayout.GetHashCode();
+            typeLayouts[schema->components] = type;
+            componentSizes[schema->components] = type.Size;
+            int hashCode = type.GetHashCode();
             schema->componentIndices.Add(hashCode, schema->components);
             schema->components++;
         }
 
         public readonly void RegisterArrayElement<T>() where T : unmanaged
         {
+            RegisterArrayElement(TypeRegistry.Get<T>());
+        }
+
+        public readonly void RegisterArrayElement(TypeLayout type)
+        {
             ThrowIfTooManyArrays();
-            ThrowIfArrayElementAlreadyRegistered<T>();
+            ThrowIfArrayElementAlreadyRegistered(type);
 
             USpan<TypeLayout> typeLayouts = Implementation.GetArrayLayouts(schema);
             USpan<ushort> arrayElementSizes = Implementation.GetArrayElementSizes(schema);
-            TypeLayout typeLayout = TypeLayout.Get<T>();
-            typeLayouts[schema->arrays] = typeLayout;
-            arrayElementSizes[schema->arrays] = (ushort)sizeof(T);
-            int hashCode = typeLayout.GetHashCode();
+            typeLayouts[schema->arrays] = type;
+            arrayElementSizes[schema->arrays] = type.Size;
+            int hashCode = type.GetHashCode();
             schema->arrayElementIndices.Add(hashCode, schema->arrays);
             schema->arrays++;
         }
 
         public readonly void RegisterTag<T>() where T : unmanaged
         {
+            RegisterTag(TypeRegistry.Get<T>());
+        }
+
+        public readonly void RegisterTag(TypeLayout type)
+        {
             ThrowIfTooManyTags();
-            ThrowIfTagAlreadyRegistered<T>();
+            ThrowIfTagAlreadyRegistered(type);
 
             USpan<TypeLayout> typeLayouts = Implementation.GetTagLayouts(schema);
-            TypeLayout typeLayout = TypeLayout.Get<T>();
-            typeLayouts[schema->tags] = typeLayout;
-            schema->tagIndices.Add(typeLayout.GetHashCode(), schema->tags);
+            typeLayouts[schema->tags] = type;
+            schema->tagIndices.Add(type.GetHashCode(), schema->tags);
             schema->tagExistence.Write(schema->tags, true);
             schema->tags++;
         }
@@ -256,26 +297,32 @@ namespace Worlds
 
         public readonly bool ContainsComponent(FixedString fullTypeName)
         {
+            USpan<TypeLayout> types = Implementation.GetComponentLayouts(schema);
             for (byte c = 0; c < BitMask.Capacity; c++)
             {
-                ComponentType componentType = new(c);
-                TypeLayout typeLayout = GetLayout(componentType);
-                if (typeLayout.FullName == fullTypeName)
+                TypeLayout type = types[c];
+                if (type.FullName == fullTypeName)
                 {
                     return true;
                 }
             }
 
             return false;
+        }
+
+        public readonly bool ContainsComponent(TypeLayout type)
+        {
+            USpan<TypeLayout> types = Implementation.GetComponentLayouts(schema);
+            return types.Contains(type);
         }
 
         public readonly bool ContainsArrayElement(FixedString fullTypeName)
         {
+            USpan<TypeLayout> types = Implementation.GetArrayLayouts(schema);
             for (byte a = 0; a < BitMask.Capacity; a++)
             {
-                ArrayElementType arrayElementType = new(a);
-                TypeLayout typeLayout = GetLayout(arrayElementType);
-                if (typeLayout.FullName == fullTypeName)
+                TypeLayout type = types[a];
+                if (type.FullName == fullTypeName)
                 {
                     return true;
                 }
@@ -284,22 +331,31 @@ namespace Worlds
             return false;
         }
 
+        public readonly bool ContainsArrayElement(TypeLayout type)
+        {
+            USpan<TypeLayout> types = Implementation.GetArrayLayouts(schema);
+            return types.Contains(type);
+        }
+
         public readonly bool ContainsTag(FixedString fullTypeName)
         {
+            USpan<TypeLayout> types = Implementation.GetTagLayouts(schema);
             for (byte t = 0; t < BitMask.Capacity; t++)
             {
-                TagType tagType = new(t);
-                if (Contains(tagType))
+                TypeLayout type = types[t];
+                if (type.FullName == fullTypeName)
                 {
-                    TypeLayout typeLayout = GetLayout(tagType);
-                    if (typeLayout.FullName == fullTypeName)
-                    {
-                        return true;
-                    }
+                    return true;
                 }
             }
 
             return false;
+        }
+
+        public readonly bool ContainsTag(TypeLayout type)
+        {
+            USpan<TypeLayout> types = Implementation.GetTagLayouts(schema);
+            return types.Contains(type);
         }
 
         public readonly bool ContainsComponent<T>() where T : unmanaged
@@ -667,6 +723,15 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
+        private readonly void ThrowIfComponentAlreadyRegistered(TypeLayout type)
+        {
+            if (ContainsComponent(type))
+            {
+                throw new Exception($"Component `{type}` is already registered in schema");
+            }
+        }
+
+        [Conditional("DEBUG")]
         private readonly void ThrowIfArrayElementAlreadyRegistered<T>() where T : unmanaged
         {
             if (ContainsArrayElement<T>())
@@ -676,11 +741,29 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
+        private readonly void ThrowIfArrayElementAlreadyRegistered(TypeLayout type)
+        {
+            if (ContainsArrayElement(type))
+            {
+                throw new Exception($"Array element `{type}` is already registered in schema");
+            }
+        }
+
+        [Conditional("DEBUG")]
         private readonly void ThrowIfTagAlreadyRegistered<T>() where T : unmanaged
         {
             if (ContainsTag<T>())
             {
                 throw new Exception($"Tag `{typeof(T).FullName}` is already registered in schema");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfTagAlreadyRegistered(TypeLayout type)
+        {
+            if (ContainsTag(type))
+            {
+                throw new Exception($"Tag `{type}` is already registered in schema");
             }
         }
 
@@ -911,7 +994,7 @@ namespace Worlds
 
         internal static class TypeLayoutHashCodeCache<T> where T : unmanaged
         {
-            public static readonly int value = TypeLayout.Get<T>().GetHashCode();
+            public static readonly int value = TypeRegistry.Get<T>().GetHashCode();
         }
     }
 }

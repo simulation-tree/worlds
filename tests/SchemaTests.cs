@@ -1,14 +1,14 @@
-﻿using Collections;
-using Unmanaged;
+﻿using Unmanaged;
 
 namespace Worlds.Tests
 {
-    public class TypeTests : WorldTests
+    public class SchemaTests : WorldTests
     {
         [Test]
         public void AddToSchema()
         {
             using Schema schema = new();
+            Assert.That(schema.ContainsComponent<Stress>(), Is.False);
             schema.RegisterComponent<Stress>();
             Assert.That(schema.ContainsComponent<Stress>(), Is.True);
 
@@ -36,7 +36,7 @@ namespace Worlds.Tests
         }
 
         [Test]
-        public void VerifyTagsGetSaved() 
+        public void VerifyTagsGetSaved()
         {
             using Schema schema = new();
             schema.RegisterTag<bool>();
@@ -82,6 +82,20 @@ namespace Worlds.Tests
             Assert.That(charType.DataKind, Is.EqualTo(DataType.Kind.ArrayElement));
             Assert.That(intType.Size, Is.EqualTo(0));
             Assert.That(intType.DataKind, Is.EqualTo(DataType.Kind.Tag));
+        }
+
+        [Test]
+        public void LoadCustomBank()
+        {
+            using Schema schema = new();
+            schema.Load<CustomSchemaBank>();
+            Assert.That(schema.ContainsComponent<bool>(), Is.True);
+            Assert.That(schema.ContainsComponent<FixedString>(), Is.True);
+            Assert.That(schema.ContainsComponent<uint>(), Is.True);
+            Assert.That(schema.ContainsComponent<float>(), Is.True);
+            Assert.That(schema.ContainsComponent<ulong>(), Is.True);
+            Assert.That(schema.ContainsComponent<byte>(), Is.True);
+            Assert.That(schema.ContainsComponent<int>(), Is.True);
         }
     }
 }

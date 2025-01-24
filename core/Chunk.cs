@@ -356,7 +356,7 @@ namespace Worlds
         {
             List* components = GetComponents(componentType);
             nint address = List.GetStartAddress(components);
-            return new(address + index * componentSize);
+            return new((void*)(address + index * componentSize));
         }
 
         public readonly override bool Equals(object? obj)

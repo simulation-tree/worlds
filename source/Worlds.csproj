@@ -18,6 +18,8 @@
 		<IsAotCompatible>True</IsAotCompatible>
 		<IsTrimmable>True</IsTrimmable>
 		<NoStandardLib>true</NoStandardLib>
+		<AssemblyName>Worlds.Root</AssemblyName>
+		<RootNamespace>Worlds.Root</RootNamespace>
 	</PropertyGroup>
 
 	<ItemGroup>
