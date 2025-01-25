@@ -52,6 +52,7 @@ private static void Main()
 ```
 
 ### Storing values in components
+
 ```cs
 using (World world = new())
 {
@@ -61,6 +62,7 @@ using (World world = new())
 ```
 
 ### Storing multiple values with arrays
+
 Unlike components, arrays offer a way to store multiple of the same type,
 and can be resized:
 ```cs
@@ -70,6 +72,7 @@ Assert.That(moreMany.ToString(), Is.EqualTo("Hello"));
 ```
 
 ### Fetching data and querying
+
 Polling of components, and modifying them can be done through a few different ways:
 ```cs
 uint sum;
@@ -134,6 +137,7 @@ void Do()
 ```
 
 ### Tagging entities
+
 Entities can be tagged with tag types:
 ```cs
 [Tag]
@@ -148,13 +152,14 @@ Assert.That(world.Contains<IsThing>(entity), Is.True);
 ```
 
 ### Relationship references to other entities
-Components with `uint` values that are _meant_ to reference other entities will be
-susceptible to pointing to the wrong entity when worlds are appended (drift). Because the
-value represents a position that may already be occupied by another entity during loading.
 
-This is solved by storing an `rint` value that indexes to entity references stored relatively.
-Then when worlds are then appended or loaded, the entities that they are meant to point to can
-shift together as they're added, preserving the relationship.
+Components with `uint` values that are _meant_ to reference other entities will be
+susceptible to drift after serialization. This is because the entity value represents
+a position, that may be occupied by another existing entity.
+
+This is solved by storing the references locally and accessing with an `rint` index.
+Then when worlds are appended to another world, the referenced entities can shift together
+as they're added, preserving the relationship.
 
 ```cs
 [Component]
@@ -176,6 +181,7 @@ uint oldSecondEntity = world.GetReference(oldFirstEntity, component.entityRefere
 ```
 
 ### Forming entity types
+
 A commonly reused pattern with components is to formalize them into types, where the
 type is qualified by components present on the entity. For example: if an entity
 contains an `PlayerName` then its a player entity. This design is supported through the
@@ -226,6 +232,7 @@ Player anotherPlayer = new Entity(world, anotherEntity).As<Player>();
 ```
 
 ### Serialization and deserialization
+
 Serializing a world to bytes is simple:
 ```cs
 using World prefabWorld = new(SchemaRegistry.Get());
@@ -243,8 +250,10 @@ using World anotherWorld = new(SchemaRegistry.Get());
 anotherWorld.Append(deserializedWorld);
 ```
 
-### Contributing and Design
-This library implements the "[entity-component-system](https://en.wikipedia.org/wiki/Entity_component_system)" pattern of the "archetype" variety.
-Created for building programs of whatever kind, with an open door to the author when targeting efficiency.
+### Contributing and design
+
+This library implements the "[entity-component-system](https://en.wikipedia.org/wiki/Entity_component_system)" pattern
+of the "archetype" variety. Created for building programs of whatever kind, with an open door to the author
+when targeting runtime efficiency.
 
 Contributions to this are welcome.
