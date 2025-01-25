@@ -1,25 +1,23 @@
 ﻿using Collections;
 using System;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using Types;
 using Unmanaged;
 using Worlds.Functions;
 
-[assembly: InternalsVisibleTo("Worlds.Tests")]
 namespace Worlds
 {
     public unsafe struct Schema : IDisposable, IEquatable<Schema>, ISerializable
     {
-        internal static Action<RegisterDataType.Input>? OnRegister;
-
         private Implementation* schema;
 
         public readonly bool IsDisposed => schema is null;
         public readonly void* Pointer => schema;
         public readonly nint Address => (nint)schema;
 
+        /// <summary>
+        /// All component types loaded.
+        /// </summary>
         public readonly System.Collections.Generic.IEnumerable<TypeLayout> ComponentTypes
         {
             get
@@ -35,6 +33,9 @@ namespace Worlds
             }
         }
 
+        /// <summary>
+        /// All array element types loaded.
+        /// </summary>
         public readonly System.Collections.Generic.IEnumerable<TypeLayout> ArrayElementTypes
         {
             get
@@ -50,6 +51,9 @@ namespace Worlds
             }
         }
 
+        /// <summary>
+        /// All tag types loaded.
+        /// </summary>
         public readonly System.Collections.Generic.IEnumerable<TypeLayout> TagTypes
         {
             get
@@ -119,16 +123,10 @@ namespace Worlds
         public readonly void Load<T>() where T : unmanaged, ISchemaBank
         {
             T bank = default;
-            bank.Load(new(this, &Register));
+            bank.Load(new(this, Register));
         }
 
-        [UnmanagedCallersOnly]
-        private static void Register(RegisterDataType.Input input)
-        {
-            RegisterType(input);
-        }
-
-        internal static void RegisterType(RegisterDataType.Input input)
+        public static void Register(RegisterDataType.Input input)
         {
             if (input.kind == DataType.Kind.Component)
             {

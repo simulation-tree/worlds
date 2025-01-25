@@ -6,12 +6,12 @@ namespace Worlds.Functions
     public unsafe readonly struct RegisterDataType : IEquatable<RegisterDataType>
     {
         private readonly Schema schema;
-        private readonly delegate* unmanaged<Input, void> function;
+        private readonly Action<Input> action;
 
-        public RegisterDataType(Schema schema, delegate* unmanaged<Input, void> function)
+        public RegisterDataType(Schema schema, Action<Input> action)
         {
             this.schema = schema;
-            this.function = function;
+            this.action = action;
         }
 
         /// <summary>
@@ -20,14 +20,7 @@ namespace Worlds.Functions
         public readonly void Invoke(TypeLayout type, DataType.Kind kind)
         {
             Input input = new(schema, type, kind);
-            if (Schema.OnRegister is not null)
-            {
-                Schema.OnRegister.Invoke(input);
-            }
-            else
-            {
-                function(input);
-            }
+            action(input);
         }
 
         public readonly override bool Equals(object? obj)
@@ -37,12 +30,12 @@ namespace Worlds.Functions
 
         public readonly bool Equals(RegisterDataType other)
         {
-            return (nint)function == (nint)other.function;
+            return schema == other.schema && action == other.action;
         }
 
         public readonly override int GetHashCode()
         {
-            return ((nint)function).GetHashCode();
+            return HashCode.Combine(schema, action);
         }
 
         public static bool operator ==(RegisterDataType left, RegisterDataType right)
