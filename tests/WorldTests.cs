@@ -10,16 +10,16 @@ namespace Worlds.Tests
             TypeRegistry.Load<Worlds.Tests.TypeBank>();
         }
 
-        public static World CreateWorld()
+        protected World CreateWorld()
         {
             World world = new(CreateSchema());
             return world;
         }
 
-        public static Schema CreateSchema()
+        protected virtual Schema CreateSchema()
         {
             Schema schema = new();
-            schema.Load<SchemaBank>();
+            schema.Load<Worlds.Tests.SchemaBank>();
             return schema;
         }
     }
