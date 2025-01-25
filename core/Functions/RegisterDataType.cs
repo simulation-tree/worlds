@@ -19,7 +19,15 @@ namespace Worlds.Functions
         /// </summary>
         public readonly void Invoke(TypeLayout type, DataType.Kind kind)
         {
-            function(new Input(schema, type, kind));
+            Input input = new(schema, type, kind);
+            if (Schema.OnRegister is not null)
+            {
+                Schema.OnRegister.Invoke(input);
+            }
+            else
+            {
+                function(input);
+            }
         }
 
         public readonly override bool Equals(object? obj)

@@ -7,6 +7,7 @@ namespace Worlds.Tests
     {
         static WorldTests()
         {
+            Schema.OnRegister = Schema.RegisterType;
             TypeRegistry.Load<Worlds.Tests.TypeBank>();
         }
 

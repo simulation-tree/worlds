@@ -1,15 +1,19 @@
 ﻿using Collections;
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Types;
 using Unmanaged;
 using Worlds.Functions;
 
+[assembly: InternalsVisibleTo("Worlds.Tests")]
 namespace Worlds
 {
     public unsafe struct Schema : IDisposable, IEquatable<Schema>, ISerializable
     {
+        internal static Action<RegisterDataType.Input>? OnRegister;
+
         private Implementation* schema;
 
         public readonly bool IsDisposed => schema is null;
@@ -120,6 +124,11 @@ namespace Worlds
 
         [UnmanagedCallersOnly]
         private static void Register(RegisterDataType.Input input)
+        {
+            RegisterType(input);
+        }
+
+        internal static void RegisterType(RegisterDataType.Input input)
         {
             if (input.kind == DataType.Kind.Component)
             {
