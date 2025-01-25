@@ -499,7 +499,7 @@ namespace Worlds
             {
                 ComponentType componentType = new((byte)instruction.A);
                 DataType dataType = schema.GetDataType(componentType);
-                Allocation allocation = new((void*)(nint)instruction.B);
+                Allocation allocation = new((void*)instruction.B);
                 ushort componentSize = dataType.Size;
                 USpan<byte> componentData = allocation.AsSpan<byte>(0, componentSize);
                 for (uint i = 0; i < selection.Count; i++)
@@ -520,7 +520,7 @@ namespace Worlds
             else if (instruction.type == Instruction.Type.SetComponent)
             {
                 ComponentType componentType = new((byte)instruction.A);
-                Allocation allocation = new((void*)(nint)instruction.B);
+                Allocation allocation = new((void*)instruction.B);
                 DataType dataType = schema.GetDataType(componentType);
                 ushort componentSize = dataType.Size;
                 USpan<byte> componentBytes = allocation.AsSpan<byte>(0, componentSize);
@@ -553,7 +553,7 @@ namespace Worlds
                 ArrayElementType arrayElementType = new((byte)instruction.A);
                 DataType dataType = schema.GetDataType(arrayElementType);
                 ushort arrayElementSize = dataType.Size;
-                Allocation allocation = new((void*)(nint)instruction.B);
+                Allocation allocation = new((void*)instruction.B);
                 uint count = (uint)instruction.C;
                 for (uint i = 0; i < selection.Count; i++)
                 {
@@ -575,15 +575,15 @@ namespace Worlds
             {
                 ArrayElementType arrayElementType = new((byte)instruction.A);
                 ushort arrayElementSize = schema.GetSize(arrayElementType);
-                Allocation allocation = new((void*)(nint)instruction.B);
+                Allocation allocation = new((void*)instruction.B);
                 uint elementCount = allocation.Read<uint>();
                 uint start = (uint)instruction.C;
-                Allocation source = new(allocation + sizeof(uint));
+                Allocation source = new((void*)(allocation + sizeof(uint)));
                 for (uint i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
                     Allocation array = Implementation.GetArray(value, entity, arrayElementType, out _);
-                    Allocation arrayStart = new(array + arrayElementSize * start);
+                    Allocation arrayStart = new((void*)(array + arrayElementSize * start));
                     source.CopyTo(arrayStart, elementCount * arrayElementSize);
                 }
             }
@@ -1929,7 +1929,7 @@ namespace Worlds
         {
             TypeLayout layout = componentType.GetLayout(Schema);
             USpan<byte> bytes = GetComponentBytes(entity, componentType);
-            return layout.Create(bytes);
+            return layout.CreateInstance(bytes);
         }
         /// <summary>
         /// Retrieves the component from the given <paramref name="entity"/> as an <see cref="object"/>.
@@ -1938,7 +1938,7 @@ namespace Worlds
         {
             TypeLayout layout = componentType.ComponentType.GetLayout(Schema);
             USpan<byte> bytes = GetComponentBytes(entity, componentType);
-            return layout.Create(bytes);
+            return layout.CreateInstance(bytes);
         }
 
         /// <summary>
@@ -1953,7 +1953,7 @@ namespace Worlds
             for (uint i = 0; i < length; i++)
             {
                 USpan<byte> bytes = array.AsSpan<byte>(i * size, size);
-                arrayObject[i] = layout.Create(bytes);
+                arrayObject[i] = layout.CreateInstance(bytes);
             }
 
             return arrayObject;

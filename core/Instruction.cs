@@ -628,7 +628,7 @@ namespace Worlds
         /// </summary>
         public unsafe static Instruction SetArrayElement<T>(uint index, T element, Schema schema) where T : unmanaged
         {
-            Allocation allocation = new(sizeof(uint) + TypeInfo<T>.size);
+            Allocation allocation = new((uint)(sizeof(uint) + sizeof(T)));
             allocation.Write(0, 1);
             allocation.Write(sizeof(uint), element);
             ArrayElementType arrayElementType = schema.GetArrayElement<T>();

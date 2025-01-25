@@ -18,6 +18,8 @@
 		<PackageTags>ecs;native</PackageTags>
 		<NoWarn>1701;1702;CS1591</NoWarn>
 		<NoStandardLib>true</NoStandardLib>
+		<RootNamespace>Worlds</RootNamespace>
+		<AssemblyName>Worlds</AssemblyName>
 	</PropertyGroup>
 
 	<ItemGroup>

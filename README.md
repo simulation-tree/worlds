@@ -1,16 +1,20 @@
 # Worlds
-Library for implementing efficient storage of data as _components_ and _arrays_, where both can be found through _entities_.
+
+Library for implementing data as _components_, _arrays_, and _tags_, found on _entities_.
+
 Entities themselves are stored within these _worlds_, which can be serialized, deserialized, and appended to other worlds at runtime.
 
 ### Initializing
-To use this library, all of the component and array types that will be used need to be registered ahead of time.
-This is done by decorating them with either `[Component]` or `[ArrayElement]` (or both), and utilizing the `TypeLayoutRegistry` class
-to register the layouts first. And then creating a schema with `SchemaRegistry.Get()` for each world to use:
+
+To use this library, all of the types that could be used need to be registered ahead of time.
+This is done by marking them with `[Component]` or `[ArrayElement]` or `[Tag]` (or a mix), 
+and utilizing the `TypeRegistryLoader` class to register the types.
+And then creating a schema using `SchemaLoader.Get()`:
 ```cs
 private static void Main()
 {
-    TypeLayoutRegistry.RegisterAll();
-    Schema schema = SchemaRegistry.Get();
+    TypeRegistryLoader.Load(); //register all types
+    Schema schema = SchemaLoader.Get(); //create a schema
     using World world = new(schema);
     //...
 }
@@ -21,19 +25,21 @@ public struct MyComponent(uint value)
     public uint value = value;
 }
 ```
+> When running in `DEBUG` mode, an exception will be thrown if a type isn't registered with
+either the registry or a schema.
 
-If the attributes aren't present, or the type layouts aren't registered, then each type needs to
-be registered with both `TypeLayout` and `Schema`:
+If the attributes aren't present, or the types aren't registered, then each type needs to
+be registered manually:
 ```cs
 private static void Main()
 {
-    TypeLayout.Register<MyComponent>();
-    TypeLayout.Register<PlayerName>();
-    TypeLayout.Register<MyReference>();
-    TypeLayout.Register<char>();
-    TypeLayout.Register<IsThing>();
+    TypeRegistry.Register<MyComponent>();
+    TypeRegistry.Register<PlayerName>();
+    TypeRegistry.Register<MyReference>();
+    TypeRegistry.Register<char>();
+    TypeRegistry.Register<IsThing>();
 
-    Schema schema = SchemaRegistry.Get();
+    Schema schema = new();
     schema.RegisterComponent<MyComponent>();
     schema.RegisterComponent<PlayerName>();
     schema.RegisterComponent<MyReference>();
@@ -45,9 +51,8 @@ private static void Main()
 }
 ```
 
-> If a type isn't registered, an exception will be thrown when trying to use it.
-
 ### Storing values in components
+
 ```cs
 using (World world = new())
 {
@@ -57,15 +62,17 @@ using (World world = new())
 ```
 
 ### Storing multiple values with arrays
+
 Unlike components, arrays offer a way to store multiple of the same type,
 and can be resized:
 ```cs
-Span<char> many = world.CreateArray(entity, "Hello world".AsSpan());
-Span<char> moreMany = world.ResizeArray<char>(entity, 5);
+USpan<char> many = world.CreateArray(entity, "Hello world".AsSpan());
+USpan<char> moreMany = world.ResizeArray<char>(entity, 5);
 Assert.That(moreMany.ToString(), Is.EqualTo("Hello"));
 ```
 
 ### Fetching data and querying
+
 Polling of components, and modifying them can be done through a few different ways:
 ```cs
 uint sum;
@@ -130,6 +137,7 @@ void Do()
 ```
 
 ### Tagging entities
+
 Entities can be tagged with tag types:
 ```cs
 [Tag]
@@ -144,13 +152,14 @@ Assert.That(world.Contains<IsThing>(entity), Is.True);
 ```
 
 ### Relationship references to other entities
-Components with `uint` values that are _meant_ to reference other entities will be
-susceptible to pointing to the wrong entity when worlds are appended (drift). Because the
-value represents a position that may already be occupied by another entity during loading.
 
-This is solved by storing an `rint` value that indexes to entity references stored relatively.
-Then when worlds are then appended or loaded, the entities that they are meant to point to can
-shift together as they're added, preserving the relationship.
+Components with `uint` values that are _meant_ to reference other entities will be
+susceptible to drift after serialization. This is because the entity value represents
+a position, that may be occupied by another existing entity.
+
+This is solved by storing the references locally and accessing with an `rint` index.
+Then when worlds are appended to another world, the referenced entities can shift together
+as they're added, preserving the relationship.
 
 ```cs
 [Component]
@@ -172,6 +181,7 @@ uint oldSecondEntity = world.GetReference(oldFirstEntity, component.entityRefere
 ```
 
 ### Forming entity types
+
 A commonly reused pattern with components is to formalize them into types, where the
 type is qualified by components present on the entity. For example: if an entity
 contains an `PlayerName` then its a player entity. This design is supported through the
@@ -222,6 +232,7 @@ Player anotherPlayer = new Entity(world, anotherEntity).As<Player>();
 ```
 
 ### Serialization and deserialization
+
 Serializing a world to bytes is simple:
 ```cs
 using World prefabWorld = new(SchemaRegistry.Get());
@@ -239,8 +250,10 @@ using World anotherWorld = new(SchemaRegistry.Get());
 anotherWorld.Append(deserializedWorld);
 ```
 
-### Contributing and Design
-This library implements the "[entity-component-system](https://en.wikipedia.org/wiki/Entity_component_system)" pattern of the "archetype" variety.
-Created for building programs of whatever kind, with an open door to the author when targeting efficiency.
+### Contributing and design
+
+This library implements the "[entity-component-system](https://en.wikipedia.org/wiki/Entity_component_system)" pattern
+of the "archetype" variety. Created for building programs of whatever kind, with an open door to the author
+when targeting runtime efficiency.
 
 Contributions to this are welcome.

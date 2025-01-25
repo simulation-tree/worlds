@@ -11,7 +11,9 @@ namespace Worlds.Tests
         {
             World world = CreateWorld();
             world.Dispose();
+
             Assert.That(Allocations.Count, Is.EqualTo(0));
+            Assert.That(world.IsDisposed, Is.True);
         }
 
         [Test]
