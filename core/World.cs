@@ -584,55 +584,63 @@ namespace Worlds
             }
 
             //modify descendants
-            if (slot.TryGetChildren(out USpan<uint> children))
+            if (value->children.Count >= entity)
             {
-                using Stack<uint> stack = new(children.Length * 2u);
-                stack.PushRange(children);
-
-                EntitySlotState slotState = slot.state;
-                while (stack.Count > 0)
+                List<uint> children = value->children[entity - 1];
+                if (!children.IsDisposed)
                 {
-                    entity = stack.Pop();
-                    slot = ref slots[entity - 1];
-                    if (enabled && slot.state == EntitySlotState.DisabledButLocallyEnabled)
-                    {
-                        slot.state = EntitySlotState.Enabled;
-                    }
-                    else if (!enabled && slot.state == EntitySlotState.Enabled)
-                    {
-                        slot.state = EntitySlotState.DisabledButLocallyEnabled;
-                    }
+                    using Stack<uint> stack = new(children.Count * 2u);
+                    stack.PushRange(children.AsSpan());
 
-                    //move descentant to proper chunk
-                    oldChunk = slot.chunk;
-                    oldDefinition = oldChunk.Definition;
-                    oldEnabled = !oldDefinition.TagTypes.Contains(TagType.Disabled);
-                    newEnabled = slot.state == EntitySlotState.Enabled;
-                    if (oldEnabled != enabled)
+                    EntitySlotState slotState = slot.state;
+                    while (stack.Count > 0)
                     {
-                        Definition newDefinition = oldDefinition;
-                        if (enabled)
+                        entity = stack.Pop();
+                        slot = ref slots[entity - 1];
+                        if (enabled && slot.state == EntitySlotState.DisabledButLocallyEnabled)
                         {
-                            newDefinition.RemoveTagType(TagType.Disabled);
+                            slot.state = EntitySlotState.Enabled;
                         }
-                        else
+                        else if (!enabled && slot.state == EntitySlotState.Enabled)
                         {
-                            newDefinition.AddTagType(TagType.Disabled);
+                            slot.state = EntitySlotState.DisabledButLocallyEnabled;
                         }
 
-                        if (!chunks.TryGetValue(newDefinition, out Chunk newChunk))
+                        //move descentant to proper chunk
+                        oldChunk = slot.chunk;
+                        oldDefinition = oldChunk.Definition;
+                        oldEnabled = !oldDefinition.TagTypes.Contains(TagType.Disabled);
+                        newEnabled = slot.state == EntitySlotState.Enabled;
+                        if (oldEnabled != enabled)
                         {
-                            newChunk = new Chunk(newDefinition, Schema);
-                            chunks.Add(newDefinition, newChunk);
+                            Definition newDefinition = oldDefinition;
+                            if (enabled)
+                            {
+                                newDefinition.RemoveTagType(TagType.Disabled);
+                            }
+                            else
+                            {
+                                newDefinition.AddTagType(TagType.Disabled);
+                            }
+
+                            if (!chunks.TryGetValue(newDefinition, out Chunk newChunk))
+                            {
+                                newChunk = new Chunk(newDefinition, Schema);
+                                chunks.Add(newDefinition, newChunk);
+                            }
+
+                            slot.chunk = newChunk;
+                            oldChunk.MoveEntity(entity, newChunk);
                         }
 
-                        slot.chunk = newChunk;
-                        oldChunk.MoveEntity(entity, newChunk);
-                    }
-
-                    if (slot.TryGetChildren(out children))
-                    {
-                        stack.PushRange(children);
+                        if (value->children.Count >= entity)
+                        {
+                            children = value->children[entity - 1];
+                            if (!children.IsDisposed)
+                            {
+                                stack.PushRange(children.AsSpan());
+                            }
+                        }
                     }
                 }
             }
@@ -845,10 +853,17 @@ namespace Worlds
         {
             Implementation.ThrowIfEntityIsMissing(value, entity);
 
-            ref EntitySlot slot = ref Slots[entity - 1];
-            if (slot.TryGetChildren(out USpan<uint> children))
+            if (value->children.Count >= entity)
             {
-                return children;
+                List<uint> children = value->children[entity - 1];
+                if (children.IsDisposed)
+                {
+                    return default;
+                }
+                else
+                {
+                    return children.AsSpan();
+                }
             }
             else
             {
@@ -863,7 +878,22 @@ namespace Worlds
         {
             Implementation.ThrowIfEntityIsMissing(value, entity);
 
-            return Slots[entity - 1].childCount;
+            if (value->children.Count >= entity)
+            {
+                List<uint> children = value->children[entity - 1];
+                if (children.IsDisposed)
+                {
+                    return 0;
+                }
+                else
+                {
+                    return children.Count;
+                }
+            }
+            else
+            {
+                return 0;
+            }
         }
 
         /// <summary>
@@ -880,7 +910,7 @@ namespace Worlds
                 uint toAdd = entity - value->references.Count;
                 for (uint i = 0; i < toAdd; i++)
                 {
-                    value->references.Add(new(4));
+                    value->references.Add(default);
                 }
             }
 
@@ -1793,6 +1823,7 @@ namespace Worlds
             public readonly List<EntitySlot> slots;
             public readonly List<uint> freeEntities;
             public readonly List<uint> parents;
+            public readonly List<List<uint>> children;
             public readonly List<List<uint>> references;
             public readonly Dictionary<Definition, Chunk> chunks;
             public readonly Schema schema;
@@ -1800,11 +1831,12 @@ namespace Worlds
             public readonly List<(EntityParentChanged, ulong)> entityParentChanged;
             public readonly List<(EntityDataChanged, ulong)> entityDataChanged;
 
-            private Implementation(List<EntitySlot> slots, List<uint> freeEntities, List<uint> parents, List<List<uint>> references, Dictionary<Definition, Chunk> chunks, Schema schema)
+            private Implementation(List<EntitySlot> slots, List<uint> freeEntities, List<uint> parents, List<List<uint>> children, List<List<uint>> references, Dictionary<Definition, Chunk> chunks, Schema schema)
             {
                 this.slots = slots;
                 this.freeEntities = freeEntities;
                 this.parents = parents;
+                this.children = children;
                 this.references = references;
                 this.chunks = chunks;
                 this.schema = schema;
@@ -2003,6 +2035,7 @@ namespace Worlds
                 List<EntitySlot> slots = new(4);
                 List<uint> freeEntities = new(4);
                 List<uint> parents = new(4);
+                List<List<uint>> children = new(4);
                 List<List<uint>> references = new(4);
                 Dictionary<Definition, Chunk> chunks = new(4);
 
@@ -2010,7 +2043,7 @@ namespace Worlds
                 chunks.Add(default, defaultChunk);
 
                 Implementation* world = Allocations.Allocate<Implementation>();
-                *world = new(slots, freeEntities, parents, references, chunks, schema);
+                *world = new(slots, freeEntities, parents, children, references, chunks, schema);
                 return world;
             }
 
@@ -2028,12 +2061,18 @@ namespace Worlds
                     world->references[r].Dispose();
                 }
 
+                for (uint c = 0; c < world->children.Count; c++)
+                {
+                    world->children[c].Dispose();
+                }
+
                 world->entityCreatedOrDestroyed.Dispose();
                 world->entityParentChanged.Dispose();
                 world->entityDataChanged.Dispose();
                 world->schema.Dispose();
                 world->slots.Dispose();
                 world->parents.Dispose();
+                world->children.Dispose();
                 world->references.Dispose();
                 world->freeEntities.Dispose();
                 world->chunks.Dispose();
@@ -2140,13 +2179,6 @@ namespace Worlds
                             slot.arrays = default;
                             slot.arrayLengths = default;
                         }
-
-                        if (slot.childCount > 0)
-                        {
-                            slot.children.Dispose();
-                            slot.children = default;
-                            slot.childCount = 0;
-                        }
                     }
                 }
 
@@ -2164,12 +2196,26 @@ namespace Worlds
                 world->freeEntities.Clear();
                 world->parents.Clear();
 
+                for (uint c = 0; c < world->children.Count; c++)
+                {
+                    ref List<uint> children = ref world->children[c];
+                    if (!children.IsDisposed)
+                    {
+                        children.Dispose();
+                    }
+                }
+
                 for (uint r = 0; r < world->references.Count; r++)
                 {
-                    world->references[r].Dispose();
+                    ref List<uint> references = ref world->references[r];
+                    if (!references.IsDisposed)
+                    {
+                        references.Dispose();
+                    }
                 }
 
                 world->references.Clear();
+                world->children.Clear();
             }
 
             public static uint CreateEntity(Implementation* world, Definition definition, out Chunk chunk, out uint index)
@@ -2232,12 +2278,13 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
 
                 ref EntitySlot slot = ref world->slots[entity - 1];
-                if (slot.TryGetChildren(out USpan<uint> children))
+                if (world->children.Count >= entity)
                 {
                     //destroy or orphan the children
+                    ref List<uint> children = ref world->children[entity - 1];
                     if (destroyChildren)
                     {
-                        for (uint i = 0; i < children.Length; i++)
+                        for (uint i = 0; i < children.Count; i++)
                         {
                             uint child = children[i];
                             DestroyEntity(world, child, true);
@@ -2245,7 +2292,7 @@ namespace Worlds
                     }
                     else
                     {
-                        for (uint i = 0; i < children.Length; i++)
+                        for (uint i = 0; i < children.Count; i++)
                         {
                             uint child = children[i];
                             ref EntitySlot childSlot = ref world->slots[child - 1];
@@ -2253,9 +2300,7 @@ namespace Worlds
                         }
                     }
 
-                    slot.children.Dispose();
-                    slot.children = default;
-                    slot.childCount = 0;
+                    children.Dispose();
                 }
 
                 ref Chunk chunk = ref slot.chunk;
@@ -2308,6 +2353,24 @@ namespace Worlds
                 return world->parents[entity - 1];
             }
 
+            public static bool TryGetChildren(Implementation* world, uint entity, out USpan<uint> children)
+            {
+                Allocations.ThrowIfNull(world);
+                ThrowIfEntityIsMissing(world, entity);
+
+                bool contains = world->children.Count >= entity;
+                if (contains)
+                {
+                    children = world->children[entity - 1].AsSpan();
+                }
+                else
+                {
+                    children = default;
+                }
+
+                return contains;
+            }
+
             /// <summary>
             /// Assigns the given <paramref name="newParent"/> to the given <paramref name="entity"/>.
             /// </summary>
@@ -2330,16 +2393,12 @@ namespace Worlds
                 //remove from previous parent children
                 if (currentParent != default)
                 {
-                    ref EntitySlot previousParentSlot = ref world->slots[currentParent - 1];
-                    if (previousParentSlot.childCount > 0)
+                    if (world->children.Count >= currentParent)
                     {
-                        if (previousParentSlot.children.TryRemoveBySwapping(entity))
+                        ref List<uint> previousParentChildren = ref world->children[currentParent - 1];
+                        if (!previousParentChildren.IsDisposed)
                         {
-                            previousParentSlot.childCount--;
-                            if (previousParentSlot.childCount == 0)
-                            {
-                                previousParentSlot.children.Dispose();
-                            }
+                            previousParentChildren.TryRemoveBySwapping(entity);
                         }
                     }
                 }
@@ -2401,14 +2460,24 @@ namespace Worlds
                         Definition oldDefinition = oldChunk.Definition;
 
                         //add to children list
-                        ref EntitySlot newParentSlot = ref world->slots[newParent - 1];
-                        if (newParentSlot.childCount == 0)
+                        if (world->children.Count < newParent)
                         {
-                            newParentSlot.children = new(1);
+                            uint toAdd = newParent - world->children.Count;
+                            for (uint i = 0; i < toAdd; i++)
+                            {
+                                world->children.Add(default);
+                            }
                         }
 
-                        newParentSlot.children.Add(entity);
-                        newParentSlot.childCount++;
+                        ref List<uint> newParentChildren = ref world->children[newParent - 1];
+                        if (newParentChildren.IsDisposed)
+                        {
+                            newParentChildren = new(4);
+                        }
+
+                        newParentChildren.Add(entity);
+
+                        ref EntitySlot newParentSlot = ref world->slots[newParent - 1];
                         if (newParentSlot.state == EntitySlotState.Disabled || newParentSlot.state == EntitySlotState.DisabledButLocallyEnabled)
                         {
                             if (slot.state == EntitySlotState.Enabled)

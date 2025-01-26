@@ -19,16 +19,6 @@ namespace Worlds
         public Chunk chunk;
 
         /// <summary>
-        /// Number of children.
-        /// </summary>
-        public ushort childCount;
-
-        /// <summary>
-        /// Children of the entity.
-        /// </summary>
-        public List<uint> children;
-
-        /// <summary>
         /// All arrays stored.
         /// </summary>
         public Array<Allocation> arrays;
@@ -42,20 +32,5 @@ namespace Worlds
         /// State of the entity.
         /// </summary>
         public EntitySlotState state;
-
-        public readonly bool TryGetChildren(out USpan<uint> children)
-        {
-            bool contains = childCount > 0;
-            if (contains)
-            {
-                children = this.children.AsSpan(0, childCount);
-            }
-            else
-            {
-                children = default;
-            }
-
-            return contains;
-        }
     }
 }
