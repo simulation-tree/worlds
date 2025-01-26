@@ -45,7 +45,7 @@ namespace Worlds
         /// <summary>
         /// States of slots.
         /// </summary>
-        public readonly List<EntitySlotState> States => value->states;
+        public readonly List<EntityState> States => value->states;
 
         /// <summary>
         /// All chunks in the world.
@@ -65,7 +65,7 @@ namespace Worlds
             get
             {
                 List<uint> free = Free;
-                List<EntitySlotState> states = States;
+                List<EntityState> states = States;
                 for (uint i = 0; i < states.Count; i++)
                 {
                     uint entity = i + 1;
@@ -505,7 +505,7 @@ namespace Worlds
         {
             Implementation.ThrowIfEntityIsMissing(value, entity);
 
-            return value->states[entity - 1] == EntitySlotState.Enabled;
+            return value->states[entity - 1] == EntityState.Enabled;
         }
 
         /// <summary>
@@ -516,8 +516,8 @@ namespace Worlds
         {
             Implementation.ThrowIfEntityIsMissing(value, entity);
 
-            ref EntitySlotState state = ref value->states[entity - 1];
-            return state == EntitySlotState.Enabled || state == EntitySlotState.DisabledButLocallyEnabled;
+            ref EntityState state = ref value->states[entity - 1];
+            return state == EntityState.Enabled || state == EntityState.DisabledButLocallyEnabled;
         }
 
         /// <summary>
@@ -528,24 +528,24 @@ namespace Worlds
         {
             Implementation.ThrowIfEntityIsMissing(value, entity);
 
-            ref EntitySlotState currentState = ref value->states[entity - 1];
-            EntitySlotState newState;
+            ref EntityState currentState = ref value->states[entity - 1];
+            EntityState newState;
             uint parent = GetParent(entity);
             if (parent != default)
             {
-                EntitySlotState parentState = value->states[parent - 1];
-                if (parentState == EntitySlotState.Disabled || parentState == EntitySlotState.DisabledButLocallyEnabled)
+                EntityState parentState = value->states[parent - 1];
+                if (parentState == EntityState.Disabled || parentState == EntityState.DisabledButLocallyEnabled)
                 {
-                    newState = enabled ? EntitySlotState.DisabledButLocallyEnabled : EntitySlotState.Disabled;
+                    newState = enabled ? EntityState.DisabledButLocallyEnabled : EntityState.Disabled;
                 }
                 else
                 {
-                    newState = enabled ? EntitySlotState.Enabled : EntitySlotState.Disabled;
+                    newState = enabled ? EntityState.Enabled : EntityState.Disabled;
                 }
             }
             else
             {
-                newState = enabled ? EntitySlotState.Enabled : EntitySlotState.Disabled;
+                newState = enabled ? EntityState.Enabled : EntityState.Disabled;
             }
 
             currentState = newState;
@@ -556,7 +556,7 @@ namespace Worlds
             Chunk oldChunk = chunk;
             Definition oldDefinition = oldChunk.Definition;
             bool oldEnabled = !oldDefinition.TagTypes.Contains(TagType.Disabled);
-            bool newEnabled = newState == EntitySlotState.Enabled;
+            bool newEnabled = newState == EntityState.Enabled;
             if (oldEnabled != newEnabled)
             {
                 Definition newDefinition = oldDefinition;
@@ -591,14 +591,14 @@ namespace Worlds
                     while (stack.Count > 0)
                     {
                         entity = stack.Pop();
-                        ref EntitySlotState childState = ref value->states[entity - 1];
-                        if (enabled && childState == EntitySlotState.DisabledButLocallyEnabled)
+                        ref EntityState childState = ref value->states[entity - 1];
+                        if (enabled && childState == EntityState.DisabledButLocallyEnabled)
                         {
-                            childState = EntitySlotState.Enabled;
+                            childState = EntityState.Enabled;
                         }
-                        else if (!enabled && childState == EntitySlotState.Enabled)
+                        else if (!enabled && childState == EntityState.Enabled)
                         {
-                            childState = EntitySlotState.DisabledButLocallyEnabled;
+                            childState = EntityState.DisabledButLocallyEnabled;
                         }
 
                         //move descentant to proper chunk
@@ -606,7 +606,7 @@ namespace Worlds
                         oldChunk = childChunk;
                         oldDefinition = oldChunk.Definition;
                         oldEnabled = !oldDefinition.TagTypes.Contains(TagType.Disabled);
-                        newEnabled = childState == EntitySlotState.Enabled;
+                        newEnabled = childState == EntityState.Enabled;
                         if (oldEnabled != enabled)
                         {
                             Definition newDefinition = oldDefinition;
@@ -1809,7 +1809,7 @@ namespace Worlds
             internal static readonly System.Collections.Generic.Dictionary<Entity, StackTrace> createStackTraces = new();
 #endif
 
-            public readonly List<EntitySlotState> states;
+            public readonly List<EntityState> states;
             public readonly List<Chunk> entityChunks;
             public readonly List<uint> freeEntities;
             public readonly List<uint> parents;
@@ -1822,7 +1822,7 @@ namespace Worlds
             public readonly List<(EntityParentChanged, ulong)> entityParentChanged;
             public readonly List<(EntityDataChanged, ulong)> entityDataChanged;
 
-            private Implementation(List<EntitySlotState> states, List<Chunk> entityChunks, List<uint> freeEntities, List<uint> parents, List<List<uint>> children, List<List<uint>> references, List<Array<nint>> arrays, Dictionary<Definition, Chunk> chunks, Schema schema)
+            private Implementation(List<EntityState> states, List<Chunk> entityChunks, List<uint> freeEntities, List<uint> parents, List<List<uint>> children, List<List<uint>> references, List<Array<nint>> arrays, Dictionary<Definition, Chunk> chunks, Schema schema)
             {
                 this.states = states;
                 this.entityChunks = entityChunks;
@@ -1868,8 +1868,8 @@ namespace Worlds
                     throw new NullReferenceException($"Entity `{entity}` not found");
                 }
 
-                ref EntitySlotState state = ref world->states[index];
-                if (state == EntitySlotState.Free)
+                ref EntityState state = ref world->states[index];
+                if (state == EntityState.Free)
                 {
                     throw new NullReferenceException($"Entity `{entity}` not found");
                 }
@@ -1999,7 +1999,7 @@ namespace Worlds
             /// </summary>
             public static Implementation* Allocate(Schema schema)
             {
-                List<EntitySlotState> states = new(4);
+                List<EntityState> states = new(4);
                 List<Chunk> entityChunks = new(4);
                 List<uint> freeEntities = new(4);
                 List<uint> parents = new(4);
@@ -2247,7 +2247,7 @@ namespace Worlds
                 }
 
                 world->entityChunks[entity - 1] = chunk;
-                world->states[entity - 1] = EntitySlotState.Enabled;
+                world->states[entity - 1] = EntityState.Enabled;
                 index = chunk.AddEntity(entity);
                 TraceCreation(world, entity);
                 NotifyCreation(new(world), entity);
@@ -2318,7 +2318,7 @@ namespace Worlds
                 ref Chunk chunk = ref world->entityChunks[entity - 1];
                 chunk.RemoveEntity(entity);
                 chunk = default;
-                world->states[entity - 1] = EntitySlotState.Free;
+                world->states[entity - 1] = EntityState.Free;
                 world->parents[entity - 1] = default;
                 world->freeEntities.Add(entity);
                 NotifyDestruction(new(world), entity);
@@ -2387,7 +2387,7 @@ namespace Worlds
                 }
 
                 ref Chunk chunk = ref world->entityChunks[entity - 1];
-                ref EntitySlotState state = ref world->states[entity - 1];
+                ref EntityState state = ref world->states[entity - 1];
                 if (newParent == default || !ContainsEntity(world, newParent))
                 {
                     if (currentParent != default)
@@ -2398,13 +2398,13 @@ namespace Worlds
                         Chunk oldChunk = chunk;
                         Definition oldDefinition = oldChunk.Definition;
 
-                        if (state == EntitySlotState.DisabledButLocallyEnabled)
+                        if (state == EntityState.DisabledButLocallyEnabled)
                         {
-                            state = EntitySlotState.Enabled;
+                            state = EntityState.Enabled;
                         }
 
                         //move to different chunk if disabled state changed
-                        bool enabled = state == EntitySlotState.Enabled;
+                        bool enabled = state == EntityState.Enabled;
                         if (oldDefinition.TagTypes.Contains(TagType.Disabled) == enabled)
                         {
                             Definition newDefinition = oldDefinition;
@@ -2460,17 +2460,17 @@ namespace Worlds
 
                         newParentChildren.Add(entity);
 
-                        ref EntitySlotState newParentSlot = ref world->states[newParent - 1];
-                        if (newParentSlot == EntitySlotState.Disabled || newParentSlot == EntitySlotState.DisabledButLocallyEnabled)
+                        ref EntityState newParentSlot = ref world->states[newParent - 1];
+                        if (newParentSlot == EntityState.Disabled || newParentSlot == EntityState.DisabledButLocallyEnabled)
                         {
-                            if (state == EntitySlotState.Enabled)
+                            if (state == EntityState.Enabled)
                             {
-                                state = EntitySlotState.DisabledButLocallyEnabled;
+                                state = EntityState.DisabledButLocallyEnabled;
                             }
                         }
 
                         //move to different chunk if disabled state changed
-                        bool enabled = state == EntitySlotState.Enabled;
+                        bool enabled = state == EntityState.Enabled;
                         if (oldDefinition.TagTypes.Contains(TagType.Disabled) == enabled)
                         {
                             Definition newDefinition = oldDefinition;
@@ -2537,8 +2537,8 @@ namespace Worlds
                     return false;
                 }
 
-                ref EntitySlotState state = ref world->states[position];
-                return state != EntitySlotState.Free;
+                ref EntityState state = ref world->states[position];
+                return state != EntityState.Free;
             }
 
             /// <summary>

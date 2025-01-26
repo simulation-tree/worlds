@@ -3,7 +3,7 @@
     /// <summary>
     /// Enabled state of an entity.
     /// </summary>
-    public enum EntitySlotState : byte
+    public enum EntityState : byte
     {
         /// <summary>
         /// The slot describes a destroyed entity, free for new ones.
