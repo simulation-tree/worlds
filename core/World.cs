@@ -2202,23 +2202,25 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(world);
 
-                uint entity;
-                if (world->freeEntities.Count > 0)
-                {
-                    entity = world->freeEntities.RemoveAtBySwapping(0);
-                }
-                else
-                {
-                    entity = world->states.Count + 1;
-                    world->states.Add(default);
-                    world->entityChunks.Add(default);
-                    world->parents.Add(default);
-                }
-
                 if (!world->chunks.TryGetValue(definition, out chunk))
                 {
                     chunk = new(definition, world->schema);
                     world->chunks.Add(definition, chunk);
+                }
+
+                uint entity;
+                if (world->freeEntities.Count > 0)
+                {
+                    entity = world->freeEntities.RemoveAtBySwapping(0);
+                    world->states[entity - 1] = EntityState.Enabled;
+                    world->entityChunks[entity - 1] = chunk;
+                }
+                else
+                {
+                    entity = world->states.Count + 1;
+                    world->states.Add(EntityState.Enabled);
+                    world->entityChunks.Add(chunk);
+                    world->parents.Add(default);
                 }
 
                 BitMask arrayElementTypes = definition.ArrayElementTypes;
@@ -2246,8 +2248,6 @@ namespace Worlds
                     }
                 }
 
-                world->entityChunks[entity - 1] = chunk;
-                world->states[entity - 1] = EntityState.Enabled;
                 index = chunk.AddEntity(entity);
                 TraceCreation(world, entity);
                 NotifyCreation(new(world), entity);
