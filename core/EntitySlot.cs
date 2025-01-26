@@ -14,11 +14,6 @@ namespace Worlds
         public uint entity;
 
         /// <summary>
-        /// ID of the parent entity.
-        /// </summary>
-        public uint parent;
-
-        /// <summary>
         /// The chunk that this entity slot belongs to.
         /// </summary>
         public Chunk chunk;
@@ -32,16 +27,6 @@ namespace Worlds
         /// Children of the entity.
         /// </summary>
         public List<uint> children;
-
-        /// <summary>
-        /// Number of references.
-        /// </summary>
-        public ushort referenceCount;
-
-        /// <summary>
-        /// References to other entities.
-        /// </summary>
-        public List<uint> references;
 
         /// <summary>
         /// All arrays stored.
@@ -58,9 +43,19 @@ namespace Worlds
         /// </summary>
         public EntitySlotState state;
 
-        public readonly USpan<uint> GetChildren()
+        public readonly bool TryGetChildren(out USpan<uint> children)
         {
-            return children.AsSpan(0, childCount);
+            bool contains = childCount > 0;
+            if (contains)
+            {
+                children = this.children.AsSpan(0, childCount);
+            }
+            else
+            {
+                children = default;
+            }
+
+            return contains;
         }
     }
 }
