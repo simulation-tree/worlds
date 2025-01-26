@@ -5,6 +5,7 @@ using System.Diagnostics;
 using Types;
 using Unmanaged;
 using Worlds.Functions;
+using Array = Collections.Implementations.Array;
 
 namespace Worlds
 {
@@ -1825,19 +1826,21 @@ namespace Worlds
             public readonly List<uint> parents;
             public readonly List<List<uint>> children;
             public readonly List<List<uint>> references;
+            public readonly List<Array<nint>> arrays;
             public readonly Dictionary<Definition, Chunk> chunks;
             public readonly Schema schema;
             public readonly List<(EntityCreatedOrDestroyed, ulong)> entityCreatedOrDestroyed;
             public readonly List<(EntityParentChanged, ulong)> entityParentChanged;
             public readonly List<(EntityDataChanged, ulong)> entityDataChanged;
 
-            private Implementation(List<EntitySlot> slots, List<uint> freeEntities, List<uint> parents, List<List<uint>> children, List<List<uint>> references, Dictionary<Definition, Chunk> chunks, Schema schema)
+            private Implementation(List<EntitySlot> slots, List<uint> freeEntities, List<uint> parents, List<List<uint>> children, List<List<uint>> references, List<Array<nint>> arrays, Dictionary<Definition, Chunk> chunks, Schema schema)
             {
                 this.slots = slots;
                 this.freeEntities = freeEntities;
                 this.parents = parents;
                 this.children = children;
                 this.references = references;
+                this.arrays = arrays;
                 this.chunks = chunks;
                 this.schema = schema;
                 entityCreatedOrDestroyed = new(4);
@@ -2037,13 +2040,14 @@ namespace Worlds
                 List<uint> parents = new(4);
                 List<List<uint>> children = new(4);
                 List<List<uint>> references = new(4);
+                List<Array<nint>> arrays = new(4);
                 Dictionary<Definition, Chunk> chunks = new(4);
 
                 Chunk defaultChunk = new(schema);
                 chunks.Add(default, defaultChunk);
 
                 Implementation* world = Allocations.Allocate<Implementation>();
-                *world = new(slots, freeEntities, parents, children, references, chunks, schema);
+                *world = new(slots, freeEntities, parents, children, references, arrays, chunks, schema);
                 return world;
             }
 
@@ -2066,6 +2070,24 @@ namespace Worlds
                     world->children[c].Dispose();
                 }
 
+                for (uint a = 0; a < world->arrays.Count; a++)
+                {
+                    ref Array<nint> arrays = ref world->arrays[a];
+                    if (!arrays.IsDisposed)
+                    {
+                        for (uint i = 0; i < arrays.Length; i++)
+                        {
+                            Array* array = (Array*)arrays[i];
+                            if (array is not null)
+                            {
+                                Array.Free(ref array);
+                            }
+                        }
+
+                        arrays.Dispose();
+                    }
+                }
+
                 world->entityCreatedOrDestroyed.Dispose();
                 world->entityParentChanged.Dispose();
                 world->entityDataChanged.Dispose();
@@ -2074,6 +2096,7 @@ namespace Worlds
                 world->parents.Dispose();
                 world->children.Dispose();
                 world->references.Dispose();
+                world->arrays.Dispose();
                 world->freeEntities.Dispose();
                 world->chunks.Dispose();
                 Allocations.Free(ref world);
@@ -2153,48 +2176,11 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(world);
 
-                //clear slots
-                uint slotCount = world->slots.Count;
-                for (uint s = 0; s < slotCount; s++)
-                {
-                    ref EntitySlot slot = ref world->slots[s];
-                    if (slot.state != EntitySlotState.Free)
-                    {
-                        Definition definition = slot.chunk.Definition;
-                        bool hasArrays = false;
-                        for (byte a = 0; a < BitMask.Capacity; a++)
-                        {
-                            if (definition.ArrayElementTypes.Contains(a))
-                            {
-                                hasArrays = true;
-                                slot.arrays[a].Dispose();
-                            }
-                        }
-
-                        if (hasArrays)
-                        {
-                            slot.arrays.Dispose();
-                            slot.arrayLengths.Dispose();
-
-                            slot.arrays = default;
-                            slot.arrayLengths = default;
-                        }
-                    }
-                }
-
-                //clear chunks
                 foreach (Definition key in world->chunks.Keys)
                 {
                     ref Chunk chunk = ref world->chunks[key];
                     chunk.Dispose();
                 }
-
-                world->chunks.Clear();
-                world->slots.Clear();
-
-                //clear maps
-                world->freeEntities.Clear();
-                world->parents.Clear();
 
                 for (uint c = 0; c < world->children.Count; c++)
                 {
@@ -2214,8 +2200,31 @@ namespace Worlds
                     }
                 }
 
+                for (uint a = 0; a < world->arrays.Count; a++)
+                {
+                    ref Array<nint> arrays = ref world->arrays[a];
+                    if (!arrays.IsDisposed)
+                    {
+                        for (uint i = 0; i < arrays.Length; i++)
+                        {
+                            Array* array = (Array*)arrays[i];
+                            if (array is not null)
+                            {
+                                Array.Free(ref array);
+                            }
+                        }
+
+                        arrays.Dispose();
+                    }
+                }
+
                 world->references.Clear();
                 world->children.Clear();
+                world->arrays.Clear();
+                world->chunks.Clear();
+                world->slots.Clear();
+                world->freeEntities.Clear();
+                world->parents.Clear();
             }
 
             public static uint CreateEntity(Implementation* world, Definition definition, out Chunk chunk, out uint index)
@@ -2234,35 +2243,41 @@ namespace Worlds
                     world->parents.Add(default);
                 }
 
-                //put entity into correct chunk
                 if (!world->chunks.TryGetValue(definition, out chunk))
                 {
                     chunk = new(definition, world->schema);
                     world->chunks.Add(definition, chunk);
                 }
 
-                ref EntitySlot slot = ref world->slots[entity - 1];
-                slot.entity = entity;
-                slot.state = EntitySlotState.Enabled;
-                slot.chunk = chunk;
-
-                //add arrays
-                if (definition.ArrayElementTypes != default)
+                BitMask arrayElementTypes = definition.ArrayElementTypes;
+                if (arrayElementTypes != default)
                 {
-                    slot.arrayLengths = new(BitMask.Capacity);
-                    slot.arrays = new(BitMask.Capacity);
+                    if (world->arrays.Count < entity)
+                    {
+                        uint toAdd = entity - world->arrays.Count;
+                        for (uint i = 0; i < toAdd; i++)
+                        {
+                            world->arrays.Add(default);
+                        }
+                    }
+
+                    ref Array<nint> arrays = ref world->arrays[entity - 1];
+                    arrays = new(BitMask.Capacity);
                     for (byte a = 0; a < BitMask.Capacity; a++)
                     {
-                        if (definition.ArrayElementTypes.Contains(a))
+                        if (arrayElementTypes.Contains(a))
                         {
                             ArrayElementType arrayElementType = new(a);
                             ushort arrayElementSize = world->schema.GetSize(arrayElementType);
-                            slot.arrays[arrayElementType] = new(0);
-                            slot.arrayLengths[arrayElementType] = 0;
+                            arrays[arrayElementType] = (nint)Array.Allocate(0, arrayElementSize);
                         }
                     }
                 }
 
+                ref EntitySlot slot = ref world->slots[entity - 1];
+                slot.entity = entity;
+                slot.state = EntitySlotState.Enabled;
+                slot.chunk = chunk;
                 index = chunk.AddEntity(entity);
                 TraceCreation(world, entity);
                 NotifyCreation(new(world), entity);
@@ -2277,68 +2292,68 @@ namespace Worlds
                 Allocations.ThrowIfNull(world);
                 ThrowIfEntityIsMissing(world, entity);
 
-                ref EntitySlot slot = ref world->slots[entity - 1];
                 if (world->children.Count >= entity)
                 {
-                    //destroy or orphan the children
                     ref List<uint> children = ref world->children[entity - 1];
-                    if (destroyChildren)
+                    if (!children.IsDisposed)
                     {
-                        for (uint i = 0; i < children.Count; i++)
+                        if (destroyChildren)
                         {
-                            uint child = children[i];
-                            DestroyEntity(world, child, true);
+                            for (uint i = 0; i < children.Count; i++)
+                            {
+                                uint child = children[i];
+                                DestroyEntity(world, child, true);
+                            }
                         }
-                    }
-                    else
-                    {
-                        for (uint i = 0; i < children.Count; i++)
+                        else
                         {
-                            uint child = children[i];
-                            ref EntitySlot childSlot = ref world->slots[child - 1];
-                            world->parents[child - 1] = default;
+                            for (uint i = 0; i < children.Count; i++)
+                            {
+                                uint child = children[i];
+                                ref EntitySlot childSlot = ref world->slots[child - 1];
+                                world->parents[child - 1] = default;
+                            }
                         }
-                    }
 
-                    children.Dispose();
+                        children.Dispose();
+                    }
                 }
 
-                ref Chunk chunk = ref slot.chunk;
-
-                //reset arrays
-                Definition definition = chunk.Definition;
-                if (definition.ArrayElementTypes.Count > 0)
+                if (world->arrays.Count >= entity)
                 {
-                    for (byte a = 0; a < BitMask.Capacity; a++)
+                    ref Array<nint> arrays = ref world->arrays[entity - 1];
+                    if (!arrays.IsDisposed)
                     {
-                        if (definition.ArrayElementTypes.Contains(a))
+                        for (byte a = 0; a < BitMask.Capacity; a++)
                         {
-                            slot.arrays[a].Dispose();
+                            Array* list = (Array*)arrays[a];
+                            if (list is not null)
+                            {
+                                Array.Free(ref list);
+                            }
                         }
+
+                        arrays.Dispose();
                     }
-
-                    slot.arrays.Dispose();
-                    slot.arrayLengths.Dispose();
-
-                    slot.arrays = default;
-                    slot.arrayLengths = default;
                 }
 
-                chunk.RemoveEntity(entity);
+                if (world->references.Count >= entity)
+                {
+                    ref List<uint> references = ref world->references[entity - 1];
+                    if (!references.IsDisposed)
+                    {
+                        references.Dispose();
+                    }
+                }
 
-                //reset the rest
+                ref EntitySlot slot = ref world->slots[entity - 1];
+                ref Chunk chunk = ref slot.chunk;
+                chunk.RemoveEntity(entity);
                 slot.entity = default;
                 slot.chunk = default;
                 slot.state = EntitySlotState.Free;
                 world->parents[entity - 1] = default;
                 world->freeEntities.Add(entity);
-
-                for (uint r = 0; r < world->references.Count; r++)
-                {
-                    world->references[r].Dispose();
-                }
-
-                world->references.Clear();
                 NotifyDestruction(new(world), entity);
             }
 
@@ -2358,14 +2373,15 @@ namespace Worlds
                 Allocations.ThrowIfNull(world);
                 ThrowIfEntityIsMissing(world, entity);
 
+                children = default;
                 bool contains = world->children.Count >= entity;
                 if (contains)
                 {
-                    children = world->children[entity - 1].AsSpan();
-                }
-                else
-                {
-                    children = default;
+                    List<uint> childrenList = world->children[entity - 1];
+                    if (!childrenList.IsDisposed)
+                    {
+                        children = childrenList.AsSpan();
+                    }
                 }
 
                 return contains;
@@ -2572,8 +2588,16 @@ namespace Worlds
                 Definition oldDefinition = oldChunk.Definition;
                 if (oldDefinition.ArrayElementTypes == default)
                 {
-                    slot.arrays = new(BitMask.Capacity);
-                    slot.arrayLengths = new(BitMask.Capacity);
+                    if (world->arrays.Count < entity)
+                    {
+                        uint toAdd = entity - world->arrays.Count;
+                        for (uint i = 0; i < toAdd; i++)
+                        {
+                            world->arrays.Add(default);
+                        }
+                    }
+
+                    world->arrays[entity - 1] = new(BitMask.Capacity);
                 }
 
                 Definition newDefinition = oldDefinition;
@@ -2589,11 +2613,11 @@ namespace Worlds
                 slot.chunk = destinationChunk;
                 oldChunk.MoveEntity(entity, destinationChunk);
 
-                Allocation newArray = new(arrayElementSize * length);
-                slot.arrays[arrayElementType] = newArray;
-                slot.arrayLengths[arrayElementType] = length;
+                Array* newArray = Array.Allocate(length, arrayElementSize);
+                ref Array<nint> arrays = ref world->arrays[entity - 1];
+                arrays[arrayElementType] = (nint)newArray;
                 NotifyArrayCreated(new(world), entity, arrayElementType);
-                return slot.arrays[arrayElementType];
+                return new((void*)Array.GetStartAddress(newArray));
             }
 
             /// <summary>
@@ -2617,9 +2641,10 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfArrayIsMissing(world, entity, arrayElementType);
 
-                ref EntitySlot slot = ref world->slots[entity - 1];
-                length = slot.arrayLengths[arrayElementType];
-                return slot.arrays[arrayElementType];
+                ref Array<nint> arrays = ref world->arrays[entity - 1];
+                Array* array = (Array*)arrays[arrayElementType];
+                length = Array.GetLength(array);
+                return new((void*)Array.GetStartAddress(array));
             }
 
             /// <summary>
@@ -2631,8 +2656,9 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfArrayIsMissing(world, entity, arrayElementType);
 
-                ref EntitySlot slot = ref world->slots[entity - 1];
-                return slot.arrayLengths[arrayElementType];
+                ref Array<nint> arrays = ref world->arrays[entity - 1];
+                Array* array = (Array*)arrays[arrayElementType];
+                return Array.GetLength(array);
             }
 
             /// <summary>
@@ -2644,12 +2670,11 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfArrayIsMissing(world, entity, arrayElementType);
 
-                ref EntitySlot slot = ref world->slots[entity - 1];
-                ref Allocation array = ref slot.arrays[arrayElementType];
-                Allocation.Resize(ref array, arrayElementSize * newLength);
-                slot.arrayLengths[arrayElementType] = newLength;
+                ref Array<nint> arrays = ref world->arrays[entity - 1];
+                Array* array = (Array*)arrays[arrayElementType];
+                Array.Resize(array, newLength, true);
                 NotifyArrayResized(new(world), entity, arrayElementType);
-                return array;
+                return new((void*)Array.GetStartAddress(array));
             }
 
             /// <summary>
@@ -2661,10 +2686,12 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfArrayIsMissing(world, entity, arrayElementType);
 
-                ref EntitySlot slot = ref world->slots[entity - 1];
-                slot.arrays[arrayElementType].Dispose();
-                slot.arrayLengths[arrayElementType] = 0;
+                ref Array<nint> arrays = ref world->arrays[entity - 1];
+                Array* array = (Array*)arrays[arrayElementType];
+                Array.Free(ref array);
+                arrays[arrayElementType] = default;
 
+                ref EntitySlot slot = ref world->slots[entity - 1];
                 Chunk oldChunk = slot.chunk;
                 Definition oldDefinition = oldChunk.Definition;
                 Definition newDefinition = oldDefinition;
@@ -2672,8 +2699,7 @@ namespace Worlds
 
                 if (newDefinition.ArrayElementTypes == default)
                 {
-                    slot.arrays.Dispose();
-                    slot.arrayLengths.Dispose();
+                    arrays.Dispose();
                 }
 
                 Dictionary<Definition, Chunk> chunks = world->chunks;

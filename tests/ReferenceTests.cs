@@ -74,5 +74,24 @@
             Assert.That(c, Is.EqualTo(a));
             Assert.That(world.GetReferenceCount(c), Is.EqualTo(0));
         }
+
+        [Test]
+        public void CreateNewEntitiesAfterReferencing()
+        {
+            using World world = CreateWorld();
+            uint a = world.CreateEntity();
+            uint b = world.CreateEntity();
+            world.AddReference(a, b);
+
+            Assert.That(world.GetReferenceCount(a), Is.EqualTo(1));
+
+            uint c = world.CreateEntity();
+
+            Assert.That(world.GetReferenceCount(a), Is.EqualTo(1));
+
+            world.AddReference(a, c);
+
+            Assert.That(world.GetReferenceCount(a), Is.EqualTo(2));
+        }
     }
 }
