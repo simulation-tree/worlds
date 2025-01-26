@@ -1,4 +1,5 @@
 ﻿using Collections;
+using Collections.Implementations;
 using System;
 using System.Diagnostics;
 using Types;
@@ -27,7 +28,7 @@ namespace Worlds
         /// <summary>
         /// The current maximum amount of referrable entities.
         /// <para>Collections of this size + 1 are guaranteed to
-        /// be able to store all entity values/positions.</para>
+        /// be able to store all entity positions.</para>
         /// </summary>
         public readonly uint MaxEntityValue => Slots.Count;
 
@@ -122,19 +123,11 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Initializes an existing world from the given address.
+        /// Initializes an existing world from the given <paramref name="pointer"/>.
         /// </summary>
-        public World(nint existingAddress)
+        public World(void* pointer)
         {
-            value = (Implementation*)existingAddress;
-        }
-
-        /// <summary>
-        /// Initializes an existing world from the given pointer.
-        /// </summary>
-        public World(Implementation* value)
-        {
-            this.value = value;
+            this.value = (Implementation*)pointer;
         }
 
         /// <summary>
@@ -195,76 +188,7 @@ namespace Worlds
 
         readonly void ISerializable.Write(BinaryWriter writer)
         {
-            List<EntitySlot> slots = Slots;
-            Schema schema = Schema;
-
-            writer.WriteObject(schema);
-            writer.WriteValue(Count);
-            for (uint s = 0; s < slots.Count; s++)
-            {
-                ref EntitySlot slot = ref slots[s];
-                uint entity = slot.entity;
-                if (!Free.Contains(entity))
-                {
-                    writer.WriteValue(entity);
-                    writer.WriteValue(slot.parent);
-
-                    //write components
-                    Chunk chunk = slot.chunk;
-                    Definition definition = chunk.Definition;
-                    uint localEntity = chunk.Entities.IndexOf(entity);
-                    writer.WriteValue(definition.ComponentTypes.Count); //todo: why not serialize the bitset directly?
-                    for (byte c = 0; c < BitMask.Capacity; c++)
-                    {
-                        if (definition.ComponentTypes.Contains(c))
-                        {
-                            ComponentType componentType = new(c);
-                            ushort componentSize = schema.GetSize(componentType);
-                            writer.WriteValue(componentType);
-                            Allocation component = chunk.GetComponent(localEntity, componentType, componentSize);
-                            writer.Write(component, componentSize);
-                        }
-                    }
-
-                    //write arrays
-                    writer.WriteValue(definition.ArrayElementTypes.Count);
-                    for (byte a = 0; a < BitMask.Capacity; a++)
-                    {
-                        if (definition.ArrayElementTypes.Contains(a))
-                        {
-                            Allocation array = slot.arrays[a];
-                            uint arrayLength = slot.arrayLengths[a];
-                            ArrayElementType arrayElementType = new(a);
-                            writer.WriteValue(arrayElementType);
-                            writer.WriteValue(arrayLength);
-                            if (arrayLength > 0)
-                            {
-                                ushort arrayElementSize = schema.GetSize(arrayElementType);
-                                writer.Write(array, arrayLength * arrayElementSize);
-                            }
-                        }
-                    }
-
-                    //write tags
-                    writer.WriteValue(definition.TagTypes.Count);
-                    for (byte t = 0; t < BitMask.Capacity; t++)
-                    {
-                        if (definition.TagTypes.Contains(t))
-                        {
-                            TagType tagType = new(t);
-                            writer.WriteValue(tagType);
-                        }
-                    }
-
-                    //write references
-                    writer.WriteValue(slot.referenceCount);
-                    for (uint r = 0; r < slot.referenceCount; r++)
-                    {
-                        uint referencedEntity = slot.references[r];
-                        writer.WriteValue(referencedEntity);
-                    }
-                }
-            }
+            Implementation.Serialize(value, writer);
         }
 
         void ISerializable.Read(BinaryReader reader)
@@ -273,7 +197,7 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Creates new entities with the data from the given world.
+        /// Creates new entities with the data from the given <paramref name="sourceWorld"/>.
         /// </summary>
         public readonly void Append(World sourceWorld)
         {
@@ -289,7 +213,8 @@ namespace Worlds
                 {
                     uint destinationEntity = start + entityIndex;
                     uint destinationParent = start + sourceSlot.parent;
-                    InitializeEntity(default, destinationEntity);
+                    //Implementation.InitializeEntity(value, default, destinationEntity);
+                    //Implementation.CreateEntity(value, destinationEntity, destinationParent);
                     SetParent(destinationEntity, destinationParent);
                     entityIndex++;
 
@@ -618,22 +543,6 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Performs all given <paramref name="instructions"/>.
-        /// </summary>
-        public readonly void Perform(List<Instruction> instructions)
-        {
-            Perform(instructions.AsSpan());
-        }
-
-        /// <summary>
-        /// Performs all given <paramref name="instructions"/>.
-        /// </summary>
-        public readonly void Perform(Array<Instruction> instructions)
-        {
-            Perform(instructions.AsSpan());
-        }
-
-        /// <summary>
         /// Performs all instructions in the given <paramref name="operation"/>.
         /// </summary>
         public readonly void Perform(Operation operation)
@@ -682,7 +591,7 @@ namespace Worlds
 
         /// <summary>
         /// Checks if the given entity is enabled regardless
-        /// of the entity hierarchy.
+        /// of it's parents.
         /// </summary>
         public readonly bool IsLocallyEnabled(uint entity)
         {
@@ -720,89 +629,86 @@ namespace Worlds
                 newState = enabled ? EntitySlotState.Enabled : EntitySlotState.Disabled;
             }
 
-            //if (newState != slot.state) //todo: this needs cleanup
+            slot.state = newState;
+
+            //move to different chunk
+            Dictionary<Definition, Chunk> chunks = Chunks;
+            Chunk oldChunk = slot.chunk;
+            Definition oldDefinition = oldChunk.Definition;
+            bool oldEnabled = !oldDefinition.TagTypes.Contains(TagType.Disabled);
+            bool newEnabled = newState == EntitySlotState.Enabled;
+            if (oldEnabled != newEnabled)
             {
-                slot.state = newState;
-
-                //move to different chunk
-                Dictionary<Definition, Chunk> chunks = Chunks;
-                Chunk oldChunk = slot.chunk;
-                Definition oldDefinition = oldChunk.Definition;
-                bool oldEnabled = !oldDefinition.TagTypes.Contains(TagType.Disabled);
-                bool newEnabled = newState == EntitySlotState.Enabled;
-                if (oldEnabled != newEnabled)
+                Definition newDefinition = oldDefinition;
+                if (newEnabled)
                 {
-                    Definition newDefinition = oldDefinition;
-                    if (newEnabled)
-                    {
-                        newDefinition.RemoveTagType(TagType.Disabled);
-                    }
-                    else
-                    {
-                        newDefinition.AddTagType(TagType.Disabled);
-                    }
-
-                    if (!chunks.TryGetValue(newDefinition, out Chunk newChunk))
-                    {
-                        newChunk = new Chunk(newDefinition, Schema);
-                        chunks.Add(newDefinition, newChunk);
-                    }
-
-                    slot.chunk = newChunk;
-                    oldChunk.MoveEntity(entity, newChunk);
+                    newDefinition.RemoveTagType(TagType.Disabled);
+                }
+                else
+                {
+                    newDefinition.AddTagType(TagType.Disabled);
                 }
 
-                //modify descendants
-                if (slot.childCount > 0)
+                if (!chunks.TryGetValue(newDefinition, out Chunk newChunk))
                 {
-                    using Stack<uint> stack = new(slot.childCount * 2u);
-                    stack.PushRange(slot.GetChildren());
+                    newChunk = new Chunk(newDefinition, Schema);
+                    chunks.Add(newDefinition, newChunk);
+                }
 
-                    EntitySlotState slotState = slot.state;
-                    while (stack.Count > 0)
+                slot.chunk = newChunk;
+                oldChunk.MoveEntity(entity, newChunk);
+            }
+
+            //modify descendants
+            if (slot.childCount > 0)
+            {
+                using Stack<uint> stack = new(slot.childCount * 2u);
+                stack.PushRange(slot.GetChildren());
+
+                EntitySlotState slotState = slot.state;
+                while (stack.Count > 0)
+                {
+                    entity = stack.Pop();
+                    slot = ref slots[entity - 1];
+                    if (enabled && slot.state == EntitySlotState.DisabledButLocallyEnabled)
                     {
-                        entity = stack.Pop();
-                        slot = ref slots[entity - 1];
-                        if (enabled && slot.state == EntitySlotState.DisabledButLocallyEnabled)
+                        slot.state = EntitySlotState.Enabled;
+                    }
+                    else if (!enabled && slot.state == EntitySlotState.Enabled)
+                    {
+                        slot.state = EntitySlotState.DisabledButLocallyEnabled;
+                    }
+
+                    //move descentant to proper chunk
+                    oldChunk = slot.chunk;
+                    oldDefinition = oldChunk.Definition;
+                    oldEnabled = !oldDefinition.TagTypes.Contains(TagType.Disabled);
+                    newEnabled = slot.state == EntitySlotState.Enabled;
+                    if (oldEnabled != enabled)
+                    {
+                        Definition newDefinition = oldDefinition;
+                        if (enabled)
                         {
-                            slot.state = EntitySlotState.Enabled;
+                            newDefinition.RemoveTagType(TagType.Disabled);
                         }
-                        else if (!enabled && slot.state == EntitySlotState.Enabled)
+                        else
                         {
-                            slot.state = EntitySlotState.DisabledButLocallyEnabled;
-                        }
-
-                        //move descentant to proper chunk
-                        oldChunk = slot.chunk;
-                        oldDefinition = oldChunk.Definition;
-                        oldEnabled = !oldDefinition.TagTypes.Contains(TagType.Disabled);
-                        newEnabled = slot.state == EntitySlotState.Enabled;
-                        if (oldEnabled != enabled)
-                        {
-                            Definition newDefinition = oldDefinition;
-                            if (enabled)
-                            {
-                                newDefinition.RemoveTagType(TagType.Disabled);
-                            }
-                            else
-                            {
-                                newDefinition.AddTagType(TagType.Disabled);
-                            }
-
-                            if (!chunks.TryGetValue(newDefinition, out Chunk newChunk))
-                            {
-                                newChunk = new Chunk(newDefinition, Schema);
-                                chunks.Add(newDefinition, newChunk);
-                            }
-
-                            slot.chunk = newChunk;
-                            oldChunk.MoveEntity(entity, newChunk);
+                            newDefinition.AddTagType(TagType.Disabled);
                         }
 
-                        if (slot.childCount > 0)
+                        if (!chunks.TryGetValue(newDefinition, out Chunk newChunk))
                         {
-                            stack.PushRange(slot.GetChildren());
+                            newChunk = new Chunk(newDefinition, Schema);
+                            chunks.Add(newDefinition, newChunk);
                         }
+
+                        slot.chunk = newChunk;
+                        oldChunk.MoveEntity(entity, newChunk);
+                    }
+
+                    if (slot.childCount > 0)
+                    {
+                        stack.PushRange(slot.GetChildren());
                     }
                 }
             }
@@ -944,7 +850,7 @@ namespace Worlds
         /// </summary>
         public readonly uint CreateEntity()
         {
-            return CreateEntity(default);
+            return Implementation.CreateEntity(value, default, out _, out _);
         }
 
         /// <summary>
@@ -952,291 +858,15 @@ namespace Worlds
         /// </summary>
         public readonly uint CreateEntity(Definition definition)
         {
-            uint entity = GetNextEntity();
-            InitializeEntity(definition, entity);
-            return entity;
+            return Implementation.CreateEntity(value, definition, out _, out _);
         }
 
         /// <summary>
-        /// Creates a new entity with the given <typeparamref name="T1"/> component.
+        /// Creates a new entity with the given <paramref name="definition"/>.
         /// </summary>
-        public readonly uint CreateEntity<T1>(T1 component1) where T1 : unmanaged
+        public readonly uint CreateEntity(Definition definition, out Chunk chunk, out uint index)
         {
-            uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1>(), default, default);
-            InitializeEntity(definition, entity);
-            SetComponent(entity, component1);
-            return entity;
-        }
-
-        /// <summary>
-        /// Creates a new entity with the given <typeparamref name="T1"/> and <typeparamref name="T2"/> components.
-        /// </summary>
-        public readonly uint CreateEntity<T1, T2>(T1 component1, T2 component2) where T1 : unmanaged where T2 : unmanaged
-        {
-            uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2>(), default, default);
-            InitializeEntity(definition, entity);
-            SetComponent(entity, component1);
-            SetComponent(entity, component2);
-            return entity;
-        }
-
-        /// <summary>
-        /// Creates a new entity with the given <typeparamref name="T1"/>, <typeparamref name="T2"/> and <typeparamref name="T3"/> components.
-        /// </summary>
-        public readonly uint CreateEntity<T1, T2, T3>(T1 component1, T2 component2, T3 component3) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
-        {
-            uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3>(), default, default);
-            InitializeEntity(definition, entity);
-            SetComponent(entity, component1);
-            SetComponent(entity, component2);
-            SetComponent(entity, component3);
-            return entity;
-        }
-
-        /// <summary>
-        /// Creates a new entity with the given <typeparamref name="T1"/>, <typeparamref name="T2"/>, <typeparamref name="T3"/> and <typeparamref name="T4"/> components.
-        /// </summary>
-        public readonly uint CreateEntity<T1, T2, T3, T4>(T1 component1, T2 component2, T3 component3, T4 component4) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
-        {
-            uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4>(), default, default);
-            InitializeEntity(definition, entity);
-            SetComponent(entity, component1);
-            SetComponent(entity, component2);
-            SetComponent(entity, component3);
-            SetComponent(entity, component4);
-            return entity;
-        }
-
-        /// <summary>
-        /// Creates a new entity with the given <typeparamref name="T1"/>, <typeparamref name="T2"/>, <typeparamref name="T3"/>, <typeparamref name="T4"/> and <typeparamref name="T5"/> components.
-        /// </summary>
-        public readonly uint CreateEntity<T1, T2, T3, T4, T5>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
-        {
-            uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5>(), default, default);
-            InitializeEntity(definition, entity);
-            SetComponent(entity, component1);
-            SetComponent(entity, component2);
-            SetComponent(entity, component3);
-            SetComponent(entity, component4);
-            SetComponent(entity, component5);
-            return entity;
-        }
-
-        /// <summary>
-        /// Creates a new entity with the given <typeparamref name="T1"/>, <typeparamref name="T2"/>, <typeparamref name="T3"/>, <typeparamref name="T4"/>, <typeparamref name="T5"/> and <typeparamref name="T6"/> components.
-        /// </summary>
-        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
-        {
-            uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6>(), default, default);
-            InitializeEntity(definition, entity);
-            SetComponent(entity, component1);
-            SetComponent(entity, component2);
-            SetComponent(entity, component3);
-            SetComponent(entity, component4);
-            SetComponent(entity, component5);
-            SetComponent(entity, component6);
-            return entity;
-        }
-
-        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
-        {
-            uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7>(), default, default);
-            InitializeEntity(definition, entity);
-            SetComponent(entity, component1);
-            SetComponent(entity, component2);
-            SetComponent(entity, component3);
-            SetComponent(entity, component4);
-            SetComponent(entity, component5);
-            SetComponent(entity, component6);
-            SetComponent(entity, component7);
-            return entity;
-        }
-
-        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
-        {
-            uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8>(), default, default);
-            InitializeEntity(definition, entity);
-            SetComponent(entity, component1);
-            SetComponent(entity, component2);
-            SetComponent(entity, component3);
-            SetComponent(entity, component4);
-            SetComponent(entity, component5);
-            SetComponent(entity, component6);
-            SetComponent(entity, component7);
-            SetComponent(entity, component8);
-            return entity;
-        }
-
-        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
-        {
-            uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9>(), default, default);
-            InitializeEntity(definition, entity);
-            SetComponent(entity, component1);
-            SetComponent(entity, component2);
-            SetComponent(entity, component3);
-            SetComponent(entity, component4);
-            SetComponent(entity, component5);
-            SetComponent(entity, component6);
-            SetComponent(entity, component7);
-            SetComponent(entity, component8);
-            SetComponent(entity, component9);
-            return entity;
-        }
-
-        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
-        {
-            uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(), default, default);
-            InitializeEntity(definition, entity);
-            SetComponent(entity, component1);
-            SetComponent(entity, component2);
-            SetComponent(entity, component3);
-            SetComponent(entity, component4);
-            SetComponent(entity, component5);
-            SetComponent(entity, component6);
-            SetComponent(entity, component7);
-            SetComponent(entity, component8);
-            SetComponent(entity, component9);
-            SetComponent(entity, component10);
-            return entity;
-        }
-
-        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
-        {
-            uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(), default, default);
-            InitializeEntity(definition, entity);
-            SetComponent(entity, component1);
-            SetComponent(entity, component2);
-            SetComponent(entity, component3);
-            SetComponent(entity, component4);
-            SetComponent(entity, component5);
-            SetComponent(entity, component6);
-            SetComponent(entity, component7);
-            SetComponent(entity, component8);
-            SetComponent(entity, component9);
-            SetComponent(entity, component10);
-            SetComponent(entity, component11);
-            return entity;
-        }
-
-        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
-        {
-            uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(), default, default);
-            InitializeEntity(definition, entity);
-            SetComponent(entity, component1);
-            SetComponent(entity, component2);
-            SetComponent(entity, component3);
-            SetComponent(entity, component4);
-            SetComponent(entity, component5);
-            SetComponent(entity, component6);
-            SetComponent(entity, component7);
-            SetComponent(entity, component8);
-            SetComponent(entity, component9);
-            SetComponent(entity, component10);
-            SetComponent(entity, component11);
-            SetComponent(entity, component12);
-            return entity;
-        }
-
-        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged
-        {
-            uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(), default, default);
-            InitializeEntity(definition, entity);
-            SetComponent(entity, component1);
-            SetComponent(entity, component2);
-            SetComponent(entity, component3);
-            SetComponent(entity, component4);
-            SetComponent(entity, component5);
-            SetComponent(entity, component6);
-            SetComponent(entity, component7);
-            SetComponent(entity, component8);
-            SetComponent(entity, component9);
-            SetComponent(entity, component10);
-            SetComponent(entity, component11);
-            SetComponent(entity, component12);
-            SetComponent(entity, component13);
-            return entity;
-        }
-
-        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13, T14 component14) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged
-        {
-            uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(), default, default);
-            InitializeEntity(definition, entity);
-            SetComponent(entity, component1);
-            SetComponent(entity, component2);
-            SetComponent(entity, component3);
-            SetComponent(entity, component4);
-            SetComponent(entity, component5);
-            SetComponent(entity, component6);
-            SetComponent(entity, component7);
-            SetComponent(entity, component8);
-            SetComponent(entity, component9);
-            SetComponent(entity, component10);
-            SetComponent(entity, component11);
-            SetComponent(entity, component12);
-            SetComponent(entity, component13);
-            SetComponent(entity, component14);
-            return entity;
-        }
-
-        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13, T14 component14, T15 component15) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged
-        {
-            uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(), default, default);
-            InitializeEntity(definition, entity);
-            SetComponent(entity, component1);
-            SetComponent(entity, component2);
-            SetComponent(entity, component3);
-            SetComponent(entity, component4);
-            SetComponent(entity, component5);
-            SetComponent(entity, component6);
-            SetComponent(entity, component7);
-            SetComponent(entity, component8);
-            SetComponent(entity, component9);
-            SetComponent(entity, component10);
-            SetComponent(entity, component11);
-            SetComponent(entity, component12);
-            SetComponent(entity, component13);
-            SetComponent(entity, component14);
-            SetComponent(entity, component15);
-            return entity;
-        }
-
-        public readonly uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13, T14 component14, T15 component15, T16 component16) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged
-        {
-            uint entity = GetNextEntity();
-            Definition definition = new(Schema.GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(), default, default);
-            InitializeEntity(definition, entity);
-            SetComponent(entity, component1);
-            SetComponent(entity, component2);
-            SetComponent(entity, component3);
-            SetComponent(entity, component4);
-            SetComponent(entity, component5);
-            SetComponent(entity, component6);
-            SetComponent(entity, component7);
-            SetComponent(entity, component8);
-            SetComponent(entity, component9);
-            SetComponent(entity, component10);
-            SetComponent(entity, component11);
-            SetComponent(entity, component12);
-            SetComponent(entity, component13);
-            SetComponent(entity, component14);
-            SetComponent(entity, component15);
-            SetComponent(entity, component16);
-            return entity;
+            return Implementation.CreateEntity(value, definition, out chunk, out index);
         }
 
         /// <summary>
@@ -1248,26 +878,6 @@ namespace Worlds
             {
                 buffer[i] = CreateEntity();
             }
-        }
-
-        /// <summary>
-        /// Returns the value for the next created entity.
-        /// </summary>
-        public readonly uint GetNextEntity()
-        {
-            return Implementation.GetNextEntity(value);
-        }
-
-        /// <summary>
-        /// Creates an entity with the given value assuming its 
-        /// not already in use.
-        /// <para>
-        /// May throw <see cref="Exception"/> if the entity is already in use.
-        /// </para>
-        /// </summary>
-        public readonly void InitializeEntity(Definition definition, uint newEntity)
-        {
-            Implementation.InitializeEntity(value, definition, newEntity);
         }
 
         /// <summary>
@@ -1314,7 +924,7 @@ namespace Worlds
             ref EntitySlot slot = ref Slots[entity - 1];
             if (slot.childCount > 0)
             {
-                return slot.children.AsSpan<uint>();
+                return slot.children.AsSpan();
             }
             else
             {
@@ -2010,8 +1620,7 @@ namespace Worlds
         /// </summary>
         public readonly void SetComponent<T>(uint entity, T component) where T : unmanaged
         {
-            ref T existing = ref GetComponent<T>(entity);
-            existing = component;
+            GetComponent<T>(entity) = component;
         }
 
         /// <summary>
@@ -2428,6 +2037,36 @@ namespace Worlds
                 Allocations.Free(ref world);
             }
 
+            public static void Serialize(Implementation* value, BinaryWriter writer)
+            {
+                Allocations.ThrowIfNull(value);
+
+                List<EntitySlot> slots = value->slots;
+                Dictionary<Definition, Chunk> chunks = value->chunks;
+                Schema schema = value->schema;
+
+                writer.WriteObject(schema);
+                writer.WriteValue(chunks.Count);
+                foreach (KeyValuePair<Definition, Chunk> pair in chunks)
+                {
+                    Definition definition = pair.key;
+                    Chunk chunk = pair.value;
+
+                    writer.WriteValue(definition);
+                    writer.WriteValue(chunk.Count);
+                    for (byte c = 0; c < BitMask.Capacity; c++)
+                    {
+                        ComponentType componentType = new(c);
+                        if (definition.ComponentTypes.Contains(componentType))
+                        {
+                            List* components = chunk.GetComponents(componentType);
+                            USpan<byte> data = List.AsSpan<byte>(components);
+                            writer.WriteSpan(data);
+                        }
+                    }
+                }
+            }
+
             /// <summary>
             /// Deserializes a new <see cref="World"/> from the data in the given <paramref name="reader"/>.
             /// <para>
@@ -2462,110 +2101,6 @@ namespace Worlds
                 }
 
                 Implementation* value = Allocate(schema);
-
-                //create entities and fill them with components and arrays
-                uint entityCount = reader.ReadValue<uint>();
-                uint currentEntityId = 1;
-                using List<uint> temporaryEntities = new(4);
-                for (uint e = 0; e < entityCount; e++)
-                {
-                    uint entity = reader.ReadValue<uint>();
-                    uint parent = reader.ReadValue<uint>();
-
-                    //skip through the island of free entities
-                    uint catchup = entity - currentEntityId;
-                    for (uint i = 0; i < catchup; i++)
-                    {
-                        uint temporaryEntity = GetNextEntity(value);
-                        InitializeEntity(value, default, temporaryEntity);
-                        temporaryEntities.Add(temporaryEntity);
-                    }
-
-                    InitializeEntity(value, default, entity);
-                    ref EntitySlot slot = ref value->slots[entity - 1];
-                    if (parent != default)
-                    {
-                        uint oldParent = slot.parent;
-                        slot.parent = parent;
-                        NotifyParentChange(new(value), entity, oldParent, parent);
-                    }
-
-                    //read components
-                    byte componentCount = reader.ReadValue<byte>();
-                    for (byte c = 0; c < componentCount; c++)
-                    {
-                        ComponentType componentType = reader.ReadValue<ComponentType>();
-                        ushort componentSize = loadedSchema.GetSize(componentType);
-                        Allocation component = AddComponent(value, entity, componentType, componentSize);
-                        reader.ReadSpan<byte>(componentSize).CopyTo(component, componentSize);
-                        NotifyComponentAdded(new(value), entity, componentType);
-                    }
-
-                    //read arrays
-                    byte arrayCount = reader.ReadValue<byte>();
-                    for (uint a = 0; a < arrayCount; a++)
-                    {
-                        ArrayElementType arrayElementType = reader.ReadValue<ArrayElementType>();
-                        uint arrayLength = reader.ReadValue<uint>();
-                        ushort arrayElementSize = loadedSchema.GetSize(arrayElementType);
-                        uint byteCount = arrayLength * arrayElementSize;
-                        Allocation array = CreateArray(value, entity, arrayElementType, arrayElementSize, arrayLength);
-                        if (arrayLength > 0)
-                        {
-                            reader.ReadSpan<byte>(byteCount).CopyTo(array, byteCount);
-                        }
-                    }
-
-                    //read tags
-                    byte tagCount = reader.ReadValue<byte>();
-                    for (byte t = 0; t < tagCount; t++)
-                    {
-                        TagType tagType = reader.ReadValue<TagType>();
-                        AddTag(value, entity, tagType);
-                    }
-
-                    //read references
-                    ushort referenceCount = reader.ReadValue<ushort>();
-                    if (referenceCount > 0)
-                    {
-                        slot.references = new(referenceCount);
-                        slot.references.AddDefault(referenceCount);
-                        slot.referenceCount = referenceCount;
-                        for (uint r = 0; r < referenceCount; r++)
-                        {
-                            uint referencedEntity = reader.ReadValue<uint>();
-                            slot.references[r] = referencedEntity;
-                        }
-                    }
-
-                    currentEntityId = entity + 1;
-                }
-
-                //assign children
-                for (uint i = 0; i < value->slots.Count; i++)
-                {
-                    uint childEntity = i + 1;
-                    ref EntitySlot childSlot = ref value->slots[i];
-                    uint parent = childSlot.parent;
-                    if (parent != default)
-                    {
-                        ref EntitySlot parentSlot = ref value->slots[parent - 1];
-                        if (parentSlot.childCount == 0)
-                        {
-                            parentSlot.children = new(4);
-                        }
-
-                        parentSlot.children.Add(childEntity);
-                        parentSlot.childCount++;
-                    }
-                }
-
-                //destroy temporary entities
-                for (uint i = 0; i < temporaryEntities.Count; i++)
-                {
-                    DestroyEntity(value, temporaryEntities[i]);
-                }
-
                 return value;
             }
 
@@ -2633,6 +2168,61 @@ namespace Worlds
 
                 //clear free entities
                 world->freeEntities.Clear();
+            }
+
+            public static uint CreateEntity(Implementation* world, Definition definition, out Chunk chunk, out uint index)
+            {
+                Allocations.ThrowIfNull(world);
+
+                List<EntitySlot> slots = world->slots;
+                List<uint> freeEntities = world->freeEntities;
+                Schema schema = world->schema;
+                Dictionary<Definition, Chunk> chunks = world->chunks;
+
+                uint entity;
+                if (freeEntities.Count > 0)
+                {
+                    entity = freeEntities.RemoveAtBySwapping(0);
+                }
+                else
+                {
+                    entity = slots.Count + 1;
+                    slots.Add(default);
+                }
+
+                //put entity into correct chunk
+                if (!chunks.TryGetValue(definition, out chunk))
+                {
+                    chunk = new(definition, schema);
+                    chunks.Add(definition, chunk);
+                }
+
+                ref EntitySlot slot = ref slots[entity - 1];
+                slot.entity = entity;
+                slot.state = EntitySlotState.Enabled;
+                slot.chunk = chunk;
+
+                //add arrays
+                if (definition.ArrayElementTypes != default)
+                {
+                    slot.arrayLengths = new(BitMask.Capacity);
+                    slot.arrays = new(BitMask.Capacity);
+                    for (byte a = 0; a < BitMask.Capacity; a++)
+                    {
+                        if (definition.ArrayElementTypes.Contains(a))
+                        {
+                            ArrayElementType arrayElementType = new(a);
+                            ushort arrayElementSize = schema.GetSize(arrayElementType);
+                            slot.arrays[arrayElementType] = new(0);
+                            slot.arrayLengths[arrayElementType] = 0;
+                        }
+                    }
+                }
+
+                index = chunk.AddEntity(entity);
+                TraceCreation(world, entity);
+                NotifyCreation(new(world), entity);
+                return entity;
             }
 
             /// <summary>
@@ -2859,94 +2449,6 @@ namespace Worlds
 
                     return true;
                 }
-            }
-
-            /// <summary>
-            /// Returns the next available entity value.
-            /// </summary>
-            public static uint GetNextEntity(Implementation* world)
-            {
-                Allocations.ThrowIfNull(world);
-
-                if (world->freeEntities.Count > 0)
-                {
-                    return world->freeEntities[0];
-                }
-                else
-                {
-                    return world->slots.Count + 1;
-                }
-            }
-
-            /// <summary>
-            /// Initializes the given entity value into existence assuming 
-            /// its not already present.
-            /// </summary>
-            public static void InitializeEntity(Implementation* world, Definition definition, uint newEntity)
-            {
-                Allocations.ThrowIfNull(world);
-                ThrowIfEntityIsAlreadyPresent(world, newEntity);
-
-                List<EntitySlot> slots = world->slots;
-                List<uint> freeEntities = world->freeEntities;
-                Schema schema = world->schema;
-
-                //make sure islands of free entities dont exist
-                uint slotCount = slots.Count;
-                while (newEntity > slotCount + 1)
-                {
-                    EntitySlot freeSlot = default;
-                    freeSlot.entity = slotCount + 1;
-                    slots.Add(freeSlot);
-                    slotCount++;
-                    freeEntities.Add(freeSlot.entity);
-                }
-
-                if (!freeEntities.TryRemoveBySwapping(newEntity))
-                {
-                    slots.Add(new());
-                }
-                else
-                {
-                    //free slot reused
-                }
-
-                ref EntitySlot slot = ref slots[newEntity - 1];
-                slot.entity = newEntity;
-                slot.state = EntitySlotState.Enabled;
-
-                //put entity into correct chunk
-                Dictionary<Definition, Chunk> chunks = world->chunks;
-                if (!chunks.TryGetValue(definition, out Chunk destinationChunk))
-                {
-                    destinationChunk = new(definition, schema);
-                    chunks.Add(definition, destinationChunk);
-                }
-
-                slot.chunk = destinationChunk;
-
-                //add arrays
-                if (definition.ArrayElementTypes != default)
-                {
-                    slot.arrayLengths = new(BitMask.Capacity);
-                    slot.arrays = new(BitMask.Capacity);
-                    for (byte a = 0; a < BitMask.Capacity; a++)
-                    {
-                        if (definition.ArrayElementTypes.Contains(a))
-                        {
-                            ArrayElementType arrayElementType = new(a);
-                            ushort arrayElementSize = schema.GetSize(arrayElementType);
-                            slot.arrays[arrayElementType] = new(arrayElementSize); //todo: not sure why this is initialized to 1 at first tbh
-                            slot.arrayLengths[arrayElementType] = 0;
-                        }
-                    }
-                }
-
-                destinationChunk.AddEntity(newEntity);
-                TraceCreation(world, newEntity);
-
-                //finally
-                NotifyCreation(new(world), newEntity);
             }
 
             [Conditional("DEBUG")]
