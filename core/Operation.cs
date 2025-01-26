@@ -301,7 +301,7 @@ namespace Worlds
                         }
                         else
                         {
-                            pretendEntity = world.Slots.Count + 1;
+                            pretendEntity = world.MaxEntityValue + 1;
                         }
 
                         selection.Add(pretendEntity);

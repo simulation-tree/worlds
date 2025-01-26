@@ -256,8 +256,8 @@ namespace Worlds
         {
             World world = entity.World;
             uint value = entity.Value;
-            ref EntitySlot slot = ref world.Slots[value - 1];
-            Definition currentDefinition = slot.chunk.Definition;
+            Chunk chunk = world.GetChunk(value);
+            Definition currentDefinition = chunk.Definition;
 
             //add missing components
             if ((currentDefinition.ComponentTypes & definition.ComponentTypes) != definition.ComponentTypes)
@@ -319,8 +319,8 @@ namespace Worlds
             uint value = entity.Value;
             World.Implementation.ThrowIfEntityIsMissing(world, value);
 
-            ref EntitySlot slot = ref world.Slots[value - 1];
-            Definition currentDefinition = slot.chunk.Definition;
+            Chunk chunk = world.GetChunk(value);
+            Definition currentDefinition = chunk.Definition;
             if ((currentDefinition.ComponentTypes & definition.ComponentTypes) != definition.ComponentTypes)
             {
                 return false;
