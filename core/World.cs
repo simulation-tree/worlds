@@ -946,7 +946,7 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Updates an existing reference to point towards a different entity.
+        /// Updates an existing <paramref name="reference"/> to point towards the <paramref name="referencedEntity"/>.
         /// </summary>
         public readonly void SetReference(uint entity, rint reference, uint referencedEntity)
         {
@@ -959,7 +959,7 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Assigns a new entity to an existing reference.
+        /// Updates an existing <paramref name="reference"/> to point towards the <paramref name="referencedEntity"/>.
         /// </summary>
         public readonly void SetReference<T>(uint entity, rint reference, T referencedEntity) where T : unmanaged, IEntity
         {
@@ -967,11 +967,16 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Checks if the given entity contains a reference to the given referenced entity.
+        /// Checks if the given entity contains a reference to the given <paramref name="referencedEntity"/>.
         /// </summary>
         public readonly bool ContainsReference(uint entity, uint referencedEntity)
         {
             Implementation.ThrowIfEntityIsMissing(value, entity);
+
+            if (value->references.Count < entity)
+            {
+                return false;
+            }
 
             ref List<uint> references = ref value->references[entity - 1];
             if (references.IsDisposed)
@@ -1034,7 +1039,7 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Retrieves the referenced entity at the given <paramref name="reference"/> index on <paramref name="entity"/>.
+        /// Retrieves the entity referenced at the given <paramref name="reference"/> index by <paramref name="entity"/>.
         /// </summary>
         public readonly ref uint GetReference(uint entity, rint reference)
         {
@@ -1047,7 +1052,7 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Retrieves the local reference that points to the given <paramref name="referencedEntity"/> on <paramref name="entity"/>.
+        /// Retrieves the <see cref="rint"/> value that points to the given <paramref name="referencedEntity"/> on <paramref name="entity"/>.
         /// </summary>
         public readonly rint GetReference(uint entity, uint referencedEntity)
         {
@@ -2468,11 +2473,19 @@ namespace Worlds
                     }
                 }
 
+                //remove from parents children list
+                ref uint parent = ref world->parents[entity - 1];
+                if (parent != default)
+                {
+                    ref List<uint> parentChildren = ref world->children[parent - 1];
+                    parentChildren.RemoveAtBySwapping(parentChildren.IndexOf(entity));
+                }
+
                 ref Chunk chunk = ref world->entityChunks[entity - 1];
                 chunk.RemoveEntity(entity);
                 chunk = default;
                 world->states[entity - 1] = EntityState.Free;
-                world->parents[entity - 1] = default;
+                parent = default;
                 world->freeEntities.Add(entity);
                 NotifyDestruction(new(world), entity);
             }
@@ -2539,137 +2552,86 @@ namespace Worlds
                     throw new InvalidOperationException("Entity cannot be its own parent");
                 }
 
+                if (!ContainsEntity(world, newParent))
+                {
+                    newParent = default;
+                }
+
                 ref uint currentParent = ref world->parents[entity - 1];
-                if (currentParent == newParent)
-                {
-                    return false;
-                }
-
-                //remove from previous parent children
-                if (currentParent != default)
-                {
-                    if (world->children.Count >= currentParent)
-                    {
-                        ref List<uint> previousParentChildren = ref world->children[currentParent - 1];
-                        if (!previousParentChildren.IsDisposed)
-                        {
-                            previousParentChildren.TryRemoveBySwapping(entity);
-                        }
-                    }
-                }
-
                 ref Chunk chunk = ref world->entityChunks[entity - 1];
                 ref EntityState state = ref world->states[entity - 1];
-                if (newParent == default || !ContainsEntity(world, newParent))
+                bool parentChanged = currentParent != newParent;
+                if (parentChanged)
                 {
-                    if (currentParent != default)
+                    uint oldParent = currentParent;
+                    currentParent = newParent;
+
+                    //remove from previous parent children list
+                    if (oldParent != default)
                     {
-                        uint oldParent = currentParent;
-                        currentParent = default;
-                        Dictionary<Definition, Chunk> chunks = world->chunks;
-                        Chunk oldChunk = chunk;
-                        Definition oldDefinition = oldChunk.Definition;
-
-                        if (state == EntityState.DisabledButLocallyEnabled)
-                        {
-                            state = EntityState.Enabled;
-                        }
-
-                        //move to different chunk if disabled state changed
-                        bool enabled = state == EntityState.Enabled;
-                        if (oldDefinition.TagTypes.Contains(TagType.Disabled) == enabled)
-                        {
-                            Definition newDefinition = oldDefinition;
-                            if (enabled)
-                            {
-                                newDefinition.RemoveTagType(TagType.Disabled);
-                            }
-                            else
-                            {
-                                newDefinition.AddTagType(TagType.Disabled);
-                            }
-
-                            if (!chunks.TryGetValue(newDefinition, out Chunk destinationChunk))
-                            {
-                                destinationChunk = new(newDefinition, world->schema);
-                                chunks.Add(newDefinition, destinationChunk);
-                            }
-
-                            chunk = destinationChunk;
-                            oldChunk.MoveEntity(entity, destinationChunk);
-                        }
-
-                        NotifyParentChange(new(world), entity, oldParent, default);
+                        ref List<uint> currentParentChildren = ref world->children[oldParent - 1];
+                        currentParentChildren.RemoveAtBySwapping(currentParentChildren.IndexOf(entity));
                     }
 
-                    return false;
-                }
-                else
-                {
-                    if (currentParent != newParent)
+                    //add to new parents children list
+                    if (world->children.Count < newParent)
                     {
-                        uint oldParent = currentParent;
-                        currentParent = newParent;
-                        Dictionary<Definition, Chunk> chunks = world->chunks;
-                        Chunk oldChunk = chunk;
-                        Definition oldDefinition = oldChunk.Definition;
-
-                        //add to children list
-                        if (world->children.Count < newParent)
+                        uint toAdd = newParent - world->children.Count;
+                        for (uint i = 0; i < toAdd; i++)
                         {
-                            uint toAdd = newParent - world->children.Count;
-                            for (uint i = 0; i < toAdd; i++)
-                            {
-                                world->children.Add(default);
-                            }
+                            world->children.Add(default);
                         }
-
-                        ref List<uint> newParentChildren = ref world->children[newParent - 1];
-                        if (newParentChildren.IsDisposed)
-                        {
-                            newParentChildren = new(4);
-                        }
-
-                        newParentChildren.Add(entity);
-
-                        ref EntityState newParentSlot = ref world->states[newParent - 1];
-                        if (newParentSlot == EntityState.Disabled || newParentSlot == EntityState.DisabledButLocallyEnabled)
-                        {
-                            if (state == EntityState.Enabled)
-                            {
-                                state = EntityState.DisabledButLocallyEnabled;
-                            }
-                        }
-
-                        //move to different chunk if disabled state changed
-                        bool enabled = state == EntityState.Enabled;
-                        if (oldDefinition.TagTypes.Contains(TagType.Disabled) == enabled)
-                        {
-                            Definition newDefinition = oldDefinition;
-                            if (enabled)
-                            {
-                                newDefinition.RemoveTagType(TagType.Disabled);
-                            }
-                            else
-                            {
-                                newDefinition.AddTagType(TagType.Disabled);
-                            }
-
-                            if (!chunks.TryGetValue(newDefinition, out Chunk destinationChunk))
-                            {
-                                destinationChunk = new(newDefinition, world->schema);
-                                chunks.Add(newDefinition, destinationChunk);
-                            }
-
-                            chunk = destinationChunk;
-                            oldChunk.MoveEntity(entity, destinationChunk);
-                        }
-
-                        NotifyParentChange(new(world), entity, oldParent, newParent);
                     }
 
-                    return true;
+                    ref List<uint> newParentChildren = ref world->children[newParent - 1];
+                    if (newParentChildren.IsDisposed)
+                    {
+                        newParentChildren = new(4);
+                    }
+
+                    newParentChildren.Add(entity);
+
+                    //update state if parent is disabled
+                    if (state == EntityState.Enabled)
+                    {
+                        ref EntityState parentState = ref world->states[newParent - 1];
+                        if (parentState == EntityState.Disabled || parentState == EntityState.DisabledButLocallyEnabled)
+                        {
+                            state = EntityState.DisabledButLocallyEnabled;
+                        }
+                    }
+
+                    //move to different chunk if disabled state changed
+                    Chunk oldChunk = chunk;
+                    Definition oldDefinition = oldChunk.Definition;
+                    bool oldEnabled = !oldDefinition.TagTypes.Contains(TagType.Disabled);
+                    bool newEnabled = state == EntityState.Enabled;
+                    if (oldEnabled != newEnabled)
+                    {
+                        Definition newDefinition = oldDefinition;
+                        if (newEnabled)
+                        {
+                            newDefinition.RemoveTagType(TagType.Disabled);
+                        }
+                        else
+                        {
+                            newDefinition.AddTagType(TagType.Disabled);
+                        }
+
+                        if (!world->chunks.TryGetValue(newDefinition, out Chunk destinationChunk))
+                        {
+                            destinationChunk = new(newDefinition, world->schema);
+                            world->chunks.Add(newDefinition, destinationChunk);
+                        }
+
+                        chunk = destinationChunk;
+                        oldChunk.MoveEntity(entity, destinationChunk);
+                    }
+
+                    NotifyParentChange(new(world), entity, oldParent, newParent);
                 }
+
+                return parentChanged;
             }
 
             [Conditional("DEBUG")]

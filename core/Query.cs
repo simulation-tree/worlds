@@ -9,6 +9,56 @@ namespace Worlds
         private Definition required;
         private Definition exclude;
 
+        /// <summary>
+        /// Counts how many entities match this query.
+        /// </summary>
+        public readonly uint Count
+        {
+            get
+            {
+                uint count = 0;
+                foreach (Definition key in world.Chunks.Keys)
+                {
+                    //check if chunk contains inclusion
+                    if ((key.ComponentTypes & required.ComponentTypes) != required.ComponentTypes)
+                    {
+                        continue;
+                    }
+
+                    if ((key.ArrayElementTypes & required.ArrayElementTypes) != required.ArrayElementTypes)
+                    {
+                        continue;
+                    }
+
+                    if ((key.TagTypes & required.TagTypes) != required.TagTypes)
+                    {
+                        continue;
+                    }
+
+                    //check if chunk doesnt contain exclusion
+                    if (key.ComponentTypes.ContainsAny(exclude.ComponentTypes))
+                    {
+                        continue;
+                    }
+
+                    if (key.ArrayElementTypes.ContainsAny(exclude.ArrayElementTypes))
+                    {
+                        continue;
+                    }
+
+                    if (key.TagTypes.ContainsAny(exclude.TagTypes))
+                    {
+                        continue;
+                    }
+
+                    Chunk chunk = world.Chunks[key];
+                    count += chunk.Count;
+                }
+
+                return count;
+            }
+        }
+
 #if NET
         [Obsolete("Default constructor not supported", true)]
         public Query()

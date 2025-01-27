@@ -39,5 +39,23 @@
             Assert.That(world.GetChildCount(a), Is.EqualTo(0));
             Assert.That(world.GetChildCount(b), Is.EqualTo(1));
         }
+
+        [Test]
+        public void ChildrenUpdateAfterChildGetsDestroyed()
+        {
+            using World world = CreateWorld();
+            uint a = world.CreateEntity();
+            uint b = world.CreateEntity();
+
+            Assert.That(world.GetChildCount(a), Is.EqualTo(0));
+
+            world.SetParent(b, a);
+
+            Assert.That(world.GetChildCount(a), Is.EqualTo(1));
+
+            world.DestroyEntity(b);
+
+            Assert.That(world.GetChildCount(a), Is.EqualTo(0));
+        }
     }
 }

@@ -8,8 +8,10 @@
             using World world = CreateWorld();
             uint entity1 = world.CreateEntity();
             uint entity2 = world.CreateEntity();
+            Assert.That(world.ContainsReference(entity1, entity2), Is.False);
             ComponentThatReferences component = new(world.AddReference(entity1, entity2));
             Assert.That(world.GetReference(entity1, component.reference), Is.EqualTo(entity2));
+            Assert.That(world.ContainsReference(entity1, entity2), Is.True);
         }
 
         [Test]
