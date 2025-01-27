@@ -1,8 +1,6 @@
 ﻿using Collections;
-using System.Runtime.InteropServices;
 using Types;
 using Unmanaged;
-using Worlds.Functions;
 
 namespace Worlds.Tests
 {
@@ -151,21 +149,20 @@ namespace Worlds.Tests
             writer.WriteObject(prefabWorld);
 
             using BinaryReader reader = new(writer);
-            using World loadedWorld = World.Deserialize(reader, new(&Process));
+            using World loadedWorld = World.Deserialize(reader, Process);
 
             Schema loadedSchema = loadedWorld.Schema;
 
-            [UnmanagedCallersOnly]
-            static TypeLayout Process(ProcessSchema.Input input)
+            static TypeLayout Process(TypeLayout type, DataType.Kind dataType)
             {
-                if (input.type.Is<Fruit>())
+                if (type.Is<Fruit>())
                 {
                     //replace fruit with another
                     return TypeRegistry.Get<Another>();
                 }
                 else
                 {
-                    return input.type;
+                    return type;
                 }
             }
 

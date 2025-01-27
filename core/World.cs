@@ -1,6 +1,7 @@
 ﻿using Collections;
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Types;
 using Unmanaged;
 using Worlds.Functions;
@@ -864,24 +865,45 @@ namespace Worlds
         /// </summary>
         public readonly USpan<uint> GetChildren(uint entity)
         {
-            Implementation.ThrowIfEntityIsMissing(value, entity);
-
-            if (value->children.Count >= entity)
+            if (Implementation.TryGetChildren(value, entity, out USpan<uint> children))
             {
-                List<uint> children = value->children[entity - 1];
-                if (children.IsDisposed)
-                {
-                    return default;
-                }
-                else
-                {
-                    return children.AsSpan();
-                }
+                return children;
             }
             else
             {
                 return default;
             }
+        }
+
+        /// <summary>
+        /// Tries to retrieve all children of the <paramref name="entity"/> entity.
+        /// </summary>
+        public readonly bool TryGetChildren(uint entity, out USpan<uint> children)
+        {
+            return Implementation.TryGetChildren(value, entity, out children);
+        }
+
+        /// <summary>
+        /// Retrieves all entities referenced by <paramref name="entity"/>.
+        /// </summary>
+        public readonly USpan<uint> GetReferences(uint entity)
+        {
+            if (Implementation.TryGetReferences(value, entity, out USpan<uint> references))
+            {
+                return references;
+            }
+            else
+            {
+                return default;
+            }
+        }
+
+        /// <summary>
+        /// Tries to retrieve all entities referenced by <paramref name="entity"/>.
+        /// </summary>
+        public readonly bool TryGetReferences(uint entity, out USpan<uint> references)
+        {
+            return Implementation.TryGetReferences(value, entity, out references);
         }
 
         /// <summary>
@@ -1813,7 +1835,25 @@ namespace Worlds
         /// <summary>
         /// Deserializes a world from the given <paramref name="reader"/>.
         /// </summary>
-        public static World Deserialize(BinaryReader reader, ProcessSchema process = default)
+        public static World Deserialize(BinaryReader reader)
+        {
+            return new(Implementation.Deserialize(reader));
+        }
+
+        /// <summary>
+        /// Deserializes a world from the given <paramref name="reader"/>
+        /// with a custom schema processor.
+        /// </summary>
+        public static World Deserialize(BinaryReader reader, ProcessSchema process)
+        {
+            return new(Implementation.Deserialize(reader, process));
+        }
+
+        /// <summary>
+        /// Deserializes a world from the given <paramref name="reader"/>
+        /// with a custom schema processor.
+        /// </summary>
+        public static World Deserialize(BinaryReader reader, Func<TypeLayout, DataType.Kind, TypeLayout> process)
         {
             return new(Implementation.Deserialize(reader, process));
         }
@@ -2105,68 +2145,91 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(value);
 
+                World world = new(value);
                 writer.WriteValue(new Signature(Version));
                 writer.WriteObject(value->schema);
-
-                USpan<Chunk> chunksBuffer = stackalloc Chunk[(int)value->chunks.Count];
-                uint chunkCount = 0;
-                foreach (Chunk chunk in value->chunks.Values)
+                writer.WriteValue(world.Count);
+                writer.WriteValue(world.MaxEntityValue);
+                for (uint i = 0; i < value->states.Count; i++)
                 {
-                    if (chunk.Count > 0)
+                    if (value->states[i] == EntityState.Free)
                     {
-                        chunksBuffer[chunkCount++] = chunk;
+                        continue;
                     }
-                }
 
-                writer.WriteValue(chunkCount);
-                for (uint i = 0; i < chunkCount; i++)
-                {
-                    Chunk chunk = chunksBuffer[i];
-                    writer.WriteValue(chunk.Definition);
-                    writer.WriteValue(chunk.Count);
+                    uint entity = i + 1;
+                    Chunk chunk = value->entityChunks[i];
+                    Definition definition = chunk.Definition;
+                    writer.WriteValue(entity);
+                    writer.WriteValue(value->states[i]);
+                    writer.WriteValue(value->parents[i]);
+
+                    //write components
+                    writer.WriteValue(definition.ComponentTypes.Count);
                     for (byte c = 0; c < BitMask.Capacity; c++)
                     {
                         ComponentType componentType = new(c);
-                        if (chunk.Definition.ComponentTypes.Contains(componentType))
+                        if (definition.ComponentTypes.Contains(componentType))
                         {
-                            Collections.Implementations.List* components = chunk.GetComponents(componentType);
-                            USpan<byte> componentsAsBytes = Collections.Implementations.List.AsSpan<byte>(components);
-                            writer.WriteSpan(componentsAsBytes);
+                            writer.WriteValue(componentType);
+                            USpan<byte> componentBytes = world.GetComponentBytes(entity, componentType);
+                            writer.WriteSpan(componentBytes);
                         }
                     }
-                }
 
-                for (uint e = 0; e < value->states.Count; e++)
-                {
-                    uint entity = e + 1;
-                    EntityState state = value->states[e];
-                    uint parent = value->parents[e];
-                    writer.WriteValue(state);
-                    writer.WriteValue(parent);
-
-                    Definition definition = value->entityChunks[e].Definition;
+                    //write arrays
+                    writer.WriteValue(definition.ArrayElementTypes.Count);
                     for (byte a = 0; a < BitMask.Capacity; a++)
                     {
                         ArrayElementType arrayElementType = new(a);
                         if (definition.ArrayElementTypes.Contains(arrayElementType))
                         {
-                            Allocation array = GetArray(value, e + 1, arrayElementType, out uint length);
+                            writer.WriteValue(arrayElementType);
+                            Allocation array = world.GetArray(entity, arrayElementType, out uint length);
                             writer.WriteValue(length);
                             writer.WriteSpan(array.AsSpan<byte>(0, length * value->schema.GetSize(arrayElementType)));
                         }
                     }
 
+                    //write tags
+                    writer.WriteValue(definition.TagTypes.Count);
+                    for (byte t = 0; t < BitMask.Capacity; t++)
+                    {
+                        TagType tagType = new(t);
+                        if (definition.TagTypes.Contains(tagType))
+                        {
+                            writer.WriteValue(tagType);
+                        }
+                    }
+                }
+
+                //write references
+                for (uint i = 0; i < value->states.Count; i++)
+                {
+                    if (value->states[i] == EntityState.Free)
+                    {
+                        continue;
+                    }
+
+                    uint entity = i + 1;
                     if (TryGetReferences(value, entity, out USpan<uint> references))
                     {
-                        writer.WriteValue(true);
                         writer.WriteValue(references.Length);
                         writer.WriteSpan(references);
                     }
                     else
                     {
-                        writer.WriteValue(false);
+                        writer.WriteValue(0);
                     }
                 }
+            }
+
+            /// <summary>
+            /// Deserializes a new <see cref="World"/> from the data in the given <paramref name="reader"/>.
+            /// </summary>
+            public static Implementation* Deserialize(BinaryReader reader)
+            {
+                return Deserialize(reader, null);
             }
 
             /// <summary>
@@ -2176,7 +2239,22 @@ namespace Worlds
             /// present types into ones that are compatible with the current runtime.
             /// </para>
             /// </summary>
-            public static Implementation* Deserialize(BinaryReader reader, ProcessSchema process = default)
+            public static Implementation* Deserialize(BinaryReader reader, ProcessSchema process)
+            {
+                return Deserialize(reader, (type, dataType) =>
+                {
+                    return process.Invoke(type, dataType);
+                });
+            }
+
+            /// <summary>
+            /// Deserializes a new <see cref="World"/> from the data in the given <paramref name="reader"/>.
+            /// <para>
+            /// The <paramref name="process"/> function is optional, and allows for reintepreting the
+            /// present types into ones that are compatible with the current runtime.
+            /// </para>
+            /// </summary>
+            public static Implementation* Deserialize(BinaryReader reader, Func<TypeLayout, DataType.Kind, TypeLayout>? process)
             {
                 Signature signature = reader.ReadValue<Signature>();
                 if (signature.Version != Version)
@@ -2184,28 +2262,29 @@ namespace Worlds
                     throw new InvalidOperationException($"Invalid version `{signature.Version}` expected `{Version}`");
                 }
 
+                //deserialize the schema first
                 Schema schema = new();
                 using Schema loadedSchema = reader.ReadObject<Schema>();
-                if (process != default)
+                if (process is not null)
                 {
                     foreach (ComponentType componentType in loadedSchema.ComponentTypes)
                     {
                         TypeLayout typeLayout = loadedSchema.GetComponentLayout(componentType);
-                        process.Invoke(ref typeLayout, DataType.Kind.Component);
+                        typeLayout = process.Invoke(typeLayout, DataType.Kind.Component);
                         schema.RegisterComponent(typeLayout);
                     }
 
                     foreach (ArrayElementType arrayElementType in loadedSchema.ArrayElementTypes)
                     {
                         TypeLayout typeLayout = loadedSchema.GetArrayElementLayout(arrayElementType);
-                        process.Invoke(ref typeLayout, DataType.Kind.ArrayElement);
+                        typeLayout = process.Invoke(typeLayout, DataType.Kind.ArrayElement);
                         schema.RegisterArrayElement(typeLayout);
                     }
 
                     foreach (TagType tagType in loadedSchema.TagTypes)
                     {
                         TypeLayout typeLayout = loadedSchema.GetTagLayout(tagType);
-                        process.Invoke(ref typeLayout, DataType.Kind.Tag);
+                        typeLayout = process.Invoke(typeLayout, DataType.Kind.Tag);
                         schema.RegisterTag(typeLayout);
                     }
                 }
@@ -2215,45 +2294,89 @@ namespace Worlds
                 }
 
                 Implementation* value = Allocate(schema);
-                World world = new(value);
-                uint chunkCount = reader.ReadValue<uint>();
-                for (uint i = 0; i < chunkCount; i++)
+                uint entityCount = reader.ReadValue<uint>();
+                uint maxEntityValue = reader.ReadValue<uint>();
+                using Array<uint> entityMap = new(maxEntityValue + 1);
+                for (uint i = 0; i < entityCount; i++)
                 {
-                    Definition definition = reader.ReadValue<Definition>();
-                    uint entityCount = reader.ReadValue<uint>();
-                    for (uint e = 0; e < entityCount; e++)
+                    uint entity = reader.ReadValue<uint>();
+                    EntityState state = reader.ReadValue<EntityState>();
+                    uint parent = reader.ReadValue<uint>();
+
+                    uint createdEntity = CreateEntity(value, default, out _, out _);
+                    entityMap[entity] = createdEntity;
+                    value->states[createdEntity - 1] = state;
+                    value->parents[createdEntity - 1] = parent;
+
+                    //read components
+                    byte componentCount = reader.ReadValue<byte>();
+                    for (byte c = 0; c < componentCount; c++)
                     {
-                        CreateEntity(value, definition, out _, out _);
+                        ComponentType componentType = reader.ReadValue<ComponentType>();
+                        ushort componentSize = schema.GetSize(componentType);
+                        USpan<byte> componentData = reader.ReadSpan<byte>(componentSize);
+                        Allocation component = AddComponent(value, createdEntity, componentType, componentSize);
+                        componentData.CopyTo(component, componentSize);
                     }
 
-                    Chunk chunk = value->chunks[definition];
-                    for (byte c = 0; c < BitMask.Capacity; c++)
+                    //read arrays
+                    byte arrayCount = reader.ReadValue<byte>();
+                    for (byte a = 0; a < arrayCount; a++)
                     {
-                        ComponentType componentType = new(c);
-                        if (definition.ComponentTypes.Contains(componentType))
-                        {
-                            Collections.Implementations.List* components = chunk.GetComponents(componentType);
-                            USpan<byte> componentsAsBytes = Collections.Implementations.List.AsSpan<byte>(components);
-                            USpan<byte> span = reader.ReadSpan<byte>(componentsAsBytes.Length);
-                            span.CopyTo(componentsAsBytes);
-                        }
+                        ArrayElementType arrayElementType = reader.ReadValue<ArrayElementType>();
+                        uint length = reader.ReadValue<uint>();
+                        Allocation array = CreateArray(value, createdEntity, arrayElementType, schema.GetSize(arrayElementType), length);
+                        USpan<byte> arrayData = reader.ReadSpan<byte>(length * schema.GetSize(arrayElementType));
+                        arrayData.CopyTo(array.AsSpan<byte>(0, length * schema.GetSize(arrayElementType)));
+                    }
+
+                    //read tags
+                    byte tagCount = reader.ReadValue<byte>();
+                    for (byte t = 0; t < tagCount; t++)
+                    {
+                        TagType tagType = reader.ReadValue<TagType>();
+                        AddTag(value, createdEntity, tagType);
                     }
                 }
 
-                for (uint e = 0; e < value->states.Count; e++)
+                //assign references and children
+                for (uint i = 0; i < value->states.Count; i++)
                 {
-                    uint entity = e + 1;
-                    EntityState state = reader.ReadValue<EntityState>();
-                    uint parent = reader.ReadValue<uint>();
-                    value->states[e] = state;
-                    value->parents[e] = parent;
+                    if (value->states[i] == EntityState.Free)
+                    {
+                        continue;
+                    }
 
+                    uint createdEntity = i + 1;
+                    uint referenceCount = reader.ReadValue<uint>();
+                    if (referenceCount > 0)
+                    {
+                        if (value->references.Count < createdEntity)
+                        {
+                            uint toAdd = createdEntity - value->references.Count;
+                            for (uint r = 0; r < toAdd; r++)
+                            {
+                                value->references.Add(default);
+                            }
+                        }
+
+                        ref List<uint> references = ref value->references[createdEntity - 1];
+                        references = new(referenceCount);
+                        for (uint r = 0; r < referenceCount; r++)
+                        {
+                            uint referencedEntity = reader.ReadValue<uint>();
+                            uint createdReferencesEntity = entityMap[referencedEntity];
+                            references.Add(createdReferencesEntity);
+                        }
+                    }
+
+                    uint parent = value->parents[createdEntity - 1];
                     if (parent != default)
                     {
                         if (value->children.Count < parent)
                         {
                             uint toAdd = parent - value->children.Count;
-                            for (uint i = 0; i < toAdd; i++)
+                            for (uint c = 0; c < toAdd; c++)
                             {
                                 value->children.Add(default);
                             }
@@ -2265,32 +2388,7 @@ namespace Worlds
                             children = new(4);
                         }
 
-                        children.Add(entity);
-                    }
-
-                    Definition definition = value->entityChunks[entity - 1].Definition;
-                    for (byte a = 0; a < BitMask.Capacity; a++)
-                    {
-                        ArrayElementType arrayElementType = new(a);
-                        if (definition.ArrayElementTypes.Contains(arrayElementType))
-                        {
-                            uint length = reader.ReadValue<uint>();
-                            ushort arrayElementSize = schema.GetSize(arrayElementType);
-                            Allocation array = ResizeArray(value, entity, arrayElementType, arrayElementSize, length);
-                            USpan<byte> span = reader.ReadSpan<byte>(length * arrayElementSize);
-                            span.CopyTo(array.AsSpan<byte>(0, length * arrayElementSize));
-                        }
-                    }
-
-                    bool hasReferences = reader.ReadValue<bool>();
-                    if (hasReferences)
-                    {
-                        uint referenceCount = reader.ReadValue<uint>();
-                        USpan<uint> references = reader.ReadSpan<uint>(referenceCount);
-                        for (uint r = 0; r < referenceCount; r++)
-                        {
-                            world.AddReference(entity, references[r]);
-                        }
+                        children.Add(createdEntity);
                     }
                 }
 

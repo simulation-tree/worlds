@@ -42,7 +42,7 @@ namespace Worlds
             }
         }
 
-        public readonly Kind DataKind => (Kind)(typeAndSize & 0b11);
+        public readonly Kind Type => (Kind)(typeAndSize & 0b11);
 
         /// <summary>
         /// Size of the data type.
@@ -52,9 +52,9 @@ namespace Worlds
         /// </summary>
         public readonly ushort Size => (ushort)(typeAndSize >> 2);
 
-        public readonly bool IsComponent => DataKind == Kind.Component;
-        public readonly bool IsArrayElement => DataKind == Kind.ArrayElement;
-        public readonly bool IsTag => DataKind == Kind.Tag;
+        public readonly bool IsComponent => Type == Kind.Component;
+        public readonly bool IsArrayElement => Type == Kind.ArrayElement;
+        public readonly bool IsTag => Type == Kind.Tag;
 
 #if NET
         [Obsolete("Default constructor not supported", true)]
@@ -103,7 +103,7 @@ namespace Worlds
 
         public readonly uint ToString(Schema schema, USpan<char> destination)
         {
-            Kind type = DataKind;
+            Kind type = Type;
             if (type == Kind.Component)
             {
                 ComponentType componentType = new(index);
@@ -135,7 +135,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfNotComponent()
         {
-            if (DataKind != Kind.Component)
+            if (Type != Kind.Component)
             {
                 throw new("Not a component type");
             }
@@ -144,7 +144,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfNotArrayElement()
         {
-            if (DataKind != Kind.ArrayElement)
+            if (Type != Kind.ArrayElement)
             {
                 throw new("Not an array element type");
             }
@@ -153,7 +153,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfNotTag()
         {
-            if (DataKind != Kind.Tag)
+            if (Type != Kind.Tag)
             {
                 throw new("Not a tag type");
             }

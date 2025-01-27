@@ -33,6 +33,11 @@ namespace Worlds.Functions
             type = newType;
         }
 
+        public readonly TypeLayout Invoke(TypeLayout type, DataType.Kind dataType)
+        {
+            return function(new Input(type, dataType));
+        }
+
         public static bool operator ==(ProcessSchema left, ProcessSchema right)
         {
             return left.Equals(right);
