@@ -1,4 +1,5 @@
-﻿using Unmanaged;
+﻿using Collections;
+using Unmanaged;
 
 namespace Worlds.Tests
 {
@@ -16,6 +17,26 @@ namespace Worlds.Tests
             copy.CopyFrom(schema);
 
             Assert.That(copy.ContainsComponent<Stress>(), Is.True);
+        }
+
+        [Test]
+        public void IterateAndFetchLayouts()
+        {
+            using Schema schema = new();
+            ComponentType c1 = schema.RegisterComponent<Stress>();
+            ComponentType c2 = schema.RegisterComponent<float>();
+            ComponentType c3 = schema.RegisterComponent<char>();
+
+            using List<ComponentType> componentTypes = new();
+            foreach (ComponentType componentType in schema.ComponentTypes)
+            {
+                componentTypes.Add(componentType);
+            }
+
+            Assert.That(componentTypes.Count, Is.EqualTo(3));
+            Assert.That(componentTypes.Contains(c1), Is.True);
+            Assert.That(componentTypes.Contains(c2), Is.True);
+            Assert.That(componentTypes.Contains(c3), Is.True);
         }
 
         [Test]

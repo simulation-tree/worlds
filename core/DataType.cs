@@ -109,7 +109,7 @@ namespace Worlds
                 ComponentType componentType = new(index);
                 if (schema.Contains(componentType))
                 {
-                    return schema.GetLayout(componentType).ToString(destination);
+                    return schema.GetComponentLayout(componentType).ToString(destination);
                 }
             }
             else if (type == Kind.ArrayElement)
@@ -117,7 +117,7 @@ namespace Worlds
                 ArrayElementType arrayElementType = new(index);
                 if (schema.Contains(arrayElementType))
                 {
-                    return schema.GetLayout(arrayElementType).ToString(destination);
+                    return schema.GetArrayElementLayout(arrayElementType).ToString(destination);
                 }
             }
             else if (type == Kind.Tag)
@@ -125,7 +125,7 @@ namespace Worlds
                 TagType tagType = new(index);
                 if (schema.Contains(tagType))
                 {
-                    return schema.GetLayout(tagType).ToString(destination);
+                    return schema.GetTagLayout(tagType).ToString(destination);
                 }
             }
 

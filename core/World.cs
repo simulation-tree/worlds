@@ -13,6 +13,8 @@ namespace Worlds
     /// </summary>
     public unsafe struct World : IDisposable, IEquatable<World>, ISerializable
     {
+        public const uint Version = 1;
+
         private Implementation* value;
 
         /// <summary>
@@ -1788,6 +1790,14 @@ namespace Worlds
             return new(Implementation.Allocate(Schema.Create()));
         }
 
+        /// <summary>
+        /// Deserializes a world from the given <paramref name="reader"/>.
+        /// </summary>
+        public static World Deserialize(BinaryReader reader, ProcessSchema process = default)
+        {
+            return new(Implementation.Deserialize(reader, process));
+        }
+
         /// <inheritdoc/>
         public static bool operator ==(World left, World right)
         {
@@ -2075,19 +2085,36 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(value);
 
-                //(a) write components, arrays and tags used
-                //find non empty chunks
-                //for each chunk:
-                //    write the component, arrays and tags referenced with an index into (a)
-                //    write how many entities there are
-                //    for each entity:
-                //        write the entity state
-                //        write the parent entity
-                //        write all references
-                //    for each component stored in the chunk:
-                //        write the entire component array
-                //    for each array stored in the chunk:
-                //        write the entire array
+                writer.WriteValue(new Signature(Version));
+                writer.WriteObject(value->schema);
+
+                USpan<Chunk> chunksBuffer = stackalloc Chunk[(int)value->chunks.Count];
+                uint chunkCount = 0;
+                foreach (Chunk chunk in value->chunks.Values)
+                {
+                    if (chunk.Count > 0)
+                    {
+                        chunksBuffer[chunkCount++] = chunk;
+                    }
+                }
+
+                writer.WriteValue(chunkCount);
+                for (uint i = 0; i < chunkCount; i++)
+                {
+                    Chunk chunk = chunksBuffer[i];
+                    writer.WriteValue(chunk.Definition);
+                    writer.WriteValue(chunk.Count);
+                    for (byte c = 0; c < BitMask.Capacity; c++)
+                    {
+                        ComponentType componentType = new(c);
+                        if (chunk.Definition.ComponentTypes.Contains(componentType))
+                        {
+                            Collections.Implementations.List* components = chunk.GetComponents(componentType);
+                            USpan<byte> componentsAsBytes = Collections.Implementations.List.AsSpan<byte>(components);
+                            writer.WriteSpan(componentsAsBytes);
+                        }
+                    }
+                }
             }
 
             /// <summary>
@@ -2099,23 +2126,35 @@ namespace Worlds
             /// </summary>
             public static Implementation* Deserialize(BinaryReader reader, ProcessSchema process = default)
             {
+                Signature signature = reader.ReadValue<Signature>();
+                if (signature.Version != Version)
+                {
+                    throw new InvalidOperationException($"Invalid version `{signature.Version}` expected `{Version}`");
+                }
+
                 Schema schema = new();
                 using Schema loadedSchema = reader.ReadObject<Schema>();
                 if (process != default)
                 {
-                    foreach (TypeLayout typeLayout in loadedSchema.ComponentTypes)
+                    foreach (ComponentType componentType in loadedSchema.ComponentTypes)
                     {
-                        process.Invoke(schema, typeLayout, DataType.Kind.Component);
+                        TypeLayout typeLayout = loadedSchema.GetComponentLayout(componentType);
+                        process.Invoke(ref typeLayout, DataType.Kind.Component);
+                        schema.RegisterComponent(typeLayout);
                     }
 
-                    foreach (TypeLayout typeLayout in loadedSchema.ArrayElementTypes)
+                    foreach (ArrayElementType arrayElementType in loadedSchema.ArrayElementTypes)
                     {
-                        process.Invoke(schema, typeLayout, DataType.Kind.ArrayElement);
+                        TypeLayout typeLayout = loadedSchema.GetArrayElementLayout(arrayElementType);
+                        process.Invoke(ref typeLayout, DataType.Kind.ArrayElement);
+                        schema.RegisterArrayElement(typeLayout);
                     }
 
-                    foreach (TypeLayout typeLayout in loadedSchema.TagTypes)
+                    foreach (TagType tagType in loadedSchema.TagTypes)
                     {
-                        process.Invoke(schema, typeLayout, DataType.Kind.Tag);
+                        TypeLayout typeLayout = loadedSchema.GetTagLayout(tagType);
+                        process.Invoke(ref typeLayout, DataType.Kind.Tag);
+                        schema.RegisterTag(typeLayout);
                     }
                 }
                 else
@@ -2124,6 +2163,30 @@ namespace Worlds
                 }
 
                 Implementation* value = Allocate(schema);
+                uint chunkCount = reader.ReadValue<uint>();
+                for (uint i = 0; i < chunkCount; i++)
+                {
+                    Definition definition = reader.ReadValue<Definition>();
+                    uint entityCount = reader.ReadValue<uint>();
+                    for (uint e = 0; e < entityCount; e++)
+                    {
+                        CreateEntity(value, definition, out _, out _);
+                    }
+
+                    Chunk chunk = value->chunks[definition];
+                    for (byte c = 0; c < BitMask.Capacity; c++)
+                    {
+                        ComponentType componentType = new(c);
+                        if (definition.ComponentTypes.Contains(componentType))
+                        {
+                            Collections.Implementations.List* components = chunk.GetComponents(componentType);
+                            USpan<byte> componentsAsBytes = Collections.Implementations.List.AsSpan<byte>(components);
+                            USpan<byte> span = reader.ReadSpan<byte>(componentsAsBytes.Length);
+                            span.CopyTo(componentsAsBytes);
+                        }
+                    }
+                }
+
                 return value;
             }
 

@@ -66,7 +66,7 @@ namespace Worlds
         {
             if (schema.Contains(this))
             {
-                return schema.GetLayout(this).ToString(destination);
+                return schema.GetComponentLayout(this).ToString(destination);
             }
             else
             {
@@ -97,7 +97,7 @@ namespace Worlds
         /// </summary>
         public readonly TypeLayout GetLayout(Schema schema)
         {
-            return schema.GetLayout(this);
+            return schema.GetComponentLayout(this);
         }
 
         public static bool operator ==(ComponentType left, ComponentType right)

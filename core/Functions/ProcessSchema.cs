@@ -5,9 +5,9 @@ namespace Worlds.Functions
 {
     public unsafe readonly struct ProcessSchema : IEquatable<ProcessSchema>
     {
-        private readonly delegate* unmanaged<Input, void> function;
+        private readonly delegate* unmanaged<Input, TypeLayout> function;
 
-        public ProcessSchema(delegate* unmanaged<Input, void> function)
+        public ProcessSchema(delegate* unmanaged<Input, TypeLayout> function)
         {
             this.function = function;
         }
@@ -27,9 +27,10 @@ namespace Worlds.Functions
             return ((nint)function).GetHashCode();
         }
 
-        public readonly void Invoke(Schema schema, TypeLayout typeLayout, DataType.Kind type)
+        public readonly void Invoke(ref TypeLayout type, DataType.Kind dataType)
         {
-            function(new Input(schema, typeLayout, type));
+            TypeLayout newType = function(new Input(type, dataType));
+            type = newType;
         }
 
         public static bool operator ==(ProcessSchema left, ProcessSchema right)
@@ -42,17 +43,15 @@ namespace Worlds.Functions
             return !(left == right);
         }
 
-        public readonly struct Input
+        public ref struct Input
         {
-            public readonly Schema schema;
-            public readonly TypeLayout typeLayout;
-            public readonly DataType.Kind type;
+            public readonly TypeLayout type;
+            public readonly DataType.Kind dataType;
 
-            public Input(Schema schema, TypeLayout typeLayout, DataType.Kind type)
+            public Input(TypeLayout type, DataType.Kind dataType)
             {
-                this.schema = schema;
-                this.typeLayout = typeLayout;
                 this.type = type;
+                this.dataType = dataType;
             }
         }
     }

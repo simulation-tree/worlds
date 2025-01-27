@@ -18,16 +18,16 @@ namespace Worlds
         /// <summary>
         /// All component types loaded.
         /// </summary>
-        public readonly System.Collections.Generic.IEnumerable<TypeLayout> ComponentTypes
+        public readonly System.Collections.Generic.IEnumerable<ComponentType> ComponentTypes
         {
             get
             {
                 for (byte c = 0; c < BitMask.Capacity; c++)
                 {
-                    TypeLayout typeLayout = GetLayout(new ComponentType(c));
-                    if (typeLayout != default)
+                    ComponentType componentType = new(c);
+                    if (Contains(componentType))
                     {
-                        yield return typeLayout;
+                        yield return componentType;
                     }
                 }
             }
@@ -36,16 +36,16 @@ namespace Worlds
         /// <summary>
         /// All array element types loaded.
         /// </summary>
-        public readonly System.Collections.Generic.IEnumerable<TypeLayout> ArrayElementTypes
+        public readonly System.Collections.Generic.IEnumerable<ArrayElementType> ArrayElementTypes
         {
             get
             {
                 for (byte a = 0; a < BitMask.Capacity; a++)
                 {
-                    TypeLayout typeLayout = GetLayout(new ArrayElementType(a));
-                    if (typeLayout != default)
+                    ArrayElementType arrayElementType = new(a);
+                    if (Contains(arrayElementType))
                     {
-                        yield return typeLayout;
+                        yield return arrayElementType;
                     }
                 }
             }
@@ -54,16 +54,16 @@ namespace Worlds
         /// <summary>
         /// All tag types loaded.
         /// </summary>
-        public readonly System.Collections.Generic.IEnumerable<TypeLayout> TagTypes
+        public readonly System.Collections.Generic.IEnumerable<TagType> TagTypes
         {
             get
             {
                 for (byte t = 0; t < BitMask.Capacity; t++)
                 {
-                    TypeLayout typeLayout = GetLayout(new TagType(t));
-                    if (typeLayout != default)
+                    TagType tagType = new(t);
+                    if (Contains(tagType))
                     {
-                        yield return typeLayout;
+                        yield return tagType;
                     }
                 }
             }
@@ -166,7 +166,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the type layout for the given <paramref name="componentType"/>.
         /// </summary>
-        public readonly TypeLayout GetLayout(ComponentType componentType)
+        public readonly TypeLayout GetComponentLayout(ComponentType componentType)
         {
             ThrowIfComponentIsMissing(componentType);
 
@@ -176,7 +176,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the type layout for the given <paramref name="arrayElementType"/>.
         /// </summary>
-        public readonly TypeLayout GetLayout(ArrayElementType arrayElementType)
+        public readonly TypeLayout GetArrayElementLayout(ArrayElementType arrayElementType)
         {
             ThrowIfArrayElementIsMissing(arrayElementType);
 
@@ -186,7 +186,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the type layout for the given <paramref name="tagType"/>.
         /// </summary>
-        public readonly TypeLayout GetLayout(TagType tagType)
+        public readonly TypeLayout GetTagLayout(TagType tagType)
         {
             ThrowIfTagIsMissing(tagType);
 
@@ -195,7 +195,7 @@ namespace Worlds
 
         public readonly TypeLayout GetComponentLayout<T>() where T : unmanaged
         {
-            return GetLayout(GetComponent<T>());
+            return GetComponentLayout(GetComponent<T>());
         }
 
         public readonly bool TryGetComponentLayout(FixedString fullTypeName, out TypeLayout componentType)
@@ -232,69 +232,75 @@ namespace Worlds
             return false;
         }
 
-        public readonly void RegisterComponent<T>() where T : unmanaged
+        public readonly ComponentType RegisterComponent<T>() where T : unmanaged
         {
-            RegisterComponent(TypeRegistry.Get<T>());
+            return RegisterComponent(TypeRegistry.Get<T>());
         }
 
-        public readonly void RegisterComponent(TypeLayout type)
+        public readonly ComponentType RegisterComponent(TypeLayout type)
         {
             ThrowIfTooManyComponents();
             ThrowIfComponentAlreadyRegistered(type);
 
             USpan<TypeLayout> typeLayouts = Implementation.GetComponentLayouts(schema);
             USpan<ushort> componentSizes = Implementation.GetComponentSizes(schema);
-            typeLayouts[schema->components] = type;
-            componentSizes[schema->components] = type.Size;
+            ComponentType componentType = new(schema->components);
+            typeLayouts[componentType] = type;
+            componentSizes[componentType] = type.Size;
             int hashCode = type.GetHashCode();
-            schema->componentIndices.Add(hashCode, schema->components);
+            schema->componentIndices.Add(hashCode, componentType);
             schema->components++;
+            return componentType;
         }
 
-        public readonly void RegisterArrayElement<T>() where T : unmanaged
+        public readonly ArrayElementType RegisterArrayElement<T>() where T : unmanaged
         {
-            RegisterArrayElement(TypeRegistry.Get<T>());
+            return RegisterArrayElement(TypeRegistry.Get<T>());
         }
 
-        public readonly void RegisterArrayElement(TypeLayout type)
+        public readonly ArrayElementType RegisterArrayElement(TypeLayout type)
         {
             ThrowIfTooManyArrays();
             ThrowIfArrayElementAlreadyRegistered(type);
 
+            ArrayElementType arrayElementType = new(schema->arrays);
             USpan<TypeLayout> typeLayouts = Implementation.GetArrayLayouts(schema);
             USpan<ushort> arrayElementSizes = Implementation.GetArrayElementSizes(schema);
-            typeLayouts[schema->arrays] = type;
-            arrayElementSizes[schema->arrays] = type.Size;
+            typeLayouts[arrayElementType] = type;
+            arrayElementSizes[arrayElementType] = type.Size;
             int hashCode = type.GetHashCode();
-            schema->arrayElementIndices.Add(hashCode, schema->arrays);
+            schema->arrayElementIndices.Add(hashCode, arrayElementType);
             schema->arrays++;
+            return arrayElementType;
         }
 
-        public readonly void RegisterTag<T>() where T : unmanaged
+        public readonly TagType RegisterTag<T>() where T : unmanaged
         {
-            RegisterTag(TypeRegistry.Get<T>());
+            return RegisterTag(TypeRegistry.Get<T>());
         }
 
-        public readonly void RegisterTag(TypeLayout type)
+        public readonly TagType RegisterTag(TypeLayout type)
         {
             ThrowIfTooManyTags();
             ThrowIfTagAlreadyRegistered(type);
 
+            TagType tagType = new(schema->tags);
             USpan<TypeLayout> typeLayouts = Implementation.GetTagLayouts(schema);
-            typeLayouts[schema->tags] = type;
-            schema->tagIndices.Add(type.GetHashCode(), schema->tags);
-            schema->tagExistence.Write(schema->tags, true);
+            typeLayouts[tagType] = type;
+            schema->tagIndices.Add(type.GetHashCode(), tagType);
+            schema->tagExistence.Write(tagType, true);
             schema->tags++;
+            return tagType;
         }
 
         public readonly bool Contains(ComponentType componentType)
         {
-            return GetSize(componentType) != default;
+            return schema->sizes.Read<ushort>(componentType.index * 2u) != default;
         }
 
         public readonly bool Contains(ArrayElementType arrayElementType)
         {
-            return GetSize(arrayElementType) != default;
+            return schema->sizes.Read<ushort>(BitMask.Capacity * 2 + arrayElementType.index * 2u) != default;
         }
 
         public readonly bool Contains(TagType tagType)
