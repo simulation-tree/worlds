@@ -198,11 +198,26 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Creates new entities with the data from the given <paramref name="sourceWorld"/>.
+        /// Appends entities from the given <paramref name="sourceWorld"/>.
         /// </summary>
         public readonly void Append(World sourceWorld)
         {
-            //todo: implement
+            Dictionary<Definition, Chunk> chunks = Chunks;
+            for (uint i = 0; i < sourceWorld.States.Count; i++)
+            {
+                uint sourceEntity = i + 1;
+                if (sourceWorld.Free.Contains(sourceEntity))
+                {
+                    continue;
+                }
+
+                Chunk sourceChunk = sourceWorld.value->entityChunks[i];
+                Definition sourceDefinition = sourceChunk.Definition;
+                uint destinationEntity = CreateEntity(sourceDefinition, out Chunk chunk, out _);
+                sourceWorld.CopyComponentsTo(sourceEntity, this, destinationEntity);
+                sourceWorld.CopyArraysTo(sourceEntity, this, destinationEntity);
+                sourceWorld.CopyTagsTo(sourceEntity, this, destinationEntity);
+            }
         }
 
         /// <summary>
@@ -2115,6 +2130,38 @@ namespace Worlds
                         }
                     }
                 }
+
+                for (uint e = 0; e < value->states.Count; e++)
+                {
+                    uint entity = e + 1;
+                    EntityState state = value->states[e];
+                    uint parent = value->parents[e];
+                    writer.WriteValue(state);
+                    writer.WriteValue(parent);
+
+                    Definition definition = value->entityChunks[e].Definition;
+                    for (byte a = 0; a < BitMask.Capacity; a++)
+                    {
+                        ArrayElementType arrayElementType = new(a);
+                        if (definition.ArrayElementTypes.Contains(arrayElementType))
+                        {
+                            Allocation array = GetArray(value, e + 1, arrayElementType, out uint length);
+                            writer.WriteValue(length);
+                            writer.WriteSpan(array.AsSpan<byte>(0, length * value->schema.GetSize(arrayElementType)));
+                        }
+                    }
+
+                    if (TryGetReferences(value, entity, out USpan<uint> references))
+                    {
+                        writer.WriteValue(true);
+                        writer.WriteValue(references.Length);
+                        writer.WriteSpan(references);
+                    }
+                    else
+                    {
+                        writer.WriteValue(false);
+                    }
+                }
             }
 
             /// <summary>
@@ -2163,6 +2210,7 @@ namespace Worlds
                 }
 
                 Implementation* value = Allocate(schema);
+                World world = new(value);
                 uint chunkCount = reader.ReadValue<uint>();
                 for (uint i = 0; i < chunkCount; i++)
                 {
@@ -2183,6 +2231,60 @@ namespace Worlds
                             USpan<byte> componentsAsBytes = Collections.Implementations.List.AsSpan<byte>(components);
                             USpan<byte> span = reader.ReadSpan<byte>(componentsAsBytes.Length);
                             span.CopyTo(componentsAsBytes);
+                        }
+                    }
+                }
+
+                for (uint e = 0; e < value->states.Count; e++)
+                {
+                    uint entity = e + 1;
+                    EntityState state = reader.ReadValue<EntityState>();
+                    uint parent = reader.ReadValue<uint>();
+                    value->states[e] = state;
+                    value->parents[e] = parent;
+
+                    if (parent != default)
+                    {
+                        if (value->children.Count < parent)
+                        {
+                            uint toAdd = parent - value->children.Count;
+                            for (uint i = 0; i < toAdd; i++)
+                            {
+                                value->children.Add(default);
+                            }
+                        }
+
+                        ref List<uint> children = ref value->children[parent - 1];
+                        if (children.IsDisposed)
+                        {
+                            children = new(4);
+                        }
+
+                        children.Add(entity);
+                    }
+
+                    Definition definition = value->entityChunks[entity - 1].Definition;
+                    for (byte a = 0; a < BitMask.Capacity; a++)
+                    {
+                        ArrayElementType arrayElementType = new(a);
+                        if (definition.ArrayElementTypes.Contains(arrayElementType))
+                        {
+                            uint length = reader.ReadValue<uint>();
+                            ushort arrayElementSize = schema.GetSize(arrayElementType);
+                            Allocation array = ResizeArray(value, entity, arrayElementType, arrayElementSize, length);
+                            USpan<byte> span = reader.ReadSpan<byte>(length * arrayElementSize);
+                            span.CopyTo(array.AsSpan<byte>(0, length * arrayElementSize));
+                        }
+                    }
+
+                    bool hasReferences = reader.ReadValue<bool>();
+                    if (hasReferences)
+                    {
+                        uint referenceCount = reader.ReadValue<uint>();
+                        USpan<uint> references = reader.ReadSpan<uint>(referenceCount);
+                        for (uint r = 0; r < referenceCount; r++)
+                        {
+                            world.AddReference(entity, references[r]);
                         }
                     }
                 }
@@ -2403,6 +2505,25 @@ namespace Worlds
                 }
 
                 return contains;
+            }
+
+            public static bool TryGetReferences(Implementation* world, uint entity, out USpan<uint> references)
+            {
+                Allocations.ThrowIfNull(world);
+                ThrowIfEntityIsMissing(world, entity);
+
+                references = default;
+                if (world->references.Count >= entity)
+                {
+                    List<uint> referencesList = world->references[entity - 1];
+                    if (!referencesList.IsDisposed)
+                    {
+                        references = referencesList.AsSpan();
+                        return true;
+                    }
+                }
+
+                return false;
             }
 
             /// <summary>

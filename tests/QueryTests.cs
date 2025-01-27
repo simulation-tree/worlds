@@ -459,6 +459,32 @@ namespace Worlds.Tests
         }
 
         [Test]
+        public void FindEntityWithTag()
+        {
+            using World world = CreateWorld();
+            uint a = world.CreateEntity();
+            uint b = world.CreateEntity();
+            uint c = world.CreateEntity();
+            uint d = world.CreateEntity();
+            world.AddComponent(a, new Apple());
+            world.AddComponent(b, new Another());
+            world.AddTag<IsThing>(b);
+            world.AddTag<IsThing>(d);
+
+            using List<uint> entities = new();
+            Query query = new(world);
+            query.RequireTag<IsThing>();
+            foreach (uint entity in query)
+            {
+                entities.Add(entity);
+            }
+
+            Assert.That(entities.Count, Is.EqualTo(2));
+            Assert.That(entities.Contains(b), Is.True);
+            Assert.That(entities.Contains(d), Is.True);
+        }
+
+        [Test]
         public void BenchmarkMethods()
         {
             using World world = CreateWorld();
