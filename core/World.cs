@@ -852,12 +852,15 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Assigns the given <paramref name="parent"/> entity to the given <paramref name="entity"/>.
+        /// Assigns the given <paramref name="newParent"/> to the given <paramref name="entity"/>.
+        /// <para>
+        /// If the given <paramref name="newParent"/> isn't valid, it will be set to <see langword="default"/>.
+        /// </para>
         /// </summary>
-        /// <returns><c>true</c> if the given parent entity was found and assigned successfuly.</returns>
-        public readonly bool SetParent(uint entity, uint parent)
+        /// <returns><see langword="true"/> if parent changed.</returns>
+        public readonly bool SetParent(uint entity, uint newParent)
         {
-            return Implementation.SetParent(value, entity, parent);
+            return Implementation.SetParent(value, entity, newParent);
         }
 
         /// <summary>
@@ -1127,7 +1130,13 @@ namespace Worlds
 
             ref List<uint> references = ref value->references[entity - 1];
             uint index = (uint)reference;
-            return references.RemoveAt(index - 1);
+            uint referencedEntity = references.RemoveAt(index - 1);
+            if (references.Count == 0)
+            {
+                references.Dispose();
+            }
+
+            return referencedEntity;
         }
 
         /// <summary>
@@ -1147,6 +1156,11 @@ namespace Worlds
 
             uint index = references.IndexOf(referencedEntity);
             references.RemoveAt(index);
+            if (references.Count == 0)
+            {
+                references.Dispose();
+            }
+
             return (rint)(index + 1);
         }
 
@@ -2095,34 +2109,6 @@ namespace Worlds
 
                 ClearEntities(world);
 
-                for (uint r = 0; r < world->references.Count; r++)
-                {
-                    world->references[r].Dispose();
-                }
-
-                for (uint c = 0; c < world->children.Count; c++)
-                {
-                    world->children[c].Dispose();
-                }
-
-                for (uint a = 0; a < world->arrays.Count; a++)
-                {
-                    ref Array<nint> arrays = ref world->arrays[a];
-                    if (!arrays.IsDisposed)
-                    {
-                        for (uint i = 0; i < arrays.Length; i++)
-                        {
-                            Array* array = (Array*)arrays[i];
-                            if (array is not null)
-                            {
-                                Array.Free(ref array);
-                            }
-                        }
-
-                        arrays.Dispose();
-                    }
-                }
-
                 world->entityCreatedOrDestroyed.Dispose();
                 world->entityParentChanged.Dispose();
                 world->entityDataChanged.Dispose();
@@ -2479,6 +2465,7 @@ namespace Worlds
                     world->parents.Add(default);
                 }
 
+                //create arrays if necessary
                 BitMask arrayElementTypes = definition.ArrayElementTypes;
                 if (arrayElementTypes != default)
                 {
@@ -2639,7 +2626,11 @@ namespace Worlds
 
             /// <summary>
             /// Assigns the given <paramref name="newParent"/> to the given <paramref name="entity"/>.
+            /// <para>
+            /// If the given <paramref name="newParent"/> isn't valid, it will be set to <see langword="default"/>.
+            /// </para>
             /// </summary>
+            /// <returns><see langword="true"/> if parent changed.</returns>
             public static bool SetParent(Implementation* world, uint entity, uint newParent)
             {
                 Allocations.ThrowIfNull(world);
@@ -2735,24 +2726,8 @@ namespace Worlds
             [Conditional("DEBUG")]
             private static void TraceCreation(Implementation* world, uint entity)
             {
-                StackTrace stackTrace = new(2, true);
-                if (stackTrace.FrameCount > 0)
-                {
-                    string? firstFrame = stackTrace.GetFrame(0)?.GetFileName();
-                    if (firstFrame != null && firstFrame.EndsWith("World.cs"))
-                    {
-                        stackTrace = new(3, true);
-                    }
-
-                    firstFrame = stackTrace.GetFrame(0)?.GetFileName();
-                    if (firstFrame != null && firstFrame.EndsWith("Entity.cs"))
-                    {
-                        stackTrace = new(4, true);
-                    }
-                }
-
 #if DEBUG
-                createStackTraces[new Entity(new World(world), entity)] = stackTrace;
+                createStackTraces[new Entity(new World(world), entity)] = new StackTrace(2, true);
 #endif
             }
 

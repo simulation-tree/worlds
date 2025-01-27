@@ -493,7 +493,7 @@ namespace Worlds.Tests
             ComponentType appleType = world.Schema.GetComponent<Apple>();
             ComponentType berryType = world.Schema.GetComponent<Berry>();
             ComponentType cherryType = world.Schema.GetComponent<Cherry>();
-            uint sampleCount = 90000;
+            uint sampleCount = 120000;
             uint count = 0;
             Stopwatch stopwatch = Stopwatch.StartNew();
             for (uint i = 0; i < sampleCount; i++)
@@ -516,7 +516,7 @@ namespace Worlds.Tests
             }
 
             stopwatch.Stop();
-            Console.WriteLine($"Creating {count} entities took {stopwatch.ElapsedTicks / 10000.0}ms");
+            Console.WriteLine($"Creating {count} entities took {stopwatch.ElapsedTicks / (float)Stopwatch.Frequency}ms");
 
             using List<(uint, Apple, Berry, Cherry)> results = new();
 
@@ -530,7 +530,7 @@ namespace Worlds.Tests
                 }
             }
             stopwatch.Stop();
-            Console.WriteLine($"ComponentQuery took {stopwatch.ElapsedTicks / 10000.0}ms");
+            Console.WriteLine($"ComponentQuery took {stopwatch.ElapsedTicks / (float)Stopwatch.Frequency}ms");
 
             //benchmarking manually iterating
             results.Clear();
@@ -558,7 +558,7 @@ namespace Worlds.Tests
                 }
             }
             stopwatch.Stop();
-            Console.WriteLine($"Manual iteration took {stopwatch.ElapsedTicks / 10000.0}ms");
+            Console.WriteLine($"Manual iteration took {stopwatch.ElapsedTicks / (float)Stopwatch.Frequency}ms");
         }
     }
 }
