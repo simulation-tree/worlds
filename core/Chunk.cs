@@ -821,19 +821,20 @@ namespace Worlds
             }
         }
 
-        public unsafe struct Implementation
+        public struct Implementation
         {
             public List<uint> entities;
-            public Array<nint> componentArrays;
-            public readonly Array<byte> typeIndices;
+            public Array<nint> componentLists;
+
             public readonly Definition definition;
             public readonly Schema schema;
+            private readonly Array<byte> typeIndices;
 
-            private Implementation(Definition definition, Array<nint> componentArrays, Array<byte> typeIndices, Schema schema)
+            private Implementation(Definition definition, Array<nint> componentLists, Array<byte> typeIndices, Schema schema)
             {
                 entities = new(4);
                 this.typeIndices = typeIndices;
-                this.componentArrays = componentArrays;
+                this.componentLists = componentLists;
                 this.definition = definition;
                 this.schema = schema;
             }
@@ -874,11 +875,11 @@ namespace Worlds
                 for (byte i = 0; i < typeCount; i++)
                 {
                     ComponentType componentType = new(chunk->typeIndices[i]);
-                    List* components = (List*)chunk->componentArrays[componentType];
+                    List* components = (List*)chunk->componentLists[componentType];
                     List.Free(ref components);
                 }
 
-                chunk->componentArrays.Dispose();
+                chunk->componentLists.Dispose();
                 chunk->typeIndices.Dispose();
                 Allocations.Free(ref chunk);
             }
@@ -895,7 +896,7 @@ namespace Worlds
                 for (byte i = 0; i < typeCount; i++)
                 {
                     ComponentType componentType = new(chunk->typeIndices[i]);
-                    List* list = (List*)chunk->componentArrays[componentType];
+                    List* list = (List*)chunk->componentLists[componentType];
                     List.AddDefault(list);
                 }
 
@@ -915,7 +916,7 @@ namespace Worlds
                 for (byte i = 0; i < typeCount; i++)
                 {
                     ComponentType componentType = new(chunk->typeIndices[i]);
-                    List* list = (List*)chunk->componentArrays[componentType];
+                    List* list = (List*)chunk->componentLists[componentType];
                     List.RemoveAtBySwapping(list, index);
                 }
             }
@@ -938,10 +939,10 @@ namespace Worlds
                 for (uint i = 0; i < destination->typeIndices.Length; i++)
                 {
                     ComponentType destinationComponentType = new(destination->typeIndices[i]);
-                    List* destinationList = (List*)destination->componentArrays[destinationComponentType];
+                    List* destinationList = (List*)destination->componentLists[destinationComponentType];
                     if (source->typeIndices.Contains(destinationComponentType.index))
                     {
-                        List* sourceList = (List*)source->componentArrays[destinationComponentType];
+                        List* sourceList = (List*)source->componentLists[destinationComponentType];
                         List.Insert(destinationList, newIndex, List.GetElementBytes(sourceList, oldIndex));
                     }
                     else
@@ -954,7 +955,7 @@ namespace Worlds
                 for (uint i = 0; i < source->typeIndices.Length; i++)
                 {
                     ComponentType sourceComponentType = new(source->typeIndices[i]);
-                    List* sourceList = (List*)source->componentArrays[sourceComponentType];
+                    List* sourceList = (List*)source->componentLists[sourceComponentType];
                     List.RemoveAtBySwapping(sourceList, oldIndex);
                 }
 
@@ -969,7 +970,7 @@ namespace Worlds
                 Allocations.ThrowIfNull(chunk);
                 ThrowIfComponentTypeIsMissing(chunk, componentType);
 
-                return (List*)chunk->componentArrays[componentType];
+                return (List*)chunk->componentLists[componentType];
             }
 
             public static Entity<C1> GetEntity<C1>(Implementation* chunk, uint index) where C1 : unmanaged

@@ -1,5 +1,4 @@
 ﻿using Collections;
-using System;
 using Types;
 using Unmanaged;
 
@@ -16,6 +15,7 @@ namespace Worlds.Tests
             world.AddComponent(a, new Cherry("Hello, World!"));
             uint temporary = world.CreateEntity();
             uint b = world.CreateEntity();
+            world.SetParent(b, a);
             world.AddComponent(b, new Fruit(43));
             uint c = world.CreateEntity();
             world.AddComponent(c, new Cherry("Goodbye, World!"));
@@ -46,6 +46,20 @@ namespace Worlds.Tests
 
             Assert.That(newEntities, Is.EquivalentTo(oldEntities));
             Assert.That(newApples, Is.EquivalentTo(apples));
+            Assert.That(loadedWorld.ContainsEntity(a), Is.True);
+            Assert.That(loadedWorld.ContainsEntity(b), Is.True);
+            Assert.That(loadedWorld.GetParent(b), Is.EqualTo(a));
+
+            list = default;
+            Query arrayQuery = new(loadedWorld);
+            arrayQuery.RequireArrayElement<Character>();
+            foreach (uint entity in arrayQuery)
+            {
+                list = entity;
+                break;
+            }
+
+            Assert.That(loadedWorld.ContainsEntity(list), Is.True);
             Assert.That(loadedWorld.ContainsArray<Character>(list), Is.True);
             Assert.That(loadedWorld.GetArray<Character>(list).As<char>().ToString(), Is.EqualTo("Well hello there list"));
         }
@@ -57,7 +71,7 @@ namespace Worlds.Tests
             uint a = prefabWorld.CreateEntity();
             prefabWorld.AddComponent(a, new Fruit(42));
             prefabWorld.AddComponent(a, new Cherry("Hello, World!"));
-            prefabWorld.AddComponent(a, new Prefab());
+            prefabWorld.AddTag<IsPrefab>(a);
 
             uint aa = prefabWorld.CreateEntity();
             prefabWorld.AddComponent(aa, new Fruit(43));
@@ -77,14 +91,21 @@ namespace Worlds.Tests
             using World loadedWorld = reader.ReadObject<World>();
             world.Append(loadedWorld);
 
-            world.TryGetFirstComponent<Prefab>(out uint prefabEntity, out _);
-            Assert.That(prefabEntity, Is.Not.EqualTo((uint)0));
+            Query prefabQuery = new(world);
+            prefabQuery.RequireTag<IsPrefab>();
+            prefabQuery.TryGetFirst(out uint prefabEntity);
+
+            Query thingQuery = new(world);
+            thingQuery.RequireTag<IsThing>();
+            thingQuery.TryGetFirst(out uint thingEntity);
+
+            Assert.That(prefabEntity, Is.Not.EqualTo(0u));
             Assert.That(world.ContainsEntity(prefabEntity), Is.True);
-            Assert.That(world.ContainsEntity(prefabEntity + 1), Is.True);
+            Assert.That(world.ContainsEntity(thingEntity), Is.True);
             Assert.That(world.GetComponent<Fruit>(prefabEntity).data, Is.EqualTo(42));
             Assert.That(world.GetComponent<Cherry>(prefabEntity).stones.ToString(), Is.EqualTo("Hello, World!"));
-            Assert.That(world.GetComponent<Fruit>(prefabEntity + 1).data, Is.EqualTo(43));
-            Assert.That(world.ContainsTag<IsThing>(prefabEntity + 1), Is.True);
+            Assert.That(world.GetComponent<Fruit>(thingEntity).data, Is.EqualTo(43));
+            Assert.That(world.ContainsTag<IsThing>(thingEntity), Is.True);
         }
 
         [Test]
@@ -94,7 +115,7 @@ namespace Worlds.Tests
             uint a = prefabWorld.CreateEntity();
             prefabWorld.AddComponent(a, new Fruit(42));
             prefabWorld.AddComponent(a, new Cherry("Hello, World!"));
-            prefabWorld.AddComponent(a, new Prefab());
+            prefabWorld.AddTag<IsPrefab>(a);
 
             using BinaryWriter writer = new();
             writer.WriteObject(prefabWorld);
@@ -106,10 +127,53 @@ namespace Worlds.Tests
             Schema loadedSchema = loadedWorld.Schema;
             Assert.That(loadedSchema.TryGetComponentLayout(typeof(Fruit).FullName!, out TypeLayout fruitType), Is.True);
             Assert.That(loadedSchema.TryGetComponentLayout(typeof(Cherry).FullName!, out TypeLayout cherryType), Is.True);
-            Assert.That(loadedSchema.TryGetComponentLayout(typeof(Prefab).FullName!, out TypeLayout prefabType), Is.True);
+            Assert.That(loadedSchema.ContainsTag<IsPrefab>(), Is.True);
             Assert.That(fruitType.Size, Is.EqualTo(sizeof(Fruit)));
             Assert.That(cherryType.Size, Is.EqualTo(sizeof(Cherry)));
-            Assert.That(prefabType.Size, Is.EqualTo(sizeof(Prefab)));
+        }
+
+        [Test]
+        public unsafe void ProcessSchema()
+        {
+            Schema prefabSchema = new();
+            prefabSchema.RegisterComponent<Fruit>();
+            prefabSchema.RegisterComponent<Cherry>();
+            prefabSchema.RegisterTag<IsPrefab>();
+            using World prefabWorld = new(prefabSchema);
+            uint a = prefabWorld.CreateEntity();
+            prefabWorld.AddComponent(a, new Fruit(42));
+            prefabWorld.AddComponent(a, new Cherry("Hello, World!"));
+            prefabWorld.AddTag<IsPrefab>(a);
+
+            using BinaryWriter writer = new();
+            writer.WriteObject(prefabWorld);
+
+            using BinaryReader reader = new(writer);
+            using World loadedWorld = World.Deserialize(reader, Process);
+
+            Schema loadedSchema = loadedWorld.Schema;
+
+            static TypeLayout Process(TypeLayout type, DataType.Kind dataType)
+            {
+                if (type.Is<Fruit>())
+                {
+                    //replace fruit with another
+                    return TypeRegistry.Get<Another>();
+                }
+                else
+                {
+                    return type;
+                }
+            }
+
+            Assert.That(loadedSchema.ContainsComponent<Another>(), Is.True);
+            Assert.That(loadedSchema.ContainsComponent<Fruit>(), Is.False);
+            Assert.That(loadedSchema.ContainsComponent<Cherry>(), Is.True);
+            Assert.That(loadedSchema.ContainsTag<IsPrefab>(), Is.True);
+            Assert.That(loadedWorld.ContainsEntity(a), Is.True);
+            Assert.That(loadedWorld.GetComponent<Another>(a).data, Is.EqualTo(42));
+            Assert.That(loadedWorld.GetComponent<Cherry>(a).stones.ToString(), Is.EqualTo("Hello, World!"));
+            Assert.That(loadedWorld.ContainsTag<IsPrefab>(a), Is.True);
         }
     }
 }

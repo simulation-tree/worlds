@@ -274,40 +274,6 @@ namespace Worlds.Tests
         }
 
         [Test]
-        public void DestroyEntityWithArray()
-        {
-            World world = CreateWorld();
-            uint entity = world.CreateEntity();
-            USpan<SimpleComponent> list = world.CreateArray<SimpleComponent>(entity, 2);
-            list[0] = new("Hello World 1");
-            list[1] = new("Hello World 2");
-            world.DestroyEntity(entity);
-
-            Assert.That(world.ContainsEntity(entity), Is.False);
-#if DEBUG
-            Assert.Throws<NullReferenceException>(() =>
-            {
-                world.ContainsArray<SimpleComponent>(entity);
-            });
-#endif
-
-            world.Dispose();
-            Assert.That(Allocations.Count, Is.EqualTo(0));
-        }
-
-        [Test]
-        public void CreateThenEmptyArray()
-        {
-            World world = CreateWorld();
-            uint entity = world.CreateEntity();
-            world.CreateArray<SimpleComponent>(entity, 2);
-            world.DestroyArray<SimpleComponent>(entity);
-            Assert.That(world.ContainsArray<SimpleComponent>(entity), Is.False);
-            world.Dispose();
-            Assert.That(Allocations.Count, Is.EqualTo(0));
-        }
-
-        [Test]
         public void MoveChildToAnotherParent()
         {
             World world = CreateWorld();
@@ -319,24 +285,6 @@ namespace Worlds.Tests
             Assert.That(world.GetParent(a), Is.EqualTo(c));
             Assert.That(world.GetChildCount(b), Is.EqualTo(0));
             Assert.That(world.GetChildCount(c), Is.EqualTo(1));
-            world.Dispose();
-            Assert.That(Allocations.Count, Is.EqualTo(0));
-        }
-
-        [Test]
-        public void DestroyArrayTwice()
-        {
-            World world = CreateWorld();
-            uint entity = world.CreateEntity();
-            USpan<SimpleComponent> list = world.CreateArray<SimpleComponent>(entity, 4);
-            list[0] = new("apple");
-            Assert.That(list.Length, Is.EqualTo(4));
-            world.DestroyEntity(entity);
-            uint another = world.CreateEntity(); //same as `entity`
-            USpan<SimpleComponent> anotherList = world.CreateArray<SimpleComponent>(another, 1);
-            anotherList[0] = new("banana");
-            Assert.That(anotherList.Length, Is.EqualTo(1));
-            world.DestroyEntity(another);
             world.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }

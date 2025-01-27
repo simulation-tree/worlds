@@ -1,4 +1,5 @@
-﻿using Unmanaged;
+﻿using Collections;
+using Unmanaged;
 
 namespace Worlds.Tests
 {
@@ -16,6 +17,26 @@ namespace Worlds.Tests
             copy.CopyFrom(schema);
 
             Assert.That(copy.ContainsComponent<Stress>(), Is.True);
+        }
+
+        [Test]
+        public void IterateAndFetchLayouts()
+        {
+            using Schema schema = new();
+            ComponentType c1 = schema.RegisterComponent<Stress>();
+            ComponentType c2 = schema.RegisterComponent<float>();
+            ComponentType c3 = schema.RegisterComponent<char>();
+
+            using List<ComponentType> componentTypes = new();
+            foreach (ComponentType componentType in schema.ComponentTypes)
+            {
+                componentTypes.Add(componentType);
+            }
+
+            Assert.That(componentTypes.Count, Is.EqualTo(3));
+            Assert.That(componentTypes.Contains(c1), Is.True);
+            Assert.That(componentTypes.Contains(c2), Is.True);
+            Assert.That(componentTypes.Contains(c3), Is.True);
         }
 
         [Test]
@@ -73,15 +94,15 @@ namespace Worlds.Tests
             DataType intType = schema.GetTagDataType<int>();
 
             Assert.That(boolType.Size, Is.EqualTo(sizeof(bool)));
-            Assert.That(boolType.DataKind, Is.EqualTo(DataType.Kind.Component));
+            Assert.That(boolType.Type, Is.EqualTo(DataType.Kind.Component));
             Assert.That(byteType.Size, Is.EqualTo(sizeof(byte)));
-            Assert.That(byteType.DataKind, Is.EqualTo(DataType.Kind.Component));
+            Assert.That(byteType.Type, Is.EqualTo(DataType.Kind.Component));
             Assert.That(shortType.Size, Is.EqualTo(sizeof(short)));
-            Assert.That(shortType.DataKind, Is.EqualTo(DataType.Kind.Component));
+            Assert.That(shortType.Type, Is.EqualTo(DataType.Kind.Component));
             Assert.That(charType.Size, Is.EqualTo(sizeof(char)));
-            Assert.That(charType.DataKind, Is.EqualTo(DataType.Kind.ArrayElement));
+            Assert.That(charType.Type, Is.EqualTo(DataType.Kind.ArrayElement));
             Assert.That(intType.Size, Is.EqualTo(0));
-            Assert.That(intType.DataKind, Is.EqualTo(DataType.Kind.Tag));
+            Assert.That(intType.Type, Is.EqualTo(DataType.Kind.Tag));
         }
 
         [Test]

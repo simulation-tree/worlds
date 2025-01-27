@@ -1,7 +1,6 @@
 ﻿using Collections;
 using System;
 using System.Diagnostics;
-using Unmanaged;
 
 namespace Worlds
 {
@@ -74,30 +73,17 @@ namespace Worlds
         {
             EntityExtensions.ThrowIfTypeLayoutMismatches<T>();
 
-            Dictionary<Definition, Chunk> chunks = world.Chunks;
             Schema schema = world.Schema;
             Definition definition = Archetype.Get<T>(schema).definition;
-            foreach (Definition key in chunks.Keys)
+            Query query = new(world, definition);
+            if (onlyEnabled)
             {
-                if (key.ComponentTypes.ContainsAll(definition.ComponentTypes) && key.ArrayElementTypes.ContainsAll(definition.ArrayElementTypes))
-                {
-                    if (!onlyEnabled || (onlyEnabled && !key.TagTypes.Contains(TagType.Disabled)))
-                    {
-                        if (key.TagTypes.ContainsAll(definition.TagTypes))
-                        {
-                            ref Chunk chunk = ref chunks[key];
-                            if (chunk.Count > 0)
-                            {
-                                entity = new Entity(world, chunk[0]).As<T>();
-                                return true;
-                            }
-                        }
-                    }
-                }
+                query.ExcludeDisabled(true);
             }
 
-            entity = default;
-            return false;
+            bool found = query.TryGetFirst(out uint foundEntity);
+            entity = new Entity(world, foundEntity).As<T>();
+            return found;
         }
 
         /// <summary>
@@ -106,6 +92,7 @@ namespace Worlds
         public static T GetFirst<T>(this World world, bool onlyEnabled = true) where T : unmanaged, IEntity
         {
             ThrowIfEntityDoesntExist<T>(world, onlyEnabled);
+
             TryGetFirst(world, out T entity, onlyEnabled);
             return entity;
         }
@@ -125,21 +112,15 @@ namespace Worlds
         /// </summary>
         public static uint CountEntitiesWith(this World world, ComponentType componentType, bool onlyEnabled = true)
         {
-            uint count = 0;
-            Dictionary<Definition, Chunk> chunks = world.Chunks;
-            foreach (Definition key in chunks.Keys)
+            Definition definition = new();
+            definition.AddComponentType(componentType);
+            Query query = new(world, definition);
+            if (onlyEnabled)
             {
-                if (key.ComponentTypes.Contains(componentType))
-                {
-                    if (!onlyEnabled || (onlyEnabled && !key.TagTypes.Contains(TagType.Disabled)))
-                    {
-                        ref Chunk chunk = ref chunks[key];
-                        count += chunk.Count;
-                    }
-                }
+                query.ExcludeDisabled(true);
             }
 
-            return count;
+            return query.Count;
         }
 
         /// <summary>
@@ -147,26 +128,17 @@ namespace Worlds
         /// </summary>
         public static uint CountEntities<T>(this World world, bool onlyEnabled = true) where T : unmanaged, IEntity
         {
+            EntityExtensions.ThrowIfTypeLayoutMismatches<T>();
+
             Schema schema = world.Schema;
-            Dictionary<Definition, Chunk> chunks = world.Chunks;
             Definition definition = Archetype.Get<T>(schema).definition;
-            uint count = 0;
-            foreach (Definition key in chunks.Keys)
+            Query query = new(world, definition);
+            if (onlyEnabled)
             {
-                if (key.ComponentTypes.ContainsAll(definition.ComponentTypes) && key.ArrayElementTypes.ContainsAll(definition.ArrayElementTypes))
-                {
-                    if (!onlyEnabled || (onlyEnabled && !key.TagTypes.Contains(TagType.Disabled)))
-                    {
-                        if (key.TagTypes.ContainsAll(definition.TagTypes))
-                        {
-                            ref Chunk chunk = ref chunks[key];
-                            count += chunk.Count;
-                        }
-                    }
-                }
+                query.ExcludeDisabled(true);
             }
 
-            return count;
+            return query.Count;
         }
 
         [Conditional("DEBUG")]

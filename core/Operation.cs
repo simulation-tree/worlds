@@ -285,6 +285,7 @@ namespace Worlds
 
             uint length = Count;
             using List<uint> created = new(length);
+            uint freeUsed = 0;
             for (uint i = 0; i < length; i++)
             {
                 Instruction instruction = this[i];
@@ -293,7 +294,16 @@ namespace Worlds
                     uint createCount = (uint)instruction.A;
                     for (uint c = 0; c < createCount; c++)
                     {
-                        uint pretendEntity = world.GetNextEntity();
+                        uint pretendEntity;
+                        if (world.Free.Count > freeUsed)
+                        {
+                            pretendEntity = world.Free[freeUsed++];
+                        }
+                        else
+                        {
+                            pretendEntity = world.MaxEntityValue + 1;
+                        }
+
                         selection.Add(pretendEntity);
                         created.Add(pretendEntity);
                     }
