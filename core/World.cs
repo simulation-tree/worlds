@@ -2075,31 +2075,19 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(value);
 
-                writer.WriteObject(value->schema);
-
-                uint existingEntities = 0;
-                for (uint i = 0; i < value->states.Count; i++)
-                {
-                    uint entity = i + 1;
-                    if (!value->freeEntities.Contains(entity))
-                    {
-                        existingEntities++;
-                    }
-                }
-
-                writer.WriteValue(existingEntities);
-
-                for (uint i = 0; i < value->states.Count; i++)
-                {
-                    uint entity = i + 1;
-                    if (!value->freeEntities.Contains(entity))
-                    {
-                        uint parent = value->parents[i];
-                        writer.WriteValue(entity);
-                        writer.WriteValue(parent);
-                        writer.WriteValue(value->states[i]);
-                    }
-                }
+                //(a) write components, arrays and tags used
+                //find non empty chunks
+                //for each chunk:
+                //    write the component, arrays and tags referenced with an index into (a)
+                //    write how many entities there are
+                //    for each entity:
+                //        write the entity state
+                //        write the parent entity
+                //        write all references
+                //    for each component stored in the chunk:
+                //        write the entire component array
+                //    for each array stored in the chunk:
+                //        write the entire array
             }
 
             /// <summary>
