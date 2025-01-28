@@ -11,7 +11,6 @@ namespace Worlds
     [Generator(LanguageNames.CSharp)]
     public class SchemaBankGenerator : IIncrementalGenerator
     {
-        private static readonly SourceBuilder source = new();
         public const string TypeNameFormat = "{0}SchemaBank";
 
         void IIncrementalGenerator.Initialize(IncrementalGeneratorInitializationContext context)
@@ -98,7 +97,7 @@ namespace Worlds
                 assemblyName = assemblyName.Substring(0, assemblyName.Length - 5);
             }
 
-            source.Clear();
+            SourceBuilder source = new();
             source.AppendLine("using Types;");
             source.AppendLine("using Unmanaged;");
             source.AppendLine("using Worlds;");
