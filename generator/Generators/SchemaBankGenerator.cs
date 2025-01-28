@@ -127,7 +127,7 @@ namespace Worlds
                     {
                         if (type is not null)
                         {
-                            AppendRegister(type);
+                            AppendRegister(source, type);
                         }
                     }
                 }
@@ -143,7 +143,7 @@ namespace Worlds
             return source.ToString();
         }
 
-        private static void AppendRegister(ITypeSymbol type)
+        private static void AppendRegister(SourceBuilder source, ITypeSymbol type)
         {
             if (type.HasAttribute("Worlds.ComponentAttribute"))
             {
