@@ -529,7 +529,9 @@ namespace Worlds.Tests
                     results.Add((r.entity, r.component1, r.component2, r.component3));
                 }
             }
+
             stopwatch.Stop();
+            uint queryCount = results.Count;
             Console.WriteLine($"ComponentQuery took {stopwatch.ElapsedTicks / (float)Stopwatch.Frequency}ms");
 
             //benchmarking manually iterating
@@ -539,13 +541,13 @@ namespace Worlds.Tests
                 Dictionary<Definition, Chunk> chunks = world.Chunks;
                 foreach (Definition key in chunks.Keys)
                 {
-                    if ((key.ComponentTypes & componentTypes) == componentTypes)
+                    if (key.ComponentTypes.ContainsAll(componentTypes))
                     {
                         Chunk chunk = chunks[key];
                         USpan<uint> entities = chunk.Entities;
-                        USpan<Apple> apples = chunk.GetComponents<Apple>();
-                        USpan<Berry> berries = chunk.GetComponents<Berry>();
-                        USpan<Cherry> cherries = chunk.GetComponents<Cherry>();
+                        USpan<Apple> apples = chunk.GetComponents<Apple>(appleType);
+                        USpan<Berry> berries = chunk.GetComponents<Berry>(berryType);
+                        USpan<Cherry> cherries = chunk.GetComponents<Cherry>(cherryType);
                         for (uint e = 0; e < entities.Length; e++)
                         {
                             uint entity = entities[e];
@@ -557,7 +559,9 @@ namespace Worlds.Tests
                     }
                 }
             }
+
             stopwatch.Stop();
+            Assert.That(results.Count, Is.EqualTo(queryCount));
             Console.WriteLine($"Manual iteration took {stopwatch.ElapsedTicks / (float)Stopwatch.Frequency}ms");
         }
     }

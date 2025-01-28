@@ -320,14 +320,14 @@ namespace Worlds
         public readonly USpan<T> GetComponents<T>() where T : unmanaged
         {
             Schema schema = Schema;
-            List<T> list = new(GetComponents(schema.GetComponent<T>()));
-            return list.AsSpan();
+            List* list = GetComponents(schema.GetComponent<T>());
+            return List.AsSpan<T>(list);
         }
 
         public readonly USpan<T> GetComponents<T>(ComponentType componentType) where T : unmanaged
         {
-            List<T> list = new(GetComponents(componentType));
-            return list.AsSpan();
+            List* list = GetComponents(componentType);
+            return List.AsSpan<T>(list);
         }
 
         /// <summary>
