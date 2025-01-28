@@ -7,7 +7,7 @@ namespace Worlds.Tests
     {
         static WorldTests()
         {
-            TypeRegistry.Load<Worlds.Tests.TypeBank>();
+            TypeRegistry.Load<WorldsTestsTypeBank>();
         }
 
         protected World CreateWorld()
@@ -19,7 +19,7 @@ namespace Worlds.Tests
         protected virtual Schema CreateSchema()
         {
             Schema schema = new();
-            schema.Load<Worlds.Tests.SchemaBank>();
+            schema.Load<WorldsTestsSchemaBank>();
             return schema;
         }
     }
