@@ -1351,6 +1351,32 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Resizes the array of type <typeparamref name="T"/> on the given <paramref name="entity"/>.
+        /// </summary>
+        public readonly USpan<T> ExpandArray<T>(uint entity, int deltaChange) where T : unmanaged
+        {
+            ArrayElementType arrayElementType = Schema.GetArrayElement<T>();
+            ushort arrayElementSize = (ushort)sizeof(T);
+            uint length = Implementation.GetArrayLength(value, entity, arrayElementType);
+            uint newLength = (uint)Math.Max(0, length + deltaChange);
+            Allocation array = Implementation.ResizeArray(value, entity, arrayElementType, arrayElementSize, newLength);
+            return array.AsSpan<T>(0, newLength);
+        }
+
+        /// <summary>
+        /// Increases the length of the array of type <typeparamref name="T"/> on the given <paramref name="entity"/>.
+        /// </summary>
+        public readonly USpan<T> ExpandArray<T>(uint entity, uint lengthIncrement) where T : unmanaged
+        {
+            ArrayElementType arrayElementType = Schema.GetArrayElement<T>();
+            ushort arrayElementSize = (ushort)sizeof(T);
+            uint length = Implementation.GetArrayLength(value, entity, arrayElementType);
+            uint newLength = length + lengthIncrement;
+            Allocation array = Implementation.ResizeArray(value, entity, arrayElementType, arrayElementSize, newLength);
+            return array.AsSpan<T>(0, newLength);
+        }
+
+        /// <summary>
         /// Attempts to retrieve an array of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
         /// </summary>
         public readonly bool TryGetArray<T>(uint entity, out USpan<T> array) where T : unmanaged

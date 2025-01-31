@@ -172,6 +172,22 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Changes the length of the existing <typeparamref name="T"/> array.
+        /// </summary>
+        public readonly USpan<T> ExpandArray<T>(int lengthDelta) where T : unmanaged
+        {
+            return world.ExpandArray<T>(value, lengthDelta);
+        }
+
+        /// <summary>
+        /// Increases the length of the existing <typeparamref name="T"/> array.
+        /// </summary>
+        public readonly USpan<T> ExpandArray<T>(uint increment) where T : unmanaged
+        {
+            return world.ExpandArray<T>(value, increment);
+        }
+
+        /// <summary>
         /// Attempts to retrieve an array of type <typeparamref name="T"/> on this entity.
         /// </summary>
         public readonly bool TryGetArray<T>(out USpan<T> values) where T : unmanaged
