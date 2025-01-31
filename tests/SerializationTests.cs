@@ -34,7 +34,7 @@ namespace Worlds.Tests
             writer.WriteObject(world);
             world.Dispose();
 
-            USpan<byte> data = writer.GetBytes();
+            USpan<byte> data = writer.AsSpan();
             using BinaryReader reader = new(data);
             using World loadedWorld = reader.ReadObject<World>();
             using List<uint> newEntities = new(loadedWorld.Entities);
