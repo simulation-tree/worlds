@@ -10,6 +10,30 @@ namespace Worlds
 {
     public static class EntityExtensions
     {
+        public unsafe static EntityNew AsEntityNew<T>(this T entity) where T : unmanaged, IEntityNew
+        {
+            ThrowIfTypeLayoutMismatchesNew<T>();
+
+            void* pointer = &entity;
+            return *(EntityNew*)pointer;
+        }
+
+        /// <summary>
+        /// Retrieves the <see cref="World"/> of this entity.
+        /// </summary>
+        public static World GetWorld<T>(this T entity) where T : unmanaged, IEntity
+        {
+            return entity.World;
+        }
+
+        /// <summary>
+        /// Retrieves the ID of this entity.
+        /// </summary>
+        public static uint GetEntityValue<T>(this T entity) where T : unmanaged, IEntity
+        {
+            return entity.Value;
+        }
+
         /// <summary>
         /// Checks if this entity has been destroyed in its <see cref="World"/>.
         /// </summary>
@@ -82,22 +106,6 @@ namespace Worlds
         public static USpan<uint> GetChildren<T>(this T entity) where T : unmanaged, IEntity
         {
             return entity.World.GetChildren(entity.Value);
-        }
-
-        /// <summary>
-        /// Retrieves the <see cref="World"/> of this entity.
-        /// </summary>
-        public static World GetWorld<T>(this T entity) where T : unmanaged, IEntity
-        {
-            return entity.World;
-        }
-
-        /// <summary>
-        /// Retrieves the ID of this entity.
-        /// </summary>
-        public static uint GetEntityValue<T>(this T entity) where T : unmanaged, IEntity
-        {
-            return entity.Value;
         }
 
         /// <summary>
@@ -442,6 +450,41 @@ namespace Worlds
                 throw new InvalidOperationException($"Entity `{entity.Value}` is destroyed and no longer available");
             }
         }
+
+#if DEBUG
+        [Conditional("DEBUG")]
+        private unsafe static void ThrowIfTypeLayoutMismatchesNew<T>() where T : unmanaged, IEntityNew
+        {
+            if (sizeof(T) != sizeof(EntityNew))
+            {
+                throw new Exception($"The type `{typeof(T)}` does not align with the `{nameof(EntityNew)}` type");
+            }
+
+            if (FieldsCache<T>.fields.Length != 2)
+            {
+                throw new Exception($"Unexpected entity type layout in `{typeof(T)}`. Was expecting 2 fields");
+            }
+
+            Type first = FieldsCache<T>.fields[0].FieldType;
+            Type second = FieldsCache<T>.fields[1].FieldType;
+            if (first != typeof(uint) || second != typeof(World))
+            {
+                throw new Exception($"Unexpected entity type layout in `{typeof(T)}`. Was expecting `uint`, then `{nameof(World)}`");
+            }
+        }
+
+        private static class FieldsCache<T> where T : unmanaged
+        {
+#pragma warning disable IL2090
+            public static readonly FieldInfo[] fields = typeof(T).GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+#pragma warning restore IL2090
+        }
+#else
+        [Conditional("DEBUG")]
+        private static void ThrowIfTypeLayoutMismatchesNew<T>() where T : unmanaged, IEntityNew
+        {
+        }
+#endif
 
         /// <summary>
         /// Throws if the given type doesn't have the same layout as <see cref="Entity"/>.

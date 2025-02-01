@@ -4,6 +4,53 @@ using Unmanaged;
 
 namespace Worlds
 {
+    public readonly struct EntityNew
+    {
+        public readonly uint value;
+        public readonly World world;
+
+        public EntityNew(World world, uint value)
+        {
+            this.world = world;
+            this.value = value;
+        }
+
+        public readonly bool ContainsComponent<T>() where T : unmanaged
+        {
+            return world.ContainsComponent<T>(value);
+        }
+
+        public readonly ref T GetComponent<T>() where T : unmanaged
+        {
+            return ref world.GetComponent<T>(value);
+        }
+
+        public readonly bool TryGetComponent<T>(out T component) where T : unmanaged
+        {
+            return world.TryGetComponent(value, out component);
+        }
+
+        public readonly ref T TryGetComponent<T>(out bool contains) where T : unmanaged
+        {
+            return ref world.TryGetComponent<T>(value, out contains);
+        }
+
+        public readonly ref T AddComponent<T>() where T : unmanaged
+        {
+            return ref world.AddComponent<T>(value);
+        }
+
+        public readonly ref T AddComponent<T>(T component) where T : unmanaged
+        {
+            return ref world.AddComponent(value, component);
+        }
+
+        public readonly void RemoveComponent<T>() where T : unmanaged
+        {
+            world.RemoveComponent<T>(value);
+        }
+    }
+
     /// <summary>
     /// Represents an entity in the simulation relative to a <see cref="World"/>.
     /// </summary>
@@ -371,7 +418,7 @@ namespace Worlds
                 enabled = entity.IsEnabled();
                 parent = entity.GetParent();
                 creationStackTrace = World.Implementation.createStackTraces[entity];
-                
+
                 Schema schema = world.Schema;
                 USpan<ComponentType> componentTypeBuffer = stackalloc ComponentType[BitMask.Capacity];
                 uint bufferLength = entity.CopyComponentTypesTo(componentTypeBuffer);

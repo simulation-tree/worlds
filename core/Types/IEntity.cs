@@ -1,4 +1,5 @@
 ﻿using System;
+using Types;
 
 namespace Worlds
 {
@@ -21,5 +22,10 @@ namespace Worlds
         /// Describes the components, arrays and tags that compose this entity.
         /// </summary>
         void Describe(ref Archetype archetype);
+    }
+
+    public interface IEntityNew : IInherits<EntityNew>
+    {
+
     }
 }
