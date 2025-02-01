@@ -302,8 +302,7 @@ namespace Worlds
         public readonly T Become<T>() where T : unmanaged, IEntity
         {
             Schema schema = world.Schema;
-            Definition definition = Archetype.Get<T>(schema).definition;
-            this.Become(definition);
+            this.Become(Archetype.Get<T>(schema));
             return As<T>();
         }
 
@@ -313,8 +312,7 @@ namespace Worlds
         public readonly bool Is<T>() where T : unmanaged, IEntity
         {
             Schema schema = world.Schema;
-            Definition definition = Archetype.Get<T>(schema).definition;
-            return this.Is(definition);
+            return this.Is(Archetype.Get<T>(schema).Definition);
         }
 
         /// <inheritdoc/>

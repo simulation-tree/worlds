@@ -254,45 +254,53 @@ namespace Worlds
         /// </summary>
         public static void Become<T>(this T entity, Definition definition) where T : unmanaged, IEntity
         {
+            Archetype archetype = new(definition, entity.GetWorld().Schema);
+            entity.Become(archetype);
+        }
+
+        public static void Become<T>(this T entity, Archetype archetype) where T : unmanaged, IEntity
+        {
             World world = entity.World;
             uint value = entity.Value;
             Chunk chunk = world.GetChunk(value);
             Definition currentDefinition = chunk.Definition;
 
             //add missing components
-            if ((currentDefinition.ComponentTypes & definition.ComponentTypes) != definition.ComponentTypes)
+            if (!currentDefinition.ComponentTypes.ContainsAll(archetype.ComponentTypes))
             {
                 for (byte c = 0; c < BitMask.Capacity; c++)
                 {
-                    if (definition.ComponentTypes.Contains(c) && !currentDefinition.ComponentTypes.Contains(c))
+                    ComponentType componentType = new(c);
+                    if (archetype.Contains(componentType) && !currentDefinition.Contains(componentType))
                     {
-                        ComponentType componentType = new(c);
-                        world.AddComponent(value, componentType);
+                        DataType dataType = new(componentType, archetype.GetSize(componentType));
+                        world.AddComponent(value, dataType);
                     }
                 }
             }
 
             //add missing arrays
-            if ((currentDefinition.ArrayElementTypes & definition.ArrayElementTypes) != definition.ArrayElementTypes)
+            if (!currentDefinition.ArrayElementTypes.ContainsAll(archetype.ArrayElementTypes))
             {
                 for (byte a = 0; a < BitMask.Capacity; a++)
                 {
-                    if (definition.ArrayElementTypes.Contains(a) && !currentDefinition.ArrayElementTypes.Contains(a))
+                    ArrayElementType arrayElementType = new(a);
+                    if (archetype.Contains(arrayElementType) && !currentDefinition.Contains(arrayElementType))
                     {
-                        ArrayElementType arrayElementType = new(a);
-                        world.CreateArray(value, arrayElementType);
+                        DataType dataType = new(arrayElementType, archetype.GetSize(arrayElementType));
+                        world.CreateArray(value, dataType);
                     }
                 }
             }
 
             //add missing tags
-            if ((currentDefinition.TagTypes & definition.TagTypes) != definition.TagTypes)
+            if (!currentDefinition.TagTypes.ContainsAll(archetype.TagTypes))
             {
                 for (byte t = 0; t < BitMask.Capacity; t++)
                 {
-                    if (definition.TagTypes.Contains(t) && !currentDefinition.TagTypes.Contains(t))
+                    TagType tagType = new(t);
+                    if (archetype.Contains(tagType) && !currentDefinition.Contains(tagType))
                     {
-                        TagType tagType = new(t);
                         world.AddTag(value, tagType);
                     }
                 }
@@ -307,7 +315,7 @@ namespace Worlds
             Schema schema = entity.GetWorld().Schema;
             Archetype archetype = new(schema);
             entity.Describe(ref archetype);
-            return entity.Is(archetype.definition);
+            return entity.Is(archetype.Definition);
         }
 
         /// <summary>
@@ -321,17 +329,17 @@ namespace Worlds
 
             Chunk chunk = world.GetChunk(value);
             Definition currentDefinition = chunk.Definition;
-            if ((currentDefinition.ComponentTypes & definition.ComponentTypes) != definition.ComponentTypes)
+            if (!currentDefinition.ComponentTypes.ContainsAll(definition.ComponentTypes))
             {
                 return false;
             }
 
-            if ((currentDefinition.ArrayElementTypes & definition.ArrayElementTypes) != definition.ArrayElementTypes)
+            if (!currentDefinition.ArrayElementTypes.ContainsAll(definition.ArrayElementTypes))
             {
                 return false;
             }
 
-            return (currentDefinition.TagTypes & definition.TagTypes) == definition.TagTypes;
+            return currentDefinition.TagTypes.ContainsAll(definition.TagTypes);
         }
 
         /// <summary>
@@ -342,7 +350,7 @@ namespace Worlds
             World world = entity.World;
             Archetype archetype = new(world.Schema);
             entity.Describe(ref archetype);
-            while (!entity.Is(archetype.definition))
+            while (!entity.Is(archetype.Definition))
             {
                 await action(world, cancellation);
             }

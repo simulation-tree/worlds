@@ -199,6 +199,21 @@ namespace Worlds
             return other.arrayElementTypes == arrayElementTypes && other.componentTypes == componentTypes && other.tagTypes == tagTypes;
         }
 
+        public readonly bool Contains(ComponentType componentType)
+        {
+            return componentTypes.Contains(componentType);
+        }
+
+        public readonly bool Contains(ArrayElementType arrayElementType)
+        {
+            return arrayElementTypes.Contains(arrayElementType);
+        }
+
+        public readonly bool Contains(TagType tagType)
+        {
+            return tagTypes.Contains(tagType);
+        }
+
         /// <summary>
         /// Checks if this definition contains the specified <typeparamref name="T"/> component type.
         /// </summary>

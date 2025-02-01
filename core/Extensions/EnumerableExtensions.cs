@@ -45,7 +45,7 @@ namespace Worlds
         {
             Dictionary<Definition, Chunk> chunks = world.Chunks;
             Schema schema = world.Schema;
-            Definition definition = Archetype.Get<T>(schema).definition;
+            Definition definition = Archetype.Get<T>(schema).Definition;
             foreach (Definition key in chunks.Keys)
             {
                 if (key.ComponentTypes.ContainsAll(definition.ComponentTypes) && key.ArrayElementTypes.ContainsAll(definition.ArrayElementTypes))
@@ -74,7 +74,7 @@ namespace Worlds
             EntityExtensions.ThrowIfTypeLayoutMismatches<T>();
 
             Schema schema = world.Schema;
-            Definition definition = Archetype.Get<T>(schema).definition;
+            Definition definition = Archetype.Get<T>(schema).Definition;
             Query query = new(world, definition);
             if (onlyEnabled)
             {
@@ -131,7 +131,7 @@ namespace Worlds
             EntityExtensions.ThrowIfTypeLayoutMismatches<T>();
 
             Schema schema = world.Schema;
-            Definition definition = Archetype.Get<T>(schema).definition;
+            Definition definition = Archetype.Get<T>(schema).Definition;
             Query query = new(world, definition);
             if (onlyEnabled)
             {

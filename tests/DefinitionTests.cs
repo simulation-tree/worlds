@@ -148,5 +148,69 @@ namespace Worlds.Tests
             Assert.That(entityA.Is(definition), Is.False);
             Assert.That(entityB.Is(definition), Is.True);
         }
+
+        [Test]
+        public void VerifySizesOfTypesInArchetype()
+        {
+            using World world = CreateWorld();
+            Archetype archetype = new(world.Schema);
+            archetype.AddComponentType<Byte>();
+            Assert.That(archetype.ComponentTypes.Count, Is.EqualTo(1));
+            archetype.AddComponentType<Float>();
+            Assert.That(archetype.ComponentTypes.Count, Is.EqualTo(2));
+            archetype.AddArrayElementType<Character>();
+            Assert.That(archetype.ArrayElementTypes.Count, Is.EqualTo(1));
+            archetype.AddArrayElementType<Float>();
+            Assert.That(archetype.ArrayElementTypes.Count, Is.EqualTo(2));
+            archetype.AddArrayElementType<Byte>();
+            Assert.That(archetype.ArrayElementTypes.Count, Is.EqualTo(3));
+
+            Assert.That(archetype.ContainsComponent<Byte>(), Is.True);
+            Assert.That(archetype.ContainsComponent<Float>(), Is.True);
+            Assert.That(archetype.ContainsComponent<Character>(), Is.False);
+            Assert.That(archetype.ContainsArray<Character>(), Is.True);
+            Assert.That(archetype.ContainsArray<Float>(), Is.True);
+            Assert.That(archetype.ContainsArray<Byte>(), Is.True);
+            Assert.That(archetype.GetComponentSize<Byte>(), Is.EqualTo(sizeof(byte)));
+            Assert.That(archetype.GetComponentSize<Float>(), Is.EqualTo(sizeof(float)));
+            Assert.That(archetype.GetArrayElementSize<Character>(), Is.EqualTo(sizeof(char)));
+            Assert.That(archetype.GetArrayElementSize<Float>(), Is.EqualTo(sizeof(float)));
+            Assert.That(archetype.GetArrayElementSize<Byte>(), Is.EqualTo(sizeof(byte)));
+        }
+
+        [Test]
+        public void BecomeAnotherEntity()
+        {
+            using World world = CreateWorld();
+
+            Entity entity = new(world);
+
+            Assert.That(entity.Is<AnotherEntity>(), Is.False);
+
+            entity.Become<AnotherEntity>();
+
+            Assert.That(entity.Is<AnotherEntity>(), Is.True);
+            Assert.That(entity.ContainsComponent<Another>(), Is.True);
+            Assert.That(entity.ContainsArray<Byte>(), Is.True);
+        }
+
+        public readonly struct AnotherEntity : IEntity
+        {
+            private readonly Entity entity;
+
+            uint IEntity.Value => entity.GetEntityValue();
+            World IEntity.World => entity.GetWorld();
+
+            void IEntity.Describe(ref Archetype archetype)
+            {
+                archetype.AddComponentType<Another>();
+                archetype.AddArrayElementType<Byte>();
+            }
+
+            public readonly void Dispose()
+            {
+                entity.Dispose();
+            }
+        }
     }
 }
