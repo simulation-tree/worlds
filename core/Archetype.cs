@@ -164,6 +164,9 @@ namespace Worlds
             componentSizes[componentType] = schema.GetSize(componentType);
         }
 
+        /// <summary>
+        /// Adds the array element of type <typeparamref name="T"/> to the definition.
+        /// </summary>
         public unsafe void AddArrayElementType<T>() where T : unmanaged
         {
             ArrayElementType arrayElementType = schema.GetArrayElement<T>();
@@ -173,6 +176,9 @@ namespace Worlds
             arrayElementSizes[arrayElementType] = (ushort)sizeof(T);
         }
 
+        /// <summary>
+        /// Adds <paramref name="arrayElementType"/> to the definition.
+        /// </summary>
         public unsafe void AddArrayElementType(ArrayElementType arrayElementType)
         {
             ThrowIfArrayElementTypeIsPresent(arrayElementType);
@@ -181,11 +187,17 @@ namespace Worlds
             arrayElementSizes[arrayElementType] = schema.GetSize(arrayElementType);
         }
 
+        /// <summary>
+        /// Adds the the tag of type <typeparamref name="T"/> to the definition.
+        /// </summary>
         public void AddTagType<T>() where T : unmanaged
         {
             definition.AddTagType<T>(schema);
         }
 
+        /// <summary>
+        /// Adds <paramref name="tagType"/> to the definition.
+        /// </summary>
         public void AddTagType(TagType tagType)
         {
             ThrowIfTagTypeIsPresent(tagType);
