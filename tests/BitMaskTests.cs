@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-
-namespace Worlds.Tests
+﻿namespace Worlds.Tests
 {
     public class BitMaskTests
     {

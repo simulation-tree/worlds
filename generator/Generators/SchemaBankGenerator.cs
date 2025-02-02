@@ -6,7 +6,7 @@ using System.Collections.Immutable;
 using System.Threading;
 using Types;
 
-namespace Worlds
+namespace Worlds.Generator
 {
     [Generator(LanguageNames.CSharp)]
     public class SchemaBankGenerator : IIncrementalGenerator

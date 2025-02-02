@@ -1,83 +1,16 @@
 ﻿using System;
-using System.Diagnostics;
 using Unmanaged;
 
 namespace Worlds
 {
-    public readonly struct EntityNew
-    {
-        public readonly uint value;
-        public readonly World world;
-
-        public EntityNew(World world, uint value)
-        {
-            this.world = world;
-            this.value = value;
-        }
-
-        public readonly bool ContainsComponent<T>() where T : unmanaged
-        {
-            return world.ContainsComponent<T>(value);
-        }
-
-        public readonly ref T GetComponent<T>() where T : unmanaged
-        {
-            return ref world.GetComponent<T>(value);
-        }
-
-        public readonly bool TryGetComponent<T>(out T component) where T : unmanaged
-        {
-            return world.TryGetComponent(value, out component);
-        }
-
-        public readonly ref T TryGetComponent<T>(out bool contains) where T : unmanaged
-        {
-            return ref world.TryGetComponent<T>(value, out contains);
-        }
-
-        public readonly ref T AddComponent<T>() where T : unmanaged
-        {
-            return ref world.AddComponent<T>(value);
-        }
-
-        public readonly ref T AddComponent<T>(T component) where T : unmanaged
-        {
-            return ref world.AddComponent(value, component);
-        }
-
-        public readonly void RemoveComponent<T>() where T : unmanaged
-        {
-            world.RemoveComponent<T>(value);
-        }
-    }
-
-    /// <summary>
-    /// Represents an entity in the simulation relative to a <see cref="World"/>.
-    /// </summary>
-    [DebuggerTypeProxy(typeof(EntityDebugView))]
     public readonly struct Entity : IEntity, IEquatable<Entity>
     {
-        /// <summary>
-        /// The entity's unique identifier.
-        /// </summary>
+        public readonly World world;
         public readonly uint value;
 
-        /// <summary>
-        /// The world this entity belongs to.
-        /// </summary>
-        public readonly World world;
-
-        readonly World IEntity.World => world;
-        readonly uint IEntity.Value => value;
-
-        readonly void IEntity.Describe(ref Archetype archetype)
-        {
-        }
+        public readonly bool IsDisposed => !world.ContainsEntity(value);
 
 #if NET
-        /// <summary>
-        /// Not suported.
-        /// </summary>
         [Obsolete("Default constructor not supported", true)]
         public Entity()
         {
@@ -86,244 +19,206 @@ namespace Worlds
 #endif
 
         /// <summary>
-        /// Initializes an existing value with the given <paramref name="existingEntity"/>.
+        /// Initializes an existing container of an entity.
         /// </summary>
-        public Entity(World world, uint existingEntity)
+        public Entity(World world, uint value)
         {
-            value = existingEntity;
+            //todo: emit an error saying that "hey 0 is not allowed"
+            World.Implementation.ThrowIfEntityIsMissing(world, value);
+
             this.world = world;
+            this.value = value;
         }
 
         /// <summary>
-        /// Creates a new entity in the given <paramref name="world"/>.
+        /// Creates a new entity in the specified <paramref name="world"/>.
         /// </summary>
         public Entity(World world)
         {
             this.world = world;
-            value = world.CreateEntity();
+            this.value = world.CreateEntity();
         }
 
-        /// <summary>
-        /// Destroys the entity.
-        /// </summary>
+        readonly void IEntity.Describe(ref Archetype archetype)
+        {
+        }
+
         public readonly void Dispose()
         {
             world.DestroyEntity(value);
         }
 
-        /// <inheritdoc/>
-        public unsafe readonly override string ToString()
+        public readonly bool Is<T>() where T : unmanaged, IEntity
         {
-            USpan<char> buffer = stackalloc char[32];
-            uint length = ToString(buffer);
-            return buffer.Slice(0, length).ToString();
+            Archetype archetype = Archetype.Get<T>(world.Schema);
+            return world.Is(value, archetype);
         }
 
-        /// <summary>
-        /// Builds a string representation of this entity.
-        /// </summary>
-        public readonly uint ToString(USpan<char> buffer)
+        public readonly bool Is(Definition definition)
         {
-            uint length = 0;
-            if (world == default)
-            {
-                buffer[length++] = 'O';
-                buffer[length++] = 'r';
-                buffer[length++] = 'p';
-                buffer[length++] = 'h';
-                buffer[length++] = 'a';
-                buffer[length++] = 'n';
-                buffer[length++] = ' ';
-            }
-            else if (!world.ContainsEntity(value))
-            {
-                buffer[length++] = 'D';
-                buffer[length++] = 'e';
-                buffer[length++] = 's';
-                buffer[length++] = 't';
-                buffer[length++] = 'r';
-                buffer[length++] = 'o';
-                buffer[length++] = 'y';
-                buffer[length++] = 'e';
-                buffer[length++] = 'd';
-                buffer[length++] = ' ';
-            }
-
-            length += value.ToString(buffer.Slice(length));
-            return length;
+            return world.Is(value, definition);
         }
 
-        /// <summary>
-        /// Retrieves an array of type <typeparamref name="T"/> on this entity.
-        /// </summary>
-        public readonly USpan<T> GetArray<T>() where T : unmanaged
+        public readonly bool Is(Archetype archetype)
         {
-            return world.GetArray<T>(value);
+            return world.Is(value, archetype);
         }
 
-        /// <summary>
-        /// Retrieves an element at <paramref name="index"/> from the array of type <typeparamref name="T"/> on this entity.
-        /// </summary>
-        public readonly ref T GetArrayElement<T>(uint index) where T : unmanaged
+        public readonly T Become<T>() where T : unmanaged, IEntity
         {
-            return ref world.GetArrayElement<T>(value, index);
+            Archetype archetype = Archetype.Get<T>(world.Schema);
+            world.Become(value, archetype);
+            return new Entity(world, value).As<T>();
         }
 
-        /// <summary>
-        /// Retrieves the length of the array of type <typeparamref name="T"/> on this entity.
-        /// </summary>
-        public readonly uint GetArrayLength<T>() where T : unmanaged
+        public readonly void Become(Definition definition)
         {
-            return world.GetArrayLength<T>(value);
+            world.Become(value, definition);
         }
 
-        /// <summary>
-        /// Checks if this entity has an array of type <typeparamref name="T"/>.
-        /// </summary>
-        public readonly bool ContainsArray<T>() where T : unmanaged
+        public readonly void Become(Archetype archetype)
         {
-            return world.ContainsArray<T>(value);
+            world.Become(value, archetype);
         }
 
-        /// <summary>
-        /// Destroys the array of type <typeparamref name="T"/> on this entity.
-        /// </summary>
-        public readonly void DestroyArray<T>() where T : unmanaged
+        public readonly T As<T>() where T : unmanaged, IEntity
         {
-            world.DestroyArray<T>(value);
+            return EntityExtensions.As<T>(this);
         }
 
-        /// <summary>
-        /// Creates a new uninitialized array of type <typeparamref name="T"/>.
-        /// </summary>
-        public readonly USpan<T> CreateArray<T>(uint length = 0) where T : unmanaged
+        public readonly Entity Clone()
         {
-            return world.CreateArray<T>(value, length);
+            return new Entity(world, world.CloneEntity(value));
         }
 
-        /// <summary>
-        /// Creates a new array of type <typeparamref name="T"/> with the given <paramref name="values"/>.
-        /// </summary>
-        public readonly void CreateArray<T>(USpan<T> values) where T : unmanaged
+        public readonly bool Contains(ComponentType componentType)
         {
-            world.CreateArray(value, values);
+            return world.Contains(value, componentType);
         }
 
-        /// <summary>
-        /// Resizes the array of type <typeparamref name="T"/> to the given <paramref name="newLength"/>.
-        /// </summary>
-        /// <returns>Newly resized array.</returns>
-        public readonly USpan<T> ResizeArray<T>(uint newLength) where T : unmanaged
+        public readonly bool Contains(ArrayElementType arrayElementType)
         {
-            return world.ResizeArray<T>(value, newLength);
+            return world.Contains(value, arrayElementType);
         }
 
-        /// <summary>
-        /// Changes the length of the existing <typeparamref name="T"/> array.
-        /// </summary>
-        public readonly USpan<T> ExpandArray<T>(int lengthDelta) where T : unmanaged
+        public readonly bool Contains(TagType tagType)
         {
-            return world.ExpandArray<T>(value, lengthDelta);
+            return world.Contains(value, tagType);
         }
 
-        /// <summary>
-        /// Increases the length of the existing <typeparamref name="T"/> array.
-        /// </summary>
-        public readonly USpan<T> ExpandArray<T>(uint increment) where T : unmanaged
+        public readonly void AddComponent(ComponentType componentType)
         {
-            return world.ExpandArray<T>(value, increment);
+            world.AddComponent(value, componentType);
         }
 
-        /// <summary>
-        /// Attempts to retrieve an array of type <typeparamref name="T"/> on this entity.
-        /// </summary>
-        public readonly bool TryGetArray<T>(out USpan<T> values) where T : unmanaged
+        public readonly void RemoveComponent(ComponentType componentType)
         {
-            if (ContainsArray<T>())
-            {
-                values = GetArray<T>();
-                return true;
-            }
-            else
-            {
-                values = default;
-                return false;
-            }
+            world.RemoveComponent(value, componentType);
         }
 
-        /// <summary>
-        /// Checks if this entity has a component of type <typeparamref name="T"/>.
-        /// </summary>
+        public readonly Allocation CreateArray(ArrayElementType arrayElementType, uint length = 0)
+        {
+            return world.CreateArray(value, arrayElementType, length);
+        }
+
+        public readonly Allocation GetArray(ArrayElementType arrayElementType, out uint length)
+        {
+            return world.GetArray(value, arrayElementType, out length);
+        }
+
+        public readonly Allocation ResizeArray(ArrayElementType arrayElementType, uint newLength)
+        {
+            return world.ResizeArray(value, arrayElementType, newLength);
+        }
+
+        public readonly void DestroyArray(ArrayElementType arrayElementType)
+        {
+            world.DestroyArray(value, arrayElementType);
+        }
+
         public readonly bool ContainsComponent<T>() where T : unmanaged
         {
             return world.ContainsComponent<T>(value);
         }
 
-        /// <summary>
-        /// Retrieves a reference for the component of type <typeparamref name="T"/>.
-        /// </summary>
         public readonly ref T GetComponent<T>() where T : unmanaged
         {
             return ref world.GetComponent<T>(value);
         }
 
-        /// <summary>
-        /// Adds a new component of type <typeparamref name="T"/> to the entity.
-        /// </summary>
-        /// <returns>Reference to the added component.</returns>
-        public readonly ref T AddComponent<T>() where T : unmanaged
-        {
-            return ref world.AddComponent<T>(value);
-        }
-
-        /// <summary>
-        /// Attempts to retrieve a reference for the component of type <typeparamref name="T"/>.
-        /// </summary>
-        /// <returns>Reference to the found component if <paramref name="contains"/> is <c>true</c>.</returns>
-        public readonly ref T TryGetComponent<T>(out bool contains) where T : unmanaged
-        {
-            return ref world.TryGetComponent<T>(value, out contains);
-        }
-
-        /// <summary>
-        /// Attempts to retrieve the component value of type <typeparamref name="T"/>.
-        /// </summary>
-        /// <returns><c>true</c> if found.</returns>
         public readonly bool TryGetComponent<T>(out T component) where T : unmanaged
         {
             return world.TryGetComponent(value, out component);
         }
 
-        /// <summary>
-        /// Retrieves an existing component of type <typeparamref name="T"/>, or the default value.
-        /// </summary>
-        public readonly T GetComponent<T>(T defaultValue) where T : unmanaged
+        public readonly ref T TryGetComponent<T>(out bool contains) where T : unmanaged
         {
-            return world.GetComponent(value, defaultValue);
+            return ref world.TryGetComponent<T>(value, out contains);
         }
 
-        /// <summary>
-        /// Assigns the given value to the entity's component of type <typeparamref name="T"/>.
-        /// </summary>
-        public readonly void SetComponent<T>(T component) where T : unmanaged
+        public readonly ref T AddComponent<T>() where T : unmanaged
         {
-            world.SetComponent(value, component);
+            return ref world.AddComponent<T>(value);
         }
 
-        /// <summary>
-        /// Adds a new <typeparamref name="T"/> component to the entity.
-        /// </summary>
         public readonly ref T AddComponent<T>(T component) where T : unmanaged
         {
             return ref world.AddComponent(value, component);
         }
 
-        /// <summary>
-        /// Removes the component of type <typeparamref name="T"/> from the entity.
-        /// </summary>
         public readonly void RemoveComponent<T>() where T : unmanaged
         {
             world.RemoveComponent<T>(value);
+        }
+
+        public readonly bool ContainsArray<T>() where T : unmanaged
+        {
+            return world.ContainsArray<T>(value);
+        }
+
+        public readonly uint GetArrayLength<T>() where T : unmanaged
+        {
+            return world.GetArrayLength<T>(value);
+        }
+
+        public readonly ref T GetArrayElement<T>(uint index) where T : unmanaged
+        {
+            return ref world.GetArrayElement<T>(value, index);
+        }
+
+        public readonly USpan<T> GetArray<T>() where T : unmanaged
+        {
+            return world.GetArray<T>(value);
+        }
+
+        public readonly bool TryGetArray<T>(out USpan<T> array) where T : unmanaged
+        {
+            return world.TryGetArray(value, out array);
+        }
+
+        public readonly void CreateArray<T>(USpan<T> elements) where T : unmanaged
+        {
+            world.CreateArray(value, elements);
+        }
+
+        public readonly USpan<T> CreateArray<T>(uint length = 0) where T : unmanaged
+        {
+            return world.CreateArray<T>(value, length);
+        }
+
+        public readonly USpan<T> ResizeArray<T>(uint newLength) where T : unmanaged
+        {
+            return world.ResizeArray<T>(value, newLength);
+        }
+
+        public readonly void DestroyArray<T>() where T : unmanaged
+        {
+            world.DestroyArray<T>(value);
+        }
+
+        public readonly void ContainsTag<T>() where T : unmanaged
+        {
+            world.ContainsTag<T>(value);
         }
 
         public readonly void AddTag<T>() where T : unmanaged
@@ -331,134 +226,124 @@ namespace Worlds
             world.AddTag<T>(value);
         }
 
-        /// <summary>
-        /// Interprets the entity as <typeparamref name="T"/>.
-        /// </summary>
-        public readonly unsafe T As<T>() where T : unmanaged, IEntity
+        public readonly void RemoveTag<T>() where T : unmanaged
         {
-            EntityExtensions.ThrowIfTypeLayoutMismatches<T>();
-
-            Entity self = this;
-            return *(T*)&self;
+            world.RemoveTag<T>(value);
         }
 
-        /// <summary>
-        /// Adds missing components and arrays that qualify the entity
-        /// to be what <see cref="Definition"/> of type <typeparamref name="T"/> argues.
-        /// </summary>
-        public readonly T Become<T>() where T : unmanaged, IEntity
+        public readonly override string ToString()
         {
-            Schema schema = world.Schema;
-            this.Become(Archetype.Get<T>(schema));
-            return As<T>();
+            return value.ToString();
         }
 
-        /// <summary>
-        /// Checks if this entity complies with the <see cref="Definition"/> of type <typeparamref name="T"/>.
-        /// </summary>
-        public readonly bool Is<T>() where T : unmanaged, IEntity
+        public readonly uint ToString(USpan<char> buffer)
         {
-            Schema schema = world.Schema;
-            return this.Is(Archetype.Get<T>(schema).Definition);
+            return value.ToString(buffer);
         }
 
-        /// <inheritdoc/>
         public readonly override bool Equals(object? obj)
         {
             return obj is Entity entity && Equals(entity);
         }
 
-        /// <inheritdoc/>
         public readonly bool Equals(Entity other)
         {
-            return world.Address * value == other.world.Address * other.value;
+            return world == other.world && value == other.value;
         }
 
-        /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return ((int)value * 397) ^ world.GetHashCode();
+            return HashCode.Combine(world, value);
         }
 
-        /// <inheritdoc/>
+        public static Entity Create<T1>(World world, T1 c1) where T1 : unmanaged
+        {
+            return new Entity(world, world.CreateEntity(c1));
+        }
+
+        public static Entity Create<T1, T2>(World world, T1 c1, T2 c2) where T1 : unmanaged where T2 : unmanaged
+        {
+            return new Entity(world, world.CreateEntity(c1, c2));
+        }
+
+        public static Entity Create<T1, T2, T3>(World world, T1 c1, T2 c2, T3 c3) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+        {
+            return new Entity(world, world.CreateEntity(c1, c2, c3));
+        }
+
+        public static Entity Create<T1, T2, T3, T4>(World world, T1 c1, T2 c2, T3 c3, T4 c4) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+        {
+            return new Entity(world, world.CreateEntity(c1, c2, c3, c4));
+        }
+
+        public static Entity Create<T1, T2, T3, T4, T5>(World world, T1 c1, T2 c2, T3 c3, T4 c4, T5 c5) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
+        {
+            return new Entity(world, world.CreateEntity(c1, c2, c3, c4, c5));
+        }
+
+        public static Entity Create<T1, T2, T3, T4, T5, T6>(World world, T1 c1, T2 c2, T3 c3, T4 c4, T5 c5, T6 c6) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
+        {
+            return new Entity(world, world.CreateEntity(c1, c2, c3, c4, c5, c6));
+        }
+
+        public static Entity Create<T1, T2, T3, T4, T5, T6, T7>(World world, T1 c1, T2 c2, T3 c3, T4 c4, T5 c5, T6 c6, T7 c7) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
+        {
+            return new Entity(world, world.CreateEntity(c1, c2, c3, c4, c5, c6, c7));
+        }
+
+        public static Entity Create<T1, T2, T3, T4, T5, T6, T7, T8>(World world, T1 c1, T2 c2, T3 c3, T4 c4, T5 c5, T6 c6, T7 c7, T8 c8) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
+        {
+            return new Entity(world, world.CreateEntity(c1, c2, c3, c4, c5, c6, c7, c8));
+        }
+
+        public static Entity Create<T1, T2, T3, T4, T5, T6, T7, T8, T9>(World world, T1 c1, T2 c2, T3 c3, T4 c4, T5 c5, T6 c6, T7 c7, T8 c8, T9 c9) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
+        {
+            return new Entity(world, world.CreateEntity(c1, c2, c3, c4, c5, c6, c7, c8, c9));
+        }
+
+        public static Entity Create<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(World world, T1 c1, T2 c2, T3 c3, T4 c4, T5 c5, T6 c6, T7 c7, T8 c8, T9 c9, T10 c10) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
+        {
+            return new Entity(world, world.CreateEntity(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10));
+        }
+
+        public static Entity Create<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(World world, T1 c1, T2 c2, T3 c3, T4 c4, T5 c5, T6 c6, T7 c7, T8 c8, T9 c9, T10 c10, T11 c11) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
+        {
+            return new Entity(world, world.CreateEntity(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11));
+        }
+
+        public static Entity Create<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(World world, T1 c1, T2 c2, T3 c3, T4 c4, T5 c5, T6 c6, T7 c7, T8 c8, T9 c9, T10 c10, T11 c11, T12 c12) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
+        {
+            return new Entity(world, world.CreateEntity(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12));
+        }
+
+        public static Entity Create<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(World world, T1 c1, T2 c2, T3 c3, T4 c4, T5 c5, T6 c6, T7 c7, T8 c8, T9 c9, T10 c10, T11 c11, T12 c12, T13 c13) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged
+        {
+            return new Entity(world, world.CreateEntity(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13));
+        }
+
+        public static Entity Create<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(World world, T1 c1, T2 c2, T3 c3, T4 c4, T5 c5, T6 c6, T7 c7, T8 c8, T9 c9, T10 c10, T11 c11, T12 c12, T13 c13, T14 c14) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged
+        {
+            return new Entity(world, world.CreateEntity(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14));
+        }
+
+        public static Entity Create<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(World world, T1 c1, T2 c2, T3 c3, T4 c4, T5 c5, T6 c6, T7 c7, T8 c8, T9 c9, T10 c10, T11 c11, T12 c12, T13 c13, T14 c14, T15 c15) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged
+        {
+            return new Entity(world, world.CreateEntity(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15));
+        }
+
+        public static Entity Create<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(World world, T1 c1, T2 c2, T3 c3, T4 c4, T5 c5, T6 c6, T7 c7, T8 c8, T9 c9, T10 c10, T11 c11, T12 c12, T13 c13, T14 c14, T15 c15, T16 c16) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged
+        {
+            return new Entity(world, world.CreateEntity(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16));
+        }
+
         public static bool operator ==(Entity left, Entity right)
         {
             return left.Equals(right);
         }
 
-        /// <inheritdoc/>
         public static bool operator !=(Entity left, Entity right)
         {
             return !(left == right);
-        }
-
-        public static implicit operator uint(Entity entity)
-        {
-            return entity.value;
-        }
-
-        internal class EntityDebugView
-        {
-#if DEBUG
-            public readonly uint value;
-            public readonly World world;
-            public readonly Entity parent;
-            public readonly Entity[] children;
-            public readonly bool enabled;
-            public readonly StackTrace creationStackTrace;
-            public readonly object[] components;
-            public readonly object[][] arrays;
-            public readonly Type[] tags;
-            public readonly Entity[] references;
-
-            public EntityDebugView(Entity entity)
-            {
-                value = entity.GetEntityValue();
-                world = entity.GetWorld();
-                enabled = entity.IsEnabled();
-                parent = entity.GetParent();
-                creationStackTrace = World.Implementation.createStackTraces[entity];
-
-                Schema schema = world.Schema;
-                USpan<ComponentType> componentTypeBuffer = stackalloc ComponentType[BitMask.Capacity];
-                uint bufferLength = entity.CopyComponentTypesTo(componentTypeBuffer);
-                components = new object[bufferLength];
-                for (uint i = 0; i < bufferLength; i++)
-                {
-                    components[i] = world.GetComponentObject(entity, componentTypeBuffer[i]);
-                }
-
-                USpan<ArrayElementType> arrayElementTypeBuffer = stackalloc ArrayElementType[BitMask.Capacity];
-                bufferLength = entity.CopyArrayElementTypesTo(arrayElementTypeBuffer);
-                arrays = new object[bufferLength][];
-                for (uint i = 0; i < bufferLength; i++)
-                {
-                    arrays[i] = world.GetArrayObject(entity, arrayElementTypeBuffer[i]);
-                }
-
-                USpan<TagType> tagTypeBuffer = stackalloc TagType[BitMask.Capacity];
-                bufferLength = entity.CopyTagTypesTo(tagTypeBuffer);
-                tags = new Type[bufferLength];
-                for (uint i = 0; i < bufferLength; i++)
-                {
-                    tags[i] = tagTypeBuffer[i].GetLayout(schema).SystemType;
-                }
-
-                references = new Entity[entity.GetReferenceCount()];
-                for (ushort i = 0; i < references.Length; i++)
-                {
-                    rint reference = (rint)(i + 1u);
-                    references[i] = new(world, entity.GetReference(reference));
-                }
-
-                USpan<uint> children = entity.GetChildren();
-                this.children = new Entity[children.Length];
-                for (uint i = 0; i < children.Length; i++)
-                {
-                    this.children[i] = new(world, children[i]);
-                }
-            }
-#endif
         }
     }
 }

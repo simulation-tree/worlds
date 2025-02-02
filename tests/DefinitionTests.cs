@@ -1,4 +1,5 @@
-﻿using Unmanaged;
+﻿using System;
+using Unmanaged;
 
 namespace Worlds.Tests
 {
@@ -192,25 +193,6 @@ namespace Worlds.Tests
             Assert.That(entity.Is<AnotherEntity>(), Is.True);
             Assert.That(entity.ContainsComponent<Another>(), Is.True);
             Assert.That(entity.ContainsArray<Byte>(), Is.True);
-        }
-
-        public readonly struct AnotherEntity : IEntity
-        {
-            private readonly Entity entity;
-
-            uint IEntity.Value => entity.GetEntityValue();
-            World IEntity.World => entity.GetWorld();
-
-            void IEntity.Describe(ref Archetype archetype)
-            {
-                archetype.AddComponentType<Another>();
-                archetype.AddArrayElementType<Byte>();
-            }
-
-            public readonly void Dispose()
-            {
-                entity.Dispose();
-            }
         }
     }
 }

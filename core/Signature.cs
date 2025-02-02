@@ -1,4 +1,6 @@
-﻿namespace Worlds
+﻿using System;
+
+namespace Worlds
 {
     public unsafe struct Signature
     {
@@ -14,6 +16,14 @@
                 }
             }
         }
+
+#if NET
+        [Obsolete("Default constructor not supported", true)]
+        public Signature()
+        {
+            throw new NotSupportedException();
+        }
+#endif
 
         public Signature(uint version)
         {

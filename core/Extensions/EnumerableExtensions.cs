@@ -71,7 +71,7 @@ namespace Worlds
         /// </summary>
         public static bool TryGetFirst<T>(this World world, out T entity, bool onlyEnabled = true) where T : unmanaged, IEntity
         {
-            EntityExtensions.ThrowIfTypeLayoutMismatches<T>();
+            EntityExtensions.ThrowIfNotEntity<T>();
 
             Schema schema = world.Schema;
             Definition definition = Archetype.Get<T>(schema).Definition;
@@ -128,7 +128,7 @@ namespace Worlds
         /// </summary>
         public static uint CountEntities<T>(this World world, bool onlyEnabled = true) where T : unmanaged, IEntity
         {
-            EntityExtensions.ThrowIfTypeLayoutMismatches<T>();
+            EntityExtensions.ThrowIfNotEntity<T>();
 
             Schema schema = world.Schema;
             Definition definition = Archetype.Get<T>(schema).Definition;

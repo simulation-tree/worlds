@@ -2,7 +2,7 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Worlds.TypeTableGenerator
+namespace Worlds.Generator
 {
     public class ReferenceCounter : CSharpSyntaxWalker
     {
