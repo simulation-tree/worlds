@@ -20,6 +20,16 @@ namespace Worlds
             return *(T*)&entity;
         }
 
+        public static World GetWorld<T>(this T entity) where T : unmanaged, IEntity
+        {
+            return AsEntity(entity).world;
+        }
+
+        public static uint GetEntityValue<T>(this T entity) where T : unmanaged, IEntity
+        {
+            return AsEntity(entity).value;
+        }
+
 #if DEBUG
         [Conditional("DEBUG")]
         public unsafe static void ThrowIfNotEntity<T>() where T : unmanaged, IEntity
