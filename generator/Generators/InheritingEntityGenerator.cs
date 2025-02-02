@@ -1,8 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using Types;
 
@@ -11,9 +9,6 @@ namespace Worlds.Generator
     [Generator(LanguageNames.CSharp)]
     public class InheritingEntityGenerator : IIncrementalGenerator
     {
-        private static readonly SymbolEqualityComparer symbolComparer = SymbolEqualityComparer.Default;
-        private const string InputVariableName = "input";
-
         void IIncrementalGenerator.Initialize(IncrementalGeneratorInitializationContext context)
         {
             var structTypes = context.SyntaxProvider.CreateSyntaxProvider(Predicate, Transform);
@@ -37,6 +32,7 @@ namespace Worlds.Generator
         private static void Generate(SourceProductionContext context, EntityType type, Compilation compilation)
         {
             SourceBuilder builder = new();
+            builder.AppendLine("#nullable enable");
             builder.AppendLine("using Worlds;");
             builder.AppendLine("using System;");
             builder.AppendLine("using Unmanaged;");
@@ -126,6 +122,11 @@ namespace Worlds.Generator
             StructDeclarationSyntax node = (StructDeclarationSyntax)syntaxContext.Node;
             ITypeSymbol? typeSymbol = syntaxContext.SemanticModel.GetDeclaredSymbol(node);
             if (typeSymbol is null)
+            {
+                return default;
+            }
+
+            if (typeSymbol is INamedTypeSymbol namedSymbol && namedSymbol.Arity > 0)
             {
                 return default;
             }
