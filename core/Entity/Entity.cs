@@ -9,6 +9,7 @@ namespace Worlds
         public readonly uint value;
 
         public readonly bool IsDisposed => !world.ContainsEntity(value);
+        public readonly bool IsCompliant => Is<Entity>();
 
 #if NET
         [Obsolete("Default constructor not supported", true)]
@@ -154,6 +155,11 @@ namespace Worlds
         public readonly ref T TryGetComponent<T>(out bool contains) where T : unmanaged
         {
             return ref world.TryGetComponent<T>(value, out contains);
+        }
+
+        public readonly void SetComponent<T>(T component) where T : unmanaged
+        {
+            world.SetComponent(value, component);
         }
 
         public readonly ref T AddComponent<T>() where T : unmanaged

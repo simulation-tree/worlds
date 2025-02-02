@@ -9,6 +9,7 @@
     public readonly uint value;
 
     public readonly bool IsDisposed => !world.ContainsEntity(value);
+    public readonly bool IsCompliant => Is<{{TypeName}}>();
 
 #if NET
     [Obsolete(""Default constructor not supported"", true)]
@@ -131,6 +132,11 @@
         return ref world.TryGetComponent<T>(value, out contains);
     }
 
+    public readonly void SetComponent<T>(T component) where T : unmanaged
+    {
+        world.SetComponent(value, component);
+    }
+
     public readonly ref T AddComponent<T>() where T : unmanaged
     {
         return ref world.AddComponent<T>(value);
@@ -204,16 +210,6 @@
     public readonly void RemoveTag<T>() where T : unmanaged
     {
         world.RemoveTag<T>(value);
-    }
-
-    public readonly override string ToString()
-    {
-        return value.ToString();
-    }
-
-    public readonly uint ToString(USpan<char> buffer)
-    {
-        return value.ToString(buffer);
     }
 
     public readonly override bool Equals(object? obj)
