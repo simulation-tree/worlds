@@ -120,7 +120,7 @@ namespace Worlds.Generator
 
             source.BeginGroup();
             {
-                source.AppendLine("void ISchemaBank.Load(RegisterDataType function)");
+                source.AppendLine("readonly void ISchemaBank.Load(RegisterDataType function)");
                 source.BeginGroup();
                 {
                     foreach (ITypeSymbol? type in types)
