@@ -1,4 +1,6 @@
-﻿namespace Worlds.Tests
+﻿using System;
+
+namespace Worlds.Tests
 {
     public class EntityTests : WorldTests
     {
@@ -31,6 +33,30 @@
             Assert.That(a.GetComponent<Apple>(), Is.EqualTo(new Apple(32)));
             Assert.That(a.GetComponent<Another>(), Is.EqualTo(new Another(10000)));
         }
+
+        [Test]
+        public void CheckGenericExtensions()
+        {
+            using World world = CreateWorld();
+            Entity a = new(world);
+            Assert.That(a.GetWorld(), Is.EqualTo(world));
+            Assert.That(a.GetEntityValue(), Is.EqualTo(a.value));
+        }
+
+#if DEBUG
+        [Test]
+        public void VeryCompatibleTypes()
+        {
+            using World world = CreateWorld();
+            Entity a = new(world);
+            a.As<AnotherEntity>();
+
+            Assert.Throws<InvalidCastException>(() =>
+            {
+                a.As<NotValidEntity>();
+            });
+        }
+#endif
 
         [Test]
         public void CreateAnotherEntity()
