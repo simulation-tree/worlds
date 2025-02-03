@@ -147,7 +147,7 @@ namespace Worlds
         /// Copies the array types in this definition to the <paramref name="destination"/>.
         /// </summary>
         /// <returns>Amount of array types copied.</returns>
-        public readonly byte CopyArrayElementTypesTo(USpan<ArrayElementType> destination)
+        public readonly byte CopyArrayTypesTo(USpan<ArrayElementType> destination)
         {
             byte count = 0;
             for (byte a = 0; a < BitMask.Capacity; a++)

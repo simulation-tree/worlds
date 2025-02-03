@@ -70,7 +70,7 @@ namespace Worlds
 
         public readonly byte CopyArrayElementTypesTo(USpan<ArrayElementType> destination)
         {
-            return definition.CopyArrayElementTypesTo(destination);
+            return definition.CopyArrayTypesTo(destination);
         }
 
         public readonly byte CopyTagTypesTo(USpan<TagType> destination)

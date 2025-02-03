@@ -57,7 +57,7 @@ namespace Worlds.Tests
             USpan<ComponentType> componentTypes = stackalloc ComponentType[BitMask.Capacity];
             USpan<ArrayElementType> arrayElementTypes = stackalloc ArrayElementType[BitMask.Capacity];
             a.CopyComponentTypesTo(componentTypes);
-            a.CopyArrayElementTypesTo(arrayElementTypes);
+            a.CopyArrayTypesTo(arrayElementTypes);
             Assert.That(componentTypes.Contains(schema.GetComponent<Integer>()), Is.True);
             Assert.That(componentTypes.Contains(schema.GetComponent<Character>()), Is.True);
             Assert.That(arrayElementTypes.Contains(schema.GetArrayElement<Double>()), Is.True);
