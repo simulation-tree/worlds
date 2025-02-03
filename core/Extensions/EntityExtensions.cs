@@ -25,12 +25,16 @@ namespace Worlds
 
         public unsafe static World GetWorld<T>(this T entity) where T : unmanaged, IEntity
         {
-            return AsEntity(entity).world;
+            ThrowIfNotEntity<T>();
+
+            return *(World*)&entity;
         }
 
         public unsafe static uint GetEntityValue<T>(this T entity) where T : unmanaged, IEntity
         {
-            return AsEntity(entity).value;
+            ThrowIfNotEntity<T>();
+
+            return *(uint*)((byte*)&entity + sizeof(World));
         }
 
 #if DEBUG
