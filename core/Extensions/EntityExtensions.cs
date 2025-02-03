@@ -1,4 +1,7 @@
-﻿using System;
+﻿#pragma warning disable IL2090
+#pragma warning disable IL2075
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 
@@ -34,33 +37,83 @@ namespace Worlds
         [Conditional("DEBUG")]
         public unsafe static void ThrowIfNotEntity<T>() where T : unmanaged, IEntity
         {
-            uint actualSize = (uint)sizeof(T);
-            uint expectedSize = (uint)sizeof(Entity);
-            if (actualSize != expectedSize)
+            if (!EntityTypeCache<T>.compatible)
             {
-                throw new InvalidCastException($"Cannot cast {typeof(T)} to Entity");
-            }
-
-            FieldInfo[] fields = FieldCache<T>.fields;
-            if (fields.Length == 2)
-            {
-                if (fields[0].FieldType != typeof(World) || fields[1].FieldType != typeof(uint))
-                {
-                    throw new InvalidCastException($"Cannot cast {typeof(T)} to Entity");
-                }
-            }
-            else
-            {
-                Type type = typeof(T);
-                throw new InvalidCastException($"Cannot cast {type} to Entity");
+                throw new InvalidCastException($"Cannot cast `{typeof(T)}` to Entity");
             }
         }
 
-        private static class FieldCache<T> where T : unmanaged, IEntity
+        private unsafe static class EntityTypeCache<T> where T : unmanaged, IEntity
         {
-#pragma warning disable IL2090
-            public static readonly FieldInfo[] fields = typeof(T).GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-#pragma warning restore IL2090
+            public static readonly bool compatible;
+
+            static EntityTypeCache()
+            {
+                uint actualSize = (uint)sizeof(T);
+                uint expectedSize = (uint)sizeof(Entity);
+                if (actualSize != expectedSize)
+                {
+                    compatible = false;
+                    return;
+                }
+
+                FieldInfo[] fields = typeof(T).GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                if (fields.Length == 2)
+                {
+                    if (fields[0].FieldType == typeof(World) && fields[1].FieldType == typeof(uint))
+                    {
+                        compatible = true;
+                    }
+                    else
+                    {
+                        compatible = false;
+                    }
+                }
+                else if (fields.Length == 1)
+                {
+                    Stack<Type> stack = new();
+                    stack.Push(fields[0].FieldType);
+                    while (stack.Count > 0)
+                    {
+                        Type current = stack.Pop();
+                        if (current == typeof(Entity))
+                        {
+                            compatible = true;
+                            break;
+                        }
+                        else
+                        {
+                            FieldInfo[] typeFields = current.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                            if (typeFields.Length == 2)
+                            {
+                                if (typeFields[0].FieldType == typeof(World) && typeFields[1].FieldType == typeof(uint))
+                                {
+                                    compatible = true;
+                                    break;
+                                }
+                                else
+                                {
+                                    compatible = false;
+                                    break;
+                                }
+                            }
+                            else if (typeFields.Length == 1)
+                            {
+                                stack.Push(typeFields[0].FieldType);
+                            }
+                            else
+                            {
+                                compatible = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    compatible = false;
+                }
+            }
         }
 #else
         [Conditional("DEBUG")]
