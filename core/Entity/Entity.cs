@@ -1,15 +1,23 @@
 ﻿using System;
+using System.Diagnostics;
 using Unmanaged;
 
 namespace Worlds
 {
+    [DebuggerTypeProxy(typeof(Entity.DebugView))]
     public readonly struct Entity : IEntity, IEquatable<Entity>
     {
         public readonly World world;
         public readonly uint value;
 
-        public readonly bool IsDisposed => !world.ContainsEntity(value);
+        public readonly bool IsDestroyed => !world.ContainsEntity(value);
         public readonly uint References => world.GetReferenceCount(value);
+
+        public readonly bool IsEnabled
+        {
+            get => world.IsEnabled(value);
+            set => world.SetEnabled(this.value, value);
+        }
 
         public readonly Entity Parent
         {
@@ -468,6 +476,123 @@ namespace Worlds
         public static bool operator !=(Entity left, Entity right)
         {
             return !(left == right);
+        }
+
+        public class DebugView
+        {
+            public readonly bool destroyed;
+            public readonly bool enabled;
+            public readonly World world;
+            public readonly uint value;
+            public readonly Entity parent;
+            public readonly Entity[] children;
+            public readonly Entity[] references;
+            public readonly Definition definition;
+            public readonly Type[] componentTypes;
+            public readonly Type[] arrayTypes;
+            public readonly Type[] tagTypes;
+            public readonly object[] components;
+            public readonly object[][] arrays;
+            public readonly StackTrace? creation;
+
+            public DebugView(Entity entity) : this(entity.world, entity.value)
+            {
+            }
+
+            public DebugView(World world, uint value)
+            {
+                this.world = world;
+                this.value = value;
+                destroyed = !world.ContainsEntity(value);
+                if (!destroyed)
+                {
+                    Entity entity = new(world, value);
+#if DEBUG
+                    World.Implementation.createStackTraces.TryGetValue(entity, out creation);
+#endif
+                    enabled = world.IsEnabled(value);
+                    uint parent = world.GetParent(value);
+                    if (parent != default)
+                    {
+                        this.parent = new Entity(world, parent);
+                    }
+                    else
+                    {
+                        this.parent = default;
+                    }
+
+                    if (world.TryGetChildren(value, out USpan<uint> children))
+                    {
+                        this.children = new Entity[children.Length];
+                        for (uint i = 0; i < children.Length; i++)
+                        {
+                            this.children[i] = new Entity(world, children[i]);
+                        }
+                    }
+                    else
+                    {
+                        this.children = Array.Empty<Entity>();
+                    }
+
+                    if (world.TryGetReferences(value, out USpan<uint> references))
+                    {
+                        this.references = new Entity[references.Length];
+                        for (uint i = 0; i < references.Length; i++)
+                        {
+                            this.references[i] = new Entity(world, references[i]);
+                        }
+                    }
+                    else
+                    {
+                        this.references = Array.Empty<Entity>();
+                    }
+
+                    Chunk chunk = world.GetChunk(value);
+                    definition = chunk.Definition;
+                    USpan<ComponentType> componentTypes = stackalloc ComponentType[BitMask.Capacity];
+                    byte count = definition.CopyComponentTypesTo(componentTypes);
+                    components = new object[count];
+                    this.componentTypes = new Type[count];
+                    for (byte i = 0; i < count; i++)
+                    {
+                        ComponentType componentType = componentTypes[i];
+                        components[i] = world.GetComponentObject(value, componentType);
+                        this.componentTypes[i] = componentType.GetLayout(world.Schema).SystemType;
+                    }
+
+                    USpan<ArrayElementType> arrayTypes = stackalloc ArrayElementType[BitMask.Capacity];
+                    count = definition.CopyArrayTypesTo(arrayTypes);
+                    arrays = new object[count][];
+                    this.arrayTypes = new Type[count];
+                    for (byte i = 0; i < count; i++)
+                    {
+                        ArrayElementType arrayType = arrayTypes[i];
+                        arrays[i] = world.GetArrayObject(value, arrayType);
+                        this.arrayTypes[i] = arrayType.GetLayout(world.Schema).SystemType;
+                    }
+
+                    USpan<TagType> tagTypes = stackalloc TagType[BitMask.Capacity];
+                    count = definition.CopyTagTypesTo(tagTypes);
+                    this.tagTypes = new Type[count];
+                    for (byte i = 0; i < count; i++)
+                    {
+                        TagType tagType = tagTypes[i];
+                        this.tagTypes[i] = tagType.GetLayout(world.Schema).SystemType;
+                    }
+                }
+                else
+                {
+                    definition = default;
+                    parent = default;
+                    children = Array.Empty<Entity>();
+                    references = Array.Empty<Entity>();
+                    componentTypes = Array.Empty<Type>();
+                    arrayTypes = Array.Empty<Type>();
+                    tagTypes = Array.Empty<Type>();
+                    components = Array.Empty<object>();
+                    arrays = Array.Empty<object[]>();
+                }
+            }
         }
     }
 }

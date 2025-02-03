@@ -3,13 +3,20 @@
     public static class EntityTemplate
     {
         public const string Source = @"
+[DebuggerTypeProxy(typeof({{TypeName}}.DebugView))]
 {{Accessors}} partial struct {{TypeName}} : IEntity, IEquatable<{{TypeName}}>
 {
     public readonly World world;
     public readonly uint value;
 
-    public readonly bool IsDisposed => !world.ContainsEntity(value);
+    public readonly bool IsDestroyed => !world.ContainsEntity(value);
     public readonly uint References => world.GetReferenceCount(value);
+
+    public readonly bool IsEnabled
+    {
+        get => world.IsEnabled(value);
+        set => world.SetEnabled(this.value, value);
+    }
 
     public readonly Entity Parent
     {
@@ -376,6 +383,16 @@
     public static implicit operator Entity({{TypeName}} entity)
     {
         return new(entity.world, entity.value);
+    }
+
+    public class DebugView : Entity.DebugView
+    {
+        public readonly bool compliant;
+
+        public DebugView({{TypeName}} entity) : base(entity.world, entity.value)
+        {
+            compliant = entity.IsCompliant;
+        }
     }
 }";
     }

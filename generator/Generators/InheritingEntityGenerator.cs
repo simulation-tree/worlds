@@ -36,6 +36,7 @@ namespace Worlds.Generator
             builder.AppendLine("#nullable enable");
             builder.AppendLine("using Worlds;");
             builder.AppendLine("using System;");
+            builder.AppendLine("using System.Diagnostics;");
             builder.AppendLine("using System.Threading;");
             builder.AppendLine("using System.Threading.Tasks;");
             builder.AppendLine("using Unmanaged;");
