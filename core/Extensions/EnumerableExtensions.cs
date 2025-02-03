@@ -82,7 +82,15 @@ namespace Worlds
             }
 
             bool found = query.TryGetFirst(out uint foundEntity);
-            entity = new Entity(world, foundEntity).As<T>();
+            if (found)
+            {
+                entity = new Entity(world, foundEntity).As<T>();
+            }
+            else
+            {
+                entity = default;
+            }
+
             return found;
         }
 
