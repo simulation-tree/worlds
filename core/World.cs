@@ -1594,6 +1594,14 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Checks if the given <paramref name="entity"/> contains a component of the given <paramref name="componentType"/>.
+        /// </summary>
+        public readonly bool ContainsComponent(uint entity, DataType componentType)
+        {
+            return Implementation.Contains(value, entity, componentType.ComponentType);
+        }
+
+        /// <summary>
         /// Checks if the given <paramref name="entity"/> contains a component of <paramref name="componentType"/>.
         /// </summary>
         public readonly bool Contains(uint entity, ComponentType componentType)
