@@ -16,7 +16,7 @@
             uint a = world.CreateEntity();
             Entity entity = new(world, a);
             entity.Dispose();
-            Assert.That(entity.IsDisposed, Is.True);
+            Assert.That(entity.IsDestroyed, Is.True);
             Assert.That(world.ContainsEntity(a), Is.False);
         }
 
