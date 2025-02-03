@@ -168,7 +168,7 @@ public struct MyReference(rint entityReference)
     public rint entityReference = entityReference;
 }
 
-using World dummyWorld = new(SchemaRegistry.Get());
+using World dummyWorld = new(SchemaLoader.Get());
 uint firstEntity = dummyWorld.CreateEntity();
 uint secondEntity = dummyWorld.CreateEntity();
 rint entityReference = dummyWorld.AddReference(firstEntity, secondEntity);
@@ -182,10 +182,10 @@ uint oldSecondEntity = world.GetReference(oldFirstEntity, component.entityRefere
 
 ### Forming entity types
 
-A commonly reused pattern with components is to formalize them into types, where the
-type is qualified by components present on the entity. For example: if an entity
-contains an `PlayerName` then its a player entity. This design is supported through the
-`IEntity` interface and its required `Definition` property:
+A commonly reused pattern with components is to formalize them into argued objects, where the
+type is qualified by the data present on the entity. For example, if an entity
+contains a `PlayerName`, then its a player entity. This design is supported with the
+`IEntity` interface and its required `Describe()` method:
 ```cs
 [Component]
 public struct PlayerName(FixedString name)
@@ -193,15 +193,10 @@ public struct PlayerName(FixedString name)
     public FixedString name = name;
 }
 
-public readonly struct Player : IEntity
+public readonly partial struct Player : IEntity
 {
-    public readonly Entity entity;
+    public readonly ref FixedString Name => ref GetComponent<PlayerName>().name;
 
-    public readonly ref FixedString Name => ref entity.GetComponent<PlayerName>().name;
-
-    readonly uint IEntity.Value => entity.value;
-    readonly World IEntity.World => entity.world;
-    
     readonly void IEntity.Describe(ref Archetype archetype)
     {
         archetype.AddComponentType<PlayerName>();    
@@ -209,45 +204,71 @@ public readonly struct Player : IEntity
 
     public Player(World world, FixedString name)
     {
-        this.entity = new(world);
-        entity.AddComponent(new PlayerName(name));
+        this.world = world;
+        value = world.CreateEntity(new PlayerName(name));
     }
 }
 
 //creating a player using its type's constructor
 Player player = new(world, "unnamed");
 ```
-> The layout of an `IEntity` type is expected to be match `uint`+`World`.
+> Entity types that are partial will have all of the API available
 
 These types can then be used to transform or interpret existing entities:
 ```cs
 //creating an entity, and making it into a player
-Player player = new Entity(world).Become<Player>();
-player.Name = "unnamed";
+Entity supposedPlayer = new(world);
+supposedPlayer.Become<Player>();
 
-//creating an entity, manually adding the components, then reinterpreting
-uint anotherEntity = world.CreateEntity();
-world.AddComponent(anotherEntity, new PlayerName("unnamed"));
-Player anotherPlayer = new Entity(world, anotherEntity).As<Player>();
+if (!supposedPlayer.Is<Player>())
+{
+    throw new InvalidOperationException($"Entity `{supposedPlayer}` was expected to be a player");
+}
+
+Player player = supposedPlayer.As<Player>();
+player.Name = "New name";
 ```
 
-### Serialization and deserialization
+### Serialization and appending
 
-Serializing a world to bytes is simple:
+Serializing a world to bytes and then appending to another world:
 ```cs
-using World prefabWorld = new(SchemaRegistry.Get());
+Schema schema = SchemaLoader.Get();
+using World prefabWorld = new(schema);
 Entity entity = new(prefabWorld);
 entity.AddComponent(new MyComponent(1337));
-prefabWorld.CreateArray<char>(entity, "Hello world");
+entity.CreateArray<char>("Hello world".AsSpan());
 
 using BinaryWriter writer = new();
 writer.WriteObject(prefabWorld);
-USpan<byte> bytes = writer.GetBytes();
+USpan<byte> bytes = writer.AsSpan();
 
 using BinaryReader reader = new(bytes);
-using World deserializedWorld = reader.ReadObject<World>();
-using World anotherWorld = new(SchemaRegistry.Get());
-anotherWorld.Append(deserializedWorld);
+using World loadedWorld = reader.ReadObject<World>();
+using World anotherWorld = new(schema);
+anotherWorld.Append(loadedWorld);
+```
+
+### Processing deserialized schemas
+
+When worlds are serialized they contain the schema that was used. Together
+with the original `TypeLayout` values. Allowing for them to be processed
+in different assemblies, and routing found types into available ones:
+```cs
+using World loadedWorld = World.Deserialize(reader, Process);
+
+static TypeLayout Process(TypeLayout type, DataType.Kind dataType)
+{
+    if (type.Is<MyComponent>())
+    {
+        //change the type to uint
+        return TypeRegistry.Get<uint>();
+    }
+    else
+    {
+        return type;
+    }
+}
 ```
 
 ### Contributing and design
