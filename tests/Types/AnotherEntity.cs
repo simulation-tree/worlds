@@ -8,10 +8,10 @@
             this.world = world;
         }
 
-        void IEntity.Describe(ref Archetype archetype)
+        public readonly void Describe(ref Archetype archetype)
         {
             archetype.AddComponentType<Another>();
-            archetype.AddArrayElementType<Byte>();
+            archetype.AddArrayType<Byte>();
         }
     }
 }

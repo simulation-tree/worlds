@@ -911,7 +911,7 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Retrieves the parent of the given entity, <c>default</c> if none
+        /// Retrieves the parent of the given entity, <see langword="default"/> if none
         /// is assigned.
         /// </summary>
         public readonly uint GetParent(uint entity)
@@ -2845,7 +2845,7 @@ namespace Worlds
                 }
 
                 Definition newDefinition = oldDefinition;
-                newDefinition.AddArrayElementType(arrayElementType);
+                newDefinition.AddArrayType(arrayElementType);
 
                 Dictionary<Definition, Chunk> chunks = world->chunks;
                 if (!chunks.TryGetValue(newDefinition, out Chunk destinationChunk))

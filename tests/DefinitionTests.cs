@@ -159,11 +159,11 @@ namespace Worlds.Tests
             Assert.That(archetype.ComponentTypes.Count, Is.EqualTo(1));
             archetype.AddComponentType<Float>();
             Assert.That(archetype.ComponentTypes.Count, Is.EqualTo(2));
-            archetype.AddArrayElementType<Character>();
+            archetype.AddArrayType<Character>();
             Assert.That(archetype.ArrayElementTypes.Count, Is.EqualTo(1));
-            archetype.AddArrayElementType<Float>();
+            archetype.AddArrayType<Float>();
             Assert.That(archetype.ArrayElementTypes.Count, Is.EqualTo(2));
-            archetype.AddArrayElementType<Byte>();
+            archetype.AddArrayType<Byte>();
             Assert.That(archetype.ArrayElementTypes.Count, Is.EqualTo(3));
 
             Assert.That(archetype.ContainsComponent<Byte>(), Is.True);

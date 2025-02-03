@@ -9,7 +9,33 @@
     public readonly uint value;
 
     public readonly bool IsDisposed => !world.ContainsEntity(value);
-    public readonly bool IsCompliant => Is<{{TypeName}}>();
+    public readonly uint References => world.GetReferenceCount(value);
+
+    public readonly Entity Parent
+    {
+        get
+        {
+            uint parent = world.GetParent(value);
+            return parent == default ? default : new Entity(world, parent);
+        }
+    }
+        
+    public readonly USpan<uint> Children
+    {
+        get
+        {
+            return world.TryGetChildren(value, out USpan<uint> children) ? children : default;
+        }
+    }
+    
+    public readonly bool IsCompliant
+    {
+        get
+        {
+            {{ComplianceChecks}}
+            return true;
+        }
+    }
 
 #if NET
     [Obsolete(""Default constructor not supported"", true)]
@@ -22,6 +48,32 @@
     public readonly void Dispose()
     {
         world.DestroyEntity(value);
+    }
+
+    public readonly bool SetParent(uint otherEntity)
+    {
+        return world.SetParent(value, otherEntity);
+    }
+
+    public readonly bool SetParent<T>(T otherEntity) where T : unmanaged, IEntity
+    {
+        return world.SetParent(value, otherEntity.GetEntityValue());
+    }
+
+    public readonly bool TryGetParent(out Entity parent)
+    {
+        uint parentValue = world.GetParent(value);
+        bool hasParent = parentValue != default;
+        if (hasParent)
+        {
+            parent = new Entity(world, parentValue);
+        }
+        else
+        {
+            parent = default;
+        }
+
+        return hasParent;
     }
 
     public readonly bool Is<T>() where T : unmanaged, IEntity
@@ -38,6 +90,15 @@
     public readonly bool Is(Archetype archetype)
     {
         return world.Is(value, archetype);
+    }
+
+    public readonly async Task UntilCompliant(Update update, CancellationToken cancellationToken = default)
+    {
+        while (!IsCompliant)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await update(world, cancellationToken);
+        }
     }
 
     public readonly T Become<T>() where T : unmanaged, IEntity
@@ -60,6 +121,76 @@
     public readonly T As<T>() where T : unmanaged, IEntity
     {
         return new Entity(world, value).As<T>();
+    }
+
+    public readonly rint AddReference(uint otherEntity)
+    {
+        return world.AddReference(value, otherEntity);
+    }
+
+    public readonly rint AddReference<T>(T otherEntity) where T : unmanaged, IEntity
+    {
+        return world.AddReference(value, otherEntity.GetEntityValue());
+    }
+
+    public readonly bool ContainsReference(uint otherEntity)
+    {
+        return world.ContainsReference(value, otherEntity);
+    }
+
+    public readonly bool ContainsReference(rint reference)
+    {
+        return world.ContainsReference(value, reference);
+    }
+
+    public readonly bool ContainsReference<T>(T otherEntity) where T : unmanaged, IEntity
+    {
+        return world.ContainsReference(value, otherEntity.GetEntityValue());
+    }
+
+    public readonly rint RemoveReference(uint otherEntity)
+    {
+        return world.RemoveReference(value, otherEntity);
+    }
+
+    public readonly uint RemoveReference(rint reference)
+    {
+        return world.RemoveReference(value, reference);
+    }
+
+    public readonly rint RemoveReference<T>(T otherEntity) where T : unmanaged, IEntity
+    {
+        return world.RemoveReference(value, otherEntity.GetEntityValue());
+    }
+
+    public readonly ref uint GetReference(rint reference)
+    {
+        return ref world.GetReference(value, reference);
+    }
+
+    public readonly rint GetReference(uint otherEntity)
+    {
+        return world.GetReference(value, otherEntity);
+    }
+
+    public readonly rint GetReference<T>(T otherEntity) where T : unmanaged, IEntity
+    {
+        return world.GetReference(value, otherEntity.GetEntityValue());
+    }
+
+    public readonly void SetReference(rint reference, uint otherEntity)
+    {
+        world.SetReference(value, reference, otherEntity);
+    }
+
+    public readonly void SetReference<T>(rint reference, T otherEntity) where T : unmanaged, IEntity
+    {
+        world.SetReference(value, reference, otherEntity.GetEntityValue());
+    }
+
+    public readonly bool TryGetReference(rint reference, out uint otherEntity)
+    {
+        return world.TryGetReference(value, reference, out otherEntity);
     }
 
     public readonly {{TypeName}} Clone()
@@ -95,6 +226,11 @@
     public readonly Allocation CreateArray(ArrayElementType arrayElementType, uint length = 0)
     {
         return world.CreateArray(value, arrayElementType, length);
+    }
+
+    public readonly Allocation GetArray(ArrayElementType arrayElementType)
+    {
+        return world.GetArray(value, arrayElementType, out _);
     }
 
     public readonly Allocation GetArray(ArrayElementType arrayElementType, out uint length)
@@ -197,9 +333,9 @@
         world.DestroyArray<T>(value);
     }
 
-    public readonly void ContainsTag<T>() where T : unmanaged
+    public readonly bool ContainsTag<T>() where T : unmanaged
     {
-        world.ContainsTag<T>(value);
+        return world.ContainsTag<T>(value);
     }
 
     public readonly void AddTag<T>() where T : unmanaged

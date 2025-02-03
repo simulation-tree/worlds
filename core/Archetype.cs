@@ -10,8 +10,9 @@ namespace Worlds
     /// </summary>
     public struct Archetype : IEquatable<Archetype>
     {
+        public readonly Schema schema;
+
         private Definition definition;
-        private readonly Schema schema;
         private unsafe fixed ushort componentSizes[BitMask.Capacity];
         private unsafe fixed ushort arrayElementSizes[BitMask.Capacity];
 
@@ -167,23 +168,23 @@ namespace Worlds
         /// <summary>
         /// Adds the array element of type <typeparamref name="T"/> to the definition.
         /// </summary>
-        public unsafe void AddArrayElementType<T>() where T : unmanaged
+        public unsafe void AddArrayType<T>() where T : unmanaged
         {
             ArrayElementType arrayElementType = schema.GetArrayElement<T>();
             ThrowIfArrayElementTypeIsPresent(arrayElementType);
 
-            definition.AddArrayElementType(arrayElementType);
+            definition.AddArrayType(arrayElementType);
             arrayElementSizes[arrayElementType] = (ushort)sizeof(T);
         }
 
         /// <summary>
         /// Adds <paramref name="arrayElementType"/> to the definition.
         /// </summary>
-        public unsafe void AddArrayElementType(ArrayElementType arrayElementType)
+        public unsafe void AddArrayType(ArrayElementType arrayElementType)
         {
             ThrowIfArrayElementTypeIsPresent(arrayElementType);
 
-            definition.AddArrayElementType(arrayElementType);
+            definition.AddArrayType(arrayElementType);
             arrayElementSizes[arrayElementType] = schema.GetSize(arrayElementType);
         }
 

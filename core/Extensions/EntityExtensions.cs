@@ -20,12 +20,12 @@ namespace Worlds
             return *(T*)&entity;
         }
 
-        public static World GetWorld<T>(this T entity) where T : unmanaged, IEntity
+        public unsafe static World GetWorld<T>(this T entity) where T : unmanaged, IEntity
         {
             return AsEntity(entity).world;
         }
 
-        public static uint GetEntityValue<T>(this T entity) where T : unmanaged, IEntity
+        public unsafe static uint GetEntityValue<T>(this T entity) where T : unmanaged, IEntity
         {
             return AsEntity(entity).value;
         }

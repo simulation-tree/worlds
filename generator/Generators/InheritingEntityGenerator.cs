@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Collections.Generic;
 using System.Threading;
 using Types;
 
@@ -35,6 +36,8 @@ namespace Worlds.Generator
             builder.AppendLine("#nullable enable");
             builder.AppendLine("using Worlds;");
             builder.AppendLine("using System;");
+            builder.AppendLine("using System.Threading;");
+            builder.AppendLine("using System.Threading.Tasks;");
             builder.AppendLine("using Unmanaged;");
             builder.AppendLine();
 
@@ -82,8 +85,10 @@ namespace Worlds.Generator
             }
 
             string typeName = type.typeSymbol.Name;
+            string complianceChecks = GetComplianceChecks(type, GetIndentation(source, "{{ComplianceChecks}}"), compilation);
             source = source.Replace("{{Accessors}}", accessors);
             source = source.Replace("{{TypeName}}", typeName);
+            source = source.Replace("{{ComplianceChecks}}", complianceChecks);
             string[] lines = source.Split('\n');
             for (int i = 0; i < lines.Length; i++)
             {
@@ -110,6 +115,159 @@ namespace Worlds.Generator
             }
 
             context.AddSource($"{type.typeSymbol.Name}.generated.cs", builder.ToString());
+        }
+
+        private static int GetIndentation(string text, string search)
+        {
+            int index = text.IndexOf(search);
+            if (index == -1)
+            {
+                return 0;
+            }
+
+            int indentation = 0;
+            for (int i = index - 1; i >= 0; i--)
+            {
+                char c = text[i];
+                if (c == ' ')
+                {
+                    indentation++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return indentation;
+        }
+
+        private static string GetComplianceChecks(EntityType type, int indentation, Compilation compilation)
+        {
+            IMethodSymbol? describeMethod = null;
+            foreach (IMethodSymbol method in type.typeSymbol.GetMethods())
+            {
+                if (method.Parameters.Length == 1)
+                {
+                    IParameterSymbol firstParameter = method.Parameters[0];
+                    if (firstParameter.RefKind == RefKind.Ref && firstParameter.Type.ToDisplayString() == "Worlds.Archetype")
+                    {
+                        if (method.MethodKind == MethodKind.ExplicitInterfaceImplementation)
+                        {
+                            if (method.Name == "Worlds.IEntity.Describe")
+                            {
+                                describeMethod = method;
+                                break;
+                            }
+                        }
+                        else if (method.MethodKind == MethodKind.Ordinary)
+                        {
+                            if (method.Name == "Describe")
+                            {
+                                describeMethod = method;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            SourceBuilder builder = new();
+            builder.Indent(indentation);
+            if (describeMethod is not null)
+            {
+                if (describeMethod.DeclaringSyntaxReferences.Length > 0)
+                {
+                    SyntaxNode node = describeMethod.DeclaringSyntaxReferences[0].GetSyntax();
+                    SemanticModel semanticModel = compilation.GetSemanticModel(type.syntaxNode.SyntaxTree);
+                    List<MemberAccessExpressionSyntax> invocations = new();
+                    foreach (SyntaxNode descendant in node.DescendantNodes())
+                    {
+                        if (descendant is MemberAccessExpressionSyntax invocationExpression)
+                        {
+                            invocations.Add(invocationExpression);
+                        }
+                    }
+
+                    foreach (MemberAccessExpressionSyntax invocation in invocations)
+                    {
+                        foreach (SyntaxNode child in invocation.ChildNodes())
+                        {
+                            if (child is GenericNameSyntax genericNameSyntax)
+                            {
+                                DataType dataType = default;
+                                if (genericNameSyntax.Identifier.ToString() == "AddComponentType")
+                                {
+                                    dataType = DataType.Component;
+                                }
+                                else if (genericNameSyntax.Identifier.ToString() == "AddArrayType")
+                                {
+                                    dataType = DataType.Array;
+                                }
+                                else if (genericNameSyntax.Identifier.ToString() == "AddTagType")
+                                {
+                                    dataType = DataType.Tag;
+                                }
+
+                                if (dataType != default)
+                                {
+                                    foreach (SyntaxNode grandChild in child.ChildNodes())
+                                    {
+                                        if (grandChild is TypeArgumentListSyntax typeArguments)
+                                        {
+                                            foreach (TypeSyntax typeArgument in typeArguments.Arguments)
+                                            {
+                                                TypeInfo foundTypeInfo = semanticModel.GetTypeInfo(typeArgument);
+                                                string typeName;
+                                                if (foundTypeInfo.Type is not null)
+                                                {
+                                                    typeName = foundTypeInfo.Type.GetFullTypeName();
+                                                }
+                                                else
+                                                {
+                                                    //full name is required
+                                                    //todo: emit a diagnostic asking for full type
+                                                    //but then once a full type name is given, how does this
+                                                    //generator know its a full type name?
+                                                    typeName = typeArgument.ToFullString();
+                                                }
+
+                                                builder.Append("if (!Contains");
+                                                if (dataType == DataType.Component)
+                                                {
+                                                    builder.Append("Component");
+                                                }
+                                                else if (dataType == DataType.Array)
+                                                {
+                                                    builder.Append("Array");
+                                                }
+                                                else if (dataType == DataType.Tag)
+                                                {
+                                                    builder.Append("Tag");
+                                                }
+
+                                                builder.Append('<');
+                                                builder.Append(typeName);
+                                                builder.Append(">())");
+                                                builder.AppendLine();
+                                                builder.BeginGroup();
+                                                {
+                                                    builder.AppendLine("return false;");
+                                                }
+                                                builder.EndGroup();
+                                                builder.AppendLine();
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            builder.Length -= 2;
+            return builder.ToString();
         }
 
         private static bool Predicate(SyntaxNode node, CancellationToken token)
@@ -152,6 +310,14 @@ namespace Worlds.Generator
             }
 
             return default;
+        }
+
+        public enum DataType : byte
+        {
+            Unknown = 0,
+            Component = 1,
+            Array = 2,
+            Tag = 3
         }
     }
 }

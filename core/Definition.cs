@@ -375,7 +375,7 @@ namespace Worlds
         /// <summary>
         /// Adds the specified <paramref name="arrayElementType"/> to this definition.
         /// </summary>
-        public Definition AddArrayElementType(ArrayElementType arrayElementType)
+        public Definition AddArrayType(ArrayElementType arrayElementType)
         {
             arrayElementTypes.Set(arrayElementType);
             return this;
