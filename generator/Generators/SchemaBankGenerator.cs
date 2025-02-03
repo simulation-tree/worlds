@@ -6,7 +6,7 @@ using System.Collections.Immutable;
 using System.Threading;
 using Types;
 
-namespace Worlds
+namespace Worlds.Generator
 {
     [Generator(LanguageNames.CSharp)]
     public class SchemaBankGenerator : IIncrementalGenerator
@@ -120,7 +120,7 @@ namespace Worlds
 
             source.BeginGroup();
             {
-                source.AppendLine("void ISchemaBank.Load(RegisterDataType function)");
+                source.AppendLine("readonly void ISchemaBank.Load(RegisterDataType function)");
                 source.BeginGroup();
                 {
                     foreach (ITypeSymbol? type in types)

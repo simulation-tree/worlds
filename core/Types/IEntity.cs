@@ -3,22 +3,13 @@
 namespace Worlds
 {
     /// <summary>
-    /// Describes a type of entity.
+    /// Denotes that the implementing type is an <see cref="Entity"/>.
     /// </summary>
     public interface IEntity : IDisposable
     {
         /// <summary>
-        /// The ID of the entity.
-        /// </summary>
-        uint Value { get; }
-
-        /// <summary>
-        /// The world that the entity belongs to.
-        /// </summary>
-        World World { get; }
-
-        /// <summary>
-        /// Describes the components, arrays and tags that compose this entity.
+        /// Describes the <see cref="ComponentType"/>s, <see cref="ArrayElementType"/>s
+        /// and <see cref="TagType"/>s that should be present on entities of this type.
         /// </summary>
         void Describe(ref Archetype archetype);
     }

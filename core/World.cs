@@ -815,6 +815,83 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Checks if the given <paramref name="entity"/> is compliant with the 
+        /// definition of the <paramref name="archetype"/>.
+        /// </summary>
+        public readonly bool Is(uint entity, Archetype archetype)
+        {
+            return Is(entity, archetype.Definition);
+        }
+
+        /// <summary>
+        /// Checks if the given <paramref name="entity"/> is compliant with the
+        /// <paramref name="definition"/>.
+        /// </summary>
+        public readonly bool Is(uint entity, Definition definition)
+        {
+            Implementation.ThrowIfEntityIsMissing(value, entity);
+
+            Chunk chunk = value->entityChunks[entity - 1];
+            Definition currentDefinition = chunk.Definition;
+            if (!currentDefinition.ComponentTypes.ContainsAll(definition.ComponentTypes))
+            {
+                return false;
+            }
+
+            if (!currentDefinition.ArrayElementTypes.ContainsAll(definition.ArrayElementTypes))
+            {
+                return false;
+            }
+
+            return currentDefinition.TagTypes.ContainsAll(definition.TagTypes);
+        }
+
+        /// <summary>
+        /// Makes the given <paramref name="entity"/> become what the 
+        /// <paramref name="definition"/> argues by adding the missing components, arrays
+        /// and tags.
+        /// </summary>
+        public readonly void Become(uint entity, Definition definition)
+        {
+            Archetype archetype = new(definition, value->schema);
+            Become(entity, archetype);
+        }
+
+        /// <summary>
+        /// Makes the given <paramref name="entity"/> become what the <paramref name="archetype"/>
+        /// argues by adding the missing components, arrays and tags.
+        /// </summary>
+        public readonly void Become(uint entity, Archetype archetype)
+        {
+            Implementation.ThrowIfEntityIsMissing(value, entity);
+
+            Chunk chunk = value->entityChunks[entity - 1];
+            Definition currentDefinition = chunk.Definition;
+            for (byte i = 0; i < BitMask.Capacity; i++)
+            {
+                ComponentType componentType = new(i);
+                if (archetype.Contains(componentType) && !currentDefinition.Contains(componentType))
+                {
+                    DataType dataType = new(componentType, archetype.GetSize(componentType));
+                    AddComponent(entity, dataType);
+                }
+
+                ArrayElementType arrayElementType = new(i);
+                if (archetype.Contains(arrayElementType) && !currentDefinition.Contains(arrayElementType))
+                {
+                    DataType dataType = new(arrayElementType, archetype.GetSize(arrayElementType));
+                    CreateArray(entity, dataType);
+                }
+
+                TagType tagType = new(i);
+                if (archetype.Contains(tagType) && !currentDefinition.Contains(tagType))
+                {
+                    AddTag(entity, tagType);
+                }
+            }
+        }
+
+        /// <summary>
         /// Creates entities to fill the given <paramref name="buffer"/>.
         /// </summary>
         public readonly void CreateEntities(USpan<uint> buffer)
@@ -834,15 +911,7 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Checks if the <paramref name="entity"/> exists and is valid in this world.
-        /// </summary>
-        public readonly bool ContainsEntity<T>(T entity) where T : unmanaged, IEntity
-        {
-            return ContainsEntity(entity.Value);
-        }
-
-        /// <summary>
-        /// Retrieves the parent of the given entity, <c>default</c> if none
+        /// Retrieves the parent of the given entity, <see langword="default"/> if none
         /// is assigned.
         /// </summary>
         public readonly uint GetParent(uint entity)
@@ -962,14 +1031,6 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Adds a new reference to the given entity.
-        /// </summary>
-        public readonly rint AddReference<T>(uint entity, T referencedEntity) where T : unmanaged, IEntity
-        {
-            return AddReference(entity, referencedEntity.Value);
-        }
-
-        /// <summary>
         /// Updates an existing <paramref name="reference"/> to point towards the <paramref name="referencedEntity"/>.
         /// </summary>
         public readonly void SetReference(uint entity, rint reference, uint referencedEntity)
@@ -980,14 +1041,6 @@ namespace Worlds
             uint index = (uint)reference;
             ref List<uint> references = ref value->references[entity - 1];
             references[index - 1] = referencedEntity;
-        }
-
-        /// <summary>
-        /// Updates an existing <paramref name="reference"/> to point towards the <paramref name="referencedEntity"/>.
-        /// </summary>
-        public readonly void SetReference<T>(uint entity, rint reference, T referencedEntity) where T : unmanaged, IEntity
-        {
-            SetReference(entity, reference, referencedEntity.Value);
         }
 
         /// <summary>
@@ -1009,14 +1062,6 @@ namespace Worlds
             }
 
             return references.Contains(referencedEntity);
-        }
-
-        /// <summary>
-        /// Checks if the given entity contains a reference to the given referenced entity.
-        /// </summary>
-        public readonly bool ContainsReference<T>(uint entity, T referencedEntity) where T : unmanaged, IEntity
-        {
-            return ContainsReference(entity, referencedEntity.Value);
         }
 
         /// <summary>
@@ -1177,10 +1222,10 @@ namespace Worlds
         public readonly bool ContainsTag<T>(uint entity) where T : unmanaged
         {
             TagType tagType = Schema.GetTag<T>();
-            return ContainsTag(entity, tagType);
+            return Contains(entity, tagType);
         }
 
-        public readonly bool ContainsTag(uint entity, TagType tagType)
+        public readonly bool Contains(uint entity, TagType tagType)
         {
             Implementation.ThrowIfEntityIsMissing(value, entity);
 
@@ -1292,15 +1337,15 @@ namespace Worlds
         public readonly bool ContainsArray<T>(uint entity) where T : unmanaged
         {
             ArrayElementType arrayElementType = Schema.GetArrayElement<T>();
-            return ContainsArray(entity, arrayElementType);
+            return Contains(entity, arrayElementType);
         }
 
         /// <summary>
         /// Checks if the given <paramref name="entity"/> contains an array of the given <paramref name="arrayElementType"/>.
         /// </summary>
-        public readonly bool ContainsArray(uint entity, ArrayElementType arrayElementType)
+        public readonly bool Contains(uint entity, ArrayElementType arrayElementType)
         {
-            return Implementation.ContainsArray(value, entity, arrayElementType);
+            return Implementation.Contains(value, entity, arrayElementType);
         }
 
         /// <summary>
@@ -1545,15 +1590,23 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsComponent<T>(uint entity) where T : unmanaged
         {
-            return ContainsComponent(entity, Schema.GetComponent<T>());
+            return Contains(entity, Schema.GetComponent<T>());
+        }
+
+        /// <summary>
+        /// Checks if the given <paramref name="entity"/> contains a component of the given <paramref name="componentType"/>.
+        /// </summary>
+        public readonly bool ContainsComponent(uint entity, DataType componentType)
+        {
+            return Implementation.Contains(value, entity, componentType.ComponentType);
         }
 
         /// <summary>
         /// Checks if the given <paramref name="entity"/> contains a component of <paramref name="componentType"/>.
         /// </summary>
-        public readonly bool ContainsComponent(uint entity, ComponentType componentType)
+        public readonly bool Contains(uint entity, ComponentType componentType)
         {
-            return Implementation.ContainsComponent(value, entity, componentType);
+            return Implementation.Contains(value, entity, componentType);
         }
 
         /// <summary>
@@ -1780,7 +1833,7 @@ namespace Worlds
                 if (sourceComponentTypes.ComponentTypes.Contains(c))
                 {
                     ComponentType componentType = new(c);
-                    if (!destinationWorld.ContainsComponent(destinationEntity, componentType))
+                    if (!destinationWorld.Contains(destinationEntity, componentType))
                     {
                         destinationWorld.AddComponent(destinationEntity, componentType);
                     }
@@ -1810,7 +1863,7 @@ namespace Worlds
                     Allocation sourceArray = Implementation.GetArray(value, sourceEntity, arrayElementType, out uint sourceLength);
                     Allocation destinationArray;
                     ushort arrayElementSize = schema.GetSize(arrayElementType);
-                    if (!destinationWorld.ContainsArray(destinationEntity, arrayElementType))
+                    if (!destinationWorld.Contains(destinationEntity, arrayElementType))
                     {
                         destinationArray = Implementation.CreateArray(destinationWorld.value, destinationEntity, arrayElementType, arrayElementSize, sourceLength);
                     }
@@ -1832,7 +1885,7 @@ namespace Worlds
                 if (tagTypes.Contains(t))
                 {
                     TagType tagType = new(t);
-                    if (!destinationWorld.ContainsTag(destinationEntity, tagType))
+                    if (!destinationWorld.Contains(destinationEntity, tagType))
                     {
                         destinationWorld.AddTag(destinationEntity, tagType);
                     }
@@ -1966,7 +2019,7 @@ namespace Worlds
             [Conditional("DEBUG")]
             public static void ThrowIfEntityIsMissing(Implementation* world, uint entity)
             {
-                if (entity == uint.MaxValue)
+                if (entity == default)
                 {
                     throw new InvalidOperationException($"Entity `{entity}` is not valid");
                 }
@@ -2800,7 +2853,7 @@ namespace Worlds
                 }
 
                 Definition newDefinition = oldDefinition;
-                newDefinition.AddArrayElementType(arrayElementType);
+                newDefinition.AddArrayType(arrayElementType);
 
                 Dictionary<Definition, Chunk> chunks = world->chunks;
                 if (!chunks.TryGetValue(newDefinition, out Chunk destinationChunk))
@@ -2822,7 +2875,7 @@ namespace Worlds
             /// <summary>
             /// Checks if the given <paramref name="entity"/> contains an array of the given <paramref name="arrayElementType"/>.
             /// </summary>
-            public static bool ContainsArray(Implementation* world, uint entity, ArrayElementType arrayElementType)
+            public static bool Contains(Implementation* world, uint entity, ArrayElementType arrayElementType)
             {
                 Allocations.ThrowIfNull(world);
                 ThrowIfEntityIsMissing(world, entity);
@@ -3027,7 +3080,7 @@ namespace Worlds
             /// <summary>
             /// Checks if the given <paramref name="entity"/> contains a component of the given <paramref name="componentType"/>.
             /// </summary>
-            public static bool ContainsComponent(Implementation* world, uint entity, ComponentType componentType)
+            public static bool Contains(Implementation* world, uint entity, ComponentType componentType)
             {
                 Allocations.ThrowIfNull(world);
                 ThrowIfEntityIsMissing(world, entity);

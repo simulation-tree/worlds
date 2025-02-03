@@ -1,7 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Types;
 
-namespace Worlds
+namespace Worlds.Generator
 {
     [Generator(LanguageNames.CSharp)]
     public class SchemaLoaderGenerator : IIncrementalGenerator

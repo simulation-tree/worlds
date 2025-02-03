@@ -71,7 +71,7 @@ namespace Worlds
         /// </summary>
         public static bool TryGetFirst<T>(this World world, out T entity, bool onlyEnabled = true) where T : unmanaged, IEntity
         {
-            EntityExtensions.ThrowIfTypeLayoutMismatches<T>();
+            EntityExtensions.ThrowIfNotEntity<T>();
 
             Schema schema = world.Schema;
             Definition definition = Archetype.Get<T>(schema).Definition;
@@ -82,7 +82,15 @@ namespace Worlds
             }
 
             bool found = query.TryGetFirst(out uint foundEntity);
-            entity = new Entity(world, foundEntity).As<T>();
+            if (found)
+            {
+                entity = new Entity(world, foundEntity).As<T>();
+            }
+            else
+            {
+                entity = default;
+            }
+
             return found;
         }
 
@@ -128,7 +136,7 @@ namespace Worlds
         /// </summary>
         public static uint CountEntities<T>(this World world, bool onlyEnabled = true) where T : unmanaged, IEntity
         {
-            EntityExtensions.ThrowIfTypeLayoutMismatches<T>();
+            EntityExtensions.ThrowIfNotEntity<T>();
 
             Schema schema = world.Schema;
             Definition definition = Archetype.Get<T>(schema).Definition;

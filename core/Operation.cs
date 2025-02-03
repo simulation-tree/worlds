@@ -394,7 +394,7 @@ namespace Worlds
         /// </summary>
         public readonly SelectedEntity SelectEntity<T>(T entity) where T : unmanaged, IEntity
         {
-            return SelectEntity(entity.GetEntityValue());
+            return SelectEntity(entity.AsEntity().value);
         }
 
         /// <summary>
@@ -431,7 +431,7 @@ namespace Worlds
         /// </summary>
         public readonly void SetParent<T>(T parent) where T : unmanaged, IEntity
         {
-            SetParent(parent.GetEntityValue());
+            SetParent(parent.AsEntity().value);
         }
 
         /// <summary>

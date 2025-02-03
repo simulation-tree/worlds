@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using Types;
 
-namespace Worlds.TypeTableGenerator
+namespace Worlds.Generator
 {
     public static class SharedFunctions
     {

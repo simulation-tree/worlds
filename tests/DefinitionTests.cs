@@ -1,4 +1,5 @@
-﻿using Unmanaged;
+﻿using System;
+using Unmanaged;
 
 namespace Worlds.Tests
 {
@@ -56,7 +57,7 @@ namespace Worlds.Tests
             USpan<ComponentType> componentTypes = stackalloc ComponentType[BitMask.Capacity];
             USpan<ArrayElementType> arrayElementTypes = stackalloc ArrayElementType[BitMask.Capacity];
             a.CopyComponentTypesTo(componentTypes);
-            a.CopyArrayElementTypesTo(arrayElementTypes);
+            a.CopyArrayTypesTo(arrayElementTypes);
             Assert.That(componentTypes.Contains(schema.GetComponent<Integer>()), Is.True);
             Assert.That(componentTypes.Contains(schema.GetComponent<Character>()), Is.True);
             Assert.That(arrayElementTypes.Contains(schema.GetArrayElement<Double>()), Is.True);
@@ -158,11 +159,11 @@ namespace Worlds.Tests
             Assert.That(archetype.ComponentTypes.Count, Is.EqualTo(1));
             archetype.AddComponentType<Float>();
             Assert.That(archetype.ComponentTypes.Count, Is.EqualTo(2));
-            archetype.AddArrayElementType<Character>();
+            archetype.AddArrayType<Character>();
             Assert.That(archetype.ArrayElementTypes.Count, Is.EqualTo(1));
-            archetype.AddArrayElementType<Float>();
+            archetype.AddArrayType<Float>();
             Assert.That(archetype.ArrayElementTypes.Count, Is.EqualTo(2));
-            archetype.AddArrayElementType<Byte>();
+            archetype.AddArrayType<Byte>();
             Assert.That(archetype.ArrayElementTypes.Count, Is.EqualTo(3));
 
             Assert.That(archetype.ContainsComponent<Byte>(), Is.True);
@@ -192,25 +193,6 @@ namespace Worlds.Tests
             Assert.That(entity.Is<AnotherEntity>(), Is.True);
             Assert.That(entity.ContainsComponent<Another>(), Is.True);
             Assert.That(entity.ContainsArray<Byte>(), Is.True);
-        }
-
-        public readonly struct AnotherEntity : IEntity
-        {
-            private readonly Entity entity;
-
-            uint IEntity.Value => entity.GetEntityValue();
-            World IEntity.World => entity.GetWorld();
-
-            void IEntity.Describe(ref Archetype archetype)
-            {
-                archetype.AddComponentType<Another>();
-                archetype.AddArrayElementType<Byte>();
-            }
-
-            public readonly void Dispose()
-            {
-                entity.Dispose();
-            }
         }
     }
 }
