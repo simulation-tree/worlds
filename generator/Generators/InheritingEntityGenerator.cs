@@ -173,8 +173,6 @@ namespace Worlds.Generator
                 }
             }
 
-            SourceBuilder builder = new();
-            builder.Indent(indentation);
             if (describeMethod is not null)
             {
                 if (describeMethod.DeclaringSyntaxReferences.Length > 0)
@@ -190,85 +188,101 @@ namespace Worlds.Generator
                         }
                     }
 
-                    foreach (MemberAccessExpressionSyntax invocation in invocations)
+                    if (invocations.Count > 0)
                     {
-                        foreach (SyntaxNode child in invocation.ChildNodes())
+                        SourceBuilder builder = new();
+                        builder.Indent(indentation);
+                        List<(DataType dataType, string typeName)> dataTypes = new();
+                        foreach (MemberAccessExpressionSyntax invocation in invocations)
                         {
-                            if (child is GenericNameSyntax genericNameSyntax)
+                            foreach (SyntaxNode child in invocation.ChildNodes())
                             {
-                                DataType dataType = default;
-                                if (genericNameSyntax.Identifier.ToString() == "AddComponentType")
+                                if (child is GenericNameSyntax genericNameSyntax)
                                 {
-                                    dataType = DataType.Component;
-                                }
-                                else if (genericNameSyntax.Identifier.ToString() == "AddArrayType")
-                                {
-                                    dataType = DataType.Array;
-                                }
-                                else if (genericNameSyntax.Identifier.ToString() == "AddTagType")
-                                {
-                                    dataType = DataType.Tag;
-                                }
-
-                                if (dataType != default)
-                                {
-                                    foreach (SyntaxNode grandChild in child.ChildNodes())
+                                    DataType dataType = default;
+                                    if (genericNameSyntax.Identifier.ToString() == "AddComponentType")
                                     {
-                                        if (grandChild is TypeArgumentListSyntax typeArguments)
+                                        dataType = DataType.Component;
+                                    }
+                                    else if (genericNameSyntax.Identifier.ToString() == "AddArrayType")
+                                    {
+                                        dataType = DataType.Array;
+                                    }
+                                    else if (genericNameSyntax.Identifier.ToString() == "AddTagType")
+                                    {
+                                        dataType = DataType.Tag;
+                                    }
+
+                                    if (dataType != default)
+                                    {
+                                        foreach (SyntaxNode grandChild in child.ChildNodes())
                                         {
-                                            foreach (TypeSyntax typeArgument in typeArguments.Arguments)
+                                            if (grandChild is TypeArgumentListSyntax typeArguments)
                                             {
-                                                TypeInfo foundTypeInfo = semanticModel.GetTypeInfo(typeArgument);
-                                                string typeName;
-                                                if (foundTypeInfo.Type is not null)
+                                                foreach (TypeSyntax typeArgument in typeArguments.Arguments)
                                                 {
-                                                    typeName = foundTypeInfo.Type.GetFullTypeName();
-                                                }
-                                                else
-                                                {
-                                                    //full name is required
-                                                    //todo: emit a diagnostic asking for full type
-                                                    //but then once a full type name is given, how does this
-                                                    //generator know its a full type name?
-                                                    typeName = typeArgument.ToFullString();
-                                                }
+                                                    TypeInfo foundTypeInfo = semanticModel.GetTypeInfo(typeArgument);
+                                                    string typeName;
+                                                    if (foundTypeInfo.Type is not null)
+                                                    {
+                                                        typeName = foundTypeInfo.Type.GetFullTypeName();
+                                                    }
+                                                    else
+                                                    {
+                                                        //full name is required
+                                                        //todo: emit a diagnostic asking for full type
+                                                        //but then once a full type name is given, how does this
+                                                        //generator know its a full type name?
+                                                        typeName = typeArgument.ToFullString();
+                                                    }
 
-                                                builder.Append("if (!Contains");
-                                                if (dataType == DataType.Component)
-                                                {
-                                                    builder.Append("Component");
+                                                    dataTypes.Add((dataType, typeName));
                                                 }
-                                                else if (dataType == DataType.Array)
-                                                {
-                                                    builder.Append("Array");
-                                                }
-                                                else if (dataType == DataType.Tag)
-                                                {
-                                                    builder.Append("Tag");
-                                                }
-
-                                                builder.Append('<');
-                                                builder.Append(typeName);
-                                                builder.Append(">())");
-                                                builder.AppendLine();
-                                                builder.BeginGroup();
-                                                {
-                                                    builder.AppendLine("return false;");
-                                                }
-                                                builder.EndGroup();
-                                                builder.AppendLine();
                                             }
                                         }
                                     }
                                 }
                             }
                         }
+
+                        if (dataTypes.Count > 0)
+                        {
+                            foreach ((DataType dataType, string typeName) in dataTypes)
+                            {
+                                builder.Append("if (!Contains");
+                                if (dataType == DataType.Component)
+                                {
+                                    builder.Append("Component");
+                                }
+                                else if (dataType == DataType.Array)
+                                {
+                                    builder.Append("Array");
+                                }
+                                else if (dataType == DataType.Tag)
+                                {
+                                    builder.Append("Tag");
+                                }
+
+                                builder.Append('<');
+                                builder.Append(typeName);
+                                builder.Append(">())");
+                                builder.AppendLine();
+                                builder.BeginGroup();
+                                {
+                                    builder.AppendLine("return false;");
+                                }
+                                builder.EndGroup();
+                                builder.AppendLine();
+                            }
+
+                            builder.Length -= 2;
+                            return builder.ToString();
+                        }
                     }
                 }
             }
 
-            builder.Length -= 2;
-            return builder.ToString();
+            return string.Empty;
         }
 
         private static bool Predicate(SyntaxNode node, CancellationToken token)
