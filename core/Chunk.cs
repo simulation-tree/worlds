@@ -858,9 +858,12 @@ namespace Worlds
                     }
                 }
 
-                Implementation* chunk = Allocations.Allocate<Implementation>();
-                chunk[0] = new(definition, componentArrays, new(typeIndices.Slice(0, typeCount)), schema);
-                return chunk;
+                ref Implementation chunk = ref Allocations.Allocate<Implementation>();
+                chunk = new(definition, componentArrays, new(typeIndices.Slice(0, typeCount)), schema);
+                fixed (Implementation* pointer = &chunk)
+                {
+                    return pointer;
+                }
             }
 
             /// <summary>

@@ -2173,9 +2173,12 @@ namespace Worlds
                 Chunk defaultChunk = new(schema);
                 chunks.Add(default, defaultChunk);
 
-                Implementation* world = Allocations.Allocate<Implementation>();
-                *world = new(states, entityChunks, freeEntities, parents, children, references, arrays, chunks, schema);
-                return world;
+                ref Implementation world = ref Allocations.Allocate<Implementation>();
+                world = new(states, entityChunks, freeEntities, parents, children, references, arrays, chunks, schema);
+                fixed (Implementation* pointer = &world)
+                {
+                    return pointer;
+                }
             }
 
             /// <summary>

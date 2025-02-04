@@ -919,11 +919,14 @@ namespace Worlds
                 Allocation sizes = new(BitMask.Capacity * 2 * 2, true);
                 Allocation tagExistence = new(BitMask.Capacity, true);
                 Allocation typeLayouts = new((uint)sizeof(TypeLayout) * BitMask.Capacity * 3, true);
-                Implementation* schema = Allocations.Allocate<Implementation>();
-                *schema = new(sizes, tagExistence, typeLayouts);
-                schema->components = 0;
-                schema->arrays = 0;
-                return schema;
+                ref Implementation schema = ref Allocations.Allocate<Implementation>();
+                schema = new(sizes, tagExistence, typeLayouts);
+                schema.components = 0;
+                schema.arrays = 0;
+                fixed (Implementation* pointer = &schema)
+                {
+                    return pointer;
+                }
             }
 
             public static void Free(ref Implementation* schema)

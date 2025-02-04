@@ -705,11 +705,14 @@ namespace Worlds
             public static Implementation* Allocate(uint initialCapacity)
             {
                 initialCapacity = Allocations.GetNextPowerOf2(Math.Max(1, initialCapacity));
-                Implementation* operation = Allocations.Allocate<Implementation>();
-                operation->count = 0;
-                operation->capacity = initialCapacity;
-                operation->list = new((uint)sizeof(Instruction) * initialCapacity);
-                return operation;
+                ref Implementation operation = ref Allocations.Allocate<Implementation>();
+                operation.count = 0;
+                operation.capacity = initialCapacity;
+                operation.list = new((uint)sizeof(Instruction) * initialCapacity);
+                fixed (Implementation* pointer = &operation)
+                {
+                    return pointer;
+                }
             }
 
             public static void Free(ref Implementation* operation)
