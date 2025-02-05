@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using System.Collections.Immutable;
 using Types;
 
-namespace Worlds.Analyzer
+namespace Worlds.Generator
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class SuggestUsingTag : DiagnosticAnalyzer

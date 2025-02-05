@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using System.Collections.Immutable;
 
-namespace Worlds.Analyzer
+namespace Worlds.Generator
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class NotInitializedEntityConstructor : DiagnosticAnalyzer
@@ -45,6 +45,12 @@ namespace Worlds.Analyzer
                     return;
                 }
 
+                //ignore if the constructor calls another constructor with " : this()"
+                if (constructor.Initializer != null)
+                {
+                    return;
+                }
+
                 if (constructor.Parent is TypeDeclarationSyntax typeDeclaration)
                 {
                     //must inherit Worlds.IEntity
@@ -53,19 +59,41 @@ namespace Worlds.Analyzer
                         return;
                     }
 
+                    //type must be partial
+                    if (!typeDeclaration.Modifiers.Any(SyntaxKind.PartialKeyword))
+                    {
+                        return;
+                    }
+
                     bool worldAssigned = false;
                     bool valueAssigned = false;
                     foreach (SyntaxNode descendant in constructor.DescendantNodes())
                     {
+                        //todo: accuracy: should check if the field being accessed is 
+                        //declared by this type
                         if (descendant is MemberAccessExpressionSyntax memberAccess)
                         {
                             if (memberAccess.Expression is ThisExpressionSyntax thisExpression)
                             {
-                                if (memberAccess.Name.Identifier.Text == "world")
+                                if (memberAccess.Name.Identifier.Text == WorldFieldName)
                                 {
                                     worldAssigned = true;
                                 }
-                                else if (memberAccess.Name.Identifier.Text == "value")
+                                else if (memberAccess.Name.Identifier.Text == ValueFieldName)
+                                {
+                                    valueAssigned = true;
+                                }
+                            }
+                        }
+                        else if (descendant is AssignmentExpressionSyntax assignment)
+                        {
+                            if (assignment.Left is IdentifierNameSyntax identifierName)
+                            {
+                                if (identifierName.Identifier.Text == WorldFieldName)
+                                {
+                                    worldAssigned = true;
+                                }
+                                else if (identifierName.Identifier.Text == ValueFieldName)
                                 {
                                     valueAssigned = true;
                                 }
