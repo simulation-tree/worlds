@@ -28,7 +28,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\analyzer\Worlds.Analyzer.csproj" />
 		<ProjectReference Include="..\generator\Worlds.Generator.csproj" />
 		<ProjectReference Include="..\core\Worlds.Core.csproj" />
 		<ProjectReference Include="..\..\types\source\Types.csproj" />
