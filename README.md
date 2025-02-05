@@ -89,26 +89,22 @@ void Do()
 }
 ```
 
-This approach is the most efficient, but is manual:
+This approach is the most efficient and quickest:
 ```cs
 uint sum = 0;
 
 void Do()
 {
     //only downside here is having to read a lot of code
-    Dictionary<Definition, Chunk> chunks = world.Chunks;
     ComponentType componentType = world.Schema.GetComponent<MyComponent>();
-    foreach (Definition key in chunks.Keys)
+    foreach (Chunk chunk in world.Chunks)
     {
-        if (key.ComponentTypes == componentType)
+        if (chunk.Contains(componentType))
         {
-            Chunk chunk = chunks[key];
-            USpan<uint> entities = chunk.Entities;
             USpan<MyComponent> components = chunk.GetComponents<MyComponent>();
-            for (uint e = 0; e < entities.Length; e++)
+            foreach (uint entity in chunk.Entities)
             {
-                uint entity = entities[e];
-                ref MyComponent component = ref components[e];
+                ref MyComponent component = ref components[entity];
                 component.value *= 2;
                 sum += component.value;
             }
