@@ -14,21 +14,7 @@ jobs:
         uses: actions/checkout@v4.1.2
         with:
           path: ${{ github.event.repository.name }}
-
-      - name: Checkout `unmanaged`
-        uses: actions/checkout@v4.1.2
-        with:
-          repository: game-simulations/unmanaged
-          token: ${{ secrets.PAT }}
-          path: unmanaged
-
-      - name: Checkout `collections`
-        uses: actions/checkout@v4.1.2
-        with:
-          repository: game-simulations/collections
-          token: ${{ secrets.PAT }}
-          path: collections
-    
+            
       - name: Checkout `types`
         uses: actions/checkout@v4.1.2
         with:
@@ -36,60 +22,77 @@ jobs:
           token: ${{ secrets.PAT }}
           path: types
       
-      - name: Setup dotnet
+      - name: Checkout `unmanaged`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/unmanaged
+          token: ${{ secrets.PAT }}
+          path: unmanaged
+      
+      - name: Checkout `collections`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/collections
+          token: ${{ secrets.PAT }}
+          path: collections
+            
+      - name: Setup
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
 
       - name: Set VERSION variable from tag
         run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
-
-      - name: Build Generator
+            
+      - name: Build `Worlds.Analyzer`
+        run: dotnet build "${{ github.event.repository.name }}/analyzer" -c Release /p:Version=${VERSION}
+      
+      - name: Build `Worlds.Core`
+        run: dotnet build "${{ github.event.repository.name }}/core" -c Release /p:Version=${VERSION}
+      
+      - name: Build `Worlds.Generator`
         run: dotnet build "${{ github.event.repository.name }}/generator" -c Release /p:Version=${VERSION}
       
-      - name: Build Analyzer
-        run: dotnet build "${{ github.event.repository.name }}/analyzer" -c Release /p:Version=${VERSION}
-
-      - name: Build Source
+      - name: Build `Worlds`
         run: dotnet build "${{ github.event.repository.name }}/source" -c Release /p:Version=${VERSION}
-
-      - name: Build Core
-        run: dotnet build "${{ github.event.repository.name }}/core" -c Release /p:Version=${VERSION}
-
+      
+      - name: Build `Worlds.Tests`
+        run: dotnet build "${{ github.event.repository.name }}/tests" -c Release /p:Version=${VERSION}
+            
       - name: Test
-        run: dotnet test "${{ github.event.repository.name }}/tests" -c Release
-
-      - name: Pack Generator
-        run: dotnet pack "${{ github.event.repository.name }}/generator" -c Release /p:Version=${VERSION} --no-build --output .
-
-      - name: Pack Analyzer
+        run: dotnet test "${{ github.event.repository.name }}/tests" -c Release --logger "trx"
+            
+      - name: Pack `Worlds.Analyzer`
         run: dotnet pack "${{ github.event.repository.name }}/analyzer" -c Release /p:Version=${VERSION} --no-build --output .
-
-      - name: Pack Source
+      
+      - name: Pack `Worlds.Core`
+        run: dotnet pack "${{ github.event.repository.name }}/core" -c Release /p:Version=${VERSION} --no-build --output .
+      
+      - name: Pack `Worlds.Generator`
+        run: dotnet pack "${{ github.event.repository.name }}/generator" -c Release /p:Version=${VERSION} --no-build --output .
+      
+      - name: Pack `Worlds`
         run: dotnet pack "${{ github.event.repository.name }}/source" -c Release /p:Version=${VERSION} --no-build --output .
 
-      - name: Pack Core
-        run: dotnet pack "${{ github.event.repository.name }}/core" -c Release /p:Version=${VERSION} --no-build --output .
-
-      - name: Add source
+      - name: Add NuGet Source
         run: dotnet nuget add source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --name github --username ${{ github.repository_owner }} --password ${{ github.token }} --store-password-in-clear-text
-      
-      - name: Push Generator
-        run: dotnet nuget push Worlds.Generator.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
-        env:
-          NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
-
-      - name: Push Analyzer
+            
+      - name: Publish `Worlds.Analyzer`
         run: dotnet nuget push Worlds.Analyzer.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
         env:
           NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
-
-      - name: Push Core
+      
+      - name: Publish `Worlds.Core`
         run: dotnet nuget push Worlds.Core.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
         env:
           NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
-
-      - name: Push Source
+      
+      - name: Publish `Worlds.Generator`
+        run: dotnet nuget push Worlds.Generator.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
+        env:
+          NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
+      
+      - name: Publish `Worlds`
         run: dotnet nuget push Worlds.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
         env:
           NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
