@@ -100,6 +100,12 @@ namespace Worlds
             return this;
         }
 
+        public Query RequireComponents(BitMask componentTypes)
+        {
+            required.AddComponentTypes(componentTypes);
+            return this;
+        }
+
         public Query ExcludeComponent<T>() where T : unmanaged
         {
             exclude.AddComponentType<T>(world.Schema);
@@ -112,6 +118,12 @@ namespace Worlds
             return this;
         }
 
+        public Query RequireArrayElements(BitMask arrayTypes)
+        {
+            required.AddArrayElementTypes(arrayTypes);
+            return this;
+        }
+
         public Query ExcludeArrayElement<T>() where T : unmanaged
         {
             exclude.AddArrayElementType<T>(world.Schema);
@@ -121,6 +133,12 @@ namespace Worlds
         public Query RequireTag<T>() where T : unmanaged
         {
             required.AddTagType<T>(world.Schema);
+            return this;
+        }
+
+        public Query RequireTags(BitMask tagTypes)
+        {
+            required.AddTagTypes(tagTypes);
             return this;
         }
 

@@ -522,10 +522,10 @@ namespace Worlds.Tests
             using List<(uint, Apple, Berry, Cherry)> results = new();
 
             //benchmark query
-            ComponentQuery<Apple, Berry, Cherry> query = new(world);
+            ComponentQuery<Apple, Berry, Cherry> componentQuery = new(world);
             stopwatch.Restart();
             {
-                foreach (var r in query)
+                foreach (var r in componentQuery)
                 {
                     results.Add((r.entity, r.component1, r.component2, r.component3));
                 }
@@ -597,9 +597,30 @@ namespace Worlds.Tests
             float manualOverListTime = stopwatch.ElapsedTicks / (float)Stopwatch.Frequency;
             Console.WriteLine($"Manual iteration over list took {manualOverListTime * 1000}ms");
 
+            //benchmarking with query type
+            results.Clear();
+            stopwatch.Restart();
+            {
+                Query query = new(world);
+                query.RequireComponents(componentTypes);
+                foreach (uint entity in query)
+                {
+                    ref Apple apple = ref world.GetComponent<Apple>(entity);
+                    ref Berry berry = ref world.GetComponent<Berry>(entity);
+                    ref Cherry cherry = ref world.GetComponent<Cherry>(entity);
+                    results.Add((entity, apple, berry, cherry));
+                }
+            }
+
+            stopwatch.Stop();
+            Assert.That(results.Count, Is.EqualTo(queryCount));
+            float queryTime = stopwatch.ElapsedTicks / (float)Stopwatch.Frequency;
+            Console.WriteLine($"Query took {queryTime * 1000}ms");
+
             //print ratios
-            Console.WriteLine($"Manual over map vs component query is {componentQueryTime / manualOverMapTime} times faster");
-            Console.WriteLine($"Manual over list vs component query is {componentQueryTime / manualOverListTime} times faster");
+            Console.WriteLine($"Manual over map vs component query  : {manualOverMapTime / componentQueryTime}x");
+            Console.WriteLine($"Manual over list vs component query : {manualOverListTime / componentQueryTime}x");
+            Console.WriteLine($"Query vs component query            : {queryTime / componentQueryTime}x");
         }
     }
 }

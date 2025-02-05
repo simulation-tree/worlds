@@ -495,6 +495,12 @@ namespace Worlds
             return this;
         }
 
+        public Definition AddTagTypes(BitMask tagTypes)
+        {
+            this.tagTypes |= tagTypes;
+            return this;
+        }
+
         public Definition AddTagTypes<T1, T2>(Schema schema) where T1 : unmanaged where T2 : unmanaged
         {
             tagTypes |= schema.GetTags<T1, T2>();
