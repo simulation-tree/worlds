@@ -85,11 +85,20 @@ namespace Worlds.Generator
                 accessors += " readonly";
             }
 
+            int complianceIndent = GetIndentation(source, "{{ComplianceChecks}}");
+            int bodyIndent = GetIndentation(source, "{{DisposeMethod}}");
+
+            string interfaces = GetInterfaces(type, compilation);
             string typeName = type.typeSymbol.Name;
-            string complianceChecks = GetComplianceChecks(type, GetIndentation(source, "{{ComplianceChecks}}"), compilation);
+            string complianceChecks = GetComplianceChecks(type, complianceIndent, compilation);
+            string disposeMethod = GetDisposeMethod(type, bodyIndent, compilation);
+            string equalityMethods = GetEqualityMethods(type, bodyIndent, compilation);
+            source = source.Replace("{{EntityInterfaces}}", interfaces);
+            source = source.Replace("{{DisposeMethod}}", disposeMethod);
+            source = source.Replace("{{EqualityMethods}}", equalityMethods);
             source = source.Replace("{{Accessors}}", accessors);
-            source = source.Replace("{{TypeName}}", typeName);
             source = source.Replace("{{ComplianceChecks}}", complianceChecks);
+            source = source.Replace("{{TypeName}}", typeName);
             string[] lines = source.Split('\n');
             for (int i = 0; i < lines.Length; i++)
             {
@@ -143,7 +152,7 @@ namespace Worlds.Generator
             return indentation;
         }
 
-        private static string GetComplianceChecks(EntityType type, int indentation, Compilation compilation)
+        private static string GetComplianceChecks(EntityType type, int indent, Compilation compilation)
         {
             IMethodSymbol? describeMethod = null;
             foreach (IMethodSymbol method in type.typeSymbol.GetMethods())
@@ -191,7 +200,7 @@ namespace Worlds.Generator
                     if (invocations.Count > 0)
                     {
                         SourceBuilder builder = new();
-                        builder.Indent(indentation);
+                        builder.Indent(indent);
                         List<(DataType dataType, string typeName)> dataTypes = new();
                         foreach (MemberAccessExpressionSyntax invocation in invocations)
                         {
@@ -283,6 +292,109 @@ namespace Worlds.Generator
             }
 
             return string.Empty;
+        }
+
+        private static string GetDisposeMethod(EntityType type, int indent, Compilation compilation)
+        {
+            bool hasDisposeMethod = false;
+            foreach (IMethodSymbol method in type.typeSymbol.GetMethods())
+            {
+                if (method.Name == "Dispose" && method.Parameters.Length == 0)
+                {
+                    hasDisposeMethod = true;
+                    break;
+                }
+            }
+
+            if (hasDisposeMethod)
+            {
+                return string.Empty;
+            }
+            else
+            {
+                SourceBuilder builder = new();
+                builder.Indent(indent);
+                builder.AppendLine();
+                builder.Append("public readonly void Dispose()");
+                builder.AppendLine();
+                builder.BeginGroup();
+                {
+                    builder.AppendLine("world.DestroyEntity(value);");
+                }
+                builder.EndGroup();
+                return builder.ToString();
+            }
+        }
+
+        private static string GetInterfaces(EntityType type, Compilation compilation)
+        {
+            //check if type already implements IEquatable
+            if (type.typeSymbol.HasInterface($"System.IEquatable<{type.fullTypeName}>"))
+            {
+                return string.Empty;
+            }
+
+            return ", IEquatable<{{TypeName}}>";
+        }
+
+        private static string GetEqualityMethods(EntityType type, int indent, Compilation compilation)
+        {
+            if (type.typeSymbol.HasInterface($"System.IEquatable<{type.fullTypeName}>"))
+            {
+                return string.Empty;
+            }
+
+            SourceBuilder builder = new();
+            builder.Indent(indent);
+            builder.AppendLine();
+            builder.AppendLine("public readonly override bool Equals(object? obj)");
+            builder.BeginGroup();
+            {
+                builder.Append("return obj is ");
+                builder.Append(type.fullTypeName);
+                builder.Append(" entity && Equals(entity);");
+                builder.AppendLine();
+            }
+            builder.EndGroup();
+            builder.AppendLine();
+            builder.AppendLine($"public readonly bool Equals({type.fullTypeName} other)");
+            builder.BeginGroup();
+            {
+                builder.AppendLine("return world == other.world && value == other.value;");
+            }
+            builder.EndGroup();
+            builder.AppendLine();
+            builder.AppendLine("public readonly override int GetHashCode()");
+            builder.BeginGroup();
+            {
+                builder.AppendLine("return HashCode.Combine(world, value);");
+            }
+            builder.EndGroup();
+            builder.AppendLine();
+            builder.Append("public static bool operator ==(");
+            builder.Append(type.fullTypeName);
+            builder.Append(" left, ");
+            builder.Append(type.fullTypeName);
+            builder.Append(" right)");
+            builder.AppendLine();
+            builder.BeginGroup();
+            {
+                builder.AppendLine("return left.Equals(right);");
+            }
+            builder.EndGroup();
+            builder.AppendLine();
+            builder.Append("public static bool operator !=(");
+            builder.Append(type.fullTypeName);
+            builder.Append(" left, ");
+            builder.Append(type.fullTypeName);
+            builder.Append(" right)");
+            builder.AppendLine();
+            builder.BeginGroup();
+            {
+                builder.AppendLine("return !(left == right);");
+            }
+            builder.EndGroup();
+            return builder.ToString();
         }
 
         private static bool Predicate(SyntaxNode node, CancellationToken token)

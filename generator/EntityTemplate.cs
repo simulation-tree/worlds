@@ -4,7 +4,7 @@
     {
         public const string Source = @"
 [DebuggerTypeProxy(typeof({{TypeName}}.DebugView))]
-{{Accessors}} partial struct {{TypeName}} : IEntity, IEquatable<{{TypeName}}>
+{{Accessors}} partial struct {{TypeName}} : IEntity{{EntityInterfaces}}
 {
     public readonly World world;
     public readonly uint value;
@@ -51,12 +51,7 @@
         throw new NotSupportedException();
     }
 #endif
-
-    public readonly void Dispose()
-    {
-        world.DestroyEntity(value);
-    }
-
+    {{DisposeMethod}}
     public readonly bool SetParent(uint otherEntity)
     {
         return world.SetParent(value, otherEntity);
@@ -354,32 +349,7 @@
     {
         world.RemoveTag<T>(value);
     }
-
-    public readonly override bool Equals(object? obj)
-    {
-        return obj is {{TypeName}} entity && Equals(entity);
-    }
-
-    public readonly bool Equals({{TypeName}} other)
-    {
-        return world == other.world && value == other.value;
-    }
-
-    public readonly override int GetHashCode()
-    {
-        return HashCode.Combine(world, value);
-    }
-
-    public static bool operator ==({{TypeName}} left, {{TypeName}} right)
-    {
-        return left.Equals(right);
-    }
-
-    public static bool operator !=({{TypeName}} left, {{TypeName}} right)
-    {
-        return !(left == right);
-    }
-
+    {{EqualityMethods}}
     public static implicit operator Entity({{TypeName}} entity)
     {
         return new(entity.world, entity.value);
