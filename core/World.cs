@@ -50,9 +50,14 @@ namespace Worlds
         public readonly List<EntityState> States => value->states;
 
         /// <summary>
-        /// All chunks in the world.
+        /// Dictionary mapping <see cref="Definition"/>s to <see cref="Chunk"/>s.
         /// </summary>
-        public readonly Dictionary<Definition, Chunk> Chunks => value->chunks;
+        public readonly Dictionary<Definition, Chunk> ChunksMap => value->chunksMap;
+
+        /// <summary>
+        /// All <see cref="Chunk"/>s in the world.
+        /// </summary>
+        public readonly USpan<Chunk> Chunks => value->uniqueChunks.AsSpan();
 
         /// <summary>
         /// The schema containing all component and array types.
@@ -202,7 +207,6 @@ namespace Worlds
         /// </summary>
         public readonly void Append(World sourceWorld)
         {
-            Dictionary<Definition, Chunk> chunks = Chunks;
             for (uint i = 0; i < sourceWorld.States.Count; i++)
             {
                 uint sourceEntity = i + 1;
@@ -568,7 +572,6 @@ namespace Worlds
             currentState = newState;
 
             //move to different chunk
-            Dictionary<Definition, Chunk> chunks = Chunks;
             ref Chunk chunk = ref value->entityChunks[entity - 1];
             Chunk oldChunk = chunk;
             Definition oldDefinition = oldChunk.Definition;
@@ -586,10 +589,11 @@ namespace Worlds
                     newDefinition.AddTagType(TagType.Disabled);
                 }
 
-                if (!chunks.TryGetValue(newDefinition, out Chunk newChunk))
+                if (!value->chunksMap.TryGetValue(newDefinition, out Chunk newChunk))
                 {
                     newChunk = new Chunk(newDefinition, Schema);
-                    chunks.Add(newDefinition, newChunk);
+                    value->chunksMap.Add(newDefinition, newChunk);
+                    value->uniqueChunks.Add(newChunk);
                 }
 
                 chunk = newChunk;
@@ -636,10 +640,11 @@ namespace Worlds
                                 newDefinition.AddTagType(TagType.Disabled);
                             }
 
-                            if (!chunks.TryGetValue(newDefinition, out Chunk newChunk))
+                            if (!value->chunksMap.TryGetValue(newDefinition, out Chunk newChunk))
                             {
                                 newChunk = new Chunk(newDefinition, Schema);
-                                chunks.Add(newDefinition, newChunk);
+                                value->chunksMap.Add(newDefinition, newChunk);
+                                value->uniqueChunks.Add(newChunk);
                             }
 
                             childChunk = newChunk;
@@ -664,14 +669,13 @@ namespace Worlds
         /// </summary>
         public readonly ref T TryGetFirstComponent<T>(out bool contains) where T : unmanaged
         {
-            Dictionary<Definition, Chunk> chunks = Chunks;
             Schema schema = Schema;
             ComponentType componentType = schema.GetComponent<T>();
-            foreach (Definition key in chunks.Keys)
+            foreach (Definition key in value->chunksMap.Keys)
             {
                 if (key.ComponentTypes.Contains(componentType))
                 {
-                    ref Chunk chunk = ref chunks[key];
+                    ref Chunk chunk = ref value->chunksMap[key];
                     if (chunk.Count > 0)
                     {
                         contains = true;
@@ -689,13 +693,12 @@ namespace Worlds
         /// </summary>
         public readonly bool TryGetFirstComponent<T>(out uint entity) where T : unmanaged
         {
-            Dictionary<Definition, Chunk> chunks = Chunks;
             ComponentType componentType = Schema.GetComponent<T>();
-            foreach (Definition key in chunks.Keys)
+            foreach (Definition key in value->chunksMap.Keys)
             {
                 if (key.ComponentTypes.Contains(componentType))
                 {
-                    ref Chunk chunk = ref chunks[key];
+                    ref Chunk chunk = ref value->chunksMap[key];
                     if (chunk.Count > 0)
                     {
                         entity = chunk.Entities[0];
@@ -713,14 +716,13 @@ namespace Worlds
         /// </summary>
         public readonly ref T TryGetFirstComponent<T>(out uint entity, out bool contains) where T : unmanaged
         {
-            Dictionary<Definition, Chunk> chunks = Chunks;
             Schema schema = Schema;
             ComponentType componentType = schema.GetComponent<T>();
-            foreach (Definition key in chunks.Keys)
+            foreach (Definition key in value->chunksMap.Keys)
             {
                 if (key.ComponentTypes.Contains(componentType))
                 {
-                    ref Chunk chunk = ref chunks[key];
+                    ref Chunk chunk = ref value->chunksMap[key];
                     if (chunk.Count > 0)
                     {
                         entity = chunk.Entities[0];
@@ -744,14 +746,13 @@ namespace Worlds
         /// <exception cref="NullReferenceException"></exception>"
         public readonly ref T GetFirstComponent<T>() where T : unmanaged
         {
-            Dictionary<Definition, Chunk> chunks = Chunks;
             Schema schema = Schema;
             ComponentType componentType = schema.GetComponent<T>();
-            foreach (Definition key in chunks.Keys)
+            foreach (Definition key in value->chunksMap.Keys)
             {
                 if (key.ComponentTypes.Contains(componentType))
                 {
-                    ref Chunk chunk = ref chunks[key];
+                    ref Chunk chunk = ref value->chunksMap[key];
                     if (chunk.Count > 0)
                     {
                         return ref chunk.GetComponent<T>(0, componentType);
@@ -771,14 +772,13 @@ namespace Worlds
         /// <exception cref="NullReferenceException"></exception>
         public readonly ref T GetFirstComponent<T>(out uint entity) where T : unmanaged
         {
-            Dictionary<Definition, Chunk> chunks = Chunks;
             Schema schema = Schema;
             ComponentType componentType = schema.GetComponent<T>();
-            foreach (Definition key in chunks.Keys)
+            foreach (Definition key in value->chunksMap.Keys)
             {
                 if (key.ComponentTypes.Contains(componentType))
                 {
-                    ref Chunk chunk = ref chunks[key];
+                    ref Chunk chunk = ref value->chunksMap[key];
                     if (chunk.Count > 0)
                     {
                         entity = chunk.Entities[0];
@@ -1568,13 +1568,12 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsAnyComponent<T>() where T : unmanaged
         {
-            Dictionary<Definition, Chunk> chunks = Chunks;
             ComponentType componentType = Schema.GetComponent<T>();
-            foreach (Definition key in chunks.Keys)
+            foreach (Definition key in value->chunksMap.Keys)
             {
                 if (key.ComponentTypes.Contains(componentType))
                 {
-                    Chunk chunk = chunks[key];
+                    Chunk chunk = value->chunksMap[key];
                     if (chunk.Entities.Length > 0)
                     {
                         return true;
@@ -1804,7 +1803,7 @@ namespace Worlds
                 mask.Set(componentTypes[i]);
             }
 
-            foreach (Definition key in Chunks.Keys)
+            foreach (Definition key in ChunksMap.Keys)
             {
                 if ((key.ComponentTypes & mask) == mask)
                 {
@@ -1978,13 +1977,14 @@ namespace Worlds
             public readonly List<List<uint>> children;
             public readonly List<List<uint>> references;
             public readonly List<Array<nint>> arrays;
-            public readonly Dictionary<Definition, Chunk> chunks;
+            public readonly Dictionary<Definition, Chunk> chunksMap;
+            public readonly List<Chunk> uniqueChunks;
             public readonly Schema schema;
             public readonly List<(EntityCreatedOrDestroyed, ulong)> entityCreatedOrDestroyed;
             public readonly List<(EntityParentChanged, ulong)> entityParentChanged;
             public readonly List<(EntityDataChanged, ulong)> entityDataChanged;
 
-            private Implementation(List<EntityState> states, List<Chunk> entityChunks, List<uint> freeEntities, List<uint> parents, List<List<uint>> children, List<List<uint>> references, List<Array<nint>> arrays, Dictionary<Definition, Chunk> chunks, Schema schema)
+            private Implementation(List<EntityState> states, List<Chunk> entityChunks, List<uint> freeEntities, List<uint> parents, List<List<uint>> children, List<List<uint>> references, List<Array<nint>> arrays, Dictionary<Definition, Chunk> chunksMap, List<Chunk> uniqueChunks, Schema schema)
             {
                 this.states = states;
                 this.entityChunks = entityChunks;
@@ -1993,7 +1993,8 @@ namespace Worlds
                 this.children = children;
                 this.references = references;
                 this.arrays = arrays;
-                this.chunks = chunks;
+                this.chunksMap = chunksMap;
+                this.uniqueChunks = uniqueChunks;
                 this.schema = schema;
                 entityCreatedOrDestroyed = new(4);
                 entityParentChanged = new(4);
@@ -2169,12 +2170,14 @@ namespace Worlds
                 List<List<uint>> references = new(4);
                 List<Array<nint>> arrays = new(4);
                 Dictionary<Definition, Chunk> chunks = new(4);
+                List<Chunk> uniqueChunks = new(4);
 
                 Chunk defaultChunk = new(schema);
                 chunks.Add(default, defaultChunk);
+                uniqueChunks.Add(defaultChunk);
 
                 ref Implementation world = ref Allocations.Allocate<Implementation>();
-                world = new(states, entityChunks, freeEntities, parents, children, references, arrays, chunks, schema);
+                world = new(states, entityChunks, freeEntities, parents, children, references, arrays, chunks, uniqueChunks, schema);
                 fixed (Implementation* pointer = &world)
                 {
                     return pointer;
@@ -2201,7 +2204,8 @@ namespace Worlds
                 world->references.Dispose();
                 world->arrays.Dispose();
                 world->freeEntities.Dispose();
-                world->chunks.Dispose();
+                world->chunksMap.Dispose();
+                world->uniqueChunks.Dispose();
                 Allocations.Free(ref world);
             }
 
@@ -2469,11 +2473,12 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(world);
 
-                foreach (Definition key in world->chunks.Keys)
+                foreach (Chunk chunk in world->uniqueChunks)
                 {
-                    ref Chunk chunk = ref world->chunks[key];
                     chunk.Dispose();
                 }
+
+                world->uniqueChunks.Clear();
 
                 for (uint c = 0; c < world->children.Count; c++)
                 {
@@ -2484,6 +2489,8 @@ namespace Worlds
                     }
                 }
 
+                world->children.Clear();
+
                 for (uint r = 0; r < world->references.Count; r++)
                 {
                     ref List<uint> references = ref world->references[r];
@@ -2492,6 +2499,8 @@ namespace Worlds
                         references.Dispose();
                     }
                 }
+
+                world->references.Clear();
 
                 for (uint a = 0; a < world->arrays.Count; a++)
                 {
@@ -2511,10 +2520,9 @@ namespace Worlds
                     }
                 }
 
-                world->references.Clear();
-                world->children.Clear();
                 world->arrays.Clear();
-                world->chunks.Clear();
+
+                world->chunksMap.Clear();
                 world->entityChunks.Clear();
                 world->states.Clear();
                 world->freeEntities.Clear();
@@ -2525,10 +2533,11 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(world);
 
-                if (!world->chunks.TryGetValue(definition, out chunk))
+                if (!world->chunksMap.TryGetValue(definition, out chunk))
                 {
                     chunk = new(definition, world->schema);
-                    world->chunks.Add(definition, chunk);
+                    world->chunksMap.Add(definition, chunk);
+                    world->uniqueChunks.Add(chunk);
                 }
 
                 uint entity;
@@ -2788,10 +2797,11 @@ namespace Worlds
                             newDefinition.AddTagType(TagType.Disabled);
                         }
 
-                        if (!world->chunks.TryGetValue(newDefinition, out Chunk destinationChunk))
+                        if (!world->chunksMap.TryGetValue(newDefinition, out Chunk destinationChunk))
                         {
                             destinationChunk = new(newDefinition, world->schema);
-                            world->chunks.Add(newDefinition, destinationChunk);
+                            world->chunksMap.Add(newDefinition, destinationChunk);
+                            world->uniqueChunks.Add(destinationChunk);
                         }
 
                         chunk = destinationChunk;
@@ -2858,11 +2868,11 @@ namespace Worlds
                 Definition newDefinition = oldDefinition;
                 newDefinition.AddArrayType(arrayElementType);
 
-                Dictionary<Definition, Chunk> chunks = world->chunks;
-                if (!chunks.TryGetValue(newDefinition, out Chunk destinationChunk))
+                if (!world->chunksMap.TryGetValue(newDefinition, out Chunk destinationChunk))
                 {
                     destinationChunk = new(newDefinition, world->schema);
-                    chunks.Add(newDefinition, destinationChunk);
+                    world->chunksMap.Add(newDefinition, destinationChunk);
+                    world->uniqueChunks.Add(destinationChunk);
                 }
 
                 chunk = destinationChunk;
@@ -2958,11 +2968,11 @@ namespace Worlds
                     arrays.Dispose();
                 }
 
-                Dictionary<Definition, Chunk> chunks = world->chunks;
-                if (!chunks.TryGetValue(newDefinition, out Chunk destinationChunk))
+                if (!world->chunksMap.TryGetValue(newDefinition, out Chunk destinationChunk))
                 {
                     destinationChunk = new(newDefinition, world->schema);
-                    chunks.Add(newDefinition, destinationChunk);
+                    world->chunksMap.Add(newDefinition, destinationChunk);
+                    world->uniqueChunks.Add(destinationChunk);
                 }
 
                 chunk = destinationChunk;
@@ -2979,16 +2989,16 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfComponentAlreadyPresent(world, entity, componentType);
 
-                Dictionary<Definition, Chunk> chunks = world->chunks;
                 ref Chunk chunk = ref world->entityChunks[entity - 1];
                 Chunk previousChunk = chunk;
                 Definition newDefinition = previousChunk.Definition;
                 newDefinition.AddComponentType(componentType);
 
-                if (!chunks.TryGetValue(newDefinition, out Chunk destinationChunk))
+                if (!world->chunksMap.TryGetValue(newDefinition, out Chunk destinationChunk))
                 {
                     destinationChunk = new(newDefinition, world->schema);
-                    chunks.Add(newDefinition, destinationChunk);
+                    world->chunksMap.Add(newDefinition, destinationChunk);
+                    world->uniqueChunks.Add(destinationChunk);
                 }
 
                 chunk = destinationChunk;
@@ -3014,17 +3024,17 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfComponentMissing(world, entity, componentType);
 
-                Dictionary<Definition, Chunk> chunks = world->chunks;
                 ref Chunk chunk = ref world->entityChunks[entity - 1];
                 Chunk previousChunk = chunk;
                 Definition newComponentTypes = previousChunk.Definition;
                 newComponentTypes.RemoveComponentType(componentType);
 
-                if (!chunks.TryGetValue(newComponentTypes, out Chunk destinationChunk))
+                if (!world->chunksMap.TryGetValue(newComponentTypes, out Chunk destinationChunk))
                 {
                     Schema schema = world->schema;
                     destinationChunk = new(newComponentTypes, schema);
-                    chunks.Add(newComponentTypes, destinationChunk);
+                    world->chunksMap.Add(newComponentTypes, destinationChunk);
+                    world->uniqueChunks.Add(destinationChunk);
                 }
 
                 chunk = destinationChunk;
@@ -3038,17 +3048,17 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfTagAlreadyPresent(world, entity, tagType);
 
-                Dictionary<Definition, Chunk> chunks = world->chunks;
                 ref Chunk chunk = ref world->entityChunks[entity - 1];
                 Chunk previousChunk = chunk;
                 Definition newDefinition = previousChunk.Definition;
                 newDefinition.AddTagType(tagType);
 
-                if (!chunks.TryGetValue(newDefinition, out Chunk destinationChunk))
+                if (!world->chunksMap.TryGetValue(newDefinition, out Chunk destinationChunk))
                 {
                     Schema schema = world->schema;
                     destinationChunk = new(newDefinition, schema);
-                    chunks.Add(newDefinition, destinationChunk);
+                    world->chunksMap.Add(newDefinition, destinationChunk);
+                    world->uniqueChunks.Add(destinationChunk);
                 }
 
                 chunk = destinationChunk;
@@ -3062,17 +3072,17 @@ namespace Worlds
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfTagIsMissing(world, entity, tagType);
 
-                Dictionary<Definition, Chunk> chunks = world->chunks;
                 ref Chunk chunk = ref world->entityChunks[entity - 1];
                 Chunk previousChunk = chunk;
                 Definition newComponentTypes = previousChunk.Definition;
                 newComponentTypes.RemoveTagType(tagType);
 
-                if (!chunks.TryGetValue(newComponentTypes, out Chunk destinationChunk))
+                if (!world->chunksMap.TryGetValue(newComponentTypes, out Chunk destinationChunk))
                 {
                     Schema schema = world->schema;
                     destinationChunk = new(newComponentTypes, schema);
-                    chunks.Add(newComponentTypes, destinationChunk);
+                    world->chunksMap.Add(newComponentTypes, destinationChunk);
+                    world->uniqueChunks.Add(destinationChunk);
                 }
 
                 chunk = destinationChunk;

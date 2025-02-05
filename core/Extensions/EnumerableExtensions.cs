@@ -8,7 +8,7 @@ namespace Worlds
     {
         public static System.Collections.Generic.IEnumerable<uint> GetAllContaining(this World world, BitMask componentTypes, bool onlyEnabled = true)
         {
-            Dictionary<Definition, Chunk> chunks = world.Chunks;
+            Dictionary<Definition, Chunk> chunks = world.ChunksMap;
             foreach (Definition key in chunks.Keys)
             {
                 if (key.ComponentTypes.ContainsAll(componentTypes))
@@ -43,7 +43,7 @@ namespace Worlds
         /// </summary>
         public static System.Collections.Generic.IEnumerable<T> GetAll<T>(this World world, bool onlyEnabled = true) where T : unmanaged, IEntity
         {
-            Dictionary<Definition, Chunk> chunks = world.Chunks;
+            Dictionary<Definition, Chunk> chunks = world.ChunksMap;
             Schema schema = world.Schema;
             Definition definition = Archetype.Get<T>(schema).Definition;
             foreach (Definition key in chunks.Keys)

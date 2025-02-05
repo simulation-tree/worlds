@@ -516,7 +516,8 @@ namespace Worlds.Tests
             }
 
             stopwatch.Stop();
-            Console.WriteLine($"Creating {count} entities took {stopwatch.ElapsedTicks / (float)Stopwatch.Frequency}ms");
+            float creationTime = stopwatch.ElapsedTicks / (float)Stopwatch.Frequency;
+            Console.WriteLine($"Creating {count} entities took {creationTime * 1000}ms");
 
             using List<(uint, Apple, Berry, Cherry)> results = new();
 
@@ -532,13 +533,14 @@ namespace Worlds.Tests
 
             stopwatch.Stop();
             uint queryCount = results.Count;
-            Console.WriteLine($"ComponentQuery took {stopwatch.ElapsedTicks / (float)Stopwatch.Frequency}ms");
+            float componentQueryTime = stopwatch.ElapsedTicks / (float)Stopwatch.Frequency;
+            Console.WriteLine($"ComponentQuery took {componentQueryTime * 1000}ms");
 
-            //benchmarking manually iterating
+            //benchmarking manually iterating over map
             results.Clear();
             stopwatch.Restart();
             {
-                Dictionary<Definition, Chunk> chunks = world.Chunks;
+                Dictionary<Definition, Chunk> chunks = world.ChunksMap;
                 foreach (Definition key in chunks.Keys)
                 {
                     if (key.ComponentTypes.ContainsAll(componentTypes))
@@ -562,7 +564,42 @@ namespace Worlds.Tests
 
             stopwatch.Stop();
             Assert.That(results.Count, Is.EqualTo(queryCount));
-            Console.WriteLine($"Manual iteration took {stopwatch.ElapsedTicks / (float)Stopwatch.Frequency}ms");
+            float manualOverMapTime = stopwatch.ElapsedTicks / (float)Stopwatch.Frequency;
+            Console.WriteLine($"Manual iteration over map took {manualOverMapTime * 1000}ms");
+
+            //benchmarking manually iterating over list
+            results.Clear();
+            stopwatch.Restart();
+            {
+                foreach (Chunk chunk in world.Chunks)
+                {
+                    Definition definition = chunk.Definition;
+                    if (definition.ComponentTypes.ContainsAll(componentTypes))
+                    {
+                        USpan<uint> entities = chunk.Entities;
+                        USpan<Apple> apples = chunk.GetComponents<Apple>(appleType);
+                        USpan<Berry> berries = chunk.GetComponents<Berry>(berryType);
+                        USpan<Cherry> cherries = chunk.GetComponents<Cherry>(cherryType);
+                        for (uint e = 0; e < entities.Length; e++)
+                        {
+                            uint entity = entities[e];
+                            ref Apple apple = ref apples[e];
+                            ref Berry berry = ref berries[e];
+                            ref Cherry cherry = ref cherries[e];
+                            results.Add((entity, apple, berry, cherry));
+                        }
+                    }
+                }
+            }
+
+            stopwatch.Stop();
+            Assert.That(results.Count, Is.EqualTo(queryCount));
+            float manualOverListTime = stopwatch.ElapsedTicks / (float)Stopwatch.Frequency;
+            Console.WriteLine($"Manual iteration over list took {manualOverListTime * 1000}ms");
+
+            //print ratios
+            Console.WriteLine($"Manual over map vs component query is {componentQueryTime / manualOverMapTime} times faster");
+            Console.WriteLine($"Manual over list vs component query is {componentQueryTime / manualOverListTime} times faster");
         }
     }
 }

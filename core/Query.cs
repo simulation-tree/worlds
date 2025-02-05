@@ -17,42 +17,46 @@ namespace Worlds
             get
             {
                 uint count = 0;
-                foreach (Definition key in world.Chunks.Keys)
+                foreach (Chunk chunk in world.Chunks)
                 {
-                    //check if chunk contains inclusion
-                    if ((key.ComponentTypes & required.ComponentTypes) != required.ComponentTypes)
+                    if (chunk.Count > 0)
                     {
-                        continue;
-                    }
+                        Definition key = chunk.Definition;
 
-                    if ((key.ArrayElementTypes & required.ArrayElementTypes) != required.ArrayElementTypes)
-                    {
-                        continue;
-                    }
+                        //check if chunk contains inclusion
+                        if ((key.ComponentTypes & required.ComponentTypes) != required.ComponentTypes)
+                        {
+                            continue;
+                        }
 
-                    if ((key.TagTypes & required.TagTypes) != required.TagTypes)
-                    {
-                        continue;
-                    }
+                        if ((key.ArrayElementTypes & required.ArrayElementTypes) != required.ArrayElementTypes)
+                        {
+                            continue;
+                        }
 
-                    //check if chunk doesnt contain exclusion
-                    if (key.ComponentTypes.ContainsAny(exclude.ComponentTypes))
-                    {
-                        continue;
-                    }
+                        if ((key.TagTypes & required.TagTypes) != required.TagTypes)
+                        {
+                            continue;
+                        }
 
-                    if (key.ArrayElementTypes.ContainsAny(exclude.ArrayElementTypes))
-                    {
-                        continue;
-                    }
+                        //check if chunk doesnt contain exclusion
+                        if (key.ComponentTypes.ContainsAny(exclude.ComponentTypes))
+                        {
+                            continue;
+                        }
 
-                    if (key.TagTypes.ContainsAny(exclude.TagTypes))
-                    {
-                        continue;
-                    }
+                        if (key.ArrayElementTypes.ContainsAny(exclude.ArrayElementTypes))
+                        {
+                            continue;
+                        }
 
-                    Chunk chunk = world.Chunks[key];
-                    count += chunk.Count;
+                        if (key.TagTypes.ContainsAny(exclude.TagTypes))
+                        {
+                            continue;
+                        }
+
+                        count += chunk.Count;
+                    }
                 }
 
                 return count;
@@ -133,71 +137,11 @@ namespace Worlds
 
         public readonly bool TryGetFirst(out uint entity)
         {
-            foreach (Definition key in world.Chunks.Keys)
+            foreach (Chunk chunk in world.Chunks)
             {
-                //check if chunk contains inclusion
-                if ((key.ComponentTypes & required.ComponentTypes) != required.ComponentTypes)
-                {
-                    continue;
-                }
-
-                if ((key.ArrayElementTypes & required.ArrayElementTypes) != required.ArrayElementTypes)
-                {
-                    continue;
-                }
-
-                if ((key.TagTypes & required.TagTypes) != required.TagTypes)
-                {
-                    continue;
-                }
-
-                //check if chunk doesnt contain exclusion
-                if (key.ComponentTypes.ContainsAny(exclude.ComponentTypes))
-                {
-                    continue;
-                }
-
-                if (key.ArrayElementTypes.ContainsAny(exclude.ArrayElementTypes))
-                {
-                    continue;
-                }
-
-                if (key.TagTypes.ContainsAny(exclude.TagTypes))
-                {
-                    continue;
-                }
-
-                Chunk chunk = world.Chunks[key];
                 if (chunk.Count > 0)
                 {
-                    entity = chunk.Entities[0];
-                    return true;
-                }
-            }
-
-            entity = default;
-            return false;
-        }
-
-        public ref struct Enumerator
-        {
-            private readonly Query query;
-
-            private Chunk chunk;
-            private uint chunkIndex;
-            private uint entityIndex;
-
-            public readonly uint Current => chunk.Entities[entityIndex - 1];
-
-            public Enumerator(Query query)
-            {
-                this.query = query;
-                World world = query.world;
-                Definition required = query.required;
-                Definition exclude = query.exclude;
-                foreach (Definition key in world.Chunks.Keys)
-                {
-                    chunkIndex++;
+                    Definition key = chunk.Definition;
 
                     //check if chunk contains inclusion
                     if ((key.ComponentTypes & required.ComponentTypes) != required.ComponentTypes)
@@ -231,7 +175,70 @@ namespace Worlds
                         continue;
                     }
 
-                    chunk = world.Chunks[key];
+                    entity = chunk.Entities[0];
+                    return true;
+                }
+            }
+
+            entity = default;
+            return false;
+        }
+
+        public ref struct Enumerator
+        {
+            private readonly Query query;
+
+            private Chunk chunk;
+            private uint chunkIndex;
+            private uint entityIndex;
+
+            public readonly uint Current => chunk.Entities[entityIndex - 1];
+
+            public Enumerator(Query query)
+            {
+                this.query = query;
+                World world = query.world;
+                Definition required = query.required;
+                Definition exclude = query.exclude;
+                for (uint i = 0; i < world.Chunks.Length; i++)
+                {
+                    Chunk chunk = world.Chunks[i];
+                    Definition key = chunk.Definition;
+
+                    //check if chunk contains inclusion
+                    if ((key.ComponentTypes & required.ComponentTypes) != required.ComponentTypes)
+                    {
+                        continue;
+                    }
+
+                    if ((key.ArrayElementTypes & required.ArrayElementTypes) != required.ArrayElementTypes)
+                    {
+                        continue;
+                    }
+
+                    if ((key.TagTypes & required.TagTypes) != required.TagTypes)
+                    {
+                        continue;
+                    }
+
+                    //check if chunk doesnt contain exclusion
+                    if (key.ComponentTypes.ContainsAny(exclude.ComponentTypes))
+                    {
+                        continue;
+                    }
+
+                    if (key.ArrayElementTypes.ContainsAny(exclude.ArrayElementTypes))
+                    {
+                        continue;
+                    }
+
+                    if (key.TagTypes.ContainsAny(exclude.TagTypes))
+                    {
+                        continue;
+                    }
+
+                    this.chunk = chunk;
+                    chunkIndex = i;
                     break;
                 }
             }
@@ -245,54 +252,53 @@ namespace Worlds
                 }
                 else
                 {
+                    chunk = default;
                     World world = query.world;
                     Definition required = query.required;
                     Definition exclude = query.exclude;
-                    uint chunkIndex = 0;
-                    chunk = default;
-                    foreach (Definition key in world.Chunks.Keys)
+                    for (uint i = chunkIndex + 1; i < world.Chunks.Length; i++)
                     {
-                        chunkIndex++;
-                        if (this.chunkIndex >= chunkIndex)
+                        Chunk chunk = world.Chunks[i]; 
+                        if (chunk.Count > 0)
                         {
-                            continue;
-                        }
+                            Definition key = chunk.Definition;
 
-                        //check if chunk contains inclusion
-                        if ((key.ComponentTypes & required.ComponentTypes) != required.ComponentTypes)
-                        {
-                            continue;
-                        }
+                            //check if chunk contains inclusion
+                            if ((key.ComponentTypes & required.ComponentTypes) != required.ComponentTypes)
+                            {
+                                continue;
+                            }
 
-                        if ((key.ArrayElementTypes & required.ArrayElementTypes) != required.ArrayElementTypes)
-                        {
-                            continue;
-                        }
+                            if ((key.ArrayElementTypes & required.ArrayElementTypes) != required.ArrayElementTypes)
+                            {
+                                continue;
+                            }
 
-                        if ((key.TagTypes & required.TagTypes) != required.TagTypes)
-                        {
-                            continue;
-                        }
+                            if ((key.TagTypes & required.TagTypes) != required.TagTypes)
+                            {
+                                continue;
+                            }
 
-                        //check if chunk doesnt contain exclusion
-                        if (key.ComponentTypes.ContainsAny(exclude.ComponentTypes))
-                        {
-                            continue;
-                        }
+                            //check if chunk doesnt contain exclusion
+                            if (key.ComponentTypes.ContainsAny(exclude.ComponentTypes))
+                            {
+                                continue;
+                            }
 
-                        if (key.ArrayElementTypes.ContainsAny(exclude.ArrayElementTypes))
-                        {
-                            continue;
-                        }
+                            if (key.ArrayElementTypes.ContainsAny(exclude.ArrayElementTypes))
+                            {
+                                continue;
+                            }
 
-                        if (key.TagTypes.ContainsAny(exclude.TagTypes))
-                        {
-                            continue;
-                        }
+                            if (key.TagTypes.ContainsAny(exclude.TagTypes))
+                            {
+                                continue;
+                            }
 
-                        this.chunkIndex = chunkIndex;
-                        chunk = world.Chunks[key];
-                        break;
+                            this.chunk = chunk;
+                            chunkIndex = i;
+                            break;
+                        }
                     }
 
                     entityIndex = 1;

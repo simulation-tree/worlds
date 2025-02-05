@@ -476,8 +476,7 @@ namespace Worlds
         /// </summary>
         public readonly Enumerator GetEnumerator()
         {
-            Dictionary<Definition, Chunk> chunks = world.Chunks;
-            return new(required, exclude, chunks, world.Schema);
+            return new(required, exclude, world.Chunks, world.Schema);
         }
 
         public unsafe ref struct Enumerator
@@ -525,47 +524,48 @@ namespace Worlds
             /// </summary>
             public readonly Chunk.Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15> Current => new(entities[entityIndex - 1], ref span1[entityIndex - 1], ref span2[entityIndex - 1], ref span3[entityIndex - 1], ref span4[entityIndex - 1], ref span5[entityIndex - 1], ref span6[entityIndex - 1], ref span7[entityIndex - 1], ref span8[entityIndex - 1], ref span9[entityIndex - 1], ref span10[entityIndex - 1], ref span11[entityIndex - 1], ref span12[entityIndex - 1], ref span13[entityIndex - 1], ref span14[entityIndex - 1], ref span15[entityIndex - 1]);
 
-            internal Enumerator(Definition required, Definition exclude, Dictionary<Definition, Chunk> allChunks, Schema schema)
+            internal Enumerator(Definition required, Definition exclude, USpan<Chunk> allChunks, Schema schema)
             {
                 chunkCount = 0;
-                USpan<Chunk> chunksBuffer = stackalloc Chunk[(int)allChunks.Count];
-                foreach (Definition key in allChunks.Keys)
+                USpan<Chunk> chunksBuffer = stackalloc Chunk[(int)allChunks.Length];
+                foreach (Chunk chunk in allChunks)
                 {
-                    //check if chunk contains inclusion
-                    if ((key.ComponentTypes & required.ComponentTypes) != required.ComponentTypes)
-                    {
-                        continue;
-                    }
-
-                    if ((key.ArrayElementTypes & required.ArrayElementTypes) != required.ArrayElementTypes)
-                    {
-                        continue;
-                    }
-
-                    if ((key.TagTypes & required.TagTypes) != required.TagTypes)
-                    {
-                        continue;
-                    }
-
-                    //check if chunk doesnt contain exclusion
-                    if (key.ComponentTypes.ContainsAny(exclude.ComponentTypes))
-                    {
-                        continue;
-                    }
-
-                    if (key.ArrayElementTypes.ContainsAny(exclude.ArrayElementTypes))
-                    {
-                        continue;
-                    }
-
-                    if (key.TagTypes.ContainsAny(exclude.TagTypes))
-                    {
-                        continue;
-                    }
-
-                    Chunk chunk = allChunks[key];
                     if (chunk.Count > 0)
                     {
+                        Definition key = chunk.Definition;
+
+                        //check if chunk contains inclusion
+                        if ((key.ComponentTypes & required.ComponentTypes) != required.ComponentTypes)
+                        {
+                            continue;
+                        }
+
+                        if ((key.ArrayElementTypes & required.ArrayElementTypes) != required.ArrayElementTypes)
+                        {
+                            continue;
+                        }
+
+                        if ((key.TagTypes & required.TagTypes) != required.TagTypes)
+                        {
+                            continue;
+                        }
+
+                        //check if chunk doesnt contain exclusion
+                        if (key.ComponentTypes.ContainsAny(exclude.ComponentTypes))
+                        {
+                            continue;
+                        }
+
+                        if (key.ArrayElementTypes.ContainsAny(exclude.ArrayElementTypes))
+                        {
+                            continue;
+                        }
+
+                        if (key.TagTypes.ContainsAny(exclude.TagTypes))
+                        {
+                            continue;
+                        }
+
                         chunksBuffer[chunkCount++] = chunk;
                     }
                 }
