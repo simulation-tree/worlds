@@ -1,5 +1,7 @@
 using System.IO;
+using static SharedFunctions;
 
+//not really used anymore
 public static class Entity
 {
     private const string TypeName = "Entity";
@@ -11,14 +13,14 @@ public static class Entity
         {
             string source = template;
             source = source.Replace("{{TypeName}}", TypeName);
-            source = source.Replace("{{GenericTypeArguments}}", SharedFunctions.GetGenericTypeArguments(i));
-            source = source.Replace("{{TypeConstraints}}", SharedFunctions.GetTypeConstraints(i));
-            source = source.Replace("{{DefaultTypes}}", SharedFunctions.GetDefaultTypes(i));
-            source = source.Replace("{{TypeParametersSignature}}", SharedFunctions.GetTypeParametersSignature(i));
-            source = source.Replace("{{TypeParameters}}", SharedFunctions.GetTypeParameters(i));
-            source = source.Replace("{{DeclareComponentFields}}", SharedFunctions.DeclareComponentFields(i));
-            source = source.Replace("{{AssignComponentFields}}", SharedFunctions.AssignComponentFields(i));
-            source = source.Replace("{{DescribeEntity}}", SharedFunctions.DescribeEntity(i));
+            source = source.Replace("{{GenericTypeArguments}}", GenericTypeArguments(i));
+            source = source.Replace("{{TypeConstraints}}", TypeConstraints(i));
+            source = source.Replace("{{DefaultTypes}}", DefaultTypes(i));
+            source = source.Replace("{{TypeParametersSignature}}", TypeParametersSignature(i));
+            source = source.Replace("{{TypeParameters}}", TypeParameters(i));
+            source = source.Replace("{{DeclareComponentFields}}", DeclareComponentFields(i, GetIndent(source, "{{DeclareComponentFields}}")));
+            source = source.Replace("{{AssignComponentFields}}", AssignComponentFields(i, GetIndent(source, "{{AssignComponentFields}}")));
+            source = source.Replace("{{DescribeEntity}}", DescribeEntity(i, GetIndent(source, "{{DescribeEntity}}")));
             File.WriteAllText($"{TypeName}{i + 1}.cs", source);
         }
     }

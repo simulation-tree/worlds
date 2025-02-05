@@ -1,4 +1,3 @@
-using Collections;
 using System;
 using System.Runtime.InteropServices;
 using Unmanaged;
@@ -489,12 +488,21 @@ namespace Worlds
             private uint entityIndex;
             private uint chunkIndex;
             private USpan<uint> entities;
-            private USpan<C1> span1;
+            private USpan<C1> list1;
 
             /// <summary>
             /// Current result.
             /// </summary>
-            public readonly Chunk.Entity<C1> Current => new(entities[entityIndex - 1], ref span1[entityIndex - 1]);
+            public readonly Chunk.Entity<C1> Current
+            {
+                get
+                {
+                    uint index = entityIndex - 1;
+                    uint entity = entities[index];
+                    ref C1 c1 = ref list1[index];
+                    return new(entity, ref c1);
+                }
+            }
 
             internal Enumerator(Definition required, Definition exclude, USpan<Chunk> allChunks, Schema schema)
             {
@@ -582,7 +590,7 @@ namespace Worlds
             private void UpdateChunkFields(ref Chunk chunk)
             {
                 entities = chunk.Entities;
-                span1 = chunk.GetComponents<C1>(c1);
+                list1 = chunk.GetComponents<C1>(c1);
             }
 
             public readonly void Dispose()

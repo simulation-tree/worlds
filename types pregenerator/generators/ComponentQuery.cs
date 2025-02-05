@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using static SharedFunctions;
 
 public static class ComponentQuery
 {
@@ -11,14 +12,15 @@ public static class ComponentQuery
         {
             string source = template;
             source = source.Replace("{{TypeName}}", TypeName);
-            source = source.Replace("{{GenericTypeArguments}}", SharedFunctions.GetGenericTypeArguments(i));
-            source = source.Replace("{{TypeConstraints}}", SharedFunctions.GetTypeConstraints(i));
-            source = source.Replace("{{DeclareComponentTypeFields}}", SharedFunctions.DeclareComponentTypeFields(i));
-            source = source.Replace("{{AssignComponentTypeFields}}", SharedFunctions.AssignComponentTypeFields(i));
-            source = source.Replace("{{AssignComponentSpans}}", SharedFunctions.AssignComponentSpans(i));
-            source = source.Replace("{{TypeParameters}}", SharedFunctions.GetTypeParameters(i));
-            source = source.Replace("{{RefIndexingComponent}}", SharedFunctions.GetRefIndexingComponent(i));
-            source = source.Replace("{{DeclareComponentSpans}}", SharedFunctions.DeclareComponentSpans(i));
+            source = source.Replace("{{GenericTypeArguments}}", GenericTypeArguments(i));
+            source = source.Replace("{{TypeConstraints}}", TypeConstraints(i));
+            source = source.Replace("{{DeclareComponentTypeFields}}", DeclareComponentTypeFields(i, GetIndent(source, "{{DeclareComponentTypeFields}}")));
+            source = source.Replace("{{AssignComponentTypeFields}}", AssignComponentTypeFields(i, GetIndent(source, "{{AssignComponentTypeFields}}")));
+            source = source.Replace("{{AssignComponentLists}}", AssignComponentLists(i, GetIndent(source, "{{AssignComponentLists}}")));
+            source = source.Replace("{{TypeParameters}}", TypeParameters(i));
+            source = source.Replace("{{AccessComponents}}", AccessComponents(i, GetIndent(source, "{{AccessComponents}}")));
+            source = source.Replace("{{DeclareComponentLists}}", DeclareComponentLists(i, GetIndent(source, "{{DeclareComponentLists}}")));
+            source = source.Replace("{{ReferenceComponents}}", ReferenceComponents(i));
             File.WriteAllText($"{TypeName}{i + 1}.cs", source);
         }
     }

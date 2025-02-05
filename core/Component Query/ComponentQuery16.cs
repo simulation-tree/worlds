@@ -1,4 +1,3 @@
-using Collections;
 using System;
 using System.Runtime.InteropServices;
 using Unmanaged;
@@ -504,27 +503,51 @@ namespace Worlds
             private uint entityIndex;
             private uint chunkIndex;
             private USpan<uint> entities;
-            private USpan<C1> span1;
-            private USpan<C2> span2;
-            private USpan<C3> span3;
-            private USpan<C4> span4;
-            private USpan<C5> span5;
-            private USpan<C6> span6;
-            private USpan<C7> span7;
-            private USpan<C8> span8;
-            private USpan<C9> span9;
-            private USpan<C10> span10;
-            private USpan<C11> span11;
-            private USpan<C12> span12;
-            private USpan<C13> span13;
-            private USpan<C14> span14;
-            private USpan<C15> span15;
-            private USpan<C16> span16;
+            private USpan<C1> list1;
+            private USpan<C2> list2;
+            private USpan<C3> list3;
+            private USpan<C4> list4;
+            private USpan<C5> list5;
+            private USpan<C6> list6;
+            private USpan<C7> list7;
+            private USpan<C8> list8;
+            private USpan<C9> list9;
+            private USpan<C10> list10;
+            private USpan<C11> list11;
+            private USpan<C12> list12;
+            private USpan<C13> list13;
+            private USpan<C14> list14;
+            private USpan<C15> list15;
+            private USpan<C16> list16;
 
             /// <summary>
             /// Current result.
             /// </summary>
-            public readonly Chunk.Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16> Current => new(entities[entityIndex - 1], ref span1[entityIndex - 1], ref span2[entityIndex - 1], ref span3[entityIndex - 1], ref span4[entityIndex - 1], ref span5[entityIndex - 1], ref span6[entityIndex - 1], ref span7[entityIndex - 1], ref span8[entityIndex - 1], ref span9[entityIndex - 1], ref span10[entityIndex - 1], ref span11[entityIndex - 1], ref span12[entityIndex - 1], ref span13[entityIndex - 1], ref span14[entityIndex - 1], ref span15[entityIndex - 1], ref span16[entityIndex - 1]);
+            public readonly Chunk.Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16> Current
+            {
+                get
+                {
+                    uint index = entityIndex - 1;
+                    uint entity = entities[index];
+                    ref C1 c1 = ref list1[index];
+                    ref C2 c2 = ref list2[index];
+                    ref C3 c3 = ref list3[index];
+                    ref C4 c4 = ref list4[index];
+                    ref C5 c5 = ref list5[index];
+                    ref C6 c6 = ref list6[index];
+                    ref C7 c7 = ref list7[index];
+                    ref C8 c8 = ref list8[index];
+                    ref C9 c9 = ref list9[index];
+                    ref C10 c10 = ref list10[index];
+                    ref C11 c11 = ref list11[index];
+                    ref C12 c12 = ref list12[index];
+                    ref C13 c13 = ref list13[index];
+                    ref C14 c14 = ref list14[index];
+                    ref C15 c15 = ref list15[index];
+                    ref C16 c16 = ref list16[index];
+                    return new(entity, ref c1, ref c2, ref c3, ref c4, ref c5, ref c6, ref c7, ref c8, ref c9, ref c10, ref c11, ref c12, ref c13, ref c14, ref c15, ref c16);
+                }
+            }
 
             internal Enumerator(Definition required, Definition exclude, USpan<Chunk> allChunks, Schema schema)
             {
@@ -627,22 +650,22 @@ namespace Worlds
             private void UpdateChunkFields(ref Chunk chunk)
             {
                 entities = chunk.Entities;
-                span1 = chunk.GetComponents<C1>(c1);
-                span2 = chunk.GetComponents<C2>(c2);
-                span3 = chunk.GetComponents<C3>(c3);
-                span4 = chunk.GetComponents<C4>(c4);
-                span5 = chunk.GetComponents<C5>(c5);
-                span6 = chunk.GetComponents<C6>(c6);
-                span7 = chunk.GetComponents<C7>(c7);
-                span8 = chunk.GetComponents<C8>(c8);
-                span9 = chunk.GetComponents<C9>(c9);
-                span10 = chunk.GetComponents<C10>(c10);
-                span11 = chunk.GetComponents<C11>(c11);
-                span12 = chunk.GetComponents<C12>(c12);
-                span13 = chunk.GetComponents<C13>(c13);
-                span14 = chunk.GetComponents<C14>(c14);
-                span15 = chunk.GetComponents<C15>(c15);
-                span16 = chunk.GetComponents<C16>(c16);
+                list1 = chunk.GetComponents<C1>(c1);
+                list2 = chunk.GetComponents<C2>(c2);
+                list3 = chunk.GetComponents<C3>(c3);
+                list4 = chunk.GetComponents<C4>(c4);
+                list5 = chunk.GetComponents<C5>(c5);
+                list6 = chunk.GetComponents<C6>(c6);
+                list7 = chunk.GetComponents<C7>(c7);
+                list8 = chunk.GetComponents<C8>(c8);
+                list9 = chunk.GetComponents<C9>(c9);
+                list10 = chunk.GetComponents<C10>(c10);
+                list11 = chunk.GetComponents<C11>(c11);
+                list12 = chunk.GetComponents<C12>(c12);
+                list13 = chunk.GetComponents<C13>(c13);
+                list14 = chunk.GetComponents<C14>(c14);
+                list15 = chunk.GetComponents<C15>(c15);
+                list16 = chunk.GetComponents<C16>(c16);
             }
 
             public readonly void Dispose()
