@@ -15,19 +15,19 @@ jobs:
         with:
           path: ${{ github.event.repository.name }}
             
-      - name: Checkout `types`
-        uses: actions/checkout@v4.1.2
-        with:
-          repository: game-simulations/types
-          token: ${{ secrets.PAT }}
-          path: types
-      
       - name: Checkout `unmanaged`
         uses: actions/checkout@v4.1.2
         with:
           repository: game-simulations/unmanaged
           token: ${{ secrets.PAT }}
           path: unmanaged
+      
+      - name: Checkout `types`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/types
+          token: ${{ secrets.PAT }}
+          path: types
       
       - name: Checkout `collections`
         uses: actions/checkout@v4.1.2
@@ -44,9 +44,6 @@ jobs:
       - name: Set VERSION variable from tag
         run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
             
-      - name: Build `Worlds.Analyzer`
-        run: dotnet build "${{ github.event.repository.name }}/analyzer" -c Release /p:Version=${VERSION}
-      
       - name: Build `Worlds.Core`
         run: dotnet build "${{ github.event.repository.name }}/core" -c Release /p:Version=${VERSION}
       
@@ -62,9 +59,6 @@ jobs:
       - name: Test
         run: dotnet test "${{ github.event.repository.name }}/tests" -c Release --logger "trx"
             
-      - name: Pack `Worlds.Analyzer`
-        run: dotnet pack "${{ github.event.repository.name }}/analyzer" -c Release /p:Version=${VERSION} --no-build --output .
-      
       - name: Pack `Worlds.Core`
         run: dotnet pack "${{ github.event.repository.name }}/core" -c Release /p:Version=${VERSION} --no-build --output .
       
@@ -77,11 +71,6 @@ jobs:
       - name: Add NuGet Source
         run: dotnet nuget add source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --name github --username ${{ github.repository_owner }} --password ${{ github.token }} --store-password-in-clear-text
             
-      - name: Publish `Worlds.Analyzer`
-        run: dotnet nuget push Worlds.Analyzer.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
-        env:
-          NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
-      
       - name: Publish `Worlds.Core`
         run: dotnet nuget push Worlds.Core.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
         env:
