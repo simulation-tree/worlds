@@ -5,12 +5,21 @@ namespace Worlds.Functions
 {
     public unsafe readonly struct ProcessSchema : IEquatable<ProcessSchema>
     {
+#if NET
         private readonly delegate* unmanaged<Input, TypeLayout> function;
 
         public ProcessSchema(delegate* unmanaged<Input, TypeLayout> function)
         {
             this.function = function;
         }
+#else
+        private readonly delegate*<Input, TypeLayout> function;
+        
+        public ProcessSchema(delegate*<Input, TypeLayout> function)
+        {
+            this.function = function;
+        }
+#endif
 
         public readonly override bool Equals(object? obj)
         {
@@ -48,7 +57,7 @@ namespace Worlds.Functions
             return !(left == right);
         }
 
-        public ref struct Input
+        public readonly struct Input
         {
             public readonly TypeLayout type;
             public readonly DataType.Kind dataType;

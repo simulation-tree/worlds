@@ -20,6 +20,8 @@ namespace Worlds
 
         public ComponentQuery(World world)
         {
+            required = default;
+            exclude = default;
             required.AddComponentTypes(world.Schema.GetComponents<C1, C2, C3, C4, C5, C6, C7>());
             this.world = world;
         }

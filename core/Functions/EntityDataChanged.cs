@@ -4,12 +4,21 @@ namespace Worlds.Functions
 {
     public unsafe readonly struct EntityDataChanged : IEquatable<EntityDataChanged>
     {
+#if NET
         private readonly delegate* unmanaged<World, uint, DataType, ChangeType, ulong, void> function;
 
         public EntityDataChanged(delegate* unmanaged<World, uint, DataType, ChangeType, ulong, void> function)
         {
             this.function = function;
         }
+#else
+        private readonly delegate*<World, uint, DataType, ChangeType, ulong, void> function;
+
+        public EntityDataChanged(delegate*<World, uint, DataType, ChangeType, ulong, void> function)
+        {
+            this.function = function;
+        }
+#endif
 
         public readonly override bool Equals(object? obj)
         {

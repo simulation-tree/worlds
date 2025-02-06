@@ -71,6 +71,7 @@ namespace Worlds
             }
         }
 
+#if NET
         /// <summary>
         /// Creates a bit set with 1s set at positions in <paramref name="positions"/>.
         /// </summary>
@@ -90,6 +91,271 @@ namespace Worlds
                 Set(index);
             }
         }
+#else
+        public BitMask(byte b1)
+        {
+            a = default;
+            b = default;
+            c = default;
+            d = default;
+            Set(b1);
+        }
+
+        public BitMask(byte b1, byte b2)
+        {
+            a = default;
+            b = default;
+            c = default;
+            d = default;
+            Set(b1);
+            Set(b2);
+        }
+
+        public BitMask(byte b1, byte b2, byte b3)
+        {
+            a = default;
+            b = default;
+            c = default;
+            d = default;
+            Set(b1);
+            Set(b2);
+            Set(b3);
+        }
+
+        public BitMask(byte b1, byte b2, byte b3, byte b4)
+        {
+            a = default;
+            b = default;
+            c = default;
+            d = default;
+            Set(b1);
+            Set(b2);
+            Set(b3);
+            Set(b4);
+        }
+
+        public BitMask(byte b1, byte b2, byte b3, byte b4, byte b5)
+        {
+            a = default;
+            b = default;
+            c = default;
+            d = default;
+            Set(b1);
+            Set(b2);
+            Set(b3);
+            Set(b4);
+            Set(b5);
+        }
+
+        public BitMask(byte b1, byte b2, byte b3, byte b4, byte b5, byte b6)
+        {
+            a = default;
+            b = default;
+            c = default;
+            d = default;
+            Set(b1);
+            Set(b2);
+            Set(b3);
+            Set(b4);
+            Set(b5);
+            Set(b6);
+        }
+
+        public BitMask(byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7)
+        {
+            a = default;
+            b = default;
+            c = default;
+            d = default;
+            Set(b1);
+            Set(b2);
+            Set(b3);
+            Set(b4);
+            Set(b5);
+            Set(b6);
+            Set(b7);
+        }
+
+        public BitMask(byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7, byte b8)
+        {
+            a = default;
+            b = default;
+            c = default;
+            d = default;
+            Set(b1);
+            Set(b2);
+            Set(b3);
+            Set(b4);
+            Set(b5);
+            Set(b6);
+            Set(b7);
+            Set(b8);
+        }
+
+        public BitMask(byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7, byte b8, byte b9)
+        {
+            a = default;
+            b = default;
+            c = default;
+            d = default;
+            Set(b1);
+            Set(b2);
+            Set(b3);
+            Set(b4);
+            Set(b5);
+            Set(b6);
+            Set(b7);
+            Set(b8);
+            Set(b9);
+        }
+
+        public BitMask(byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7, byte b8, byte b9, byte b10)
+        {
+            a = default;
+            b = default;
+            c = default;
+            d = default;
+            Set(b1);
+            Set(b2);
+            Set(b3);
+            Set(b4);
+            Set(b5);
+            Set(b6);
+            Set(b7);
+            Set(b8);
+            Set(b9);
+            Set(b10);
+        }
+
+        public BitMask(byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7, byte b8, byte b9, byte b10, byte b11)
+        {
+            a = default;
+            b = default;
+            c = default;
+            d = default;
+            Set(b1);
+            Set(b2);
+            Set(b3);
+            Set(b4);
+            Set(b5);
+            Set(b6);
+            Set(b7);
+            Set(b8);
+            Set(b9);
+            Set(b10);
+            Set(b11);
+        }
+
+        public BitMask(byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7, byte b8, byte b9, byte b10, byte b11, byte b12)
+        {
+            a = default;
+            b = default;
+            c = default;
+            d = default;
+            Set(b1);
+            Set(b2);
+            Set(b3);
+            Set(b4);
+            Set(b5);
+            Set(b6);
+            Set(b7);
+            Set(b8);
+            Set(b9);
+            Set(b10);
+            Set(b11);
+            Set(b12);
+        }
+
+        public BitMask(byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7, byte b8, byte b9, byte b10, byte b11, byte b12, byte b13)
+        {
+            a = default;
+            b = default;
+            c = default;
+            d = default;
+            Set(b1);
+            Set(b2);
+            Set(b3);
+            Set(b4);
+            Set(b5);
+            Set(b6);
+            Set(b7);
+            Set(b8);
+            Set(b9);
+            Set(b10);
+            Set(b11);
+            Set(b12);
+            Set(b13);
+        }
+
+        public BitMask(byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7, byte b8, byte b9, byte b10, byte b11, byte b12, byte b13, byte b14)
+        {
+            a = default;
+            b = default;
+            c = default;
+            d = default;
+            Set(b1);
+            Set(b2);
+            Set(b3);
+            Set(b4);
+            Set(b5);
+            Set(b6);
+            Set(b7);
+            Set(b8);
+            Set(b9);
+            Set(b10);
+            Set(b11);
+            Set(b12);
+            Set(b13);
+            Set(b14);
+        }
+
+        public BitMask(byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7, byte b8, byte b9, byte b10, byte b11, byte b12, byte b13, byte b14, byte b15)
+        {
+            a = default;
+            b = default;
+            c = default;
+            d = default;
+            Set(b1);
+            Set(b2);
+            Set(b3);
+            Set(b4);
+            Set(b5);
+            Set(b6);
+            Set(b7);
+            Set(b8);
+            Set(b9);
+            Set(b10);
+            Set(b11);
+            Set(b12);
+            Set(b13);
+            Set(b14);
+            Set(b15);
+        }
+
+        public BitMask(byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7, byte b8, byte b9, byte b10, byte b11, byte b12, byte b13, byte b14, byte b15, byte b16)
+        {
+            a = default;
+            b = default;
+            c = default;
+            d = default;
+            Set(b1);
+            Set(b2);
+            Set(b3);
+            Set(b4);
+            Set(b5);
+            Set(b6);
+            Set(b7);
+            Set(b8);
+            Set(b9);
+            Set(b10);
+            Set(b11);
+            Set(b12);
+            Set(b13);
+            Set(b14);
+            Set(b15);
+            Set(b16);
+        }
+#endif
 
         /// <inheritdoc/>
         public readonly override string ToString()

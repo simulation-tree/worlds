@@ -3,7 +3,8 @@
     "rootNamespace": "Worlds",
     "references": [
         "Unmanaged",
-        "Collections"
+        "Collections",
+        "Types"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

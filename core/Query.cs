@@ -214,6 +214,9 @@ namespace Worlds
 
             public Enumerator(Query query)
             {
+                entityIndex = 0;
+                chunk = default;
+                chunkIndex = 0;
                 this.query = query;
                 World world = query.world;
                 Definition required = query.required;
