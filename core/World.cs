@@ -23,6 +23,11 @@ namespace Worlds
         public readonly nint Address => (nint)value;
 
         /// <summary>
+        /// The native implementation pointer.
+        /// </summary>
+        public readonly Implementation* Pointer => value;
+
+        /// <summary>
         /// Amount of entities that exist in the world.
         /// </summary>
         public readonly uint Count => value->states.Count - value->freeEntities.Count;
@@ -226,6 +231,10 @@ namespace Worlds
 
         /// <summary>
         /// Adds a function that listens to whenever an entity is either created, or destroyed.
+        /// <para>
+        /// Creation events are indicated by <see cref="ChangeType.Added"/>,
+        /// while destruction events are indicated by <see cref="ChangeType.Removed"/>.
+        /// </para>
         /// </summary>
         public readonly void ListenToEntityCreationOrDestruction(EntityCreatedOrDestroyed function, ulong userData = default)
         {
@@ -1924,6 +1933,14 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Creates a new world with the given <paramref name="schema"/>.
+        /// </summary>
+        public static World Create(Schema schema)
+        {
+            return new(Implementation.Allocate(schema));
+        }
+
+        /// <summary>
         /// Deserializes a world from the given <paramref name="reader"/>.
         /// </summary>
         public static World Deserialize(BinaryReader reader)
@@ -2334,7 +2351,7 @@ namespace Worlds
                 }
 
                 //deserialize the schema first
-                Schema schema = new();
+                Schema schema = Schema.Create();
                 using Schema loadedSchema = reader.ReadObject<Schema>();
                 if (process is not null)
                 {

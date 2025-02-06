@@ -820,7 +820,7 @@ namespace Worlds
 
             public OperationDebugView(Operation operation)
             {
-                using List<uint> selection = new();
+                using List<uint> selection = new(4);
                 operation.ReadSelection(selection);
 
                 selected = new uint[selection.Count];

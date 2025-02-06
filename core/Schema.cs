@@ -329,6 +329,14 @@ namespace Worlds
             return types.Contains(type);
         }
 
+        public readonly bool TryGetComponentType(TypeLayout type, out ComponentType componentType)
+        {
+            USpan<TypeLayout> types = Implementation.GetComponentLayouts(schema);
+            bool contains = types.TryIndexOf(type, out uint index);
+            componentType = new((byte)index);
+            return contains;
+        }
+
         public readonly bool ContainsArrayElement(FixedString fullTypeName)
         {
             USpan<TypeLayout> types = Implementation.GetArrayLayouts(schema);
@@ -348,6 +356,14 @@ namespace Worlds
         {
             USpan<TypeLayout> types = Implementation.GetArrayLayouts(schema);
             return types.Contains(type);
+        }
+
+        public readonly bool TryGetArrayElementType(TypeLayout type, out ArrayElementType arrayElementType)
+        {
+            USpan<TypeLayout> types = Implementation.GetArrayLayouts(schema);
+            bool contains = types.TryIndexOf(type, out uint index);
+            arrayElementType = new((byte)index);
+            return contains;
         }
 
         public readonly bool ContainsTag(FixedString fullTypeName)
