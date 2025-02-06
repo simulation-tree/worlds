@@ -2617,19 +2617,20 @@ namespace Worlds
                     ref List<uint> children = ref world->children[entity - 1];
                     if (!children.IsDisposed)
                     {
+                        USpan<uint> childrenSpan = children.AsSpan();
                         if (destroyChildren)
                         {
-                            for (uint i = 0; i < children.Count; i++)
+                            for (uint i = 0; i < childrenSpan.Length; i++)
                             {
-                                uint child = children[i];
+                                uint child = childrenSpan[i];
                                 DestroyEntity(world, child, true);
                             }
                         }
                         else
                         {
-                            for (uint i = 0; i < children.Count; i++)
+                            for (uint i = 0; i < childrenSpan.Length; i++)
                             {
-                                uint child = children[i];
+                                uint child = childrenSpan[i];
                                 world->parents[child - 1] = default;
                             }
                         }

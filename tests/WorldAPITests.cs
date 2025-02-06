@@ -55,13 +55,16 @@ namespace Worlds.Tests
             uint b = world.CreateEntity();
             uint c = world.CreateEntity();
             uint d = world.CreateEntity();
+            uint e = world.CreateEntity();
             world.SetParent(b, a);
             world.SetParent(c, b);
             world.SetParent(d, c);
+            world.SetParent(e, a);
             Assert.That(world.ContainsEntity(a), Is.True);
             Assert.That(world.ContainsEntity(b), Is.True);
             Assert.That(world.ContainsEntity(c), Is.True);
             Assert.That(world.ContainsEntity(d), Is.True);
+            Assert.That(world.ContainsEntity(e), Is.True);
             Assert.That(world.GetParent(b), Is.EqualTo(a));
             Assert.That(world.GetParent(c), Is.EqualTo(b));
             Assert.That(world.GetParent(d), Is.EqualTo(c));
@@ -73,6 +76,7 @@ namespace Worlds.Tests
             Assert.That(world.ContainsEntity(b), Is.False);
             Assert.That(world.ContainsEntity(c), Is.False);
             Assert.That(world.ContainsEntity(d), Is.False);
+            Assert.That(world.ContainsEntity(e), Is.False);
         }
 
         [Test]
