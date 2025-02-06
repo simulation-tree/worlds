@@ -1,9 +1,9 @@
 {
-    "name": "Simulation",
-    "rootNamespace": "Simulation",
+    "name": "Worlds",
+    "rootNamespace": "Worlds",
     "references": [
-        "GUID:e442c6948205ebc42a3de523d6b5290d",
-        "GUID:e3523b465bd539342b65c0eae0b4c695"
+        "Unmanaged",
+        "Collections"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
