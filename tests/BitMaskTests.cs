@@ -1,4 +1,8 @@
-﻿namespace Worlds.Tests
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+
+namespace Worlds.Tests
 {
     public class BitMaskTests
     {
@@ -69,6 +73,59 @@
         }
 
         [Test]
+        public void CollectTimes()
+        {
+            Stopwatch stopwatch = new();
+            List<int> times = new();
+            for (int r = 0; r < 100; r++)
+            {
+                stopwatch.Start();
+                for (int i = 0; i < 100000; i++)
+                {
+                    BitMask x = new();
+                    x.Set(3);
+                    x.Set(4);
+                    x.Set(5);
+                    x.Set(9);
+                    x.Contains(200);
+
+                    BitMask y = new();
+                    y.Set(4);
+                    y.Set(9);
+
+                    x.Contains(4);
+                    x.Contains(9);
+                }
+
+                stopwatch.Stop();
+                times.Add((int)stopwatch.ElapsedTicks);
+            }
+
+            float min = int.MaxValue;
+            float max = int.MinValue;
+            float total = 0;
+            foreach (int time in times)
+            {
+                if (time < min)
+                {
+                    min = time;
+                }
+                
+                if (time > max)
+                {
+                    max = time;
+                }
+
+                total += time;
+            }
+
+            float avg = total / times.Count;
+            Console.WriteLine($"Min: {min / Stopwatch.Frequency}");
+            Console.WriteLine($"Max: {max / Stopwatch.Frequency}");
+            Console.WriteLine($"Avg: {avg / Stopwatch.Frequency}");
+        }
+
+        [Test]
         public void CountIncrementsWhenSetting()
         {
             BitMask a = new();
@@ -96,6 +153,31 @@
             BitMask b = new();
 
             Assert.That(a | b, Is.EqualTo(a));
+        }
+
+        public class ClassBitMask
+        {
+            private BitMask value;
+
+            public void Set(byte index)
+            {
+                value.Set(index);
+            }
+
+            public void Clear()
+            {
+                value = default;
+            }
+
+            public void Clear(byte index)
+            {
+                value.Clear(index);
+            }
+
+            public bool Contains(byte index)
+            {
+                return value.Contains(index);
+            }
         }
     }
 }

@@ -1,14 +1,6 @@
-﻿#if NET
-#define USE_VECTOR256
-#endif
-
-using System;
+﻿using System;
 using System.Diagnostics;
-using System.Numerics;
 using System.Runtime.InteropServices;
-#if USE_VECTOR256
-using System.Runtime.Intrinsics;
-#endif
 using Unmanaged;
 
 namespace Worlds
@@ -24,11 +16,6 @@ namespace Worlds
         /// </summary>
         public const byte Capacity = 255;
 
-#if USE_VECTOR256
-        [FieldOffset(0)]
-        private Vector256<ulong> data;
-#else
-
         [FieldOffset(0)]
         private ulong a;
 
@@ -40,7 +27,6 @@ namespace Worlds
 
         [FieldOffset(24)]
         private ulong d;
-#endif
 
         /// <summary>
         /// Amount of bits set to 1.
@@ -52,12 +38,6 @@ namespace Worlds
                 unchecked
                 {
                     int count = 0;
-#if USE_VECTOR256
-                    count += BitOperations.PopCount(data.GetElement(0));
-                    count += BitOperations.PopCount(data.GetElement(1));
-                    count += BitOperations.PopCount(data.GetElement(2));
-                    count += BitOperations.PopCount(data.GetElement(3));
-#else
                     for (byte index = 0; index < Capacity; index++)
                     {
                         if (Contains(index))
@@ -65,33 +45,11 @@ namespace Worlds
                             count++;
                         }
                     }
-#endif
                     return (byte)count;
                 }
             }
         }
 
-#if NET
-        /// <summary>
-        /// Creates a bit set with 1s set at positions in <paramref name="positions"/>.
-        /// </summary>
-        public BitMask(params USpan<byte> positions)
-        {
-#if !USE_VECTOR256
-            a = default;
-            b = default;
-            c = default;
-            d = default;
-#endif
-
-            ThrowIfOutOfRange(positions.Length);
-            for (uint i = 0; i < positions.Length; i++)
-            {
-                byte index = positions[i];
-                Set(index);
-            }
-        }
-#else
         public BitMask(byte b1)
         {
             a = default;
@@ -355,7 +313,6 @@ namespace Worlds
             Set(b15);
             Set(b16);
         }
-#endif
 
         /// <inheritdoc/>
         public readonly override string ToString()
@@ -394,14 +351,7 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsAll(BitMask other)
         {
-#if USE_VECTOR256
-            return (data & other.data) == other.data;
-#else
-            return (a & other.a) == other.a &&
-                   (b & other.b) == other.b &&
-                   (c & other.c) == other.c &&
-                   (d & other.d) == other.d;
-#endif
+            return (a & other.a) == other.a && (b & other.b) == other.b && (c & other.c) == other.c && (d & other.d) == other.d;
         }
 
         /// <summary>
@@ -409,14 +359,7 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsAny(BitMask other)
         {
-#if USE_VECTOR256
-            return !(data & other.data).Equals(default);
-#else
-            return (a & other.a) != 0 ||
-                   (b & other.b) != 0 ||
-                   (c & other.c) != 0 ||
-                   (d & other.d) != 0;
-#endif
+            return (a & other.a) != 0 || (b & other.b) != 0 || (c & other.c) != 0 || (d & other.d) != 0;
         }
 
         /// <summary>
@@ -424,11 +367,6 @@ namespace Worlds
         /// </summary>
         public readonly bool Contains(byte index)
         {
-#if USE_VECTOR256
-            int longIndex = index / 64;
-            int bitIndex = index % 64;
-            return (data.GetElement(longIndex) & 1UL << bitIndex) != 0;
-#else
             return index switch
             {
                 < 64 => (a & 1UL << index) != 0,
@@ -436,21 +374,13 @@ namespace Worlds
                 < 192 => (c & 1UL << index - 128) != 0,
                 _ => (d & 1UL << index - 192) != 0,
             };
-#endif
         }
 
         /// <summary>
         /// Sets the bit at position <paramref name="index"/> to 1.
         /// </summary>
-        public BitMask Set(byte index)
+        public void Set(byte index)
         {
-#if USE_VECTOR256
-            int longIndex = index / 64;
-            int bitIndex = index % 64;
-            ulong slot = data.GetElement(longIndex);
-            slot |= 1UL << bitIndex;
-            data = data.WithElement(longIndex, slot);
-#else
             switch (index)
             {
                 case < 64:
@@ -466,22 +396,24 @@ namespace Worlds
                     d |= 1UL << index - 192;
                     break;
             }
-#endif
-            return this;
+        }
+
+        /// <summary>
+        /// Resets the entire bit mask to <see langword="default"/>.
+        /// </summary>
+        public void Clear()
+        {
+            a = default;
+            b = default;
+            c = default;
+            d = default;
         }
 
         /// <summary>
         /// Resets the bit at position <paramref name="index"/> to 0.
         /// </summary>
-        public BitMask Clear(byte index)
+        public void Clear(byte index)
         {
-#if USE_VECTOR256
-            int longIndex = index / 64;
-            int bitIndex = index % 64;
-            ulong slot = data.GetElement(longIndex);
-            slot &= ~(1UL << bitIndex);
-            data = data.WithElement(longIndex, slot);
-#else
             switch (index)
             {
                 case < 64:
@@ -497,8 +429,6 @@ namespace Worlds
                     d &= ~(1UL << index - 192);
                     break;
             }
-#endif
-            return this;
         }
 
         /// <summary>
@@ -506,15 +436,11 @@ namespace Worlds
         /// </summary>
         public readonly override int GetHashCode()
         {
-#if USE_VECTOR256
-            return data.GetHashCode();
-#else
             unchecked
             {
                 ulong hash = a ^ b ^ c ^ d;
                 return (int)hash ^ (int)(hash >> 32);
             }
-#endif
         }
 
         /// <inheritdoc/>
@@ -526,11 +452,7 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly bool Equals(BitMask other)
         {
-#if USE_VECTOR256
-            return data == other.data;
-#else
             return a == other.a && b == other.b && c == other.c && d == other.d;
-#endif
         }
 
         [Conditional("DEBUG")]
@@ -558,14 +480,10 @@ namespace Worlds
         public static BitMask operator |(BitMask left, BitMask right)
         {
             BitMask result = left;
-#if USE_VECTOR256
-            result.data |= right.data;
-#else
             result.a |= right.a;
             result.b |= right.b;
             result.c |= right.c;
             result.d |= right.d;
-#endif
             return result;
         }
 
@@ -575,14 +493,10 @@ namespace Worlds
         public static BitMask operator &(BitMask left, BitMask right)
         {
             BitMask result = left;
-#if USE_VECTOR256
-            result.data &= right.data;
-#else
             result.a &= right.a;
             result.b &= right.b;
             result.c &= right.c;
             result.d &= right.d;
-#endif
             return result;
         }
 
@@ -592,14 +506,10 @@ namespace Worlds
         public static BitMask operator ^(BitMask left, BitMask right)
         {
             BitMask result = left;
-#if USE_VECTOR256
-            result.data ^= right.data;
-#else
             result.a ^= right.a;
             result.b ^= right.b;
             result.c ^= right.c;
             result.d ^= right.d;
-#endif
             return result;
         }
 
@@ -609,14 +519,10 @@ namespace Worlds
         public static BitMask operator ~(BitMask mask)
         {
             BitMask result = mask;
-#if USE_VECTOR256
-            result.data = ~result.data;
-#else
             result.a = ~result.a;
             result.b = ~result.b;
             result.c = ~result.c;
             result.d = ~result.d;
-#endif
             return result;
         }
     }
