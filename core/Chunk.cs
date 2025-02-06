@@ -315,18 +315,22 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Retrieves all components of the given <typeparamref name="T"/> type.
+        /// Retrieves a span containing all <typeparamref name="T"/> components.
         /// </summary>
         public readonly USpan<T> GetComponents<T>() where T : unmanaged
         {
             Schema schema = Schema;
-            List* list = GetComponents(schema.GetComponent<T>());
+            ComponentType componentType = schema.GetComponent<T>();
+            List* list = Implementation.GetComponents(value, componentType);
             return List.AsSpan<T>(list);
         }
 
+        /// <summary>
+        /// Retrieves a span containing all <typeparamref name="T"/> components.
+        /// </summary>
         public readonly USpan<T> GetComponents<T>(ComponentType componentType) where T : unmanaged
         {
-            List* list = GetComponents(componentType);
+            List* list = Implementation.GetComponents(value, componentType);
             return List.AsSpan<T>(list);
         }
 
