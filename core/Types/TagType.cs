@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using Types;
 using Unmanaged;
 
@@ -9,7 +10,7 @@ namespace Worlds
         /// <summary>
         /// Tag type stating that the entity is disabled.
         /// </summary>
-        public static readonly TagType Disabled = new(BitMask.Capacity);
+        public static readonly TagType Disabled = new(BitMask.MaxValue);
 
         /// <summary>
         /// Index of the tag type within a <see cref="BitMask"/>.
@@ -33,6 +34,13 @@ namespace Worlds
         public TagType(byte value)
         {
             this.index = value;
+        }
+
+        public TagType(uint value)
+        {
+            ThrowIfOutOfRange(value);
+
+            this.index = (byte)value;
         }
 
         /// <inheritdoc/>
@@ -107,6 +115,15 @@ namespace Worlds
         public static implicit operator byte(TagType tagType)
         {
             return tagType.index;
+        }
+
+        [Conditional("DEBUG")]
+        private static void ThrowIfOutOfRange(uint value)
+        {
+            if (value > BitMask.MaxValue)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), value, $"Value must be less than or equal to {BitMask.MaxValue}");
+            }
         }
     }
 }

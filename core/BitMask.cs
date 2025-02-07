@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Unmanaged;
 
@@ -8,13 +7,23 @@ namespace Worlds
     /// <summary>
     /// Represents a 256 bit mask.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct BitMask : IEquatable<BitMask>
     {
         /// <summary>
-        /// Maximum amount of bits in the bit set.
+        /// Maximum amount of bits that can be stored.
         /// </summary>
-        public const byte Capacity = 255;
+        public const uint Capacity = 256;
+
+        /// <summary>
+        /// Minimum most bit position.
+        /// </summary>
+        public const byte MinValue = 0;
+
+        /// <summary>
+        /// Maximum most bit position.
+        /// </summary>
+        public const byte MaxValue = 255;
 
         [FieldOffset(0)]
         private ulong a;
@@ -38,13 +47,14 @@ namespace Worlds
                 unchecked
                 {
                     int count = 0;
-                    for (byte index = 0; index < Capacity; index++)
+                    for (uint index = 0; index < Capacity; index++)
                     {
                         if (Contains(index))
                         {
                             count++;
                         }
                     }
+
                     return (byte)count;
                 }
             }
@@ -317,7 +327,7 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override string ToString()
         {
-            USpan<char> buffer = stackalloc char[Capacity];
+            USpan<char> buffer = stackalloc char[(int)Capacity];
             uint length = ToString(buffer);
             return buffer.Slice(0, length).ToString();
         }
@@ -328,7 +338,7 @@ namespace Worlds
         public readonly uint ToString(USpan<char> buffer)
         {
             uint length = 0;
-            for (byte i = 0; i < Capacity; i++)
+            for (uint i = 0; i < Capacity; i++)
             {
                 if (Contains(i))
                 {
@@ -373,6 +383,20 @@ namespace Worlds
                 < 128 => (b & 1UL << index - 64) != 0,
                 < 192 => (c & 1UL << index - 128) != 0,
                 _ => (d & 1UL << index - 192) != 0,
+            };
+        }
+
+        /// <summary>
+        /// Checks if the bit at position <paramref name="index"/> is 1.
+        /// </summary>
+        public readonly bool Contains(uint index)
+        {
+            return index switch
+            {
+                < 64 => (a & 1UL << (int)index) != 0,
+                < 128 => (b & 1UL << (int)index - 64) != 0,
+                < 192 => (c & 1UL << (int)index - 128) != 0,
+                _ => (d & 1UL << (int)index - 192) != 0,
             };
         }
 
@@ -453,15 +477,6 @@ namespace Worlds
         public readonly bool Equals(BitMask other)
         {
             return a == other.a && b == other.b && c == other.c && d == other.d;
-        }
-
-        [Conditional("DEBUG")]
-        private static void ThrowIfOutOfRange(uint length)
-        {
-            if (length >= Capacity)
-            {
-                throw new ArgumentOutOfRangeException(nameof(length), $"The index must be less than {Capacity}");
-            }
         }
 
         public static bool operator ==(BitMask left, BitMask right)

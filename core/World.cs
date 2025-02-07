@@ -911,7 +911,7 @@ namespace Worlds
 
             Chunk chunk = value->entityChunks[entity - 1];
             Definition currentDefinition = chunk.Definition;
-            for (byte i = 0; i < BitMask.Capacity; i++)
+            for (uint i = 0; i < BitMask.Capacity; i++)
             {
                 ComponentType componentType = new(i);
                 if (archetype.Contains(componentType) && !currentDefinition.Contains(componentType))
@@ -1309,7 +1309,7 @@ namespace Worlds
             ref Chunk chunk = ref value->entityChunks[entity - 1];
             BitMask arrayElementTypes = chunk.Definition.ArrayElementTypes;
             byte count = 0;
-            for (byte a = 0; a < BitMask.Capacity; a++)
+            for (uint a = 0; a < BitMask.Capacity; a++)
             {
                 if (arrayElementTypes.Contains(a))
                 {
@@ -1871,7 +1871,7 @@ namespace Worlds
             Definition sourceComponentTypes = sourceChunk.Definition;
             uint sourceIndex = sourceChunk.Entities.IndexOf(sourceEntity);
             Schema schema = Schema;
-            for (byte c = 0; c < BitMask.Capacity; c++)
+            for (uint c = 0; c < BitMask.Capacity; c++)
             {
                 if (sourceComponentTypes.ComponentTypes.Contains(c))
                 {
@@ -1898,7 +1898,7 @@ namespace Worlds
         {
             Schema schema = Schema;
             BitMask arrayElementTypes = GetArrayElementTypes(sourceEntity);
-            for (byte a = 0; a < BitMask.Capacity; a++)
+            for (uint a = 0; a < BitMask.Capacity; a++)
             {
                 if (arrayElementTypes.Contains(a))
                 {
@@ -1923,7 +1923,7 @@ namespace Worlds
         public readonly void CopyTagsTo(uint sourceEntity, World destinationWorld, uint destinationEntity)
         {
             BitMask tagTypes = GetTagTypes(sourceEntity);
-            for (byte t = 0; t < BitMask.Capacity; t++)
+            for (uint t = 0; t < BitMask.Capacity; t++)
             {
                 if (tagTypes.Contains(t))
                 {
@@ -2289,7 +2289,7 @@ namespace Worlds
 
                     //write components
                     writer.WriteValue(definition.ComponentTypes.Count);
-                    for (byte c = 0; c < BitMask.Capacity; c++)
+                    for (uint c = 0; c < BitMask.Capacity; c++)
                     {
                         ComponentType componentType = new(c);
                         if (definition.ComponentTypes.Contains(componentType))
@@ -2302,7 +2302,7 @@ namespace Worlds
 
                     //write arrays
                     writer.WriteValue(definition.ArrayElementTypes.Count);
-                    for (byte a = 0; a < BitMask.Capacity; a++)
+                    for (uint a = 0; a < BitMask.Capacity; a++)
                     {
                         ArrayElementType arrayElementType = new(a);
                         if (definition.ArrayElementTypes.Contains(arrayElementType))
@@ -2316,7 +2316,7 @@ namespace Worlds
 
                     //write tags
                     writer.WriteValue(definition.TagTypes.Count);
-                    for (byte t = 0; t < BitMask.Capacity; t++)
+                    for (uint t = 0; t < BitMask.Capacity; t++)
                     {
                         TagType tagType = new(t);
                         if (definition.TagTypes.Contains(tagType))
@@ -2433,7 +2433,7 @@ namespace Worlds
 
                     //read components
                     byte componentCount = reader.ReadValue<byte>();
-                    for (byte c = 0; c < componentCount; c++)
+                    for (uint c = 0; c < componentCount; c++)
                     {
                         ComponentType componentType = reader.ReadValue<ComponentType>();
                         ushort componentSize = schema.GetSize(componentType);
@@ -2444,7 +2444,7 @@ namespace Worlds
 
                     //read arrays
                     byte arrayCount = reader.ReadValue<byte>();
-                    for (byte a = 0; a < arrayCount; a++)
+                    for (uint a = 0; a < arrayCount; a++)
                     {
                         ArrayElementType arrayElementType = reader.ReadValue<ArrayElementType>();
                         uint length = reader.ReadValue<uint>();
@@ -2455,7 +2455,7 @@ namespace Worlds
 
                     //read tags
                     byte tagCount = reader.ReadValue<byte>();
-                    for (byte t = 0; t < tagCount; t++)
+                    for (uint t = 0; t < tagCount; t++)
                     {
                         TagType tagType = reader.ReadValue<TagType>();
                         AddTag(value, createdEntity, tagType);
@@ -2622,7 +2622,7 @@ namespace Worlds
 
                     ref Array<nint> arrays = ref world->arrays[entity - 1];
                     arrays = new(BitMask.Capacity);
-                    for (byte a = 0; a < BitMask.Capacity; a++)
+                    for (uint a = 0; a < BitMask.Capacity; a++)
                     {
                         if (arrayElementTypes.Contains(a))
                         {
@@ -2679,7 +2679,7 @@ namespace Worlds
                     ref Array<nint> arrays = ref world->arrays[entity - 1];
                     if (!arrays.IsDisposed)
                     {
-                        for (byte a = 0; a < BitMask.Capacity; a++)
+                        for (uint a = 0; a < BitMask.Capacity; a++)
                         {
                             Array* list = (Array*)arrays[a];
                             if (list is not null)

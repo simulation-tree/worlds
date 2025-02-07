@@ -22,7 +22,7 @@ namespace Worlds
         {
             get
             {
-                for (byte c = 0; c < BitMask.Capacity; c++)
+                for (uint c = 0; c < BitMask.Capacity; c++)
                 {
                     ComponentType componentType = new(c);
                     if (Contains(componentType))
@@ -40,7 +40,7 @@ namespace Worlds
         {
             get
             {
-                for (byte a = 0; a < BitMask.Capacity; a++)
+                for (uint a = 0; a < BitMask.Capacity; a++)
                 {
                     ArrayElementType arrayElementType = new(a);
                     if (Contains(arrayElementType))
@@ -58,7 +58,7 @@ namespace Worlds
         {
             get
             {
-                for (byte t = 0; t < BitMask.Capacity; t++)
+                for (uint t = 0; t < BitMask.Capacity; t++)
                 {
                     TagType tagType = new(t);
                     if (Contains(tagType))
@@ -637,7 +637,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfTooManyComponents()
         {
-            if (schema->componentCount >= BitMask.Capacity)
+            if (schema->componentCount == BitMask.MaxValue)
             {
                 throw new Exception("Too many components types registered");
             }
@@ -646,7 +646,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfTooManyArrays()
         {
-            if (schema->arraysCount >= BitMask.Capacity)
+            if (schema->arraysCount == BitMask.MaxValue)
             {
                 throw new Exception("Too many arrays element types registered");
             }
@@ -655,7 +655,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfTooManyTags()
         {
-            if (schema->tagsCount >= BitMask.Capacity)
+            if (schema->tagsCount == BitMask.MaxValue)
             {
                 throw new Exception("Too many tag types registered");
             }

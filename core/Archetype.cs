@@ -13,8 +13,8 @@ namespace Worlds
         public readonly Schema schema;
 
         private Definition definition;
-        private unsafe fixed ushort componentSizes[BitMask.Capacity];
-        private unsafe fixed ushort arrayElementSizes[BitMask.Capacity];
+        private unsafe fixed ushort componentSizes[(int)BitMask.Capacity];
+        private unsafe fixed ushort arrayElementSizes[(int)BitMask.Capacity];
 
         public readonly Definition Definition => definition;
         public readonly BitMask ComponentTypes => definition.ComponentTypes;
@@ -39,7 +39,7 @@ namespace Worlds
         {
             this.definition = definition;
             this.schema = schema;
-            for (byte i = 0; i < BitMask.Capacity; i++)
+            for (uint i = 0; i < BitMask.Capacity; i++)
             {
                 if (definition.ComponentTypes.Contains(i))
                 {

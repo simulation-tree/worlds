@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Types;
 using Unmanaged;
 
@@ -31,6 +32,13 @@ namespace Worlds
         public ArrayElementType(byte value)
         {
             this.index = value;
+        }
+
+        public ArrayElementType(uint value)
+        {
+            ThrowIfOutOfRange(value);
+
+            this.index = (byte)value;
         }
 
         /// <inheritdoc/>
@@ -106,6 +114,15 @@ namespace Worlds
         public static implicit operator byte(ArrayElementType arrayElementType)
         {
             return arrayElementType.index;
+        }
+
+        [Conditional("DEBUG")]
+        private static void ThrowIfOutOfRange(uint value)
+        {
+            if (value > BitMask.MaxValue)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), value, $"Value must be less than or equal to {BitMask.MaxValue}");
+            }
         }
     }
 }

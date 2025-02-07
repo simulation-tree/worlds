@@ -90,7 +90,7 @@ namespace Worlds
         {
             uint length = 0;
             BitMask componentTypes = Definition.ComponentTypes;
-            for (byte i = 0; i < BitMask.Capacity; i++)
+            for (uint i = 0; i < BitMask.Capacity; i++)
             {
                 if (componentTypes.Contains(i))
                 {
@@ -1760,16 +1760,16 @@ namespace Worlds
             public static Implementation* Allocate(Definition definition, Schema schema)
             {
                 Array<nint> componentArrays = new(BitMask.Capacity);
-                USpan<byte> typeIndices = stackalloc byte[BitMask.Capacity];
+                USpan<byte> typeIndices = stackalloc byte[(int)BitMask.Capacity];
                 byte typeCount = 0;
-                for (byte c = 0; c < BitMask.Capacity; c++)
+                for (uint c = 0; c < BitMask.Capacity; c++)
                 {
                     if (definition.ComponentTypes.Contains(c))
                     {
                         ComponentType componentType = new(c);
                         ushort componentSize = schema.GetSize(componentType);
                         componentArrays[c] = (nint)List.Allocate(4, componentSize);
-                        typeIndices[typeCount++] = c;
+                        typeIndices[typeCount++] = (byte)c;
                     }
                 }
 

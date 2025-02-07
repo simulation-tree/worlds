@@ -58,7 +58,7 @@ namespace Worlds
         public readonly uint ToString(USpan<char> buffer)
         {
             uint length = 0;
-            for (byte i = 0; i < BitMask.Capacity; i++)
+            for (uint i = 0; i < BitMask.Capacity; i++)
             {
                 if (componentTypes.Contains(i))
                 {
@@ -69,7 +69,7 @@ namespace Worlds
                 }
             }
 
-            for (byte i = 0; i < BitMask.Capacity; i++)
+            for (uint i = 0; i < BitMask.Capacity; i++)
             {
                 if (arrayElementTypes.Contains(i))
                 {
@@ -94,7 +94,7 @@ namespace Worlds
         public readonly uint ToString(Schema schema, USpan<char> buffer)
         {
             uint length = 0;
-            for (byte i = 0; i < BitMask.Capacity; i++)
+            for (uint i = 0; i < BitMask.Capacity; i++)
             {
                 if (componentTypes.Contains(i))
                 {
@@ -105,7 +105,7 @@ namespace Worlds
                 }
             }
 
-            for (byte i = 0; i < BitMask.Capacity; i++)
+            for (uint i = 0; i < BitMask.Capacity; i++)
             {
                 if (arrayElementTypes.Contains(i))
                 {
@@ -131,7 +131,7 @@ namespace Worlds
         public readonly byte CopyComponentTypesTo(USpan<ComponentType> destination)
         {
             byte count = 0;
-            for (byte c = 0; c < BitMask.Capacity; c++)
+            for (uint c = 0; c < BitMask.Capacity; c++)
             {
                 if (componentTypes.Contains(c))
                 {
@@ -150,7 +150,7 @@ namespace Worlds
         public readonly byte CopyArrayTypesTo(USpan<ArrayElementType> destination)
         {
             byte count = 0;
-            for (byte a = 0; a < BitMask.Capacity; a++)
+            for (uint a = 0; a < BitMask.Capacity; a++)
             {
                 if (arrayElementTypes.Contains(a))
                 {
@@ -169,7 +169,7 @@ namespace Worlds
         public readonly byte CopyTagTypesTo(USpan<TagType> destination)
         {
             byte count = 0;
-            for (byte t = 0; t < BitMask.Capacity; t++)
+            for (uint t = 0; t < BitMask.Capacity; t++)
             {
                 if (tagTypes.Contains(t))
                 {

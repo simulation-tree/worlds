@@ -549,32 +549,32 @@ namespace Worlds
 
                     Chunk chunk = world.GetChunk(value);
                     definition = chunk.Definition;
-                    USpan<ComponentType> componentTypes = stackalloc ComponentType[BitMask.Capacity];
+                    USpan<ComponentType> componentTypes = stackalloc ComponentType[(int)BitMask.Capacity];
                     byte count = definition.CopyComponentTypesTo(componentTypes);
                     components = new object[count];
                     this.componentTypes = new Type[count];
-                    for (byte i = 0; i < count; i++)
+                    for (uint i = 0; i < count; i++)
                     {
                         ComponentType componentType = componentTypes[i];
                         components[i] = world.GetComponentObject(value, componentType);
                         this.componentTypes[i] = componentType.GetLayout(world.Schema).SystemType;
                     }
 
-                    USpan<ArrayElementType> arrayTypes = stackalloc ArrayElementType[BitMask.Capacity];
+                    USpan<ArrayElementType> arrayTypes = stackalloc ArrayElementType[(int)BitMask.Capacity];
                     count = definition.CopyArrayTypesTo(arrayTypes);
                     arrays = new object[count][];
                     this.arrayTypes = new Type[count];
-                    for (byte i = 0; i < count; i++)
+                    for (uint i = 0; i < count; i++)
                     {
                         ArrayElementType arrayType = arrayTypes[i];
                         arrays[i] = world.GetArrayObject(value, arrayType);
                         this.arrayTypes[i] = arrayType.GetLayout(world.Schema).SystemType;
                     }
 
-                    USpan<TagType> tagTypes = stackalloc TagType[BitMask.Capacity];
+                    USpan<TagType> tagTypes = stackalloc TagType[(int)BitMask.Capacity];
                     count = definition.CopyTagTypesTo(tagTypes);
                     this.tagTypes = new Type[count];
-                    for (byte i = 0; i < count; i++)
+                    for (uint i = 0; i < count; i++)
                     {
                         TagType tagType = tagTypes[i];
                         this.tagTypes[i] = tagType.GetLayout(world.Schema).SystemType;

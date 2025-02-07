@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Types;
 using Unmanaged;
 
@@ -31,6 +32,13 @@ namespace Worlds
         public ComponentType(byte value)
         {
             this.index = value;
+        }
+
+        public ComponentType(uint value)
+        {
+            ThrowIfOutOfRange(value);
+
+            this.index = (byte)value;
         }
 
         /// <inheritdoc/>
@@ -113,6 +121,16 @@ namespace Worlds
         public static implicit operator byte(ComponentType componentType)
         {
             return componentType.index;
+        }
+
+
+        [Conditional("DEBUG")]
+        private static void ThrowIfOutOfRange(uint value)
+        {
+            if (value > BitMask.MaxValue)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), value, $"Value must be less than or equal to {BitMask.MaxValue}");
+            }
         }
     }
 }
