@@ -1,0 +1,29 @@
+﻿namespace Worlds
+{
+    public enum InstructionType : byte
+    {
+        CreateEntities,
+        DestroySelectedEntities,
+        ClearSelection,
+        SelectEntities,
+        SelectPreviouslyCreatedEntity,
+        SetParentToPreviouslyCreatedEntity,
+        SetParent,
+        AddComponent,
+        RemoveComponent,
+        SetComponent,
+        AddOrSetComponent,
+        AddTag,
+        RemoveTag,
+        CreateArray,
+        SetArray,
+        CreateAndInitializeArray,
+        CreateOrSetArray,
+        DestroyArray,
+        ResizeArray,
+        SetArrayElements,
+        AddReference,
+        AddReferenceToPreviouslyCreatedEntity,
+        RemoveReference
+    }
+}

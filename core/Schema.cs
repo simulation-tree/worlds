@@ -401,6 +401,16 @@ namespace Worlds
             return new(arrayElementType, (ushort)sizeof(T));
         }
 
+        public readonly DataType GetArrayElementDataType(TypeLayout type)
+        {
+            ThrowIfArrayElementIsMissing(type);
+
+            USpan<long> arrayTypeHashes = Implementation.GetArrayTypeHashes(schema);
+            uint index = arrayTypeHashes.IndexOf(type.Hash);
+            ArrayElementType arrayElementType = new((byte)index);
+            return new(arrayElementType, type.Size);
+        }
+
         public readonly TagType GetTag<T>() where T : unmanaged
         {
             ThrowIfTagIsMissing<T>();
@@ -696,6 +706,15 @@ namespace Worlds
             if (arrayElementSize == default)
             {
                 throw new Exception($"Array element size for `{arrayElementTypes}` is missing from schema");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfArrayElementIsMissing(TypeLayout arrayElementType)
+        {
+            if (!ContainsArrayElement(arrayElementType))
+            {
+                throw new Exception($"Array element `{arrayElementType}` is missing from schema");
             }
         }
 
