@@ -169,6 +169,20 @@ namespace Worlds.Tests
         }
 
         [Test]
+        public void ClearingInstructions()
+        {
+            using Operation operation = new();
+            operation.CreateEntity();
+            operation.AddComponent(new TestComponent(1));
+
+            Assert.That(operation.Count, Is.EqualTo(2));
+
+            operation.Clear();
+
+            Assert.That(operation.Count, Is.EqualTo(0));
+        }
+
+        [Test]
         public void ResizeExistingArray()
         {
             using Operation operation = new();

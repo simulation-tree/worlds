@@ -183,6 +183,7 @@ namespace Worlds
             Allocations.ThrowIfNull(operation);
 
             operation->bytesLength = 0;
+            operation->count = 0;
         }
 
         /// <summary>
@@ -461,8 +462,13 @@ namespace Worlds
         /// </summary>
         public readonly void Perform(World world)
         {
-            using Performing performing = new(this, world);
-            performing.Do();
+            Allocations.ThrowIfNull(operation);
+
+            if (operation->count > 0)
+            {
+                using Performing performing = new(this, world);
+                performing.Do();
+            }
         }
 
         /// <summary>
