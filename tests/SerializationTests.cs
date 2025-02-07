@@ -112,6 +112,8 @@ namespace Worlds.Tests
         public unsafe void CheckSchemaOfLoadedWorld()
         {
             World prefabWorld = CreateWorld();
+            ComponentType fruitType = prefabWorld.Schema.GetComponent<Fruit>();
+            ComponentType cherryType = prefabWorld.Schema.GetComponent<Cherry>();
             uint a = prefabWorld.CreateEntity();
             prefabWorld.AddComponent(a, new Fruit(42));
             prefabWorld.AddComponent(a, new Cherry("Hello, World!"));
@@ -125,11 +127,11 @@ namespace Worlds.Tests
             using World loadedWorld = reader.ReadObject<World>();
 
             Schema loadedSchema = loadedWorld.Schema;
-            Assert.That(loadedSchema.TryGetComponentLayout(typeof(Fruit).FullName!, out TypeLayout fruitType), Is.True);
-            Assert.That(loadedSchema.TryGetComponentLayout(typeof(Cherry).FullName!, out TypeLayout cherryType), Is.True);
+            Assert.That(loadedSchema.TryGetComponentType(TypeRegistry.Get<Fruit>(), out ComponentType loadedFruitType), Is.True);
+            Assert.That(loadedSchema.TryGetComponentType(TypeRegistry.Get<Cherry>(), out ComponentType loadedCherryType), Is.True);
             Assert.That(loadedSchema.ContainsTag<IsPrefab>(), Is.True);
-            Assert.That(fruitType.Size, Is.EqualTo(sizeof(Fruit)));
-            Assert.That(cherryType.Size, Is.EqualTo(sizeof(Cherry)));
+            Assert.That(loadedFruitType, Is.EqualTo(fruitType));
+            Assert.That(loadedCherryType, Is.EqualTo(cherryType));
         }
 
         [Test]

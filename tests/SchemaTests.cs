@@ -12,11 +12,24 @@ namespace Worlds.Tests
             Assert.That(schema.ContainsComponent<Stress>(), Is.False);
             schema.RegisterComponent<Stress>();
             Assert.That(schema.ContainsComponent<Stress>(), Is.True);
+        }
+
+        [Test]
+        public void Copying()
+        {
+            using Schema schema = new();
+            Assert.That(schema.ContainsComponent<Stress>(), Is.False);
+            schema.RegisterComponent<Stress>();
+            TagType thingTag = schema.RegisterTag<IsThing>();
+            Assert.That(schema.ContainsComponent<Stress>(), Is.True);
+            Assert.That(schema.ContainsTag<IsThing>(), Is.True);
 
             using Schema copy = new();
             copy.CopyFrom(schema);
 
             Assert.That(copy.ContainsComponent<Stress>(), Is.True);
+            Assert.That(copy.ContainsTag<IsThing>(), Is.True);
+            Assert.That(copy.Contains(thingTag), Is.True);
         }
 
         [Test]
@@ -45,6 +58,7 @@ namespace Worlds.Tests
             using Schema prefabSchema = new();
             prefabSchema.RegisterComponent<float>();
             prefabSchema.RegisterComponent<char>();
+            TagType thingTag = prefabSchema.RegisterTag<IsThing>();
 
             using BinaryWriter writer = new();
             writer.WriteObject(prefabSchema);
@@ -54,6 +68,8 @@ namespace Worlds.Tests
 
             Assert.That(loadedSchema.ContainsComponent<float>(), Is.True);
             Assert.That(loadedSchema.ContainsComponent<char>(), Is.True);
+            Assert.That(loadedSchema.ContainsTag<IsThing>(), Is.True);
+            Assert.That(loadedSchema.Contains(thingTag), Is.True);
         }
 
         [Test]

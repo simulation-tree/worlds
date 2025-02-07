@@ -126,7 +126,7 @@ namespace Worlds
             bank.Load(new(this, Register));
         }
 
-        public static void Register(RegisterDataType.Input input)
+        private static void Register(RegisterDataType.Input input)
         {
             if (input.kind == DataType.Kind.Component)
             {
@@ -170,7 +170,9 @@ namespace Worlds
         {
             ThrowIfComponentIsMissing(componentType);
 
-            return Implementation.GetComponentLayouts(schema)[componentType];
+            USpan<long> componentTypeHashes = Implementation.GetComponentTypeHashes(schema);
+            long hash = componentTypeHashes[componentType];
+            return TypeRegistry.Get(hash);
         }
 
         /// <summary>
@@ -180,7 +182,9 @@ namespace Worlds
         {
             ThrowIfArrayElementIsMissing(arrayElementType);
 
-            return Implementation.GetArrayLayouts(schema)[arrayElementType];
+            USpan<long> arrayTypeHashes = Implementation.GetArrayTypeHashes(schema);
+            long hash = arrayTypeHashes[arrayElementType];
+            return TypeRegistry.Get(hash);
         }
 
         /// <summary>
@@ -190,46 +194,14 @@ namespace Worlds
         {
             ThrowIfTagIsMissing(tagType);
 
-            return Implementation.GetTagLayouts(schema)[tagType];
+            USpan<long> tagTypeHashes = Implementation.GetTagTypeHashes(schema);
+            long hash = tagTypeHashes[tagType];
+            return TypeRegistry.Get(hash);
         }
 
         public readonly TypeLayout GetComponentLayout<T>() where T : unmanaged
         {
             return GetComponentLayout(GetComponent<T>());
-        }
-
-        public readonly bool TryGetComponentLayout(FixedString fullTypeName, out TypeLayout componentType)
-        {
-            USpan<TypeLayout> types = Implementation.GetComponentLayouts(schema);
-            for (byte c = 0; c < BitMask.Capacity; c++)
-            {
-                TypeLayout layout = types[c];
-                if (layout.FullName == fullTypeName)
-                {
-                    componentType = layout;
-                    return true;
-                }
-            }
-
-            componentType = default;
-            return false;
-        }
-
-        public readonly bool TryGetArrayElementLayout(FixedString fullTypeName, out TypeLayout arrayElementType)
-        {
-            USpan<TypeLayout> types = Implementation.GetArrayLayouts(schema);
-            for (byte a = 0; a < BitMask.Capacity; a++)
-            {
-                TypeLayout type = types[a];
-                if (type.FullName == fullTypeName)
-                {
-                    arrayElementType = type;
-                    return true;
-                }
-            }
-
-            arrayElementType = default;
-            return false;
         }
 
         public readonly ComponentType RegisterComponent<T>() where T : unmanaged
@@ -242,14 +214,12 @@ namespace Worlds
             ThrowIfTooManyComponents();
             ThrowIfComponentAlreadyRegistered(type);
 
-            USpan<TypeLayout> typeLayouts = Implementation.GetComponentLayouts(schema);
             USpan<ushort> componentSizes = Implementation.GetComponentSizes(schema);
-            ComponentType componentType = new(schema->components);
-            typeLayouts[componentType] = type;
+            USpan<long> componentHashes = Implementation.GetComponentTypeHashes(schema);
+            ComponentType componentType = new(schema->componentCount);
             componentSizes[componentType] = type.Size;
-            int hashCode = type.GetHashCode();
-            schema->componentIndices.Add(hashCode, componentType);
-            schema->components++;
+            componentHashes[componentType] = type.Hash;
+            schema->componentCount++;
             return componentType;
         }
 
@@ -263,14 +233,12 @@ namespace Worlds
             ThrowIfTooManyArrays();
             ThrowIfArrayElementAlreadyRegistered(type);
 
-            ArrayElementType arrayElementType = new(schema->arrays);
-            USpan<TypeLayout> typeLayouts = Implementation.GetArrayLayouts(schema);
+            ArrayElementType arrayElementType = new(schema->arraysCount);
             USpan<ushort> arrayElementSizes = Implementation.GetArrayElementSizes(schema);
-            typeLayouts[arrayElementType] = type;
+            USpan<long> arrayElementHashes = Implementation.GetArrayTypeHashes(schema);
             arrayElementSizes[arrayElementType] = type.Size;
-            int hashCode = type.GetHashCode();
-            schema->arrayElementIndices.Add(hashCode, arrayElementType);
-            schema->arrays++;
+            arrayElementHashes[arrayElementType] = type.Hash;
+            schema->arraysCount++;
             return arrayElementType;
         }
 
@@ -284,12 +252,11 @@ namespace Worlds
             ThrowIfTooManyTags();
             ThrowIfTagAlreadyRegistered(type);
 
-            TagType tagType = new(schema->tags);
-            USpan<TypeLayout> typeLayouts = Implementation.GetTagLayouts(schema);
-            typeLayouts[tagType] = type;
-            schema->tagIndices.Add(type.GetHashCode(), tagType);
-            schema->tagExistence.Write(tagType, true);
-            schema->tags++;
+            TagType tagType = new(schema->tagsCount);
+            USpan<long> tagHashes = Implementation.GetTagTypeHashes(schema);
+            tagHashes[tagType] = type.Hash;
+            schema->tagsMask.Set(tagType);
+            schema->tagsCount++;
             return tagType;
         }
 
@@ -305,123 +272,132 @@ namespace Worlds
 
         public readonly bool Contains(TagType tagType)
         {
-            return schema->tagExistence.Read<bool>(tagType.index);
+            return schema->tagsMask.Contains(tagType);
         }
 
         public readonly bool ContainsComponent(FixedString fullTypeName)
         {
-            USpan<TypeLayout> types = Implementation.GetComponentLayouts(schema);
-            for (byte c = 0; c < BitMask.Capacity; c++)
-            {
-                TypeLayout type = types[c];
-                if (type.FullName == fullTypeName)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            long hash = fullTypeName.GetLongHashCode();
+            USpan<long> componentTypeHashes = Implementation.GetComponentTypeHashes(schema);
+            return componentTypeHashes.Contains(hash);
         }
 
         public readonly bool ContainsComponent(TypeLayout type)
         {
-            USpan<TypeLayout> types = Implementation.GetComponentLayouts(schema);
-            return types.Contains(type);
+            long hash = type.Hash;
+            USpan<long> componentTypeHashes = Implementation.GetComponentTypeHashes(schema);
+            return componentTypeHashes.Contains(hash);
         }
 
         public readonly bool TryGetComponentType(TypeLayout type, out ComponentType componentType)
         {
-            USpan<TypeLayout> types = Implementation.GetComponentLayouts(schema);
-            bool contains = types.TryIndexOf(type, out uint index);
+            long hash = type.Hash;
+            USpan<long> componentTypeHashes = Implementation.GetComponentTypeHashes(schema);
+            bool contains = componentTypeHashes.TryIndexOf(hash, out uint index);
             componentType = new((byte)index);
             return contains;
         }
 
         public readonly bool ContainsArrayElement(FixedString fullTypeName)
         {
-            USpan<TypeLayout> types = Implementation.GetArrayLayouts(schema);
-            for (byte a = 0; a < BitMask.Capacity; a++)
-            {
-                TypeLayout type = types[a];
-                if (type.FullName == fullTypeName)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            long hash = fullTypeName.GetLongHashCode();
+            USpan<long> arrayTypeHashes = Implementation.GetArrayTypeHashes(schema);
+            return arrayTypeHashes.Contains(hash);
         }
 
         public readonly bool ContainsArrayElement(TypeLayout type)
         {
-            USpan<TypeLayout> types = Implementation.GetArrayLayouts(schema);
-            return types.Contains(type);
+            long hash = type.Hash;
+            USpan<long> arrayTypeHashes = Implementation.GetArrayTypeHashes(schema);
+            return arrayTypeHashes.Contains(hash);
         }
 
         public readonly bool TryGetArrayElementType(TypeLayout type, out ArrayElementType arrayElementType)
         {
-            USpan<TypeLayout> types = Implementation.GetArrayLayouts(schema);
-            bool contains = types.TryIndexOf(type, out uint index);
+            long hash = type.Hash;
+            USpan<long> arrayTypeHashes = Implementation.GetArrayTypeHashes(schema);
+            bool contains = arrayTypeHashes.TryIndexOf(hash, out uint index);
             arrayElementType = new((byte)index);
             return contains;
         }
 
         public readonly bool ContainsTag(FixedString fullTypeName)
         {
-            USpan<TypeLayout> types = Implementation.GetTagLayouts(schema);
-            for (byte t = 0; t < BitMask.Capacity; t++)
-            {
-                TypeLayout type = types[t];
-                if (type.FullName == fullTypeName)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            long hash = fullTypeName.GetLongHashCode();
+            USpan<long> tagTypeHashes = Implementation.GetTagTypeHashes(schema);
+            return tagTypeHashes.Contains(hash);
         }
 
         public readonly bool ContainsTag(TypeLayout type)
         {
-            USpan<TypeLayout> types = Implementation.GetTagLayouts(schema);
-            return types.Contains(type);
+            long hash = type.Hash;
+            USpan<long> tagTypeHashes = Implementation.GetTagTypeHashes(schema);
+            return tagTypeHashes.Contains(hash);
         }
 
         public readonly bool ContainsComponent<T>() where T : unmanaged
         {
-            int hashCode = TypeLayoutHashCodeCache<T>.value;
-            return schema->componentIndices.ContainsKey(hashCode);
+            long hash = TypeLayoutHashCodeCache<T>.value;
+            USpan<long> componentTypeHashes = Implementation.GetComponentTypeHashes(schema);
+            return componentTypeHashes.Contains(hash);
         }
 
         public readonly ComponentType GetComponent<T>() where T : unmanaged
         {
             ThrowIfComponentIsMissing<T>();
 
-            return new(schema->componentIndices[TypeLayoutHashCodeCache<T>.value]);
+            long hash = TypeLayoutHashCodeCache<T>.value;
+            USpan<long> componentTypeHashes = Implementation.GetComponentTypeHashes(schema);
+            uint index = componentTypeHashes.IndexOf(hash);
+            return new((byte)index);
         }
 
         public readonly DataType GetComponentDataType<T>() where T : unmanaged
         {
-            ComponentType componentType = GetComponent<T>();
+            ThrowIfComponentIsMissing<T>();
+
+            long hash = TypeLayoutHashCodeCache<T>.value;
+            USpan<long> componentTypeHashes = Implementation.GetComponentTypeHashes(schema);
+            uint index = componentTypeHashes.IndexOf(hash);
+            ComponentType componentType = new((byte)index);
             return new(componentType, (ushort)sizeof(T));
+        }
+
+        public readonly DataType GetComponentDataType(TypeLayout type)
+        {
+            ThrowIfComponentIsMissing(type);
+
+            USpan<long> componentTypeHashes = Implementation.GetComponentTypeHashes(schema);
+            uint index = componentTypeHashes.IndexOf(type.Hash);
+            ComponentType componentType = new((byte)index);
+            return new(componentType, type.Size);
         }
 
         public readonly bool ContainsArrayElement<T>() where T : unmanaged
         {
-            int hashCode = TypeLayoutHashCodeCache<T>.value;
-            return schema->arrayElementIndices.ContainsKey(hashCode);
+            long hash = TypeLayoutHashCodeCache<T>.value;
+            USpan<long> arrayTypeHashes = Implementation.GetArrayTypeHashes(schema);
+            return arrayTypeHashes.Contains(hash);
         }
 
         public readonly ArrayElementType GetArrayElement<T>() where T : unmanaged
         {
             ThrowIfArrayElementIsMissing<T>();
 
-            return new(schema->arrayElementIndices[TypeLayoutHashCodeCache<T>.value]);
+            long hash = TypeLayoutHashCodeCache<T>.value;
+            USpan<long> arrayTypeHashes = Implementation.GetArrayTypeHashes(schema);
+            uint index = arrayTypeHashes.IndexOf(hash);
+            return new((byte)index);
         }
 
         public readonly DataType GetArrayElementDataType<T>() where T : unmanaged
         {
-            ArrayElementType arrayElementType = GetArrayElement<T>();
+            ThrowIfArrayElementIsMissing<T>();
+
+            long hash = TypeLayoutHashCodeCache<T>.value;
+            USpan<long> arrayTypeHashes = Implementation.GetArrayTypeHashes(schema);
+            uint index = arrayTypeHashes.IndexOf(hash);
+            ArrayElementType arrayElementType = new((byte)index);
             return new(arrayElementType, (ushort)sizeof(T));
         }
 
@@ -429,19 +405,28 @@ namespace Worlds
         {
             ThrowIfTagIsMissing<T>();
 
-            int hashCode = TypeLayoutHashCodeCache<T>.value;
-            return new(schema->tagIndices[hashCode]);
+            long hash = TypeLayoutHashCodeCache<T>.value;
+            USpan<long> tagTypeHashes = Implementation.GetTagTypeHashes(schema);
+            uint index = tagTypeHashes.IndexOf(hash);
+            return new((byte)index);
         }
 
         public readonly DataType GetTagDataType<T>() where T : unmanaged
         {
-            return GetDataType(GetTag<T>());
+            ThrowIfTagIsMissing<T>();
+
+            long hash = TypeLayoutHashCodeCache<T>.value;
+            USpan<long> tagTypeHashes = Implementation.GetTagTypeHashes(schema);
+            uint index = tagTypeHashes.IndexOf(hash);
+            TagType tagType = new((byte)index);
+            return new(tagType);
         }
 
         public readonly bool ContainsTag<T>() where T : unmanaged
         {
-            int hashCode = TypeLayoutHashCodeCache<T>.value;
-            return schema->tagIndices.ContainsKey(hashCode);
+            long hash = TypeLayoutHashCodeCache<T>.value;
+            USpan<long> tagTypeHashes = Implementation.GetTagTypeHashes(schema);
+            return tagTypeHashes.Contains(hash);
         }
 
         public readonly BitMask GetComponents<T1>() where T1 : unmanaged
@@ -652,7 +637,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfTooManyComponents()
         {
-            if (schema->components >= BitMask.Capacity)
+            if (schema->componentCount >= BitMask.Capacity)
             {
                 throw new Exception("Too many components types registered");
             }
@@ -661,7 +646,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfTooManyArrays()
         {
-            if (schema->arrays >= BitMask.Capacity)
+            if (schema->arraysCount >= BitMask.Capacity)
             {
                 throw new Exception("Too many arrays element types registered");
             }
@@ -670,7 +655,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfTooManyTags()
         {
-            if (schema->tags >= BitMask.Capacity)
+            if (schema->tagsCount >= BitMask.Capacity)
             {
                 throw new Exception("Too many tag types registered");
             }
@@ -683,6 +668,15 @@ namespace Worlds
             if (componentSize == default)
             {
                 throw new Exception($"Component size for `{componentType}` is missing from schema");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfComponentIsMissing(TypeLayout componentType)
+        {
+            if (!ContainsComponent(componentType))
+            {
+                throw new Exception($"Component `{componentType}` is missing from schema");
             }
         }
 
@@ -803,81 +797,39 @@ namespace Worlds
 
         readonly void ISerializable.Write(BinaryWriter writer)
         {
-            writer.WriteValue(schema->components);
-            writer.WriteValue(schema->arrays);
-            writer.WriteValue(schema->tags);
+            writer.WriteValue(schema->componentCount);
+            writer.WriteValue(schema->arraysCount);
+            writer.WriteValue(schema->tagsCount);
+            writer.WriteValue(schema->tagsMask);
             USpan<ushort> componentSizes = Implementation.GetComponentSizes(schema);
             USpan<ushort> arrayElementSizes = Implementation.GetArrayElementSizes(schema);
-            USpan<TypeLayout> componentLayouts = Implementation.GetComponentLayouts(schema);
-            USpan<TypeLayout> arrayLayouts = Implementation.GetArrayLayouts(schema);
-            USpan<TypeLayout> tagLayouts = Implementation.GetTagLayouts(schema);
-            for (byte i = 0; i < BitMask.Capacity; i++)
-            {
-                ushort componentSize = componentSizes[i];
-                writer.WriteValue(componentSize != default);
-                if (componentSize != default)
-                {
-                    writer.WriteValue(componentSizes[i]);
-                    writer.WriteObject(componentLayouts[i]);
-                }
-
-                ushort arrayElementSize = arrayElementSizes[i];
-                writer.WriteValue(arrayElementSize != default);
-                if (arrayElementSize != default)
-                {
-                    writer.WriteValue(arrayElementSizes[i]);
-                    writer.WriteObject(arrayLayouts[i]);
-                }
-
-                bool hasTag = schema->tagExistence.Read<bool>(i);
-                writer.WriteValue(hasTag);
-                if (hasTag)
-                {
-                    writer.WriteObject(tagLayouts[i]);
-                }
-            }
+            USpan<long> componentTypeHashes = Implementation.GetComponentTypeHashes(schema);
+            USpan<long> arrayTypeHashes = Implementation.GetArrayTypeHashes(schema);
+            USpan<long> tagTypeHashes = Implementation.GetTagTypeHashes(schema);
+            writer.WriteSpan(componentSizes);
+            writer.WriteSpan(arrayElementSizes);
+            writer.WriteSpan(componentTypeHashes);
+            writer.WriteSpan(arrayTypeHashes);
+            writer.WriteSpan(tagTypeHashes);
         }
 
         void ISerializable.Read(BinaryReader reader)
         {
             schema = Implementation.Allocate();
-            schema->components = reader.ReadValue<byte>();
-            schema->arrays = reader.ReadValue<byte>();
-            schema->tags = reader.ReadValue<byte>();
+            schema->componentCount = reader.ReadValue<byte>();
+            schema->arraysCount = reader.ReadValue<byte>();
+            schema->tagsCount = reader.ReadValue<byte>();
+            schema->tagsMask = reader.ReadValue<BitMask>();
             USpan<ushort> componentSizes = Implementation.GetComponentSizes(schema);
             USpan<ushort> arrayElementSizes = Implementation.GetArrayElementSizes(schema);
-            USpan<TypeLayout> componentLayouts = Implementation.GetComponentLayouts(schema);
-            USpan<TypeLayout> arrayLayouts = Implementation.GetArrayLayouts(schema);
-            USpan<TypeLayout> tagLayouts = Implementation.GetTagLayouts(schema);
-            for (byte i = 0; i < BitMask.Capacity; i++)
-            {
-                bool hasComponent = reader.ReadValue<bool>();
-                if (hasComponent)
-                {
-                    componentSizes[i] = reader.ReadValue<ushort>();
-                    TypeLayout typeLayout = reader.ReadObject<TypeLayout>();
-                    componentLayouts[i] = typeLayout;
-                    schema->componentIndices.Add(typeLayout.GetHashCode(), i);
-                }
-
-                bool hasArrayElement = reader.ReadValue<bool>();
-                if (hasArrayElement)
-                {
-                    arrayElementSizes[i] = reader.ReadValue<ushort>();
-                    TypeLayout typeLayout = reader.ReadObject<TypeLayout>();
-                    arrayLayouts[i] = typeLayout;
-                    schema->arrayElementIndices.Add(typeLayout.GetHashCode(), i);
-                }
-
-                bool hasTag = reader.ReadValue<bool>();
-                schema->tagExistence.Write(i, hasTag);
-                if (hasTag)
-                {
-                    TypeLayout typeLayout = reader.ReadObject<TypeLayout>();
-                    tagLayouts[i] = typeLayout;
-                    schema->tagIndices.Add(typeLayout.GetHashCode(), i);
-                }
-            }
+            USpan<long> componentHashes = Implementation.GetComponentTypeHashes(schema);
+            USpan<long> arrayHashes = Implementation.GetArrayTypeHashes(schema);
+            USpan<long> tagHashes = Implementation.GetTagTypeHashes(schema);
+            componentSizes.CopyFrom(reader.ReadSpan<ushort>(BitMask.Capacity));
+            arrayElementSizes.CopyFrom(reader.ReadSpan<ushort>(BitMask.Capacity));
+            componentHashes.CopyFrom(reader.ReadSpan<long>(BitMask.Capacity));
+            arrayHashes.CopyFrom(reader.ReadSpan<long>(BitMask.Capacity));
+            tagHashes.CopyFrom(reader.ReadSpan<long>(BitMask.Capacity));
         }
 
         /// <summary>
@@ -900,38 +852,31 @@ namespace Worlds
 
         public struct Implementation
         {
-            public byte components;
-            public byte arrays;
-            public byte tags;
-            public readonly Allocation sizes;
-            public readonly Allocation tagExistence;
-            public readonly Allocation typeLayouts;
-            public readonly Dictionary<int, byte> componentIndices;
-            public readonly Dictionary<int, byte> arrayElementIndices;
-            public readonly Dictionary<int, byte> tagIndices;
+            private const uint SizesLength = sizeof(ushort) * BitMask.Capacity * 2;
+            private const uint TypeHashesLength = sizeof(long) * BitMask.Capacity * 3;
 
-            private Implementation(Allocation sizes, Allocation tagExistence, Allocation typeLayouts)
+            public byte componentCount;
+            public byte arraysCount;
+            public byte tagsCount;
+            public BitMask tagsMask;
+            public readonly Allocation sizes;
+            public readonly Allocation typeHashes;
+
+            private Implementation(Allocation sizes, Allocation typeHashes)
             {
-                this.components = 0;
-                this.arrays = 0;
-                this.tags = 0;
+                this.componentCount = 0;
+                this.arraysCount = 0;
+                this.tagsCount = 0;
                 this.sizes = sizes;
-                this.tagExistence = tagExistence;
-                this.typeLayouts = typeLayouts;
-                this.componentIndices = new(BitMask.Capacity);
-                this.arrayElementIndices = new(BitMask.Capacity);
-                this.tagIndices = new(BitMask.Capacity);
+                this.typeHashes = typeHashes;
             }
 
             public static Implementation* Allocate()
             {
-                Allocation sizes = new(BitMask.Capacity * 2 * 2, true);
-                Allocation tagExistence = new(BitMask.Capacity, true);
-                Allocation typeLayouts = new((uint)sizeof(TypeLayout) * BitMask.Capacity * 3, true);
+                Allocation sizes = new(SizesLength, true);
+                Allocation typeHashes = new(TypeHashesLength, true);
                 ref Implementation schema = ref Allocations.Allocate<Implementation>();
-                schema = new(sizes, tagExistence, typeLayouts);
-                schema.components = 0;
-                schema.arrays = 0;
+                schema = new(sizes, typeHashes);
                 fixed (Implementation* pointer = &schema)
                 {
                     return pointer;
@@ -942,53 +887,28 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(schema);
 
-                schema->tagIndices.Dispose();
-                schema->componentIndices.Dispose();
-                schema->arrayElementIndices.Dispose();
                 schema->sizes.Dispose();
-                schema->tagExistence.Dispose();
-                schema->typeLayouts.Dispose();
+                schema->typeHashes.Dispose();
                 Allocations.Free(ref schema);
             }
 
             public static void Clear(Implementation* schema)
             {
-                schema->components = 0;
-                schema->arrays = 0;
-                schema->tags = 0;
-                schema->componentIndices.Clear();
-                schema->arrayElementIndices.Clear();
-                schema->tagIndices.Clear();
-                schema->sizes.Clear(BitMask.Capacity * 2 * 2);
-                schema->tagExistence.Clear(BitMask.Capacity);
-                schema->typeLayouts.Clear((uint)sizeof(TypeLayout) * BitMask.Capacity * 3);
+                schema->componentCount = 0;
+                schema->arraysCount = 0;
+                schema->tagsCount = 0;
+                schema->sizes.Clear(SizesLength);
+                schema->typeHashes.Clear(TypeHashesLength);
             }
 
             public static void CopyTo(Implementation* source, Implementation* destination)
             {
-                destination->components = source->components;
-                destination->arrays = source->arrays;
-                destination->tags = source->tags;
-                source->sizes.CopyTo(destination->sizes, BitMask.Capacity * 2 * 2);
-                source->tagExistence.CopyTo(destination->tagExistence, BitMask.Capacity);
-                source->typeLayouts.CopyTo(destination->typeLayouts, (uint)sizeof(TypeLayout) * BitMask.Capacity * 3);
-                destination->componentIndices.Clear();
-                foreach ((int hashCode, byte index) in source->componentIndices)
-                {
-                    destination->componentIndices.Add(hashCode, index);
-                }
-
-                destination->arrayElementIndices.Clear();
-                foreach ((int hashCode, byte index) in source->arrayElementIndices)
-                {
-                    destination->arrayElementIndices.Add(hashCode, index);
-                }
-
-                destination->tagIndices.Clear();
-                foreach ((int hashCode, byte index) in source->tagIndices)
-                {
-                    destination->tagIndices.Add(hashCode, index);
-                }
+                destination->componentCount = source->componentCount;
+                destination->arraysCount = source->arraysCount;
+                destination->tagsCount = source->tagsCount;
+                destination->tagsMask = source->tagsMask;
+                source->sizes.CopyTo(destination->sizes, SizesLength);
+                source->typeHashes.CopyTo(destination->typeHashes, TypeHashesLength);
             }
 
             public static USpan<ushort> GetComponentSizes(Implementation* schema)
@@ -1001,25 +921,25 @@ namespace Worlds
                 return schema->sizes.AsSpan<ushort>(BitMask.Capacity, BitMask.Capacity);
             }
 
-            public static USpan<TypeLayout> GetComponentLayouts(Implementation* schema)
+            public static USpan<long> GetComponentTypeHashes(Implementation* schema)
             {
-                return schema->typeLayouts.AsSpan<TypeLayout>(0, BitMask.Capacity);
+                return schema->typeHashes.AsSpan<long>(0, BitMask.Capacity);
             }
 
-            public static USpan<TypeLayout> GetArrayLayouts(Implementation* schema)
+            public static USpan<long> GetArrayTypeHashes(Implementation* schema)
             {
-                return schema->typeLayouts.AsSpan<TypeLayout>(BitMask.Capacity, BitMask.Capacity);
+                return schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
             }
 
-            public static USpan<TypeLayout> GetTagLayouts(Implementation* schema)
+            public static USpan<long> GetTagTypeHashes(Implementation* schema)
             {
-                return schema->typeLayouts.AsSpan<TypeLayout>(BitMask.Capacity * 2, BitMask.Capacity);
+                return schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
             }
         }
 
         internal static class TypeLayoutHashCodeCache<T> where T : unmanaged
         {
-            public static readonly int value = TypeRegistry.Get<T>().GetHashCode();
+            public static readonly long value = TypeRegistry.Get<T>().Hash;
         }
     }
 }

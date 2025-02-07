@@ -509,6 +509,41 @@ namespace Worlds
             }
         }
 
+        public readonly void Perform(OperationNew operation)
+        {
+            using List<uint> selection = new(4);
+            using List<uint> entities = new(4);
+            uint bytePosition = 0;
+            while (bytePosition < operation.Length)
+            {
+                InstructionType type = operation.ReadInstructionType(ref bytePosition);
+                if (type == InstructionType.CreateEntity)
+                {
+                    bool select = operation.Read<bool>(ref bytePosition);
+                    uint entity = CreateEntity();
+                    entities.Add(entity);
+                    if (select)
+                    {
+                        selection.Add(entity);
+                    }
+                }
+                else if (type == InstructionType.AddComponent)
+                {
+                    TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
+                    DataType componentType = Schema.GetComponentDataType(layout);
+                    USpan<byte> component = operation.ReadSpan(layout.Size, ref bytePosition);
+                    foreach (uint entity in entities)
+                    {
+                        AddComponent(entity, componentType, component);
+                    }
+                }
+                else
+                {
+                    throw new NotImplementedException($"Unknown instruction type `{type}`");
+                }
+            }
+        }
+
         /// <summary>
         /// Destroys the given <paramref name="entity"/> assuming it exists.
         /// </summary>
