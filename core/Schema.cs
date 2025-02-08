@@ -106,14 +106,14 @@ namespace Worlds
         {
             ThrowIfComponentIsMissing(componentType);
 
-            return schema->sizes.Read<ushort>(componentType.index * 2u);
+            return schema->sizes.Read<ushort>((uint)componentType * 2u);
         }
 
         public readonly ushort GetSize(ArrayElementType arrayElementType)
         {
             ThrowIfArrayElementIsMissing(arrayElementType);
 
-            return schema->sizes.Read<ushort>(BitMask.Capacity * 2 + arrayElementType.index * 2u);
+            return schema->sizes.Read<ushort>(BitMask.Capacity * 2 + (uint)arrayElementType * 2u);
         }
 
         /// <summary>
@@ -171,7 +171,7 @@ namespace Worlds
             ThrowIfComponentIsMissing(componentType);
 
             USpan<long> componentTypeHashes = Implementation.GetComponentTypeHashes(schema);
-            long hash = componentTypeHashes[componentType];
+            long hash = componentTypeHashes[(uint)componentType];
             return TypeRegistry.Get(hash);
         }
 
@@ -183,7 +183,7 @@ namespace Worlds
             ThrowIfArrayElementIsMissing(arrayElementType);
 
             USpan<long> arrayTypeHashes = Implementation.GetArrayTypeHashes(schema);
-            long hash = arrayTypeHashes[arrayElementType];
+            long hash = arrayTypeHashes[(uint)arrayElementType];
             return TypeRegistry.Get(hash);
         }
 
@@ -195,7 +195,7 @@ namespace Worlds
             ThrowIfTagIsMissing(tagType);
 
             USpan<long> tagTypeHashes = Implementation.GetTagTypeHashes(schema);
-            long hash = tagTypeHashes[tagType];
+            long hash = tagTypeHashes[(uint)tagType];
             return TypeRegistry.Get(hash);
         }
 
@@ -217,8 +217,8 @@ namespace Worlds
             USpan<ushort> componentSizes = Implementation.GetComponentSizes(schema);
             USpan<long> componentHashes = Implementation.GetComponentTypeHashes(schema);
             ComponentType componentType = new(schema->componentCount);
-            componentSizes[componentType] = type.Size;
-            componentHashes[componentType] = type.Hash;
+            componentSizes[(uint)componentType] = type.Size;
+            componentHashes[(uint)componentType] = type.Hash;
             schema->componentCount++;
             return componentType;
         }
@@ -236,8 +236,8 @@ namespace Worlds
             ArrayElementType arrayElementType = new(schema->arraysCount);
             USpan<ushort> arrayElementSizes = Implementation.GetArrayElementSizes(schema);
             USpan<long> arrayElementHashes = Implementation.GetArrayTypeHashes(schema);
-            arrayElementSizes[arrayElementType] = type.Size;
-            arrayElementHashes[arrayElementType] = type.Hash;
+            arrayElementSizes[(uint)arrayElementType] = type.Size;
+            arrayElementHashes[(uint)arrayElementType] = type.Hash;
             schema->arraysCount++;
             return arrayElementType;
         }
@@ -254,7 +254,7 @@ namespace Worlds
 
             TagType tagType = new(schema->tagsCount);
             USpan<long> tagHashes = Implementation.GetTagTypeHashes(schema);
-            tagHashes[tagType] = type.Hash;
+            tagHashes[(uint)tagType] = type.Hash;
             schema->tagsMask.Set(tagType);
             schema->tagsCount++;
             return tagType;
@@ -262,12 +262,12 @@ namespace Worlds
 
         public readonly bool Contains(ComponentType componentType)
         {
-            return schema->sizes.Read<ushort>(componentType.index * 2u) != default;
+            return schema->sizes.Read<ushort>((uint)componentType * 2u) != default;
         }
 
         public readonly bool Contains(ArrayElementType arrayElementType)
         {
-            return schema->sizes.Read<ushort>(BitMask.Capacity * 2 + arrayElementType.index * 2u) != default;
+            return schema->sizes.Read<ushort>(BitMask.Capacity * 2 + (uint)arrayElementType * 2u) != default;
         }
 
         public readonly bool Contains(TagType tagType)
@@ -441,202 +441,534 @@ namespace Worlds
 
         public readonly BitMask GetComponents<T1>() where T1 : unmanaged
         {
-            return new(GetComponent<T1>());
+            BitMask bitMask = default;
+            bitMask.Set(GetComponent<T1>());
+            return bitMask;
         }
 
         public readonly BitMask GetComponents<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
-            return new(GetComponent<T1>(), GetComponent<T2>());
+            BitMask bitMask = default;
+            bitMask.Set(GetComponent<T1>());
+            bitMask.Set(GetComponent<T2>());
+            return bitMask;
         }
 
         public readonly BitMask GetComponents<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>());
+            BitMask bitMask = default;
+            bitMask.Set(GetComponent<T1>());
+            bitMask.Set(GetComponent<T2>());
+            bitMask.Set(GetComponent<T3>());
+            return bitMask;
         }
 
         public readonly BitMask GetComponents<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>());
+            BitMask bitMask = default;
+            bitMask.Set(GetComponent<T1>());
+            bitMask.Set(GetComponent<T2>());
+            bitMask.Set(GetComponent<T3>());
+            bitMask.Set(GetComponent<T4>());
+            return bitMask;
         }
 
         public readonly BitMask GetComponents<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
-            return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>());
+            BitMask bitMask = default;
+            bitMask.Set(GetComponent<T1>());
+            bitMask.Set(GetComponent<T2>());
+            bitMask.Set(GetComponent<T3>());
+            bitMask.Set(GetComponent<T4>());
+            bitMask.Set(GetComponent<T5>());
+            return bitMask;
         }
 
         public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
-            return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>());
+            BitMask bitMask = default;
+            bitMask.Set(GetComponent<T1>());
+            bitMask.Set(GetComponent<T2>());
+            bitMask.Set(GetComponent<T3>());
+            bitMask.Set(GetComponent<T4>());
+            bitMask.Set(GetComponent<T5>());
+            bitMask.Set(GetComponent<T6>());
+            return bitMask;
         }
 
         public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
-            return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>());
+            BitMask bitMask = default;
+            bitMask.Set(GetComponent<T1>());
+            bitMask.Set(GetComponent<T2>());
+            bitMask.Set(GetComponent<T3>());
+            bitMask.Set(GetComponent<T4>());
+            bitMask.Set(GetComponent<T5>());
+            bitMask.Set(GetComponent<T6>());
+            bitMask.Set(GetComponent<T7>());
+            return bitMask;
         }
 
         public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
-            return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>(), GetComponent<T8>());
+            BitMask bitMask = default;
+            bitMask.Set(GetComponent<T1>());
+            bitMask.Set(GetComponent<T2>());
+            bitMask.Set(GetComponent<T3>());
+            bitMask.Set(GetComponent<T4>());
+            bitMask.Set(GetComponent<T5>());
+            bitMask.Set(GetComponent<T6>());
+            bitMask.Set(GetComponent<T7>());
+            bitMask.Set(GetComponent<T8>());
+            return bitMask;
         }
 
         public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
-            return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>(), GetComponent<T8>(), GetComponent<T9>());
+            BitMask bitMask = default;
+            bitMask.Set(GetComponent<T1>());
+            bitMask.Set(GetComponent<T2>());
+            bitMask.Set(GetComponent<T3>());
+            bitMask.Set(GetComponent<T4>());
+            bitMask.Set(GetComponent<T5>());
+            bitMask.Set(GetComponent<T6>());
+            bitMask.Set(GetComponent<T7>());
+            bitMask.Set(GetComponent<T8>());
+            bitMask.Set(GetComponent<T9>());
+            return bitMask;
         }
 
         public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
-            return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>(), GetComponent<T8>(), GetComponent<T9>(), GetComponent<T10>());
+            BitMask bitMask = default;
+            bitMask.Set(GetComponent<T1>());
+            bitMask.Set(GetComponent<T2>());
+            bitMask.Set(GetComponent<T3>());
+            bitMask.Set(GetComponent<T4>());
+            bitMask.Set(GetComponent<T5>());
+            bitMask.Set(GetComponent<T6>());
+            bitMask.Set(GetComponent<T7>());
+            bitMask.Set(GetComponent<T8>());
+            bitMask.Set(GetComponent<T9>());
+            bitMask.Set(GetComponent<T10>());
+            return bitMask;
         }
 
         public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
-            return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>(), GetComponent<T8>(), GetComponent<T9>(), GetComponent<T10>(), GetComponent<T11>());
+            BitMask bitMask = default;
+            bitMask.Set(GetComponent<T1>());
+            bitMask.Set(GetComponent<T2>());
+            bitMask.Set(GetComponent<T3>());
+            bitMask.Set(GetComponent<T4>());
+            bitMask.Set(GetComponent<T5>());
+            bitMask.Set(GetComponent<T6>());
+            bitMask.Set(GetComponent<T7>());
+            bitMask.Set(GetComponent<T8>());
+            bitMask.Set(GetComponent<T9>());
+            bitMask.Set(GetComponent<T10>());
+            bitMask.Set(GetComponent<T11>());
+            return bitMask;
         }
 
         public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
-            return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>(), GetComponent<T8>(), GetComponent<T9>(), GetComponent<T10>(), GetComponent<T11>(), GetComponent<T12>());
+            BitMask bitMask = default;
+            bitMask.Set(GetComponent<T1>());
+            bitMask.Set(GetComponent<T2>());
+            bitMask.Set(GetComponent<T3>());
+            bitMask.Set(GetComponent<T4>());
+            bitMask.Set(GetComponent<T5>());
+            bitMask.Set(GetComponent<T6>());
+            bitMask.Set(GetComponent<T7>());
+            bitMask.Set(GetComponent<T8>());
+            bitMask.Set(GetComponent<T9>());
+            bitMask.Set(GetComponent<T10>());
+            bitMask.Set(GetComponent<T11>());
+            bitMask.Set(GetComponent<T12>());
+            return bitMask;
         }
 
         public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged
         {
-            return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>(), GetComponent<T8>(), GetComponent<T9>(), GetComponent<T10>(), GetComponent<T11>(), GetComponent<T12>(), GetComponent<T13>());
+            BitMask bitMask = default;
+            bitMask.Set(GetComponent<T1>());
+            bitMask.Set(GetComponent<T2>());
+            bitMask.Set(GetComponent<T3>());
+            bitMask.Set(GetComponent<T4>());
+            bitMask.Set(GetComponent<T5>());
+            bitMask.Set(GetComponent<T6>());
+            bitMask.Set(GetComponent<T7>());
+            bitMask.Set(GetComponent<T8>());
+            bitMask.Set(GetComponent<T9>());
+            bitMask.Set(GetComponent<T10>());
+            bitMask.Set(GetComponent<T11>());
+            bitMask.Set(GetComponent<T12>());
+            bitMask.Set(GetComponent<T13>());
+            return bitMask;
         }
 
         public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged
         {
-            return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>(), GetComponent<T8>(), GetComponent<T9>(), GetComponent<T10>(), GetComponent<T11>(), GetComponent<T12>(), GetComponent<T13>(), GetComponent<T14>());
+            BitMask bitMask = default;
+            bitMask.Set(GetComponent<T1>());
+            bitMask.Set(GetComponent<T2>());
+            bitMask.Set(GetComponent<T3>());
+            bitMask.Set(GetComponent<T4>());
+            bitMask.Set(GetComponent<T5>());
+            bitMask.Set(GetComponent<T6>());
+            bitMask.Set(GetComponent<T7>());
+            bitMask.Set(GetComponent<T8>());
+            bitMask.Set(GetComponent<T9>());
+            bitMask.Set(GetComponent<T10>());
+            bitMask.Set(GetComponent<T11>());
+            bitMask.Set(GetComponent<T12>());
+            bitMask.Set(GetComponent<T13>());
+            bitMask.Set(GetComponent<T14>());
+            return bitMask;
         }
 
         public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged
         {
-            return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>(), GetComponent<T8>(), GetComponent<T9>(), GetComponent<T10>(), GetComponent<T11>(), GetComponent<T12>(), GetComponent<T13>(), GetComponent<T14>(), GetComponent<T15>());
+            BitMask bitMask = default;
+            bitMask.Set(GetComponent<T1>());
+            bitMask.Set(GetComponent<T2>());
+            bitMask.Set(GetComponent<T3>());
+            bitMask.Set(GetComponent<T4>());
+            bitMask.Set(GetComponent<T5>());
+            bitMask.Set(GetComponent<T6>());
+            bitMask.Set(GetComponent<T7>());
+            bitMask.Set(GetComponent<T8>());
+            bitMask.Set(GetComponent<T9>());
+            bitMask.Set(GetComponent<T10>());
+            bitMask.Set(GetComponent<T11>());
+            bitMask.Set(GetComponent<T12>());
+            bitMask.Set(GetComponent<T13>());
+            bitMask.Set(GetComponent<T14>());
+            bitMask.Set(GetComponent<T15>());
+            return bitMask;
         }
 
         public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged
         {
-            return new(GetComponent<T1>(), GetComponent<T2>(), GetComponent<T3>(), GetComponent<T4>(), GetComponent<T5>(), GetComponent<T6>(), GetComponent<T7>(), GetComponent<T8>(), GetComponent<T9>(), GetComponent<T10>(), GetComponent<T11>(), GetComponent<T12>(), GetComponent<T13>(), GetComponent<T14>(), GetComponent<T15>(), GetComponent<T16>());
+            BitMask bitMask = default;
+            bitMask.Set(GetComponent<T1>());
+            bitMask.Set(GetComponent<T2>());
+            bitMask.Set(GetComponent<T3>());
+            bitMask.Set(GetComponent<T4>());
+            bitMask.Set(GetComponent<T5>());
+            bitMask.Set(GetComponent<T6>());
+            bitMask.Set(GetComponent<T7>());
+            bitMask.Set(GetComponent<T8>());
+            bitMask.Set(GetComponent<T9>());
+            bitMask.Set(GetComponent<T10>());
+            bitMask.Set(GetComponent<T11>());
+            bitMask.Set(GetComponent<T12>());
+            bitMask.Set(GetComponent<T13>());
+            bitMask.Set(GetComponent<T14>());
+            bitMask.Set(GetComponent<T15>());
+            bitMask.Set(GetComponent<T16>());
+            return bitMask;
         }
 
         public readonly BitMask GetArrayElements<T1>() where T1 : unmanaged
         {
-            return new(GetArrayElement<T1>());
+            BitMask bitMask = default;
+            bitMask.Set(GetArrayElement<T1>());
+            return bitMask;
         }
 
         public readonly BitMask GetArrayElements<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
-            return new(GetArrayElement<T1>(), GetArrayElement<T2>());
+            BitMask bitMask = default;
+            bitMask.Set(GetArrayElement<T1>());
+            bitMask.Set(GetArrayElement<T2>());
+            return bitMask;
         }
 
         public readonly BitMask GetArrayElements<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            return new(GetArrayElement<T1>(), GetArrayElement<T2>(), GetArrayElement<T3>());
+            BitMask bitMask = default;
+            bitMask.Set(GetArrayElement<T1>());
+            bitMask.Set(GetArrayElement<T2>());
+            bitMask.Set(GetArrayElement<T3>());
+            return bitMask;
         }
 
         public readonly BitMask GetArrayElements<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            return new(GetArrayElement<T1>(), GetArrayElement<T2>(), GetArrayElement<T3>(), GetArrayElement<T4>());
+            BitMask bitMask = default;
+            bitMask.Set(GetArrayElement<T1>());
+            bitMask.Set(GetArrayElement<T2>());
+            bitMask.Set(GetArrayElement<T3>());
+            bitMask.Set(GetArrayElement<T4>());
+            return bitMask;
         }
 
         public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
-            return new(GetArrayElement<T1>(), GetArrayElement<T2>(), GetArrayElement<T3>(), GetArrayElement<T4>(), GetArrayElement<T5>());
+            BitMask bitMask = default;
+            bitMask.Set(GetArrayElement<T1>());
+            bitMask.Set(GetArrayElement<T2>());
+            bitMask.Set(GetArrayElement<T3>());
+            bitMask.Set(GetArrayElement<T4>());
+            bitMask.Set(GetArrayElement<T5>());
+            return bitMask;
         }
 
         public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
-            return new(GetArrayElement<T1>(), GetArrayElement<T2>(), GetArrayElement<T3>(), GetArrayElement<T4>(), GetArrayElement<T5>(), GetArrayElement<T6>());
+            BitMask bitMask = default;
+            bitMask.Set(GetArrayElement<T1>());
+            bitMask.Set(GetArrayElement<T2>());
+            bitMask.Set(GetArrayElement<T3>());
+            bitMask.Set(GetArrayElement<T4>());
+            bitMask.Set(GetArrayElement<T5>());
+            bitMask.Set(GetArrayElement<T6>());
+            return bitMask;
         }
 
         public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
-            return new(GetArrayElement<T1>(), GetArrayElement<T2>(), GetArrayElement<T3>(), GetArrayElement<T4>(), GetArrayElement<T5>(), GetArrayElement<T6>(), GetArrayElement<T7>());
+            BitMask bitMask = default;
+            bitMask.Set(GetArrayElement<T1>());
+            bitMask.Set(GetArrayElement<T2>());
+            bitMask.Set(GetArrayElement<T3>());
+            bitMask.Set(GetArrayElement<T4>());
+            bitMask.Set(GetArrayElement<T5>());
+            bitMask.Set(GetArrayElement<T6>());
+            bitMask.Set(GetArrayElement<T7>());
+            return bitMask;
         }
 
         public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
-            return new(GetArrayElement<T1>(), GetArrayElement<T2>(), GetArrayElement<T3>(), GetArrayElement<T4>(), GetArrayElement<T5>(), GetArrayElement<T6>(), GetArrayElement<T7>(), GetArrayElement<T8>());
+            BitMask bitMask = default;
+            bitMask.Set(GetArrayElement<T1>());
+            bitMask.Set(GetArrayElement<T2>());
+            bitMask.Set(GetArrayElement<T3>());
+            bitMask.Set(GetArrayElement<T4>());
+            bitMask.Set(GetArrayElement<T5>());
+            bitMask.Set(GetArrayElement<T6>());
+            bitMask.Set(GetArrayElement<T7>());
+            bitMask.Set(GetArrayElement<T8>());
+            return bitMask;
         }
 
         public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
-            return new(GetArrayElement<T1>(), GetArrayElement<T2>(), GetArrayElement<T3>(), GetArrayElement<T4>(), GetArrayElement<T5>(), GetArrayElement<T6>(), GetArrayElement<T7>(), GetArrayElement<T8>(), GetArrayElement<T9>());
+            BitMask bitMask = default;
+            bitMask.Set(GetArrayElement<T1>());
+            bitMask.Set(GetArrayElement<T2>());
+            bitMask.Set(GetArrayElement<T3>());
+            bitMask.Set(GetArrayElement<T4>());
+            bitMask.Set(GetArrayElement<T5>());
+            bitMask.Set(GetArrayElement<T6>());
+            bitMask.Set(GetArrayElement<T7>());
+            bitMask.Set(GetArrayElement<T8>());
+            bitMask.Set(GetArrayElement<T9>());
+            return bitMask;
         }
 
         public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
-            return new(GetArrayElement<T1>(), GetArrayElement<T2>(), GetArrayElement<T3>(), GetArrayElement<T4>(), GetArrayElement<T5>(), GetArrayElement<T6>(), GetArrayElement<T7>(), GetArrayElement<T8>(), GetArrayElement<T9>(), GetArrayElement<T10>());
+            BitMask bitMask = default;
+            bitMask.Set(GetArrayElement<T1>());
+            bitMask.Set(GetArrayElement<T2>());
+            bitMask.Set(GetArrayElement<T3>());
+            bitMask.Set(GetArrayElement<T4>());
+            bitMask.Set(GetArrayElement<T5>());
+            bitMask.Set(GetArrayElement<T6>());
+            bitMask.Set(GetArrayElement<T7>());
+            bitMask.Set(GetArrayElement<T8>());
+            bitMask.Set(GetArrayElement<T9>());
+            bitMask.Set(GetArrayElement<T10>());
+            return bitMask;
         }
 
         public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
-            return new(GetArrayElement<T1>(), GetArrayElement<T2>(), GetArrayElement<T3>(), GetArrayElement<T4>(), GetArrayElement<T5>(), GetArrayElement<T6>(), GetArrayElement<T7>(), GetArrayElement<T8>(), GetArrayElement<T9>(), GetArrayElement<T10>(), GetArrayElement<T11>());
+            BitMask bitMask = default;
+            bitMask.Set(GetArrayElement<T1>());
+            bitMask.Set(GetArrayElement<T2>());
+            bitMask.Set(GetArrayElement<T3>());
+            bitMask.Set(GetArrayElement<T4>());
+            bitMask.Set(GetArrayElement<T5>());
+            bitMask.Set(GetArrayElement<T6>());
+            bitMask.Set(GetArrayElement<T7>());
+            bitMask.Set(GetArrayElement<T8>());
+            bitMask.Set(GetArrayElement<T9>());
+            bitMask.Set(GetArrayElement<T10>());
+            bitMask.Set(GetArrayElement<T11>());
+            return bitMask;
         }
 
         public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
-            return new(GetArrayElement<T1>(), GetArrayElement<T2>(), GetArrayElement<T3>(), GetArrayElement<T4>(), GetArrayElement<T5>(), GetArrayElement<T6>(), GetArrayElement<T7>(), GetArrayElement<T8>(), GetArrayElement<T9>(), GetArrayElement<T10>(), GetArrayElement<T11>(), GetArrayElement<T12>());
+            BitMask bitMask = default;
+            bitMask.Set(GetArrayElement<T1>());
+            bitMask.Set(GetArrayElement<T2>());
+            bitMask.Set(GetArrayElement<T3>());
+            bitMask.Set(GetArrayElement<T4>());
+            bitMask.Set(GetArrayElement<T5>());
+            bitMask.Set(GetArrayElement<T6>());
+            bitMask.Set(GetArrayElement<T7>());
+            bitMask.Set(GetArrayElement<T8>());
+            bitMask.Set(GetArrayElement<T9>());
+            bitMask.Set(GetArrayElement<T10>());
+            bitMask.Set(GetArrayElement<T11>());
+            bitMask.Set(GetArrayElement<T12>());
+            return bitMask;
         }
 
         public readonly BitMask GetTags<T1>() where T1 : unmanaged
         {
-            return new(GetTag<T1>());
+            BitMask bitMask = default;
+            bitMask.Set(GetTag<T1>());
+            return bitMask;
         }
 
         public readonly BitMask GetTags<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
-            return new(GetTag<T1>(), GetTag<T2>());
+            BitMask bitMask = default;
+            bitMask.Set(GetTag<T1>());
+            bitMask.Set(GetTag<T2>());
+            return bitMask;
         }
 
         public readonly BitMask GetTags<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>());
+            BitMask bitMask = default;
+            bitMask.Set(GetTag<T1>());
+            bitMask.Set(GetTag<T2>());
+            bitMask.Set(GetTag<T3>());
+            return bitMask;
         }
 
         public readonly BitMask GetTags<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>());
+            BitMask bitMask = default;
+            bitMask.Set(GetTag<T1>());
+            bitMask.Set(GetTag<T2>());
+            bitMask.Set(GetTag<T3>());
+            bitMask.Set(GetTag<T4>());
+            return bitMask;
         }
 
         public readonly BitMask GetTags<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
-            return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>());
+            BitMask bitMask = default;
+            bitMask.Set(GetTag<T1>());
+            bitMask.Set(GetTag<T2>());
+            bitMask.Set(GetTag<T3>());
+            bitMask.Set(GetTag<T4>());
+            bitMask.Set(GetTag<T5>());
+            return bitMask;
         }
 
         public readonly BitMask GetTags<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
-            return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>(), GetTag<T6>());
+            BitMask bitMask = default;
+            bitMask.Set(GetTag<T1>());
+            bitMask.Set(GetTag<T2>());
+            bitMask.Set(GetTag<T3>());
+            bitMask.Set(GetTag<T4>());
+            bitMask.Set(GetTag<T5>());
+            bitMask.Set(GetTag<T6>());
+            return bitMask;
         }
 
         public readonly BitMask GetTags<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
-            return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>(), GetTag<T6>(), GetTag<T7>());
+            BitMask bitMask = default;
+            bitMask.Set(GetTag<T1>());
+            bitMask.Set(GetTag<T2>());
+            bitMask.Set(GetTag<T3>());
+            bitMask.Set(GetTag<T4>());
+            bitMask.Set(GetTag<T5>());
+            bitMask.Set(GetTag<T6>());
+            bitMask.Set(GetTag<T7>());
+            return bitMask;
         }
 
         public readonly BitMask GetTags<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
-            return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>(), GetTag<T6>(), GetTag<T7>(), GetTag<T8>());
+            BitMask bitMask = default;
+            bitMask.Set(GetTag<T1>());
+            bitMask.Set(GetTag<T2>());
+            bitMask.Set(GetTag<T3>());
+            bitMask.Set(GetTag<T4>());
+            bitMask.Set(GetTag<T5>());
+            bitMask.Set(GetTag<T6>());
+            bitMask.Set(GetTag<T7>());
+            bitMask.Set(GetTag<T8>());
+            return bitMask;
         }
 
         public readonly BitMask GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
-            return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>(), GetTag<T6>(), GetTag<T7>(), GetTag<T8>(), GetTag<T9>());
+            BitMask bitMask = default;
+            bitMask.Set(GetTag<T1>());
+            bitMask.Set(GetTag<T2>());
+            bitMask.Set(GetTag<T3>());
+            bitMask.Set(GetTag<T4>());
+            bitMask.Set(GetTag<T5>());
+            bitMask.Set(GetTag<T6>());
+            bitMask.Set(GetTag<T7>());
+            bitMask.Set(GetTag<T8>());
+            bitMask.Set(GetTag<T9>());
+            return bitMask;
         }
 
         public readonly BitMask GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
-            return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>(), GetTag<T6>(), GetTag<T7>(), GetTag<T8>(), GetTag<T9>(), GetTag<T10>());
+            BitMask bitMask = default;
+            bitMask.Set(GetTag<T1>());
+            bitMask.Set(GetTag<T2>());
+            bitMask.Set(GetTag<T3>());
+            bitMask.Set(GetTag<T4>());
+            bitMask.Set(GetTag<T5>());
+            bitMask.Set(GetTag<T6>());
+            bitMask.Set(GetTag<T7>());
+            bitMask.Set(GetTag<T8>());
+            bitMask.Set(GetTag<T9>());
+            bitMask.Set(GetTag<T10>());
+            return bitMask;
         }
 
         public readonly BitMask GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
-            return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>(), GetTag<T6>(), GetTag<T7>(), GetTag<T8>(), GetTag<T9>(), GetTag<T10>(), GetTag<T11>());
+            BitMask bitMask = default;
+            bitMask.Set(GetTag<T1>());
+            bitMask.Set(GetTag<T2>());
+            bitMask.Set(GetTag<T3>());
+            bitMask.Set(GetTag<T4>());
+            bitMask.Set(GetTag<T5>());
+            bitMask.Set(GetTag<T6>());
+            bitMask.Set(GetTag<T7>());
+            bitMask.Set(GetTag<T8>());
+            bitMask.Set(GetTag<T9>());
+            bitMask.Set(GetTag<T10>());
+            bitMask.Set(GetTag<T11>());
+            return bitMask;
         }
 
         public readonly BitMask GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
-            return new(GetTag<T1>(), GetTag<T2>(), GetTag<T3>(), GetTag<T4>(), GetTag<T5>(), GetTag<T6>(), GetTag<T7>(), GetTag<T8>(), GetTag<T9>(), GetTag<T10>(), GetTag<T11>(), GetTag<T12>());
+            BitMask bitMask = default;
+            bitMask.Set(GetTag<T1>());
+            bitMask.Set(GetTag<T2>());
+            bitMask.Set(GetTag<T3>());
+            bitMask.Set(GetTag<T4>());
+            bitMask.Set(GetTag<T5>());
+            bitMask.Set(GetTag<T6>());
+            bitMask.Set(GetTag<T7>());
+            bitMask.Set(GetTag<T8>());
+            bitMask.Set(GetTag<T9>());
+            bitMask.Set(GetTag<T10>());
+            bitMask.Set(GetTag<T11>());
+            bitMask.Set(GetTag<T12>());
+            return bitMask;
         }
 
         public static Schema Create()
@@ -674,7 +1006,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfComponentIsMissing(ComponentType componentType)
         {
-            ushort componentSize = schema->sizes.Read<ushort>(componentType.index * 2u);
+            ushort componentSize = schema->sizes.Read<ushort>((uint)componentType * 2u);
             if (componentSize == default)
             {
                 throw new Exception($"Component size for `{componentType}` is missing from schema");
@@ -702,7 +1034,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfArrayElementIsMissing(ArrayElementType arrayElementTypes)
         {
-            ushort arrayElementSize = schema->sizes.Read<ushort>(BitMask.Capacity * 2 + arrayElementTypes.index * 2u);
+            ushort arrayElementSize = schema->sizes.Read<ushort>(BitMask.Capacity * 2 + (uint)arrayElementTypes * 2u);
             if (arrayElementSize == default)
             {
                 throw new Exception($"Array element size for `{arrayElementTypes}` is missing from schema");

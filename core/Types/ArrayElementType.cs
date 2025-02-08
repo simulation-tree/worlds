@@ -10,10 +10,7 @@ namespace Worlds
     /// </summary>
     public readonly struct ArrayElementType : IEquatable<ArrayElementType>
     {
-        /// <summary>
-        /// Index of the array type within a <see cref="BitMask"/>.
-        /// </summary>
-        public readonly byte index;
+        private readonly byte index;
 
 #if NET
         /// <summary>
@@ -31,6 +28,8 @@ namespace Worlds
         /// </summary>
         public ArrayElementType(byte value)
         {
+            ThrowIfOutOfRange(value);
+
             this.index = value;
         }
 

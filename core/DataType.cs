@@ -66,19 +66,19 @@ namespace Worlds
 
         public DataType(ComponentType componentType, ushort size)
         {
-            index = componentType.index;
+            index = componentType;
             typeAndSize = (ushort)((byte)Kind.Component | (size << 2));
         }
 
         public DataType(ArrayElementType arrayElementType, ushort size)
         {
-            index = arrayElementType.index;
+            index = arrayElementType;
             typeAndSize = (ushort)((byte)Kind.ArrayElement | (size << 2));
         }
 
         public DataType(TagType tagType)
         {
-            index = tagType.index;
+            index = tagType;
             typeAndSize = (byte)Kind.Tag;
         }
 

@@ -10,10 +10,7 @@ namespace Worlds
     /// </summary>
     public readonly struct ComponentType : IEquatable<ComponentType>
     {
-        /// <summary>
-        /// Index of the component type within a <see cref="BitMask"/>.
-        /// </summary>
-        public readonly byte index;
+        private readonly byte index;
 
 #if NET
         /// <summary>
@@ -31,6 +28,8 @@ namespace Worlds
         /// </summary>
         public ComponentType(byte value)
         {
+            ThrowIfOutOfRange(value);
+
             this.index = value;
         }
 
@@ -122,7 +121,6 @@ namespace Worlds
         {
             return componentType.index;
         }
-
 
         [Conditional("DEBUG")]
         private static void ThrowIfOutOfRange(uint value)

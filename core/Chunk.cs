@@ -146,166 +146,6 @@ namespace Worlds
             return Implementation.Move(value, entity, destination.value);
         }
 
-        public readonly Entity<C1> GetEntity<C1>(uint index) where C1 : unmanaged
-        {
-            return Implementation.GetEntity<C1>(value, index);
-        }
-
-        public readonly Entity<C1> GetEntity<C1>(uint index, ComponentType c1) where C1 : unmanaged
-        {
-            return Implementation.GetEntity<C1>(value, index, c1);
-        }
-
-        public readonly Entity<C1, C2> GetEntity<C1, C2>(uint index) where C1 : unmanaged where C2 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2>(value, index);
-        }
-
-        public readonly Entity<C1, C2> GetEntity<C1, C2>(uint index, ComponentType c1, ComponentType c2) where C1 : unmanaged where C2 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2>(value, index, c1, c2);
-        }
-
-        public readonly Entity<C1, C2, C3> GetEntity<C1, C2, C3>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3>(value, index);
-        }
-
-        public readonly Entity<C1, C2, C3> GetEntity<C1, C2, C3>(uint index, ComponentType c1, ComponentType c2, ComponentType c3) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3>(value, index, c1, c2, c3);
-        }
-
-        public readonly Entity<C1, C2, C3, C4> GetEntity<C1, C2, C3, C4>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4>(value, index);
-        }
-
-        public readonly Entity<C1, C2, C3, C4> GetEntity<C1, C2, C3, C4>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4>(value, index, c1, c2, c3, c4);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5> GetEntity<C1, C2, C3, C4, C5>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5>(value, index);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5> GetEntity<C1, C2, C3, C4, C5>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5>(value, index, c1, c2, c3, c4, c5);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6> GetEntity<C1, C2, C3, C4, C5, C6>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6>(value, index);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6> GetEntity<C1, C2, C3, C4, C5, C6>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6>(value, index, c1, c2, c3, c4, c5, c6);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6, C7> GetEntity<C1, C2, C3, C4, C5, C6, C7>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7>(value, index);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6, C7> GetEntity<C1, C2, C3, C4, C5, C6, C7>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6, ComponentType c7) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7>(value, index, c1, c2, c3, c4, c5, c6, c7);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8>(value, index);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6, ComponentType c7, ComponentType c8) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8>(value, index, c1, c2, c3, c4, c5, c6, c7, c8);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9>(value, index);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6, ComponentType c7, ComponentType c8, ComponentType c9) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9>(value, index, c1, c2, c3, c4, c5, c6, c7, c8, c9);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10>(value, index);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6, ComponentType c7, ComponentType c8, ComponentType c9, ComponentType c10) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10>(value, index, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11>(value, index);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6, ComponentType c7, ComponentType c8, ComponentType c9, ComponentType c10, ComponentType c11) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11>(value, index, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12>(value, index);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6, ComponentType c7, ComponentType c8, ComponentType c9, ComponentType c10, ComponentType c11, ComponentType c12) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12>(value, index, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13>(value, index);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6, ComponentType c7, ComponentType c8, ComponentType c9, ComponentType c10, ComponentType c11, ComponentType c12, ComponentType c13) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13>(value, index, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14>(value, index);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6, ComponentType c7, ComponentType c8, ComponentType c9, ComponentType c10, ComponentType c11, ComponentType c12, ComponentType c13, ComponentType c14) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14>(value, index, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged where C15 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15>(value, index);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6, ComponentType c7, ComponentType c8, ComponentType c9, ComponentType c10, ComponentType c11, ComponentType c12, ComponentType c13, ComponentType c14, ComponentType c15) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged where C15 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15>(value, index, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16>(uint index) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged where C15 : unmanaged where C16 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16>(value, index);
-        }
-
-        public readonly Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16> GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16>(uint index, ComponentType c1, ComponentType c2, ComponentType c3, ComponentType c4, ComponentType c5, ComponentType c6, ComponentType c7, ComponentType c8, ComponentType c9, ComponentType c10, ComponentType c11, ComponentType c12, ComponentType c13, ComponentType c14, ComponentType c15, ComponentType c16) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged where C15 : unmanaged where C16 : unmanaged
-        {
-            return Implementation.GetEntity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16>(value, index, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16);
-        }
-
         /// <summary>
         /// Retrieves the list of all components of the given <paramref name="componentType"/>.
         /// </summary>
@@ -317,33 +157,10 @@ namespace Worlds
         /// <summary>
         /// Retrieves a span containing all <typeparamref name="T"/> components.
         /// </summary>
-        public readonly USpan<T> GetComponents<T>() where T : unmanaged
-        {
-            Schema schema = Schema;
-            ComponentType componentType = schema.GetComponent<T>();
-            List* list = Implementation.GetComponents(value, componentType);
-            return List.AsSpan<T>(list);
-        }
-
-        /// <summary>
-        /// Retrieves a span containing all <typeparamref name="T"/> components.
-        /// </summary>
         public readonly USpan<T> GetComponents<T>(ComponentType componentType) where T : unmanaged
         {
             List* list = Implementation.GetComponents(value, componentType);
             return List.AsSpan<T>(list);
-        }
-
-        /// <summary>
-        /// Retrieves a specific component of the type <typeparamref name="T"/> at <paramref name="index"/>.
-        /// </summary>
-        public readonly ref T GetComponent<T>(uint index) where T : unmanaged
-        {
-            Schema schema = Schema;
-            ComponentType componentType = schema.GetComponent<T>();
-            List* components = GetComponents(componentType);
-            nint address = List.GetStartAddress(components);
-            return ref *(T*)(address + index * sizeof(T));
         }
 
         public readonly ref T GetComponent<T>(uint index, ComponentType componentType) where T : unmanaged
@@ -1858,7 +1675,7 @@ namespace Worlds
                 {
                     ComponentType destinationComponentType = new(destination->typeIndices[i]);
                     List* destinationList = (List*)destination->componentLists[destinationComponentType];
-                    if (source->typeIndices.Contains(destinationComponentType.index))
+                    if (source->typeIndices.Contains(destinationComponentType))
                     {
                         List* sourceList = (List*)source->componentLists[destinationComponentType];
                         List.Insert(destinationList, newIndex, List.GetElementBytes(sourceList, oldIndex));

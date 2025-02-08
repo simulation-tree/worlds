@@ -2340,7 +2340,7 @@ namespace Worlds
                     if (world->arrays.Count < entity)
                     {
                         uint toAdd = entity - world->arrays.Count;
-                        for (uint i = 0; i < toAdd; i++)
+                        for (int i = 0; i < toAdd; i++)
                         {
                             world->arrays.Add(default);
                         }
@@ -2354,7 +2354,7 @@ namespace Worlds
                         {
                             ArrayElementType arrayElementType = new(a);
                             ushort arrayElementSize = world->schema.GetSize(arrayElementType);
-                            arrays[arrayElementType] = (nint)Array.Allocate(0, arrayElementSize);
+                            arrays[(uint)arrayElementType] = (nint)Array.Allocate(0, arrayElementSize);
                         }
                     }
                 }
@@ -2659,7 +2659,7 @@ namespace Worlds
 
                 Array* newArray = Array.Allocate(length, arrayElementSize);
                 ref Array<nint> arrays = ref world->arrays[entity - 1];
-                arrays[arrayElementType] = (nint)newArray;
+                arrays[(uint)arrayElementType] = (nint)newArray;
                 NotifyArrayCreated(new(world), entity, arrayElementType);
                 return new((void*)Array.GetStartAddress(newArray));
             }
@@ -2687,7 +2687,7 @@ namespace Worlds
                 ThrowIfArrayIsMissing(world, entity, arrayElementType);
 
                 ref Array<nint> arrays = ref world->arrays[entity - 1];
-                Array* array = (Array*)arrays[arrayElementType];
+                Array* array = (Array*)arrays[(uint)arrayElementType];
                 length = Array.GetLength(array);
                 return new((void*)Array.GetStartAddress(array));
             }
@@ -2702,7 +2702,7 @@ namespace Worlds
                 ThrowIfArrayIsMissing(world, entity, arrayElementType);
 
                 ref Array<nint> arrays = ref world->arrays[entity - 1];
-                Array* array = (Array*)arrays[arrayElementType];
+                Array* array = (Array*)arrays[(uint)arrayElementType];
                 return Array.GetLength(array);
             }
 
@@ -2716,7 +2716,7 @@ namespace Worlds
                 ThrowIfArrayIsMissing(world, entity, arrayElementType);
 
                 ref Array<nint> arrays = ref world->arrays[entity - 1];
-                Array* array = (Array*)arrays[arrayElementType];
+                Array* array = (Array*)arrays[(uint)arrayElementType];
                 Array.Resize(array, newLength, true);
                 NotifyArrayResized(new(world), entity, arrayElementType);
                 return new((void*)Array.GetStartAddress(array));
@@ -2732,9 +2732,9 @@ namespace Worlds
                 ThrowIfArrayIsMissing(world, entity, arrayElementType);
 
                 ref Array<nint> arrays = ref world->arrays[entity - 1];
-                Array* array = (Array*)arrays[arrayElementType];
+                Array* array = (Array*)arrays[(uint)arrayElementType];
                 Array.Free(ref array);
-                arrays[arrayElementType] = default;
+                arrays[(uint)arrayElementType] = default;
 
                 ref Chunk chunk = ref world->entityChunks[entity - 1];
                 Chunk oldChunk = chunk;

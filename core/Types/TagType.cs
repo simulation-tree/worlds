@@ -12,10 +12,7 @@ namespace Worlds
         /// </summary>
         public static readonly TagType Disabled = new(BitMask.MaxValue);
 
-        /// <summary>
-        /// Index of the tag type within a <see cref="BitMask"/>.
-        /// </summary>
-        public readonly byte index;
+        private readonly byte index;
 
 #if NET
         /// <summary>
@@ -33,6 +30,8 @@ namespace Worlds
         /// </summary>
         public TagType(byte value)
         {
+            ThrowIfOutOfRange(value);
+
             this.index = value;
         }
 
