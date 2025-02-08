@@ -573,8 +573,7 @@ namespace Worlds.Tests
             {
                 foreach (Chunk chunk in world.Chunks)
                 {
-                    Definition definition = chunk.Definition;
-                    if (definition.ComponentTypes.ContainsAll(componentTypes))
+                    if (chunk.Definition.ComponentTypes.ContainsAll(componentTypes))
                     {
                         USpan<uint> entities = chunk.Entities;
                         USpan<Apple> apples = chunk.GetComponents<Apple>(appleType);

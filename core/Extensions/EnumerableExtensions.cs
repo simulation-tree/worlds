@@ -1,5 +1,4 @@
-﻿using Collections;
-using System;
+﻿using System;
 using System.Diagnostics;
 
 namespace Worlds
@@ -8,18 +7,17 @@ namespace Worlds
     {
         public static System.Collections.Generic.IEnumerable<uint> GetAllContaining(this World world, BitMask componentTypes, bool onlyEnabled = true)
         {
-            Dictionary<Definition, Chunk> chunks = world.ChunksMap;
-            foreach (Definition key in chunks.Keys)
+            for (uint i = 0; i < world.Chunks.Length; i++)
             {
-                if (key.ComponentTypes.ContainsAll(componentTypes))
+                Chunk chunk = world.Chunks[i];
+                if (chunk.Definition.ComponentTypes.ContainsAll(componentTypes))
                 {
-                    if (!onlyEnabled || (onlyEnabled && !key.TagTypes.Contains(TagType.Disabled)))
+                    if (!onlyEnabled || (onlyEnabled && !chunk.Definition.TagTypes.Contains(TagType.Disabled)))
                     {
-                        Chunk chunk = chunks[key];
                         uint count = chunk.Count;
                         for (uint e = 0; e < count; e++)
                         {
-                            yield return chunk[e];
+                            yield return chunk.Entities[e];
                         }
                     }
                 }
@@ -43,21 +41,20 @@ namespace Worlds
         /// </summary>
         public static System.Collections.Generic.IEnumerable<T> GetAll<T>(this World world, bool onlyEnabled = true) where T : unmanaged, IEntity
         {
-            Dictionary<Definition, Chunk> chunks = world.ChunksMap;
             Schema schema = world.Schema;
             Definition definition = Archetype.Get<T>(schema).Definition;
-            foreach (Definition key in chunks.Keys)
+            for (uint i = 0; i < world.Chunks.Length; i++)
             {
-                if (key.ComponentTypes.ContainsAll(definition.ComponentTypes) && key.ArrayElementTypes.ContainsAll(definition.ArrayElementTypes))
+                Chunk chunk = world.Chunks[i];
+                if (chunk.Definition.ComponentTypes.ContainsAll(definition.ComponentTypes) && chunk.Definition.ArrayElementTypes.ContainsAll(definition.ArrayElementTypes))
                 {
-                    if (!onlyEnabled || (onlyEnabled && !key.TagTypes.Contains(TagType.Disabled)))
+                    if (!onlyEnabled || (onlyEnabled && !chunk.Definition.TagTypes.Contains(TagType.Disabled)))
                     {
-                        if (key.TagTypes.ContainsAll(definition.TagTypes))
+                        if (chunk.Definition.TagTypes.ContainsAll(definition.TagTypes))
                         {
-                            Chunk chunk = chunks[key];
                             for (uint e = 0; e < chunk.Count; e++)
                             {
-                                Entity entity = new(world, chunk[e]);
+                                Entity entity = new(world, chunk.Entities[e]);
                                 yield return entity.As<T>();
                             }
                         }

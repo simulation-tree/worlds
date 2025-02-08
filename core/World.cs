@@ -433,11 +433,10 @@ namespace Worlds
         {
             Schema schema = Schema;
             ComponentType componentType = schema.GetComponent<T>();
-            foreach (Definition key in value->chunksMap.Keys)
+            foreach (Chunk chunk in value->uniqueChunks)
             {
-                if (key.ComponentTypes.Contains(componentType))
+                if (chunk.Definition.ComponentTypes.Contains(componentType))
                 {
-                    ref Chunk chunk = ref value->chunksMap[key];
                     if (chunk.Count > 0)
                     {
                         contains = true;
@@ -456,11 +455,10 @@ namespace Worlds
         public readonly bool TryGetFirstComponent<T>(out uint entity) where T : unmanaged
         {
             ComponentType componentType = Schema.GetComponent<T>();
-            foreach (Definition key in value->chunksMap.Keys)
+            foreach (Chunk chunk in value->uniqueChunks)
             {
-                if (key.ComponentTypes.Contains(componentType))
+                if (chunk.Definition.ComponentTypes.Contains(componentType))
                 {
-                    ref Chunk chunk = ref value->chunksMap[key];
                     if (chunk.Count > 0)
                     {
                         entity = chunk.Entities[0];
@@ -480,11 +478,10 @@ namespace Worlds
         {
             Schema schema = Schema;
             ComponentType componentType = schema.GetComponent<T>();
-            foreach (Definition key in value->chunksMap.Keys)
+            foreach (Chunk chunk in value->uniqueChunks)
             {
-                if (key.ComponentTypes.Contains(componentType))
+                if (chunk.Definition.ComponentTypes.Contains(componentType))
                 {
-                    ref Chunk chunk = ref value->chunksMap[key];
                     if (chunk.Count > 0)
                     {
                         entity = chunk.Entities[0];
@@ -510,11 +507,10 @@ namespace Worlds
         {
             Schema schema = Schema;
             ComponentType componentType = schema.GetComponent<T>();
-            foreach (Definition key in value->chunksMap.Keys)
+            foreach (Chunk chunk in value->uniqueChunks)
             {
-                if (key.ComponentTypes.Contains(componentType))
+                if (chunk.Definition.ComponentTypes.Contains(componentType))
                 {
-                    ref Chunk chunk = ref value->chunksMap[key];
                     if (chunk.Count > 0)
                     {
                         return ref chunk.GetComponent<T>(0, componentType);
@@ -536,11 +532,10 @@ namespace Worlds
         {
             Schema schema = Schema;
             ComponentType componentType = schema.GetComponent<T>();
-            foreach (Definition key in value->chunksMap.Keys)
+            foreach (Chunk chunk in value->uniqueChunks)
             {
-                if (key.ComponentTypes.Contains(componentType))
+                if (chunk.Definition.ComponentTypes.Contains(componentType))
                 {
-                    ref Chunk chunk = ref value->chunksMap[key];
                     if (chunk.Count > 0)
                     {
                         entity = chunk.Entities[0];
@@ -1339,12 +1334,11 @@ namespace Worlds
         public readonly bool ContainsAnyComponent<T>() where T : unmanaged
         {
             ComponentType componentType = Schema.GetComponent<T>();
-            foreach (Definition key in value->chunksMap.Keys)
+            foreach (Chunk chunk in value->uniqueChunks)
             {
-                if (key.ComponentTypes.Contains(componentType))
+                if (chunk.Definition.ComponentTypes.Contains(componentType))
                 {
-                    Chunk chunk = value->chunksMap[key];
-                    if (chunk.Entities.Length > 0)
+                    if (chunk.Count > 0)
                     {
                         return true;
                     }
@@ -1573,9 +1567,9 @@ namespace Worlds
                 mask.Set(componentTypes[i]);
             }
 
-            foreach (Definition key in ChunksMap.Keys)
+            foreach (Chunk chunk in value->uniqueChunks)
             {
-                if ((key.ComponentTypes & mask) == mask)
+                if (chunk.Definition.ComponentTypes.ContainsAll(mask))
                 {
                     return true;
                 }
