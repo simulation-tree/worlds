@@ -274,5 +274,39 @@ namespace Worlds.Tests
                 Assert.That(world.ContainsComponent<SimpleComponent>(i), Is.False);
             }
         }
+
+        [Test]
+        public void SimplerAddThenRemove()
+        {
+            using World world = CreateWorld();
+            USpan<uint> entities = stackalloc uint[100];
+            world.CreateEntities(entities);
+
+            Assert.That(world.Count, Is.EqualTo(entities.Length));
+
+            using Operation operation = new();
+            operation.SelectEntities(entities);
+            operation.AddComponent<TestComponent>(default);
+            operation.AddComponent<SimpleComponent>(default);
+
+            operation.Perform(world);
+            for (uint i = 0; i < entities.Length; i++)
+            {
+                Assert.That(world.ContainsComponent<TestComponent>(entities[i]), Is.True);
+                Assert.That(world.ContainsComponent<SimpleComponent>(entities[i]), Is.True);
+            }
+
+            operation.Clear();
+            operation.SelectEntities(entities);
+            operation.RemoveComponent<TestComponent>();
+            operation.RemoveComponent<SimpleComponent>();
+
+            operation.Perform(world);
+            for (uint i = 0; i < entities.Length; i++)
+            {
+                Assert.That(world.ContainsComponent<TestComponent>(entities[i]), Is.False);
+                Assert.That(world.ContainsComponent<SimpleComponent>(entities[i]), Is.False);
+            }
+        }
     }
 }
