@@ -940,7 +940,7 @@ namespace Worlds
         /// </summary>
         public readonly Allocation CreateArray(uint entity, DataType arrayElementType, uint length = 0)
         {
-            ushort arrayElementSize = arrayElementType.Size;
+            ushort arrayElementSize = arrayElementType.size;
             return Implementation.CreateArray(value, entity, arrayElementType, arrayElementSize, length);
         }
 
@@ -1032,7 +1032,7 @@ namespace Worlds
         /// </summary>
         public readonly Allocation ResizeArray(uint entity, DataType arrayElementType, uint newLength)
         {
-            ushort arrayElementSize = arrayElementType.Size;
+            ushort arrayElementSize = arrayElementType.size;
             return Implementation.ResizeArray(value, entity, arrayElementType, arrayElementSize, newLength);
         }
 
@@ -1146,7 +1146,7 @@ namespace Worlds
         /// </summary>
         public readonly void AddComponent(uint entity, DataType componentType)
         {
-            ushort componentSize = componentType.Size;
+            ushort componentSize = componentType.size;
             Implementation.AddComponent(value, entity, componentType, componentSize);
             Implementation.NotifyComponentAdded(this, entity, componentType);
         }
@@ -1169,7 +1169,7 @@ namespace Worlds
         /// </summary>
         public readonly void AddComponent(uint entity, DataType componentType, USpan<byte> source)
         {
-            ushort componentSize = componentType.Size;
+            ushort componentSize = componentType.size;
             Allocation component = Implementation.AddComponent(value, entity, componentType, componentSize);
             source.CopyTo(component, Math.Min(componentSize, source.Length));
             Implementation.NotifyComponentAdded(this, entity, componentType);
@@ -1290,7 +1290,7 @@ namespace Worlds
         /// </summary>
         public readonly ref T GetComponent<T>(uint entity, DataType componentType) where T : unmanaged
         {
-            ushort componentSize = componentType.Size;
+            ushort componentSize = componentType.size;
             Allocation component = Implementation.GetComponent(value, entity, componentType, componentSize);
             return ref component.Read<T>();
         }
@@ -1311,7 +1311,7 @@ namespace Worlds
         /// </summary>
         public readonly Allocation GetComponent(uint entity, DataType componentType)
         {
-            ushort componentSize = componentType.Size;
+            ushort componentSize = componentType.size;
             return Implementation.GetComponent(value, entity, componentType, componentSize);
         }
 
@@ -1330,7 +1330,7 @@ namespace Worlds
         /// </summary>
         public readonly USpan<byte> GetComponentBytes(uint entity, DataType componentType)
         {
-            ushort componentSize = componentType.Size;
+            ushort componentSize = componentType.size;
             Allocation component = Implementation.GetComponent(value, entity, componentType, componentSize);
             return component.AsSpan<byte>(0, componentSize);
         }

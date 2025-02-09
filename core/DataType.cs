@@ -9,8 +9,9 @@ namespace Worlds
     /// </summary>
     public readonly struct DataType : IEquatable<DataType>
     {
-        private readonly byte index;
-        private readonly ushort typeAndSize;
+        public readonly byte index;
+        public readonly ushort size;
+        public readonly Kind kind;
 
         public readonly ComponentType ComponentType
         {
@@ -42,19 +43,9 @@ namespace Worlds
             }
         }
 
-        public readonly Kind Type => (Kind)(typeAndSize & 0b11);
-
-        /// <summary>
-        /// Size of the data type.
-        /// <para>
-        /// Tag types will always be size 0, despite the declaring type.
-        /// </para>
-        /// </summary>
-        public readonly ushort Size => (ushort)(typeAndSize >> 2);
-
-        public readonly bool IsComponent => Type == Kind.Component;
-        public readonly bool IsArrayElement => Type == Kind.ArrayElement;
-        public readonly bool IsTag => Type == Kind.Tag;
+        public readonly bool IsComponent => kind == Kind.Component;
+        public readonly bool IsArrayElement => kind == Kind.ArrayElement;
+        public readonly bool IsTag => kind == Kind.Tag;
 
 #if NET
         [Obsolete("Default constructor not supported", true)]
@@ -67,19 +58,22 @@ namespace Worlds
         public DataType(ComponentType componentType, ushort size)
         {
             index = componentType;
-            typeAndSize = (ushort)((byte)Kind.Component | (size << 2));
+            kind = Kind.Component;
+            this.size = size;
         }
 
         public DataType(ArrayElementType arrayElementType, ushort size)
         {
             index = arrayElementType;
-            typeAndSize = (ushort)((byte)Kind.ArrayElement | (size << 2));
+            kind = Kind.ArrayElement;
+            this.size = size;
         }
 
         public DataType(TagType tagType)
         {
             index = tagType;
-            typeAndSize = (byte)Kind.Tag;
+            kind = Kind.Tag;
+            size = 0;
         }
 
         public readonly override string ToString()
@@ -103,8 +97,7 @@ namespace Worlds
 
         public readonly uint ToString(Schema schema, USpan<char> destination)
         {
-            Kind type = Type;
-            if (type == Kind.Component)
+            if (kind == Kind.Component)
             {
                 ComponentType componentType = new(index);
                 if (schema.Contains(componentType))
@@ -112,7 +105,7 @@ namespace Worlds
                     return schema.GetComponentLayout(componentType).ToString(destination);
                 }
             }
-            else if (type == Kind.ArrayElement)
+            else if (kind == Kind.ArrayElement)
             {
                 ArrayElementType arrayElementType = new(index);
                 if (schema.Contains(arrayElementType))
@@ -120,7 +113,7 @@ namespace Worlds
                     return schema.GetArrayElementLayout(arrayElementType).ToString(destination);
                 }
             }
-            else if (type == Kind.Tag)
+            else if (kind == Kind.Tag)
             {
                 TagType tagType = new(index);
                 if (schema.Contains(tagType))
@@ -135,7 +128,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfNotComponent()
         {
-            if (Type != Kind.Component)
+            if (kind != Kind.Component)
             {
                 throw new("Not a component type");
             }
@@ -144,7 +137,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfNotArrayElement()
         {
-            if (Type != Kind.ArrayElement)
+            if (kind != Kind.ArrayElement)
             {
                 throw new("Not an array element type");
             }
@@ -153,7 +146,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfNotTag()
         {
-            if (Type != Kind.Tag)
+            if (kind != Kind.Tag)
             {
                 throw new("Not a tag type");
             }
@@ -166,12 +159,15 @@ namespace Worlds
 
         public bool Equals(DataType other)
         {
-            return index == other.index && typeAndSize == other.typeAndSize;
+            return index == other.index && kind == other.kind;
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(index, typeAndSize);
+            unchecked
+            {
+                return (index << 2) | (byte)kind;
+            }
         }
 
         public static bool operator ==(DataType left, DataType right)
