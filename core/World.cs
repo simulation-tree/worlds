@@ -427,127 +427,6 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Attempts to retrieve the first found component of type <typeparamref name="T"/>.
-        /// </summary>
-        public readonly ref T TryGetFirstComponent<T>(out bool contains) where T : unmanaged
-        {
-            Schema schema = Schema;
-            ComponentType componentType = schema.GetComponent<T>();
-            foreach (Chunk chunk in value->uniqueChunks)
-            {
-                if (chunk.Definition.ComponentTypes.Contains(componentType))
-                {
-                    if (chunk.Count > 0)
-                    {
-                        contains = true;
-                        return ref chunk.GetComponent<T>(0, componentType);
-                    }
-                }
-            }
-
-            contains = false;
-            return ref *(T*)default(nint);
-        }
-
-        /// <summary>
-        /// Attempts to retrieve the first entity found with a component of type <typeparamref name="T"/>.
-        /// </summary>
-        public readonly bool TryGetFirstComponent<T>(out uint entity) where T : unmanaged
-        {
-            ComponentType componentType = Schema.GetComponent<T>();
-            foreach (Chunk chunk in value->uniqueChunks)
-            {
-                if (chunk.Definition.ComponentTypes.Contains(componentType))
-                {
-                    if (chunk.Count > 0)
-                    {
-                        entity = chunk.Entities[0];
-                        return true;
-                    }
-                }
-            }
-
-            entity = default;
-            return false;
-        }
-
-        /// <summary>
-        /// Attempts to retrieve the first found entity and component of type <typeparamref name="T"/>.
-        /// </summary>
-        public readonly ref T TryGetFirstComponent<T>(out uint entity, out bool contains) where T : unmanaged
-        {
-            Schema schema = Schema;
-            ComponentType componentType = schema.GetComponent<T>();
-            foreach (Chunk chunk in value->uniqueChunks)
-            {
-                if (chunk.Definition.ComponentTypes.Contains(componentType))
-                {
-                    if (chunk.Count > 0)
-                    {
-                        entity = chunk.Entities[0];
-                        contains = true;
-                        return ref chunk.GetComponent<T>(0, componentType);
-                    }
-                }
-            }
-
-            entity = default;
-            contains = false;
-            return ref *(T*)default(nint);
-        }
-
-        /// <summary>
-        /// Retrieves the first found entity and component of type <typeparamref name="T"/>.
-        /// <para>
-        /// May throw a <see cref="NullReferenceException"/> if no entity with the component is found.
-        /// </para>
-        /// </summary>
-        /// <exception cref="NullReferenceException"></exception>"
-        public readonly ref T GetFirstComponent<T>() where T : unmanaged
-        {
-            Schema schema = Schema;
-            ComponentType componentType = schema.GetComponent<T>();
-            foreach (Chunk chunk in value->uniqueChunks)
-            {
-                if (chunk.Definition.ComponentTypes.Contains(componentType))
-                {
-                    if (chunk.Count > 0)
-                    {
-                        return ref chunk.GetComponent<T>(0, componentType);
-                    }
-                }
-            }
-
-            throw new NullReferenceException($"No entity with component of type `{typeof(T)}` was found");
-        }
-
-        /// <summary>
-        /// Retrieves the first found entity and component of type <typeparamref name="T"/>.
-        /// <para>
-        /// May throw a <see cref="NullReferenceException"/> if no entity with the component is found.
-        /// </para>
-        /// </summary>
-        /// <exception cref="NullReferenceException"></exception>
-        public readonly ref T GetFirstComponent<T>(out uint entity) where T : unmanaged
-        {
-            Schema schema = Schema;
-            ComponentType componentType = schema.GetComponent<T>();
-            foreach (Chunk chunk in value->uniqueChunks)
-            {
-                if (chunk.Definition.ComponentTypes.Contains(componentType))
-                {
-                    if (chunk.Count > 0)
-                    {
-                        entity = chunk.Entities[0];
-                        return ref chunk.GetComponent<T>(0, componentType);
-                    }
-                }
-            }
-
-            throw new NullReferenceException($"No entity with component of type `{typeof(T)}` found");
-        }
-
-        /// <summary>
         /// Creates a new entity.
         /// </summary>
         public readonly uint CreateEntity()
@@ -2815,6 +2694,9 @@ namespace Worlds
                 NotifyComponentRemoved(new(world), entity, componentType);
             }
 
+            /// <summary>
+            /// Adds the <paramref name="tagType"/> to the <paramref name="entity"/>.
+            /// </summary>
             public static void AddTag(Implementation* world, uint entity, TagType tagType)
             {
                 Allocations.ThrowIfNull(world);
@@ -2839,6 +2721,9 @@ namespace Worlds
                 NotifyTagAdded(new(world), entity, tagType);
             }
 
+            /// <summary>
+            /// Removes the <paramref name="tagType"/> from the <paramref name="entity"/>.
+            /// </summary>
             public static void RemoveTag(Implementation* world, uint entity, TagType tagType)
             {
                 Allocations.ThrowIfNull(world);
@@ -2875,6 +2760,9 @@ namespace Worlds
                 return world->entityChunks[index].Definition.ComponentTypes.Contains(componentType);
             }
 
+            /// <summary>
+            /// Retrieves the component of the given <paramref name="componentType"/> for the given <paramref name="entity"/>.
+            /// </summary>
             public static Allocation GetComponent(Implementation* world, uint entity, ComponentType componentType, ushort componentSize)
             {
                 Allocations.ThrowIfNull(world);
