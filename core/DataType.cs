@@ -205,6 +205,11 @@ namespace Worlds
             return new(type.index);
         }
 
+        public static implicit operator byte(DataType type)
+        {
+            return type.index;
+        }
+
         /// <summary>
         /// Describes the type of data found on an entity.
         /// </summary>

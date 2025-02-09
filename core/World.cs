@@ -1276,6 +1276,26 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves a reference to the component of type <typeparamref name="T"/>.
+        /// </summary>
+        public readonly ref T GetComponent<T>(uint entity, ComponentType componentType) where T : unmanaged
+        {
+            ushort componentSize = Schema.GetSize(componentType);
+            Allocation component = Implementation.GetComponent(value, entity, componentType, componentSize);
+            return ref component.Read<T>();
+        }
+
+        /// <summary>
+        /// Retrieves a reference to the component of type <typeparamref name="T"/>.
+        /// </summary>
+        public readonly ref T GetComponent<T>(uint entity, DataType componentType) where T : unmanaged
+        {
+            ushort componentSize = componentType.Size;
+            Allocation component = Implementation.GetComponent(value, entity, componentType, componentSize);
+            return ref component.Read<T>();
+        }
+
+        /// <summary>
         /// Retrieves the component of the given <paramref name="componentType"/> from the given <paramref name="entity"/>
         /// as a pointer.
         /// </summary>

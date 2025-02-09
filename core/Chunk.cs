@@ -163,6 +163,9 @@ namespace Worlds
             return List.AsSpan<T>(list);
         }
 
+        /// <summary>
+        /// Retrieves a reference to the component of type <paramref name="componentType"/>.
+        /// </summary>
         public readonly ref T GetComponent<T>(uint index, ComponentType componentType) where T : unmanaged
         {
             List* components = GetComponents(componentType);

@@ -423,6 +423,28 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Sets the bit at position <paramref name="index"/> to 1.
+        /// </summary>
+        public void Set(uint index)
+        {
+            switch (index)
+            {
+                case < 64:
+                    a |= 1UL << (int)index;
+                    break;
+                case < 128:
+                    b |= 1UL << (int)index - 64;
+                    break;
+                case < 192:
+                    c |= 1UL << (int)index - 128;
+                    break;
+                default:
+                    d |= 1UL << (int)index - 192;
+                    break;
+            }
+        }
+
+        /// <summary>
         /// Resets the entire bit mask to <see langword="default"/>.
         /// </summary>
         public void Clear()
