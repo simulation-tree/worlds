@@ -16,8 +16,24 @@ namespace Worlds
         public readonly nint Address => (nint)schema;
 
         /// <summary>
+        /// Counts how many <see cref="ComponentType"/>s are registered.
+        /// </summary>
+        public readonly byte ComponentCount => schema->componentCount;
+
+        /// <summary>
+        /// Counts how many <see cref="ArrayElementType"/>s are registered.
+        /// </summary>
+        public readonly byte ArrayCount => schema->arraysCount;
+
+        /// <summary>
+        /// Counts how many <see cref="TagType"/>s are registered.
+        /// </summary>
+        public readonly byte TagCount => schema->tagsCount;
+
+        /// <summary>
         /// All component types loaded.
         /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public readonly System.Collections.Generic.IEnumerable<ComponentType> ComponentTypes
         {
             get
@@ -36,6 +52,7 @@ namespace Worlds
         /// <summary>
         /// All array element types loaded.
         /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public readonly System.Collections.Generic.IEnumerable<ArrayElementType> ArrayElementTypes
         {
             get
@@ -54,6 +71,7 @@ namespace Worlds
         /// <summary>
         /// All tag types loaded.
         /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public readonly System.Collections.Generic.IEnumerable<TagType> TagTypes
         {
             get
@@ -66,6 +84,66 @@ namespace Worlds
                         yield return tagType;
                     }
                 }
+            }
+        }
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Collapsed)]
+        private readonly TypeLayout[] Components
+        {
+            get
+            {
+                TypeLayout[] buffer = new TypeLayout[schema->componentCount];
+                uint count = 0;
+                for (uint c = 0; c < BitMask.Capacity; c++)
+                {
+                    ComponentType componentType = new(c);
+                    if (Contains(componentType))
+                    {
+                        buffer[count++] = GetComponentLayout(componentType);
+                    }
+                }
+
+                return buffer;
+            }
+        }
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Collapsed)]
+        private readonly TypeLayout[] ArrayElements
+        {
+            get
+            {
+                TypeLayout[] buffer = new TypeLayout[schema->arraysCount];
+                uint count = 0;
+                for (uint a = 0; a < BitMask.Capacity; a++)
+                {
+                    ArrayElementType arrayElementType = new(a);
+                    if (Contains(arrayElementType))
+                    {
+                        buffer[count++] = GetArrayElementLayout(arrayElementType);
+                    }
+                }
+
+                return buffer;
+            }
+        }
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Collapsed)]
+        private readonly TypeLayout[] Tags
+        {
+            get
+            {
+                TypeLayout[] buffer = new TypeLayout[schema->tagsCount];
+                uint count = 0;
+                for (uint t = 0; t < BitMask.Capacity; t++)
+                {
+                    TagType tagType = new(t);
+                    if (Contains(tagType))
+                    {
+                        buffer[count++] = GetTagLayout(tagType);
+                    }
+                }
+
+                return buffer;
             }
         }
 
@@ -206,7 +284,9 @@ namespace Worlds
 
         public readonly ComponentType RegisterComponent<T>() where T : unmanaged
         {
-            return RegisterComponent(TypeRegistry.Get<T>());
+            ComponentType newComponentType = RegisterComponent(TypeRegistry.Get<T>());
+            SchemaTypeCache<T>.components[this] = newComponentType;
+            return newComponentType;
         }
 
         public readonly ComponentType RegisterComponent(TypeLayout type)
@@ -225,7 +305,9 @@ namespace Worlds
 
         public readonly ArrayElementType RegisterArrayElement<T>() where T : unmanaged
         {
-            return RegisterArrayElement(TypeRegistry.Get<T>());
+            ArrayElementType arrayType = RegisterArrayElement(TypeRegistry.Get<T>());
+            SchemaTypeCache<T>.arrayElements[this] = arrayType;
+            return arrayType;
         }
 
         public readonly ArrayElementType RegisterArrayElement(TypeLayout type)
@@ -244,7 +326,9 @@ namespace Worlds
 
         public readonly TagType RegisterTag<T>() where T : unmanaged
         {
-            return RegisterTag(TypeRegistry.Get<T>());
+            TagType tagType = RegisterTag(TypeRegistry.Get<T>());
+            SchemaTypeCache<T>.tags[this] = tagType;
+            return tagType;
         }
 
         public readonly TagType RegisterTag(TypeLayout type)
@@ -346,6 +430,11 @@ namespace Worlds
         {
             ThrowIfComponentIsMissing<T>();
 
+            if (SchemaTypeCache<T>.components.TryGetValue(this, out ComponentType componentType))
+            {
+                return componentType;
+            }
+
             long hash = TypeLayoutHashCodeCache<T>.value;
             USpan<long> componentTypeHashes = Implementation.GetComponentTypeHashes(schema);
             uint index = componentTypeHashes.IndexOf(hash);
@@ -356,11 +445,15 @@ namespace Worlds
         {
             ThrowIfComponentIsMissing<T>();
 
+            if (SchemaTypeCache<T>.components.TryGetValue(this, out ComponentType componentType))
+            {
+                return new(componentType, (ushort)sizeof(T));
+            }
+
             long hash = TypeLayoutHashCodeCache<T>.value;
             USpan<long> componentTypeHashes = Implementation.GetComponentTypeHashes(schema);
             uint index = componentTypeHashes.IndexOf(hash);
-            ComponentType componentType = new((byte)index);
-            return new(componentType, (ushort)sizeof(T));
+            return new((byte)index, DataType.Kind.Component, (ushort)sizeof(T));
         }
 
         public readonly DataType GetComponentDataType(TypeLayout type)
@@ -369,8 +462,7 @@ namespace Worlds
 
             USpan<long> componentTypeHashes = Implementation.GetComponentTypeHashes(schema);
             uint index = componentTypeHashes.IndexOf(type.Hash);
-            ComponentType componentType = new((byte)index);
-            return new(componentType, type.Size);
+            return new((byte)index, DataType.Kind.Component, type.Size);
         }
 
         public readonly bool ContainsArrayElement<T>() where T : unmanaged
@@ -384,6 +476,11 @@ namespace Worlds
         {
             ThrowIfArrayElementIsMissing<T>();
 
+            if (SchemaTypeCache<T>.arrayElements.TryGetValue(this, out ArrayElementType arrayElementType))
+            {
+                return arrayElementType;
+            }
+
             long hash = TypeLayoutHashCodeCache<T>.value;
             USpan<long> arrayTypeHashes = Implementation.GetArrayTypeHashes(schema);
             uint index = arrayTypeHashes.IndexOf(hash);
@@ -394,11 +491,15 @@ namespace Worlds
         {
             ThrowIfArrayElementIsMissing<T>();
 
+            if (SchemaTypeCache<T>.arrayElements.TryGetValue(this, out ArrayElementType arrayElementType))
+            {
+                return new(arrayElementType, (ushort)sizeof(T));
+            }
+
             long hash = TypeLayoutHashCodeCache<T>.value;
             USpan<long> arrayTypeHashes = Implementation.GetArrayTypeHashes(schema);
             uint index = arrayTypeHashes.IndexOf(hash);
-            ArrayElementType arrayElementType = new((byte)index);
-            return new(arrayElementType, (ushort)sizeof(T));
+            return new((byte)index, DataType.Kind.ArrayElement, (ushort)sizeof(T));
         }
 
         public readonly DataType GetArrayElementDataType(TypeLayout type)
@@ -407,13 +508,17 @@ namespace Worlds
 
             USpan<long> arrayTypeHashes = Implementation.GetArrayTypeHashes(schema);
             uint index = arrayTypeHashes.IndexOf(type.Hash);
-            ArrayElementType arrayElementType = new((byte)index);
-            return new(arrayElementType, type.Size);
+            return new((byte)index, DataType.Kind.ArrayElement, type.Size);
         }
 
         public readonly TagType GetTag<T>() where T : unmanaged
         {
             ThrowIfTagIsMissing<T>();
+
+            if (SchemaTypeCache<T>.tags.TryGetValue(this, out TagType tagType))
+            {
+                return tagType;
+            }
 
             long hash = TypeLayoutHashCodeCache<T>.value;
             USpan<long> tagTypeHashes = Implementation.GetTagTypeHashes(schema);
@@ -425,11 +530,15 @@ namespace Worlds
         {
             ThrowIfTagIsMissing<T>();
 
+            if (SchemaTypeCache<T>.tags.TryGetValue(this, out TagType tagType))
+            {
+                return new(tagType);
+            }
+
             long hash = TypeLayoutHashCodeCache<T>.value;
             USpan<long> tagTypeHashes = Implementation.GetTagTypeHashes(schema);
             uint index = tagTypeHashes.IndexOf(hash);
-            TagType tagType = new((byte)index);
-            return new(tagType);
+            return new((byte)index, DataType.Kind.Tag, 0);
         }
 
         public readonly bool ContainsTag<T>() where T : unmanaged
@@ -1291,6 +1400,13 @@ namespace Worlds
         internal static class TypeLayoutHashCodeCache<T> where T : unmanaged
         {
             public static readonly long value = TypeRegistry.Get<T>().Hash;
+        }
+
+        internal static class SchemaTypeCache<T> where T : unmanaged
+        {
+            public static readonly System.Collections.Generic.Dictionary<Schema, ComponentType> components = new();
+            public static readonly System.Collections.Generic.Dictionary<Schema, ArrayElementType> arrayElements = new();
+            public static readonly System.Collections.Generic.Dictionary<Schema, TagType> tags = new();
         }
     }
 }

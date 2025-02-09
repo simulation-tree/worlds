@@ -76,6 +76,13 @@ namespace Worlds
             size = 0;
         }
 
+        public DataType(byte index, Kind kind, ushort size)
+        {
+            this.index = index;
+            this.kind = kind;
+            this.size = size;
+        }
+
         public readonly override string ToString()
         {
             USpan<char> buffer = stackalloc char[256];
