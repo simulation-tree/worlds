@@ -26,7 +26,7 @@ namespace Worlds.Tests
         public void CreateEntityWithComponents()
         {
             using World world = CreateWorld();
-            Entity a = Entity.Create(world, new Apple(32), new Another(10000));
+            Entity a = new(world, world.CreateEntity(new Apple(32), new Another(10000)));
             Assert.That(a, Is.Not.EqualTo(default(Entity)));
             Assert.That(a.ContainsComponent<Apple>(), Is.True);
             Assert.That(a.ContainsComponent<Another>(), Is.True);

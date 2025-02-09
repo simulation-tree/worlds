@@ -650,10 +650,7 @@ namespace Worlds
             if (value->references.Count < entity)
             {
                 uint toAdd = entity - value->references.Count;
-                for (uint i = 0; i < toAdd; i++)
-                {
-                    value->references.Add(default);
-                }
+                value->references.AddRepeat(default, toAdd);
             }
 
             ref List<uint> references = ref value->references[entity - 1];
@@ -1884,7 +1881,7 @@ namespace Worlds
                     Definition definition = chunk.Definition;
                     writer.WriteValue(entity);
                     writer.WriteValue(value->states[i]);
-                    writer.WriteValue(value->parents[i]);
+                    writer.WriteValue(GetParent(value, entity));
 
                     //write components
                     writer.WriteValue(definition.ComponentTypes.Count);
@@ -2019,6 +2016,7 @@ namespace Worlds
                 uint entityCount = reader.ReadValue<uint>();
                 uint maxEntityValue = reader.ReadValue<uint>();
                 using Array<uint> entityMap = new(maxEntityValue + 1);
+                value->parents.AddRepeat(default, entityCount + 1);
                 for (uint i = 0; i < entityCount; i++)
                 {
                     uint entity = reader.ReadValue<uint>();
@@ -2076,10 +2074,7 @@ namespace Worlds
                         if (value->references.Count < createdEntity)
                         {
                             uint toAdd = createdEntity - value->references.Count;
-                            for (uint r = 0; r < toAdd; r++)
-                            {
-                                value->references.Add(default);
-                            }
+                            value->references.AddRepeat(default, toAdd);
                         }
 
                         ref List<uint> references = ref value->references[createdEntity - 1];
@@ -2092,25 +2087,25 @@ namespace Worlds
                         }
                     }
 
-                    uint parent = value->parents[createdEntity - 1];
-                    if (parent != default)
+                    if (value->parents.Count >= createdEntity)
                     {
-                        if (value->children.Count < parent)
+                        uint parent = value->parents[createdEntity - 1];
+                        if (parent != default)
                         {
-                            uint toAdd = parent - value->children.Count;
-                            for (uint c = 0; c < toAdd; c++)
+                            if (value->children.Count < parent)
                             {
-                                value->children.Add(default);
+                                uint toAdd = parent - value->children.Count;
+                                value->children.AddRepeat(default, toAdd);
                             }
-                        }
 
-                        ref List<uint> children = ref value->children[parent - 1];
-                        if (children.IsDisposed)
-                        {
-                            children = new(4);
-                        }
+                            ref List<uint> children = ref value->children[parent - 1];
+                            if (children.IsDisposed)
+                            {
+                                children = new(4);
+                            }
 
-                        children.Add(createdEntity);
+                            children.Add(createdEntity);
+                        }
                     }
                 }
 
@@ -2172,7 +2167,6 @@ namespace Worlds
                 }
 
                 world->arrays.Clear();
-
                 world->chunksMap.Clear();
                 world->entityChunks.Clear();
                 world->states.Clear();
@@ -2203,7 +2197,6 @@ namespace Worlds
                     entity = world->states.Count + 1;
                     world->states.Add(EntityState.Enabled);
                     world->entityChunks.Add(chunk);
-                    world->parents.Add(default);
                 }
 
                 //create arrays if necessary
@@ -2213,10 +2206,7 @@ namespace Worlds
                     if (world->arrays.Count < entity)
                     {
                         uint toAdd = entity - world->arrays.Count;
-                        for (int i = 0; i < toAdd; i++)
-                        {
-                            world->arrays.Add(default);
-                        }
+                        world->arrays.AddRepeat(default, toAdd);
                     }
 
                     ref Array<nint> arrays = ref world->arrays[entity - 1];
@@ -2246,6 +2236,7 @@ namespace Worlds
                 Allocations.ThrowIfNull(world);
                 ThrowIfEntityIsMissing(world, entity);
 
+                //unparent or destroy children
                 if (world->children.Count >= entity)
                 {
                     ref List<uint> children = ref world->children[entity - 1];
@@ -2265,14 +2256,18 @@ namespace Worlds
                             for (uint i = 0; i < childrenSpan.Length; i++)
                             {
                                 uint child = childrenSpan[i];
-                                world->parents[child - 1] = default;
+                                if (world->parents.Count >= child)
+                                {
+                                    world->parents[child - 1] = default;
+                                }
                             }
-                        }
 
-                        children.Dispose();
+                            children.Dispose();
+                        }
                     }
                 }
 
+                //clear arrays
                 if (world->arrays.Count >= entity)
                 {
                     ref Array<nint> arrays = ref world->arrays[entity - 1];
@@ -2291,6 +2286,7 @@ namespace Worlds
                     }
                 }
 
+                //clear references
                 if (world->references.Count >= entity)
                 {
                     ref List<uint> references = ref world->references[entity - 1];
@@ -2301,18 +2297,21 @@ namespace Worlds
                 }
 
                 //remove from parents children list
-                ref uint parent = ref world->parents[entity - 1];
-                if (parent != default)
+                if (world->parents.Count >= entity)
                 {
-                    ref List<uint> parentChildren = ref world->children[parent - 1];
-                    parentChildren.RemoveAtBySwapping(parentChildren.IndexOf(entity));
+                    ref uint parent = ref world->parents[entity - 1];
+                    if (parent != default)
+                    {
+                        ref List<uint> parentChildren = ref world->children[parent - 1];
+                        parentChildren.RemoveAtBySwapping(parentChildren.IndexOf(entity));
+                        parent = default;
+                    }
                 }
 
                 ref Chunk chunk = ref world->entityChunks[entity - 1];
                 chunk.RemoveEntity(entity);
                 chunk = default;
                 world->states[entity - 1] = EntityState.Free;
-                parent = default;
                 world->freeEntities.Add(entity);
                 NotifyDestruction(new(world), entity);
             }
@@ -2324,6 +2323,11 @@ namespace Worlds
             {
                 Allocations.ThrowIfNull(world);
                 ThrowIfEntityIsMissing(world, entity);
+
+                if (world->parents.Count < entity)
+                {
+                    return default;
+                }
 
                 return world->parents[entity - 1];
             }
@@ -2388,6 +2392,12 @@ namespace Worlds
                     newParent = default;
                 }
 
+                if (world->parents.Count < entity)
+                {
+                    uint toAdd = entity - world->parents.Count;
+                    world->parents.AddRepeat(default, toAdd);
+                }
+
                 ref uint currentParent = ref world->parents[entity - 1];
                 ref Chunk chunk = ref world->entityChunks[entity - 1];
                 ref EntityState state = ref world->states[entity - 1];
@@ -2408,10 +2418,7 @@ namespace Worlds
                     if (world->children.Count < newParent)
                     {
                         uint toAdd = newParent - world->children.Count;
-                        for (uint i = 0; i < toAdd; i++)
-                        {
-                            world->children.Add(default);
-                        }
+                        world->children.AddRepeat(default, toAdd);
                     }
 
                     ref List<uint> newParentChildren = ref world->children[newParent - 1];
@@ -2508,10 +2515,7 @@ namespace Worlds
                     if (world->arrays.Count < entity)
                     {
                         uint toAdd = entity - world->arrays.Count;
-                        for (uint i = 0; i < toAdd; i++)
-                        {
-                            world->arrays.Add(default);
-                        }
+                        world->arrays.AddRepeat(default, toAdd);
                     }
 
                     world->arrays[entity - 1] = new(BitMask.Capacity);
