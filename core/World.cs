@@ -1164,6 +1164,16 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Adds a new default <typeparamref name="T"/> component to the given <paramref name="entity"/>.
+        /// </summary>
+        public readonly void AddComponent<T>(uint entity, ComponentType componentType) where T : unmanaged
+        {
+            ushort componentSize = (ushort)sizeof(T);
+            Implementation.AddComponent(value, entity, componentType, componentSize);
+            Implementation.NotifyComponentAdded(this, entity, componentType);
+        }
+
+        /// <summary>
         /// Adds a new component of the given <paramref name="componentType"/> with <paramref name="source"/> bytes
         /// to <paramref name="entity"/>.
         /// </summary>
@@ -2801,97 +2811,127 @@ namespace Worlds
             internal static void NotifyCreation(World world, uint entity)
             {
                 List<(EntityCreatedOrDestroyed, ulong)> events = world.value->entityCreatedOrDestroyed;
-                foreach ((EntityCreatedOrDestroyed callback, ulong userData) in events)
+                if (events.Count > 0)
                 {
-                    callback.Invoke(world, entity, ChangeType.Added, userData);
+                    foreach ((EntityCreatedOrDestroyed callback, ulong userData) in events)
+                    {
+                        callback.Invoke(world, entity, ChangeType.Added, userData);
+                    }
                 }
             }
 
             internal static void NotifyDestruction(World world, uint entity)
             {
                 List<(EntityCreatedOrDestroyed, ulong)> events = world.value->entityCreatedOrDestroyed;
-                foreach ((EntityCreatedOrDestroyed callback, ulong userData) in events)
+                if (events.Count > 0)
                 {
-                    callback.Invoke(world, entity, ChangeType.Removed, userData);
+                    foreach ((EntityCreatedOrDestroyed callback, ulong userData) in events)
+                    {
+                        callback.Invoke(world, entity, ChangeType.Removed, userData);
+                    }
                 }
             }
 
             internal static void NotifyParentChange(World world, uint entity, uint oldParent, uint newParent)
             {
                 List<(EntityParentChanged, ulong)> events = world.value->entityParentChanged;
-                foreach ((EntityParentChanged callback, ulong userData) in events)
+                if (events.Count > 0)
                 {
-                    callback.Invoke(world, entity, oldParent, newParent, userData);
+                    foreach ((EntityParentChanged callback, ulong userData) in events)
+                    {
+                        callback.Invoke(world, entity, oldParent, newParent, userData);
+                    }
                 }
             }
 
             internal static void NotifyComponentAdded(World world, uint entity, ComponentType componentType)
             {
                 List<(EntityDataChanged, ulong)> events = world.value->entityDataChanged;
-                DataType type = world.Schema.GetDataType(componentType);
-                foreach ((EntityDataChanged callback, ulong userData) in events)
+                if (events.Count > 0)
                 {
-                    callback.Invoke(world, entity, type, ChangeType.Added, userData);
+                    DataType type = world.Schema.GetDataType(componentType);
+                    foreach ((EntityDataChanged callback, ulong userData) in events)
+                    {
+                        callback.Invoke(world, entity, type, ChangeType.Added, userData);
+                    }
                 }
             }
 
             internal static void NotifyComponentRemoved(World world, uint entity, ComponentType componentType)
             {
                 List<(EntityDataChanged, ulong)> events = world.value->entityDataChanged;
-                DataType type = world.Schema.GetDataType(componentType);
-                foreach ((EntityDataChanged callback, ulong userData) in events)
+                if (events.Count > 0)
                 {
-                    callback.Invoke(world, entity, type, ChangeType.Removed, userData);
+                    DataType type = world.Schema.GetDataType(componentType);
+                    foreach ((EntityDataChanged callback, ulong userData) in events)
+                    {
+                        callback.Invoke(world, entity, type, ChangeType.Removed, userData);
+                    }
                 }
             }
 
             internal static void NotifyArrayCreated(World world, uint entity, ArrayElementType arrayElementType)
             {
                 List<(EntityDataChanged, ulong)> events = world.value->entityDataChanged;
-                DataType type = world.Schema.GetDataType(arrayElementType);
-                foreach ((EntityDataChanged callback, ulong userData) in events)
+                if (events.Count > 0)
                 {
-                    callback.Invoke(world, entity, type, ChangeType.Added, userData);
+                    DataType type = world.Schema.GetDataType(arrayElementType);
+                    foreach ((EntityDataChanged callback, ulong userData) in events)
+                    {
+                        callback.Invoke(world, entity, type, ChangeType.Added, userData);
+                    }
                 }
             }
 
             internal static void NotifyArrayDestroyed(World world, uint entity, ArrayElementType arrayElementType)
             {
                 List<(EntityDataChanged, ulong)> events = world.value->entityDataChanged;
-                DataType type = world.Schema.GetDataType(arrayElementType);
-                foreach ((EntityDataChanged callback, ulong userData) in events)
+                if (events.Count > 0)
                 {
-                    callback.Invoke(world, entity, type, ChangeType.Removed, userData);
+                    DataType type = world.Schema.GetDataType(arrayElementType);
+                    foreach ((EntityDataChanged callback, ulong userData) in events)
+                    {
+                        callback.Invoke(world, entity, type, ChangeType.Removed, userData);
+                    }
                 }
             }
 
             internal static void NotifyArrayResized(World world, uint entity, ArrayElementType arrayElementType)
             {
                 List<(EntityDataChanged, ulong)> events = world.value->entityDataChanged;
-                DataType type = world.Schema.GetDataType(arrayElementType);
-                foreach ((EntityDataChanged callback, ulong userData) in events)
+                if (events.Count > 0)
                 {
-                    callback.Invoke(world, entity, type, ChangeType.Modified, userData);
+                    DataType type = world.Schema.GetDataType(arrayElementType);
+                    foreach ((EntityDataChanged callback, ulong userData) in events)
+                    {
+                        callback.Invoke(world, entity, type, ChangeType.Modified, userData);
+                    }
                 }
             }
 
             internal static void NotifyTagAdded(World world, uint entity, TagType tagType)
             {
                 List<(EntityDataChanged, ulong)> events = world.value->entityDataChanged;
-                DataType type = world.Schema.GetDataType(tagType);
-                foreach ((EntityDataChanged callback, ulong userData) in events)
+                if (events.Count > 0)
                 {
-                    callback.Invoke(world, entity, type, ChangeType.Added, userData);
+                    DataType type = world.Schema.GetDataType(tagType);
+                    foreach ((EntityDataChanged callback, ulong userData) in events)
+                    {
+                        callback.Invoke(world, entity, type, ChangeType.Added, userData);
+                    }
                 }
             }
 
             internal static void NotifyTagRemoved(World world, uint entity, TagType tagType)
             {
                 List<(EntityDataChanged, ulong)> events = world.value->entityDataChanged;
-                DataType type = world.Schema.GetDataType(tagType);
-                foreach ((EntityDataChanged callback, ulong userData) in events)
+                if (events.Count > 0)
                 {
-                    callback.Invoke(world, entity, type, ChangeType.Removed, userData);
+                    DataType type = world.Schema.GetDataType(tagType);
+                    foreach ((EntityDataChanged callback, ulong userData) in events)
+                    {
+                        callback.Invoke(world, entity, type, ChangeType.Removed, userData);
+                    }
                 }
             }
         }
