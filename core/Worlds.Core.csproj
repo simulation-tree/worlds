@@ -28,4 +28,10 @@
 		</None>
 	</ItemGroup>
 
+	<ItemGroup>
+		<ProjectReference Include="..\..\collections\source\Collections.csproj" />
+		<ProjectReference Include="..\..\types\core\Types.Core.csproj" />
+		<ProjectReference Include="..\..\unmanaged\source\Unmanaged.csproj" />
+	</ItemGroup>
+
 </Project>
