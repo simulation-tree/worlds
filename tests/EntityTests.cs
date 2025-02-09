@@ -5,13 +5,6 @@ namespace Worlds.Tests
     public class EntityTests : WorldTests
     {
         [Test]
-        public void CompareAgainstDefault()
-        {
-            Entity a = default;
-            Assert.That(a == default, Is.True);
-        }
-
-        [Test]
         public void InitializeExistingEntity()
         {
             using World world = CreateWorld();

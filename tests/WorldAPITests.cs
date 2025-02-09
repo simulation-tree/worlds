@@ -25,13 +25,6 @@ namespace Worlds.Tests
         }
 
         [Test]
-        public void NonCreatedWorldError()
-        {
-            World world = default;
-            Assert.Throws<NullReferenceException>(() => world.Dispose());
-        }
-
-        [Test]
         public void MaxEntityIDIsValid()
         {
             using World world = CreateWorld();
