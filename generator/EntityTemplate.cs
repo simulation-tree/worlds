@@ -250,6 +250,21 @@
         world.DestroyArray(value, arrayElementType);
     }
 
+    public readonly void AddTag(TagType tagType)
+    {
+        world.AddTag(value, tagType);
+    }
+
+    public readonly bool ContainsTag(TagType tagType)
+    {
+        return world.Contains(value, tagType);
+    }
+
+    public readonly void RemoveTag(TagType tagType)
+    {
+        world.RemoveTag(value, tagType);
+    }
+
     public readonly bool ContainsComponent<T>() where T : unmanaged
     {
         return world.ContainsComponent<T>(value);
