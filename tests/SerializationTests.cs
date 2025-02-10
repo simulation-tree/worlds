@@ -24,10 +24,10 @@ namespace Worlds.Tests
             world.CreateArray(list, new USpan<char>("Well hello there list").As<Character>());
 
             using List<uint> oldEntities = new(world.Entities);
-            using List<(uint, Apple)> apples = new();
-            foreach (uint entity in world.GetAllContaining<Apple>())
+            using List<(uint, Fruit)> apples = new();
+            foreach (uint entity in world.GetAllContaining<Fruit>())
             {
-                apples.Add((entity, world.GetComponent<Apple>(entity)));
+                apples.Add((entity, world.GetComponent<Fruit>(entity)));
             }
 
             using BinaryWriter writer = new();
@@ -38,10 +38,10 @@ namespace Worlds.Tests
             using BinaryReader reader = new(data);
             using World loadedWorld = reader.ReadObject<World>();
             using List<uint> newEntities = new(loadedWorld.Entities);
-            using List<(uint, Apple)> newApples = new();
-            foreach (uint entity in loadedWorld.GetAllContaining<Apple>())
+            using List<(uint, Fruit)> newApples = new();
+            foreach (uint entity in loadedWorld.GetAllContaining<Fruit>())
             {
-                newApples.Add((entity, world.GetComponent<Apple>(entity)));
+                newApples.Add((entity, loadedWorld.GetComponent<Fruit>(entity)));
             }
 
             Assert.That(newEntities, Is.EquivalentTo(oldEntities));
