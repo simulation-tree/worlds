@@ -9,6 +9,8 @@ namespace Worlds
 {
     public unsafe struct Schema : IDisposable, IEquatable<Schema>, ISerializable
     {
+        private static int globalSchemaCount;
+
         private Implementation* schema;
 
         public readonly bool IsDisposed => schema is null;
@@ -285,7 +287,7 @@ namespace Worlds
         public readonly ComponentType RegisterComponent<T>() where T : unmanaged
         {
             ComponentType newComponentType = RegisterComponent(TypeRegistry.Get<T>());
-            SchemaTypeCache<T>.components[this] = newComponentType;
+            SchemaTypeCache<T>.Set(this, newComponentType);
             return newComponentType;
         }
 
@@ -306,7 +308,7 @@ namespace Worlds
         public readonly ArrayElementType RegisterArrayElement<T>() where T : unmanaged
         {
             ArrayElementType arrayType = RegisterArrayElement(TypeRegistry.Get<T>());
-            SchemaTypeCache<T>.arrayElements[this] = arrayType;
+            SchemaTypeCache<T>.Set(this, arrayType);
             return arrayType;
         }
 
@@ -327,7 +329,7 @@ namespace Worlds
         public readonly TagType RegisterTag<T>() where T : unmanaged
         {
             TagType tagType = RegisterTag(TypeRegistry.Get<T>());
-            SchemaTypeCache<T>.tags[this] = tagType;
+            SchemaTypeCache<T>.Set(this, tagType);
             return tagType;
         }
 
@@ -430,7 +432,7 @@ namespace Worlds
         {
             ThrowIfComponentIsMissing<T>();
 
-            if (SchemaTypeCache<T>.components.TryGetValue(this, out ComponentType componentType))
+            if (SchemaTypeCache<T>.TryGetComponent(this, out ComponentType componentType))
             {
                 return componentType;
             }
@@ -445,7 +447,7 @@ namespace Worlds
         {
             ThrowIfComponentIsMissing<T>();
 
-            if (SchemaTypeCache<T>.components.TryGetValue(this, out ComponentType componentType))
+            if (SchemaTypeCache<T>.TryGetComponent(this, out ComponentType componentType))
             {
                 return new(componentType, (ushort)sizeof(T));
             }
@@ -476,7 +478,7 @@ namespace Worlds
         {
             ThrowIfArrayElementIsMissing<T>();
 
-            if (SchemaTypeCache<T>.arrayElements.TryGetValue(this, out ArrayElementType arrayElementType))
+            if (SchemaTypeCache<T>.TryGetArrayElement(this, out ArrayElementType arrayElementType))
             {
                 return arrayElementType;
             }
@@ -491,7 +493,7 @@ namespace Worlds
         {
             ThrowIfArrayElementIsMissing<T>();
 
-            if (SchemaTypeCache<T>.arrayElements.TryGetValue(this, out ArrayElementType arrayElementType))
+            if (SchemaTypeCache<T>.TryGetArrayElement(this, out ArrayElementType arrayElementType))
             {
                 return new(arrayElementType, (ushort)sizeof(T));
             }
@@ -515,7 +517,7 @@ namespace Worlds
         {
             ThrowIfTagIsMissing<T>();
 
-            if (SchemaTypeCache<T>.tags.TryGetValue(this, out TagType tagType))
+            if (SchemaTypeCache<T>.TryGetTag(this, out TagType tagType))
             {
                 return tagType;
             }
@@ -530,7 +532,7 @@ namespace Worlds
         {
             ThrowIfTagIsMissing<T>();
 
-            if (SchemaTypeCache<T>.tags.TryGetValue(this, out TagType tagType))
+            if (SchemaTypeCache<T>.TryGetTag(this, out TagType tagType))
             {
                 return new(tagType);
             }
@@ -1319,16 +1321,18 @@ namespace Worlds
             public byte arraysCount;
             public byte tagsCount;
             public BitMask tagsMask;
+            public readonly int schemaCount;
             public readonly Allocation sizes;
             public readonly Allocation typeHashes;
 
-            private Implementation(Allocation sizes, Allocation typeHashes)
+            private Implementation(Allocation sizes, Allocation typeHashes, int schemaCount)
             {
                 this.componentCount = 0;
                 this.arraysCount = 0;
                 this.tagsCount = 0;
                 this.sizes = sizes;
                 this.typeHashes = typeHashes;
+                this.schemaCount = schemaCount;
             }
 
             public static Implementation* Allocate()
@@ -1336,7 +1340,9 @@ namespace Worlds
                 Allocation sizes = new(SizesLength, true);
                 Allocation typeHashes = new(TypeHashesLength, true);
                 ref Implementation schema = ref Allocations.Allocate<Implementation>();
-                schema = new(sizes, typeHashes);
+                schema = new(sizes, typeHashes, globalSchemaCount);
+                globalSchemaCount++;
+
                 fixed (Implementation* pointer = &schema)
                 {
                     return pointer;
@@ -1404,9 +1410,75 @@ namespace Worlds
 
         internal static class SchemaTypeCache<T> where T : unmanaged
         {
-            public static readonly System.Collections.Generic.Dictionary<Schema, ComponentType> components = new();
-            public static readonly System.Collections.Generic.Dictionary<Schema, ArrayElementType> arrayElements = new();
-            public static readonly System.Collections.Generic.Dictionary<Schema, TagType> tags = new();
+            private static readonly System.Collections.Generic.List<ComponentType> components = new();
+            private static readonly System.Collections.Generic.List<ArrayElementType> arrayElements = new();
+            private static readonly System.Collections.Generic.List<TagType> tags = new();
+
+            public static void Set(Schema schema, ComponentType componentType)
+            {
+                while (schema.schema->schemaCount >= components.Count)
+                {
+                    components.Add(default);
+                }
+
+                components[schema.schema->schemaCount] = componentType;
+            }
+
+            public static void Set(Schema schema, ArrayElementType arrayElementType)
+            {
+                while (schema.schema->schemaCount >= arrayElements.Count)
+                {
+                    arrayElements.Add(default);
+                }
+
+                arrayElements[schema.schema->schemaCount] = arrayElementType;
+            }
+
+            public static void Set(Schema schema, TagType tagType)
+            {
+                while (schema.schema->schemaCount >= tags.Count)
+                {
+                    tags.Add(default);
+                }
+
+                tags[schema.schema->schemaCount] = tagType;
+            }
+
+            public static bool TryGetComponent(Schema schema, out ComponentType componentType)
+            {
+                if (schema.schema->schemaCount < components.Count)
+                {
+                    componentType = components[schema.schema->schemaCount];
+                    return true;
+                }
+
+                componentType = default;
+                return false;
+            }
+
+            public static bool TryGetArrayElement(Schema schema, out ArrayElementType arrayElementType)
+            {
+                if (schema.schema->schemaCount < arrayElements.Count)
+                {
+                    arrayElementType = arrayElements[schema.schema->schemaCount];
+                    return true;
+                }
+
+                arrayElementType = default;
+                return false;
+            }
+
+            public static bool TryGetTag(Schema schema, out TagType tagType)
+            {
+                if (schema.schema->schemaCount < tags.Count)
+                {
+                    tagType = tags[schema.schema->schemaCount];
+                    return true;
+                }
+
+                tagType = default;
+                return false;
+            }
         }
     }
 }
