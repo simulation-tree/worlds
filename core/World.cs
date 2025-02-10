@@ -30,44 +30,89 @@ namespace Worlds
         /// <summary>
         /// Amount of entities that exist in the world.
         /// </summary>
-        public readonly uint Count => value->states.Count - value->freeEntities.Count;
+        public readonly uint Count
+        {
+            get
+            {
+                Allocations.ThrowIfNull(value);
+
+                return value->states.Count - value->freeEntities.Count;
+            }
+        }
 
         /// <summary>
         /// The current maximum amount of referrable entities.
         /// <para>Collections of this size + 1 are guaranteed to
         /// be able to store all entity positions.</para>
         /// </summary>
-        public readonly uint MaxEntityValue => value->states.Count;
+        public readonly uint MaxEntityValue
+        {
+            get
+            {
+                Allocations.ThrowIfNull(value);
+
+                return value->states.Count;
+            }
+        }
 
         /// <summary>
         /// Checks if the world has been disposed.
         /// </summary>
         public readonly bool IsDisposed => value is null;
 
+        private readonly List<EntityState> States => value->states;
+
         /// <summary>
         /// All previously used entities that are now free.
         /// </summary>
-        public readonly List<uint> Free => value->freeEntities;
+        public readonly List<uint> Free
+        {
+            get
+            {
+                Allocations.ThrowIfNull(value);
 
-        /// <summary>
-        /// States of slots.
-        /// </summary>
-        public readonly List<EntityState> States => value->states;
+                return value->freeEntities;
+            }
+        }
 
         /// <summary>
         /// Dictionary mapping <see cref="Definition"/>s to <see cref="Chunk"/>s.
         /// </summary>
-        public readonly Dictionary<Definition, Chunk> ChunksMap => value->chunksMap;
+        public readonly Dictionary<Definition, Chunk> ChunksMap
+        {
+            get
+            {
+                Allocations.ThrowIfNull(value);
+
+                return value->chunksMap;
+            }
+        }
 
         /// <summary>
         /// All <see cref="Chunk"/>s in the world.
         /// </summary>
-        public readonly USpan<Chunk> Chunks => value->uniqueChunks.AsSpan();
+        public readonly USpan<Chunk> Chunks
+        {
+            get
+            {
+                Allocations.ThrowIfNull(value);
+
+                return value->uniqueChunks.AsSpan();
+            }
+        }
 
         /// <summary>
         /// The schema containing all component and array types.
         /// </summary>
-        public readonly Schema Schema => value->schema;
+        public readonly Schema Schema
+        {
+            get
+            {
+                Allocations.ThrowIfNull(value);
+
+                return value->schema;
+            }
+        }
 
         /// <summary>
         /// All entities that exist in the world.
@@ -96,6 +141,8 @@ namespace Worlds
         {
             get
             {
+                Allocations.ThrowIfNull(value);
+
                 uint i = 0;
                 for (uint s = 0; s < value->states.Count; s++)
                 {
@@ -212,7 +259,7 @@ namespace Worlds
         /// </summary>
         public readonly void Append(World sourceWorld)
         {
-            for (uint i = 0; i < sourceWorld.States.Count; i++)
+            for (uint i = 0; i < sourceWorld.value->states.Count; i++)
             {
                 uint sourceEntity = i + 1;
                 if (sourceWorld.Free.Contains(sourceEntity))
