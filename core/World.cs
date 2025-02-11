@@ -1379,7 +1379,7 @@ namespace Worlds
         {
             ushort componentSize = Schema.GetSize(componentType);
             Allocation component = Implementation.GetComponent(value, entity, componentType, componentSize);
-            return component.AsSpan<byte>(0, componentSize);
+            return component.AsSpan(0, componentSize);
         }
 
         /// <summary>
@@ -1389,7 +1389,7 @@ namespace Worlds
         {
             ushort componentSize = componentType.size;
             Allocation component = Implementation.GetComponent(value, entity, componentType, componentSize);
-            return component.AsSpan<byte>(0, componentSize);
+            return component.AsSpan(0, componentSize);
         }
 
         /// <summary>

@@ -2,6 +2,7 @@
 using Collections.Implementations;
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Unmanaged;
 
 namespace Worlds
@@ -1577,6 +1578,7 @@ namespace Worlds
             /// <summary>
             /// Allocates a new <see cref="Implementation"/> with the given <paramref name="definition"/>.
             /// </summary>
+            [SkipLocalsInit]
             public static Implementation* Allocate(Definition definition, Schema schema)
             {
                 Array<nint> componentArrays = new(BitMask.Capacity);
