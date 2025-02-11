@@ -1612,9 +1612,9 @@ namespace Worlds
 
                 chunk->entities.Dispose();
                 uint typeCount = chunk->typeIndices.Length;
-                for (byte i = 0; i < typeCount; i++)
+                for (uint t = 0; t < typeCount; t++)
                 {
-                    ComponentType componentType = new(chunk->typeIndices[i]);
+                    ComponentType componentType = new(chunk->typeIndices[t]);
                     List* components = (List*)chunk->componentLists[componentType];
                     List.Free(ref components);
                 }
@@ -1633,9 +1633,9 @@ namespace Worlds
 
                 chunk->entities.Add(entity);
                 uint typeCount = chunk->typeIndices.Length;
-                for (byte i = 0; i < typeCount; i++)
+                for (uint t = 0; t < typeCount; t++)
                 {
-                    ComponentType componentType = new(chunk->typeIndices[i]);
+                    ComponentType componentType = new(chunk->typeIndices[t]);
                     List* list = (List*)chunk->componentLists[componentType];
                     List.AddDefault(list, 1);
                 }
@@ -1653,9 +1653,9 @@ namespace Worlds
                 uint index = chunk->entities.IndexOf(entity);
                 chunk->entities.RemoveAtBySwapping(index);
                 uint typeCount = chunk->typeIndices.Length;
-                for (byte i = 0; i < typeCount; i++)
+                for (uint t = 0; t < typeCount; t++)
                 {
-                    ComponentType componentType = new(chunk->typeIndices[i]);
+                    ComponentType componentType = new(chunk->typeIndices[t]);
                     List* list = (List*)chunk->componentLists[componentType];
                     List.RemoveAtBySwapping(list, index);
                 }
@@ -1676,9 +1676,9 @@ namespace Worlds
                 destination->entities.Add(entity);
 
                 //copy from source to destination
-                for (uint i = 0; i < destination->typeIndices.Length; i++)
+                for (uint t = 0; t < destination->typeIndices.Length; t++)
                 {
-                    ComponentType destinationComponentType = new(destination->typeIndices[i]);
+                    ComponentType destinationComponentType = new(destination->typeIndices[t]);
                     List* destinationList = (List*)destination->componentLists[destinationComponentType];
                     if (source->typeIndices.Contains(destinationComponentType))
                     {
@@ -1692,9 +1692,9 @@ namespace Worlds
                 }
 
                 //remove from source
-                for (uint i = 0; i < source->typeIndices.Length; i++)
+                for (uint t = 0; t < source->typeIndices.Length; t++)
                 {
-                    ComponentType sourceComponentType = new(source->typeIndices[i]);
+                    ComponentType sourceComponentType = new(source->typeIndices[t]);
                     List* sourceList = (List*)source->componentLists[sourceComponentType];
                     List.RemoveAtBySwapping(sourceList, oldIndex);
                 }

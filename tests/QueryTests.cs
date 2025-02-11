@@ -571,8 +571,9 @@ namespace Worlds.Tests
             results.Clear();
             stopwatch.Restart();
             {
-                foreach (Chunk chunk in world.Chunks)
+                for (uint i = 0; i < world.Chunks.Length; i++)
                 {
+                    Chunk chunk = world.Chunks[i];
                     if (chunk.Definition.ComponentTypes.ContainsAll(componentTypes))
                     {
                         USpan<uint> entities = chunk.Entities;
