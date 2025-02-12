@@ -219,6 +219,11 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsComponent<T>(Schema schema) where T : unmanaged
         {
+            if (!schema.ContainsComponent<T>())
+            {
+                return false;
+            }
+
             return componentTypes.Contains(schema.GetComponent<T>());
         }
 
@@ -227,11 +232,21 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsArray<T>(Schema schema) where T : unmanaged
         {
+            if (!schema.ContainsArrayElement<T>())
+            {
+                return false;
+            }
+
             return arrayElementTypes.Contains(schema.GetArrayElement<T>());
         }
 
         public readonly bool ContainsTag<T>(Schema schema) where T : unmanaged
         {
+            if (!schema.ContainsTag<T>())
+            {
+                return false;
+            }
+
             return tagTypes.Contains(schema.GetTag<T>());
         }
 

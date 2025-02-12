@@ -45,6 +45,7 @@ namespace Worlds.Generator
                 builder.AppendLine("public static void Load(Schema schema)");
                 builder.BeginGroup();
                 {
+                    int count = 0;
                     foreach (ITypeSymbol type in compilation.GetAllTypes())
                     {
                         if (type.IsRefLikeType)
@@ -65,12 +66,20 @@ namespace Worlds.Generator
                             }
                         }
 
-                        if (type.HasInterface("Worlds.ISchemaBank"))
+                        if (type.HasInterface(SchemaBankGenerator.InterfaceName))
                         {
-                            builder.Append("schema.Load<");
                             builder.Append(type.GetFullTypeName());
-                            builder.Append(">();");
+                            builder.Append(" template");
+                            builder.Append(count);
+                            builder.Append(" = default;");
                             builder.AppendLine();
+
+                            builder.Append("template");
+                            builder.Append(count);
+                            builder.Append(".Load(schema);");
+                            builder.AppendLine();
+
+                            count++;
                         }
                     }
                 }

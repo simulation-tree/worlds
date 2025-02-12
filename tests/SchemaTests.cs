@@ -1,4 +1,5 @@
 ﻿using Collections;
+using System;
 using Unmanaged;
 
 namespace Worlds.Tests
@@ -125,14 +126,9 @@ namespace Worlds.Tests
         public void LoadCustomBank()
         {
             using Schema schema = new();
+            Assert.That(schema.ContainsComponent<DateTime>(), Is.False);
             schema.Load<CustomSchemaBank>();
-            Assert.That(schema.ContainsComponent<bool>(), Is.True);
-            Assert.That(schema.ContainsComponent<FixedString>(), Is.True);
-            Assert.That(schema.ContainsComponent<uint>(), Is.True);
-            Assert.That(schema.ContainsComponent<float>(), Is.True);
-            Assert.That(schema.ContainsComponent<ulong>(), Is.True);
-            Assert.That(schema.ContainsComponent<byte>(), Is.True);
-            Assert.That(schema.ContainsComponent<int>(), Is.True);
+            Assert.That(schema.ContainsComponent<DateTime>(), Is.True);
         }
     }
 }
