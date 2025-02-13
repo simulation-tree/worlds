@@ -51,6 +51,11 @@ namespace Worlds.Generator
             builder.AppendLine();
             builder.BeginGroup();
             {
+                builder.AppendLine("/// <summary>");
+                builder.AppendLine("/// Loads all mentioned components, arrays and tag");
+                builder.AppendLine("/// types into the given schema.");
+                builder.AppendLine("/// </summary>");
+
                 builder.AppendLine("public static void Load(Schema schema)");
                 builder.BeginGroup();
                 {
@@ -101,6 +106,12 @@ namespace Worlds.Generator
                 }
                 builder.EndGroup();
                 builder.AppendLine();
+
+                builder.AppendLine("/// <summary>");
+                builder.AppendLine("/// Retrieves a schema containing all mentioned components, arrays");
+                builder.AppendLine("/// and tag types.");
+                builder.AppendLine("/// </summary>");
+
                 builder.AppendLine("public static Schema Get()");
                 builder.BeginGroup();
                 {

@@ -696,6 +696,11 @@ namespace Worlds.Generator
                 source.BeginGroup();
             }
 
+            source.AppendLine("/// <summary>");
+            source.AppendLine("/// Contains all component, array and tag");
+            source.AppendLine("/// types mentioned by this project.");
+            source.AppendLine("/// </summary>");
+
             typeName = TypeNameFormat.Replace("{0}", assemblyName ?? "");
             typeName = typeName.Replace(".", "");
             source.Append("public readonly struct ");
