@@ -164,7 +164,7 @@ namespace Worlds
 
 #if NET
         /// <summary>
-        /// Creates a new world.
+        /// Creates a new world with an empty <see cref="Worlds.Schema"/>.
         /// </summary>
         public World()
         {

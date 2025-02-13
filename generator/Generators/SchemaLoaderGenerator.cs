@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using System.Collections.Generic;
 using Types;
 
 namespace Worlds.Generator
@@ -17,11 +18,19 @@ namespace Worlds.Generator
         {
             if (compilation.GetEntryPoint(context.CancellationToken) is not null)
             {
-                context.AddSource($"{TypeName}.generated.cs", Generate(compilation));
+                List<SchemaBankGenerator.Input> inputs = new();
+                foreach (SyntaxTree syntaxTree in compilation.SyntaxTrees)
+                {
+                    SemanticModel semanticModel = compilation.GetSemanticModel(syntaxTree);
+                    inputs.Add(new(syntaxTree.GetRoot(), semanticModel));
+                }
+
+                SchemaBankGenerator.TryGenerate(inputs, out string typeName, out _);
+                context.AddSource($"{TypeName}.generated.cs", Generate(compilation, typeName));
             }
         }
 
-        private static string Generate(Compilation compilation)
+        private static string Generate(Compilation compilation, string schemaBankTypeName)
         {
             string? assemblyName = compilation.AssemblyName;
             SourceBuilder builder = new();
@@ -45,16 +54,23 @@ namespace Worlds.Generator
                 builder.AppendLine("public static void Load(Schema schema)");
                 builder.BeginGroup();
                 {
-                    int count = 0;
+                    List<ITypeSymbol> schemaBankTypes = new();
                     foreach (ITypeSymbol type in compilation.GetAllTypes())
                     {
+                        if (!type.HasInterface(SchemaBankGenerator.InterfaceName))
+                        {
+                            continue;
+                        }
+
                         if (type.IsRefLikeType)
                         {
+                            builder.AppendLine($"//skipped {type.GetFullTypeName()} because its a ref like type");
                             continue;
                         }
 
                         if (type.DeclaredAccessibility == Accessibility.Private || type.DeclaredAccessibility == Accessibility.ProtectedOrInternal)
                         {
+                            builder.AppendLine($"//skipped {type.GetFullTypeName()} because its accessibility is {type.DeclaredAccessibility}");
                             continue;
                         }
 
@@ -62,25 +78,25 @@ namespace Worlds.Generator
                         {
                             if (namedType.IsGenericType)
                             {
+                                builder.AppendLine($"//skipped {type.GetFullTypeName()} because its a generic type");
                                 continue;
                             }
                         }
 
-                        if (type.HasInterface(SchemaBankGenerator.InterfaceName))
-                        {
-                            builder.Append(type.GetFullTypeName());
-                            builder.Append(" template");
-                            builder.Append(count);
-                            builder.Append(" = default;");
-                            builder.AppendLine();
+                        schemaBankTypes.Add(type);
+                    }
 
-                            builder.Append("template");
-                            builder.Append(count);
-                            builder.Append(".Load(schema);");
-                            builder.AppendLine();
+                    int offset = 0;
+                    if (!string.IsNullOrEmpty(schemaBankTypeName))
+                    {
+                        AppendLoadingSchemaBank(builder, schemaBankTypeName, 0);
+                        offset++;
+                    }
 
-                            count++;
-                        }
+                    for (int i = 0; i < schemaBankTypes.Count; i++)
+                    {
+                        ITypeSymbol schemaBankType = schemaBankTypes[i];
+                        AppendLoadingSchemaBank(builder, schemaBankType.GetFullTypeName(), i + offset);
                     }
                 }
                 builder.EndGroup();
@@ -102,6 +118,20 @@ namespace Worlds.Generator
             }
 
             return builder.ToString();
+        }
+
+        private static void AppendLoadingSchemaBank(SourceBuilder source, string schemaBankTypeName, int index)
+        {
+            source.Append(schemaBankTypeName);
+            source.Append(" bank");
+            source.Append(index);
+            source.Append(" = default;");
+            source.AppendLine();
+
+            source.Append("bank");
+            source.Append(index);
+            source.Append(".Load(schema);");
+            source.AppendLine();
         }
     }
 }
