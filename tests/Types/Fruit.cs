@@ -2,7 +2,6 @@
 
 namespace Worlds.Tests
 {
-    [Component]
     public readonly struct Fruit : IEquatable<Fruit>
     {
         public readonly int data;

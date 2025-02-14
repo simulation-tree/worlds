@@ -1,7 +1,5 @@
 ﻿namespace Worlds.Tests
 {
-    [Component]
-    [ArrayElement]
     public struct Float
     {
         public float value;

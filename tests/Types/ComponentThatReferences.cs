@@ -1,6 +1,5 @@
 ﻿namespace Worlds.Tests
 {
-    [Component]
     public struct ComponentThatReferences
     {
         public rint reference;
