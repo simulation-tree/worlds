@@ -461,30 +461,32 @@ namespace Worlds
         {
             ThrowIfComponentIsMissing<T>();
 
-            if (SchemaTypeCache<T>.TryGetComponent(this, out ComponentType componentType))
+            if (!SchemaTypeCache<T>.TryGetComponent(this, out ComponentType componentType))
             {
-                return componentType;
+                long hash = TypeLayoutHashCodeCache<T>.value;
+                USpan<long> componentTypeHashes = Implementation.GetComponentTypeHashes(schema);
+                uint index = componentTypeHashes.IndexOf(hash);
+                componentType = new((byte)index);
+                SchemaTypeCache<T>.Set(this, componentType);
             }
 
-            long hash = TypeLayoutHashCodeCache<T>.value;
-            USpan<long> componentTypeHashes = Implementation.GetComponentTypeHashes(schema);
-            uint index = componentTypeHashes.IndexOf(hash);
-            return new((byte)index);
+            return componentType;
         }
 
         public readonly DataType GetComponentDataType<T>() where T : unmanaged
         {
             ThrowIfComponentIsMissing<T>();
 
-            if (SchemaTypeCache<T>.TryGetComponent(this, out ComponentType componentType))
+            if (!SchemaTypeCache<T>.TryGetComponent(this, out ComponentType componentType))
             {
-                return new(componentType, (ushort)sizeof(T));
+                long hash = TypeLayoutHashCodeCache<T>.value;
+                USpan<long> componentTypeHashes = Implementation.GetComponentTypeHashes(schema);
+                uint index = componentTypeHashes.IndexOf(hash);
+                componentType = new((byte)index);
+                SchemaTypeCache<T>.Set(this, componentType);
             }
 
-            long hash = TypeLayoutHashCodeCache<T>.value;
-            USpan<long> componentTypeHashes = Implementation.GetComponentTypeHashes(schema);
-            uint index = componentTypeHashes.IndexOf(hash);
-            return new((byte)index, DataType.Kind.Component, (ushort)sizeof(T));
+            return new(componentType, (ushort)sizeof(T));
         }
 
         public readonly DataType GetComponentDataType(TypeLayout type)
@@ -512,30 +514,32 @@ namespace Worlds
         {
             ThrowIfArrayElementIsMissing<T>();
 
-            if (SchemaTypeCache<T>.TryGetArrayElement(this, out ArrayElementType arrayElementType))
+            if (!SchemaTypeCache<T>.TryGetArrayElement(this, out ArrayElementType arrayElementType))
             {
-                return arrayElementType;
+                long hash = TypeLayoutHashCodeCache<T>.value;
+                USpan<long> arrayTypeHashes = Implementation.GetArrayTypeHashes(schema);
+                uint index = arrayTypeHashes.IndexOf(hash);
+                arrayElementType = new((byte)index);
+                SchemaTypeCache<T>.Set(this, arrayElementType);
             }
 
-            long hash = TypeLayoutHashCodeCache<T>.value;
-            USpan<long> arrayTypeHashes = Implementation.GetArrayTypeHashes(schema);
-            uint index = arrayTypeHashes.IndexOf(hash);
-            return new((byte)index);
+            return arrayElementType;
         }
 
         public readonly DataType GetArrayElementDataType<T>() where T : unmanaged
         {
             ThrowIfArrayElementIsMissing<T>();
 
-            if (SchemaTypeCache<T>.TryGetArrayElement(this, out ArrayElementType arrayElementType))
+            if (!SchemaTypeCache<T>.TryGetArrayElement(this, out ArrayElementType arrayElementType))
             {
-                return new(arrayElementType, (ushort)sizeof(T));
+                long hash = TypeLayoutHashCodeCache<T>.value;
+                USpan<long> arrayTypeHashes = Implementation.GetArrayTypeHashes(schema);
+                uint index = arrayTypeHashes.IndexOf(hash);
+                arrayElementType = new((byte)index);
+                SchemaTypeCache<T>.Set(this, arrayElementType);
             }
 
-            long hash = TypeLayoutHashCodeCache<T>.value;
-            USpan<long> arrayTypeHashes = Implementation.GetArrayTypeHashes(schema);
-            uint index = arrayTypeHashes.IndexOf(hash);
-            return new((byte)index, DataType.Kind.ArrayElement, (ushort)sizeof(T));
+            return new(arrayElementType, (ushort)sizeof(T));
         }
 
         public readonly DataType GetArrayElementDataType(TypeLayout type)
@@ -551,30 +555,32 @@ namespace Worlds
         {
             ThrowIfTagIsMissing<T>();
 
-            if (SchemaTypeCache<T>.TryGetTag(this, out TagType tagType))
+            if (!SchemaTypeCache<T>.TryGetTag(this, out TagType tagType))
             {
-                return tagType;
+                long hash = TypeLayoutHashCodeCache<T>.value;
+                USpan<long> tagTypeHashes = Implementation.GetTagTypeHashes(schema);
+                uint index = tagTypeHashes.IndexOf(hash);
+                tagType = new((byte)index);
+                SchemaTypeCache<T>.Set(this, tagType);
             }
 
-            long hash = TypeLayoutHashCodeCache<T>.value;
-            USpan<long> tagTypeHashes = Implementation.GetTagTypeHashes(schema);
-            uint index = tagTypeHashes.IndexOf(hash);
-            return new((byte)index);
+            return tagType;
         }
 
         public readonly DataType GetTagDataType<T>() where T : unmanaged
         {
             ThrowIfTagIsMissing<T>();
 
-            if (SchemaTypeCache<T>.TryGetTag(this, out TagType tagType))
+            if (!SchemaTypeCache<T>.TryGetTag(this, out TagType tagType))
             {
-                return new(tagType);
+                long hash = TypeLayoutHashCodeCache<T>.value;
+                USpan<long> tagTypeHashes = Implementation.GetTagTypeHashes(schema);
+                uint index = tagTypeHashes.IndexOf(hash);
+                tagType = new((byte)index);
+                SchemaTypeCache<T>.Set(this, tagType);
             }
 
-            long hash = TypeLayoutHashCodeCache<T>.value;
-            USpan<long> tagTypeHashes = Implementation.GetTagTypeHashes(schema);
-            uint index = tagTypeHashes.IndexOf(hash);
-            return new((byte)index, DataType.Kind.Tag, 0);
+            return new(tagType);
         }
 
         public readonly bool ContainsTag<T>() where T : unmanaged
