@@ -1,4 +1,6 @@
-﻿using System;
+﻿#pragma warning disable T0002
+
+using System;
 
 namespace Worlds.Tests
 {
