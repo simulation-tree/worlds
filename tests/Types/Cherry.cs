@@ -3,7 +3,6 @@ using Unmanaged;
 
 namespace Worlds.Tests
 {
-    [Component]
     public struct Cherry : IEquatable<Cherry>
     {
         public FixedString stones;

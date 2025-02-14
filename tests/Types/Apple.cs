@@ -2,7 +2,6 @@
 
 namespace Worlds.Tests
 {
-    [Component]
     public struct Apple : IEquatable<Apple>
     {
         public byte bites;

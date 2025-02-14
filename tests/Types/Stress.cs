@@ -2,7 +2,6 @@
 
 namespace Worlds.Tests
 {
-    [Component]
     public readonly struct Stress : IEquatable<Stress>
     {
         public readonly byte first;
