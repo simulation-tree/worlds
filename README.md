@@ -4,50 +4,51 @@ Library for implementing data as _components_, _arrays_, and _tags_, found on _e
 
 Entities themselves are stored within these _worlds_, which can be serialized, deserialized, and appended to other worlds at runtime.
 
-### Initializing
+### Creating worlds
 
-To use this library, all of the types that could be used need to be registered ahead of time.
-This is done by marking them with `[Component]` or `[ArrayElement]` or `[Tag]` (or a mix), 
-and utilizing the `TypeRegistryLoader` class to register the types.
-And then creating a schema using `SchemaLoader.Get()`:
+All worlds contain a `Schema`, describing which types are possible to use.
+They can be loaded after a world is created, or by passing one to the constructor:
 ```cs
 private static void Main()
 {
-    TypeRegistryLoader.Load(); //register all types
-    Schema schema = SchemaLoader.Get(); //create a schema
+    TypeRegistryLoader.Load();
+
+    Schema schema = new();
+    schema.RegisterComponent<float>();
+    schema.RegisterComponent<int>();
+    schema.RegisterComponent<Fruit>();
+
     using World world = new(schema);
-    //...
+
+    uint entity = world.CreateEntity();
+    world.AddComponent(entity, 3.14f);
+    world.AddComponent(entity, 1337);
+    world.AddComponent(entity, new Fruit(25));
 }
 
-[Component]
-public struct MyComponent(uint value)
+public struct Fruit(uint value)
 {
     public uint value = value;
 }
 ```
-> When running in `DEBUG` mode, an exception will be thrown if a type isn't registered with
-either the registry or a schema.
+> The `TypeRegistryLoader` is part of the [`types`](https://github.com/game-simulations/types) project and it initializes metadata for all types.
 
-If the attributes aren't present, or the types aren't registered, then each type needs to
-be registered manually:
+### Schema loader
+
+Included is a generator for a `SchemaLoader` type available only to projects with an 
+entry point. It ensures that all mentioned types are registered, saving the need
+to manually register them:
 ```cs
 private static void Main()
 {
-    TypeRegistry.Register<MyComponent>();
-    TypeRegistry.Register<PlayerName>();
-    TypeRegistry.Register<MyReference>();
-    TypeRegistry.Register<char>();
-    TypeRegistry.Register<IsThing>();
-
-    Schema schema = new();
-    schema.RegisterComponent<MyComponent>();
-    schema.RegisterComponent<PlayerName>();
-    schema.RegisterComponent<MyReference>();
-    schema.RegisterArrayElement<char>();
-    schema.RegisterTag<IsThing>();
-    
+    TypeRegistryLoader.Load();
+    Schema schema = SchemaLoader.Get();
     using World world = new(schema);
-    //...
+
+    uint entity = world.CreateEntity();
+    world.AddComponent(entity, 3.14f);
+    world.AddComponent(entity, 1337);
+    world.AddComponent(entity, new Fruit(25));
 }
 ```
 
@@ -57,7 +58,7 @@ private static void Main()
 using (World world = new())
 {
     uint entity = world.CreateEntity();
-    world.AddComponent(entity, new MyComponent(25));
+    world.AddComponent(entity, new Fruit(25));
 }
 ```
 
@@ -79,10 +80,10 @@ uint sum;
 
 void Do()
 {
-    foreach (uint entity in world.GetAll<MyComponent>())
+    foreach (uint entity in world.GetAllContaining<Fruit>())
     {
         //this approach suffers from having to fetch each component individually
-        ref MyComponent component = ref world.GetComponent<MyComponent>(entity);
+        ref Fruit component = ref world.GetComponent<Fruit>(entity);
         component.value *= 2;
         sum += component.value;
     }
@@ -96,15 +97,15 @@ uint sum = 0;
 void Do()
 {
     //only downside here is having to read a lot of code
-    ComponentType componentType = world.Schema.GetComponent<MyComponent>();
+    ComponentType componentType = world.Schema.GetComponent<Fruit>();
     foreach (Chunk chunk in world.Chunks)
     {
         if (chunk.Contains(componentType))
         {
-            USpan<MyComponent> components = chunk.GetComponents<MyComponent>();
+            USpan<Fruit> components = chunk.GetComponents<Fruit>(componentType);
             foreach (uint entity in chunk.Entities)
             {
-                ref MyComponent component = ref components[entity];
+                ref Fruit component = ref components[entity];
                 component.value *= 2;
                 sum += component.value;
             }
@@ -121,11 +122,11 @@ uint sum = 0;
 void Do()
 {
     //a little slower than manually iterating, but more readable
-    ComponentQuery<MyComponent> query = new(world);
+    ComponentQuery<Fruit> query = new(world);
     foreach (var x in query)
     {
         uint entity = x.entity;
-        ref MyComponent component = ref x.component1;
+        ref Fruit component = ref x.component1;
         component.value *= 2;
         sum += component.value;
     }
@@ -136,7 +137,6 @@ void Do()
 
 Entities can be tagged with tag types:
 ```cs
-[Tag]
 public struct IsThing
 {
 }
@@ -158,7 +158,6 @@ Then when worlds are appended to another world, the referenced entities can shif
 as they're added, preserving the relationship.
 
 ```cs
-[Component]
 public struct MyReference(rint entityReference)
 {
     public rint entityReference = entityReference;
@@ -183,7 +182,6 @@ type is qualified by the data present on the entity. For example, if an entity
 contains a `PlayerName`, then its a player entity. This design is supported with the
 `IEntity` interface and its required `Describe()` method:
 ```cs
-[Component]
 public struct PlayerName(FixedString name)
 {
     public FixedString name = name;
@@ -232,7 +230,7 @@ Serializing a world to bytes and then appending to another world:
 Schema schema = SchemaLoader.Get();
 using World prefabWorld = new(schema);
 Entity entity = new(prefabWorld);
-entity.AddComponent(new MyComponent(1337));
+entity.AddComponent(new Fruit(1337));
 entity.CreateArray<char>("Hello world".AsSpan());
 
 using BinaryWriter writer = new();
@@ -255,7 +253,7 @@ using World loadedWorld = World.Deserialize(reader, Process);
 
 static TypeLayout Process(TypeLayout type, DataType.Kind dataType)
 {
-    if (type.Is<MyComponent>())
+    if (type.Is<Fruit>())
     {
         //change the type to uint
         return TypeRegistry.Get<uint>();
