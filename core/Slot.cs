@@ -24,14 +24,6 @@ namespace Worlds
         public readonly bool ChildrenOutdated => (flags & Flags.ChildrenOutdated) != 0;
         public readonly bool ReferencesOutdated => (flags & Flags.ReferencesOutdated) != 0;
 
-        public Slot(State state, Chunk chunk)
-        {
-            parent = 0;
-            this.state = state;
-            this.chunk = chunk;
-            flags = Flags.None;
-        }
-
         public enum State : byte
         {
             Unknown,
