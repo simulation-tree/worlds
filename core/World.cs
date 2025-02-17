@@ -1419,18 +1419,17 @@ namespace Worlds
             Schema schema = Schema;
             ComponentType componentType = schema.GetComponent<T>();
             ref Chunk chunk = ref value->slots[entity].chunk;
-            bool contains = chunk.Definition.ComponentTypes.Contains(componentType);
-            if (contains)
+            if (chunk.Definition.ComponentTypes.Contains(componentType))
             {
                 uint index = chunk.Entities.IndexOf(entity);
                 component = chunk.GetComponent<T>(index, componentType);
+                return true;
             }
             else
             {
                 component = default;
+                return false;
             }
-
-            return contains;
         }
 
         /// <summary>

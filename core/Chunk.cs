@@ -169,7 +169,7 @@ namespace Worlds
         /// </summary>
         public readonly ref T GetComponent<T>(uint index, ComponentType componentType) where T : unmanaged
         {
-            List* components = GetComponents(componentType);
+            List* components = Implementation.GetComponents(value, componentType);
             nint address = List.GetStartAddress(components);
             return ref *(T*)(address + index * sizeof(T));
         }
@@ -179,7 +179,7 @@ namespace Worlds
         /// </summary>
         public readonly Allocation GetComponent(uint index, ComponentType componentType, ushort componentSize)
         {
-            List* components = GetComponents(componentType);
+            List* components = Implementation.GetComponents(value, componentType);
             nint address = List.GetStartAddress(components);
             return new((void*)(address + index * componentSize));
         }
