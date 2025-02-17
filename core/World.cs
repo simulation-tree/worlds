@@ -685,15 +685,18 @@ namespace Worlds
             {
                 slot.flags |= Slot.Flags.ContainsReferences;
                 slot.references = new(4);
+                slot.references.Add(default); //reserved
             }
             else if (slot.ReferencesOutdated)
             {
                 slot.flags &= ~Slot.Flags.ReferencesOutdated;
                 slot.references.Clear();
+                slot.references.Add(default); //reserved
             }
 
+            uint count = slot.references.Count;
             slot.references.Add(referencedEntity);
-            return (rint)slot.references.Count;
+            return (rint)count;
         }
 
         /// <summary>
@@ -704,8 +707,7 @@ namespace Worlds
             Implementation.ThrowIfEntityIsMissing(value, entity);
             Implementation.ThrowIfReferenceIsMissing(value, entity, reference);
 
-            uint index = (uint)reference;
-            value->slots[entity].references[index - 1] = referencedEntity;
+            value->slots[entity].references[(uint)reference] = referencedEntity;
         }
 
         /// <summary>
@@ -755,7 +757,7 @@ namespace Worlds
             ref Slot slot = ref value->slots[entity];
             if (slot.ContainsReferences && !slot.ReferencesOutdated)
             {
-                return slot.references.Count;
+                return slot.references.Count - 1;
             }
             else
             {
@@ -771,9 +773,7 @@ namespace Worlds
             Implementation.ThrowIfEntityIsMissing(value, entity);
             Implementation.ThrowIfReferenceIsMissing(value, entity, reference);
 
-            ref List<uint> references = ref value->slots[entity].references;
-            uint index = (uint)reference;
-            return ref references[index - 1];
+            return ref value->slots[entity].references[(uint)reference];
         }
 
         /// <summary>
@@ -802,7 +802,7 @@ namespace Worlds
                 uint index = (uint)reference;
                 if (index > 0 && index <= slot.references.Count)
                 {
-                    referencedEntity = slot.references[index - 1];
+                    referencedEntity = slot.references[index];
                     return true;
                 }
             }
@@ -820,8 +820,7 @@ namespace Worlds
             Implementation.ThrowIfEntityIsMissing(value, entity);
             Implementation.ThrowIfReferenceIsMissing(value, entity, reference);
 
-            uint index = (uint)reference;
-            return value->slots[entity].references.RemoveAt(index - 1);
+            return value->slots[entity].references.RemoveAt((uint)reference);
         }
 
         /// <summary>
@@ -834,9 +833,9 @@ namespace Worlds
             Implementation.ThrowIfReferencedEntityIsMissing(value, entity, referencedEntity);
 
             ref List<uint> references = ref value->slots[entity].references;
-            uint index = references.IndexOf(referencedEntity);
-            references.RemoveAt(index);
-            return (rint)(index + 1);
+            uint count = references.Count;
+            references.RemoveAt(references.IndexOf(referencedEntity));
+            return (rint)count;
         }
 
         /// <summary>
@@ -1722,9 +1721,8 @@ namespace Worlds
                     throw new NullReferenceException($"Reference `{reference}` not found on entity `{entity}`");
                 }
 
-                ref List<uint> references = ref slot.references;
                 uint index = (uint)reference;
-                if (index == 0 || index > references.Count)
+                if (index == 0 || index > slot.references.Count)
                 {
                     throw new NullReferenceException($"Reference `{reference}` not found on entity `{entity}`");
                 }
@@ -1744,8 +1742,7 @@ namespace Worlds
                     throw new NullReferenceException($"Entity `{entity}` does not reference `{referencedEntity}`");
                 }
 
-                ref List<uint> references = ref slot.references;
-                if (!references.Contains(referencedEntity))
+                if (!slot.references.Contains(referencedEntity))
                 {
                     throw new NullReferenceException($"Entity `{entity}` does not reference `{referencedEntity}`");
                 }
@@ -2109,7 +2106,7 @@ namespace Worlds
                     {
                         slot.flags |= Slot.Flags.ContainsReferences;
                         ref List<uint> references = ref slot.references;
-                        references = new(referenceCount);
+                        references = new(referenceCount + 1);
                         for (uint r = 0; r < referenceCount; r++)
                         {
                             uint referencedEntity = reader.ReadValue<uint>();
@@ -2332,7 +2329,7 @@ namespace Worlds
                 ref Slot slot = ref world->slots[entity];
                 if (slot.ContainsReferences && !slot.ReferencesOutdated)
                 {
-                    references = world->slots[entity].references.AsSpan();
+                    references = world->slots[entity].references.AsSpan(1);
                     return true;
                 }
                 else
