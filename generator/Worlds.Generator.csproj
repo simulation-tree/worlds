@@ -23,7 +23,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\types\generator\Types.Generator.csproj" />
+		<ProjectReference Include="..\..\unmanaged\generator\Unmanaged.Generator.csproj" />
 	</ItemGroup>
 
 </Project>

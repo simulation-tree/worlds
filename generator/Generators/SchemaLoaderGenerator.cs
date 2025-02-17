@@ -1,6 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using System.Collections.Generic;
-using Types;
+using Unmanaged;
 
 namespace Worlds.Generator
 {
