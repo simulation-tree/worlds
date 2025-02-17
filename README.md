@@ -1,5 +1,8 @@
 # Worlds
 
+[![Test](https://github.com/game-simulations/worlds/actions/workflows/test.yml/badge.svg)](https://github.com/game-simulations/worlds/actions/workflows/test.yml)
+![NuGet](https://img.shields.io/github/r-package/v/game-simulations/worlds)
+
 Library for implementing data as _components_, _arrays_, and _tags_, found on _entities_.
 
 Entities themselves are stored within these _worlds_, which can be serialized, deserialized, and appended to other worlds at runtime.
