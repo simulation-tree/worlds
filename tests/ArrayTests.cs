@@ -23,6 +23,9 @@ namespace Worlds.Tests
             });
 #endif
 
+            uint sameEntity = world.CreateEntity();
+            Assert.That(world.ContainsEntity(sameEntity), Is.True);
+            Assert.That(world.ContainsArray<SimpleComponent>(sameEntity), Is.False);
             world.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }
@@ -49,6 +52,7 @@ namespace Worlds.Tests
             Assert.That(list.Length, Is.EqualTo(4));
             world.DestroyEntity(entity);
             uint another = world.CreateEntity(); //same as `entity`
+            Assert.That(another, Is.EqualTo(entity));
             USpan<SimpleComponent> anotherList = world.CreateArray<SimpleComponent>(another, 1);
             anotherList[0] = new("banana");
             Assert.That(anotherList.Length, Is.EqualTo(1));

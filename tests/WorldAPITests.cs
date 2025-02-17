@@ -119,11 +119,15 @@ namespace Worlds.Tests
         public void CreateAndDestroyEntity()
         {
             using World world = CreateWorld();
-            uint entity = world.CreateEntity();
-            world.DestroyEntity(entity);
-            Assert.That(world.ContainsEntity(entity), Is.False);
+            uint a = world.CreateEntity();
+            Assert.That(world.ContainsEntity(a), Is.True);
+            world.DestroyEntity(a);
+            Assert.That(world.ContainsEntity(a), Is.False);
             Assert.That(world.Count, Is.EqualTo(0));
-            Assert.Throws<NullReferenceException>(() => world.GetComponent<SimpleComponent>(entity));
+            Assert.Throws<NullReferenceException>(() => world.GetComponent<SimpleComponent>(a));
+            uint b = world.CreateEntity();
+            Assert.That(world.ContainsEntity(b), Is.True);
+            Assert.That(world.Count, Is.EqualTo(1));
         }
 
         [Test]
@@ -328,10 +332,9 @@ namespace Worlds.Tests
             Assert.That(world.Count, Is.EqualTo(realEntities));
             world.Clear();
             Assert.That(world.Count, Is.EqualTo(0));
-            for (uint i = 0; i < 100; i++)
+            for (uint e = 1; e <= 100; e++)
             {
-                uint entity = i + 1;
-                Assert.That(world.ContainsEntity(entity), Is.False);
+                Assert.That(world.ContainsEntity(e), Is.False, $"Entity {e} should not exist");
             }
         }
 

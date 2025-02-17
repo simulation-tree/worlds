@@ -1637,7 +1637,7 @@ namespace Worlds
                 {
                     ComponentType componentType = new(chunk->typeIndices[t]);
                     List* list = (List*)chunk->componentLists[componentType];
-                    List.AddDefault(list, 1);
+                    List.AddDefault(list);
                 }
 
                 return chunk->entities.Count - 1;
@@ -1687,7 +1687,7 @@ namespace Worlds
                     }
                     else
                     {
-                        List.AddDefault(destinationList, 1);
+                        List.AddDefault(destinationList);
                     }
                 }
 

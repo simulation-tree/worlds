@@ -275,6 +275,11 @@
         return ref world.GetComponent<T>(value);
     }
 
+    public readonly ref T GetComponent<T>(ComponentType componentType) where T : unmanaged
+    {
+        return ref world.GetComponent<T>(value, componentType);
+    }
+
     public readonly bool TryGetComponent<T>(out T component) where T : unmanaged
     {
         return world.TryGetComponent(value, out component);

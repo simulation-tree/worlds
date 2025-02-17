@@ -60,6 +60,11 @@ namespace Worlds
             }
         }
 
+        /// <summary>
+        /// Checks if empty.
+        /// </summary>
+        public readonly bool IsEmpty => a == 0 && b == 0 && c == 0 && d == 0;
+
         public BitMask(byte b1)
         {
             a = default;
