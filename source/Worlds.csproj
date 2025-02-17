@@ -31,6 +31,7 @@
 		<ProjectReference Include="..\generator\Worlds.Generator.csproj" />
 		<ProjectReference Include="..\core\Worlds.Core.csproj" />
 		<ProjectReference Include="..\..\types\source\Types.csproj" />
+		<ProjectReference Include="..\..\unmanaged\source\Unmanaged.csproj" />
 	</ItemGroup>
 
 </Project>
