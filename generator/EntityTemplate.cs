@@ -275,6 +275,11 @@
         return ref world.GetComponent<T>(value);
     }
 
+    public readonly T GetComponentOrDefault<T>(T defaultValue = default) where T : unmanaged
+    {
+        return world.GetComponentOrDefault<T>(value, defaultValue);
+    }
+
     public readonly ref T GetComponent<T>(ComponentType componentType) where T : unmanaged
     {
         return ref world.GetComponent<T>(value, componentType);

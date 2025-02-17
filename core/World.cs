@@ -198,7 +198,7 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Resets the world to <c>default</c> state.
+        /// Resets the world to <see langword="default"/> state.
         /// </summary>
         public readonly void Clear()
         {
@@ -996,6 +996,15 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves the array of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
+        /// </summary>
+        public readonly USpan<T> GetArray<T>(uint entity, ArrayElementType arrayType) where T : unmanaged
+        {
+            Allocation array = Implementation.GetArray(value, entity, arrayType, out uint length);
+            return array.AsSpan<T>(0, length);
+        }
+
+        /// <summary>
         /// Retrieves the array of the given <paramref name="arrayElementType"/> from the given <paramref name="entity"/>.
         /// </summary>
         public readonly Allocation GetArray(uint entity, ArrayElementType arrayElementType, out uint length)
@@ -1063,10 +1072,10 @@ namespace Worlds
         /// </summary>
         public readonly bool TryGetArray<T>(uint entity, out USpan<T> array) where T : unmanaged
         {
-            //todo: this can be quicker
-            if (ContainsArray<T>(entity))
+            DataType arrayElementType = Schema.GetArrayElementDataType<T>();
+            if (ContainsArray(entity, arrayElementType))
             {
-                array = GetArray<T>(entity);
+                array = GetArray<T>(entity, arrayElementType);
                 return true;
             }
             else
@@ -1183,7 +1192,7 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Adds a <c>default</c> component to <paramref name="entity"/> and returns it by reference.
+        /// Adds a <see langword="default"/> component to <paramref name="entity"/> and returns it by reference.
         /// </summary>
         public readonly ref T AddComponent<T>(uint entity) where T : unmanaged
         {
@@ -1219,7 +1228,7 @@ namespace Worlds
             ComponentType componentType = Schema.GetComponent<T>();
             foreach (Chunk chunk in value->uniqueChunks)
             {
-                if (chunk.Definition.ComponentTypes.Contains(componentType))
+                if (chunk.Definition.Contains(componentType))
                 {
                     if (chunk.Count > 0)
                     {
@@ -1267,14 +1276,15 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Returns the component of the expected type if it exists, otherwise the given default
-        /// value is used.
+        /// Retrieves the component of type <typeparamref name="T"/> if it exists, otherwise the given
+        /// <paramref name="defaultValue"/> is returned.
         /// </summary>
-        public readonly T GetComponent<T>(uint entity, T defaultValue) where T : unmanaged
+        public readonly T GetComponentOrDefault<T>(uint entity, T defaultValue = default) where T : unmanaged
         {
-            if (ContainsComponent<T>(entity))
+            ComponentType componentType = Schema.GetComponent<T>();
+            if (Contains(entity, componentType))
             {
-                return GetComponent<T>(entity);
+                return GetComponent<T>(entity, componentType);
             }
             else
             {
