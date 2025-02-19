@@ -11,7 +11,6 @@ namespace Worlds.Generator
     {
         private const string WorldFieldName = "world";
         private const string ValueFieldName = "value";
-        private const string ID = "W0002";
         private const string Title = "Entity not initialized";
         private const string Format = "Entity constructor in type `{0}` doesn't initialize the `{1}` field";
         private const string Category = "Types";
@@ -22,8 +21,8 @@ namespace Worlds.Generator
 
         static NotInitializedEntityConstructor()
         {
-            worldAssignmentRule = new(ID, Title, Format, Category, Severity, true);
-            valueAssignmentRule = new(ID, Title, Format, Category, Severity, true);
+            worldAssignmentRule = new("W0001", Title, Format, Category, Severity, true);
+            valueAssignmentRule = new("W0002", Title, Format, Category, Severity, true);
         }
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [worldAssignmentRule, valueAssignmentRule];
