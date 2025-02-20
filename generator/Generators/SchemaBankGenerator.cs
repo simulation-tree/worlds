@@ -288,7 +288,7 @@ namespace Worlds.Generator
                     {
                         if (descendant is InvocationExpressionSyntax invocationExpression)
                         {
-                            Handle(source, all, null, semanticModel, false, invocationExpression);
+                            Handle(source, all, semanticModel, false, invocationExpression);
                         }
                         else if (descendant is VariableDeclarationSyntax variableDeclaration)
                         {
@@ -308,12 +308,12 @@ namespace Worlds.Generator
 
                                             if (all.Add(new FoundDataType(DataKind.Component, genericType.GetFullTypeName())))
                                             {
-                                                source.AppendLine($"// {variableDeclaration.Type}: {genericType.GetFullTypeName()};");
+                                                source.AppendLine($"// component {descendant} = {genericType.GetFullTypeName()}");
                                             }
                                         }
                                         else
                                         {
-                                            source.AppendLine($"// not found: {variableDeclaration.Type}: {identifierName.Identifier};");
+                                            //source.AppendLine($"// not found: {variableDeclaration.Type}: {identifierName.Identifier};");
                                         }
                                     }
                                 }
@@ -323,7 +323,7 @@ namespace Worlds.Generator
                         {
                             if (expressionStatement.Expression is InvocationExpressionSyntax wrappedInvocationExpression)
                             {
-                                Handle(source, all, null, semanticModel, false, wrappedInvocationExpression);
+                                Handle(source, all, semanticModel, false, wrappedInvocationExpression);
                             }
 
                             //source.AppendLine($"// expression: {input.typeDeclaration.Identifier} {expressionStatement.Expression} {expressionStatement.Expression.GetType()}");
@@ -353,12 +353,12 @@ namespace Worlds.Generator
 
                                             if (all.Add(new FoundDataType(DataKind.Component, componentType.GetFullTypeName())))
                                             {
-                                                source.AppendLine($"// local: {variableType} {componentType.GetFullTypeName()}");
+                                                source.AppendLine($"// component {descendant} = {genericType.GetFullTypeName()}");
                                             }
                                         }
                                         else
                                         {
-                                            source.AppendLine($"// not found: {variableType} {typeSyntax}");
+                                            //source.AppendLine($"// not found: {variableType} {typeSyntax}");
                                         }
                                     }
                                 }
@@ -390,7 +390,7 @@ namespace Worlds.Generator
                 {
                     if (descendant is InvocationExpressionSyntax invocationExpression)
                     {
-                        Handle(source, all, typeDeclaration, semanticModel, isEntity, invocationExpression);
+                        Handle(source, all, semanticModel, isEntity, invocationExpression);
                     }
                     else if (descendant is VariableDeclarationSyntax variableDeclaration)
                     {
@@ -410,12 +410,12 @@ namespace Worlds.Generator
 
                                         if (all.Add(new FoundDataType(DataKind.Component, genericType.GetFullTypeName())))
                                         {
-                                            source.AppendLine($"// {variableDeclaration.Type}: {genericType.GetFullTypeName()};");
+                                            source.AppendLine($"// component {descendant} = {genericType.GetFullTypeName()}");
                                         }
                                     }
                                     else
                                     {
-                                        source.AppendLine($"// not found: {variableDeclaration.Type}: {identifierName.Identifier};");
+                                        //source.AppendLine($"// not found: {variableDeclaration.Type}: {identifierName.Identifier};");
                                     }
                                 }
                             }
@@ -425,7 +425,7 @@ namespace Worlds.Generator
                     {
                         if (expressionStatement.Expression is InvocationExpressionSyntax wrappedInvocationExpression)
                         {
-                            Handle(source, all, typeDeclaration, semanticModel, isEntity, wrappedInvocationExpression);
+                            Handle(source, all, semanticModel, isEntity, wrappedInvocationExpression);
                         }
 
                         //source.AppendLine($"// expression: {input.typeDeclaration.Identifier} {expressionStatement.Expression} {expressionStatement.Expression.GetType()}");
@@ -450,9 +450,9 @@ namespace Worlds.Generator
             return valid;
         }
 
-        private static void Handle(SourceBuilder source, HashSet<FoundDataType> all, TypeDeclarationSyntax? typeDeclaration, SemanticModel semanticModel, bool isEntity, InvocationExpressionSyntax invocationExpression)
+        private static void Handle(SourceBuilder source, HashSet<FoundDataType> all, SemanticModel semanticModel, bool isEntity, InvocationExpressionSyntax invocationExpression)
         {
-            //source.AppendLine($"// 1111 {input.typeDeclaration.Identifier}: {invocationExpression.GetType()} + {invocationExpression.Expression.GetType()} + {invocationExpression};");
+            //source.AppendLine($"// 1111 {typeDeclaration?.Identifier}: {invocationExpression.GetType()} + {invocationExpression.Expression.GetType()} + {invocationExpression};");
             if (semanticModel.GetSymbolInfo(invocationExpression).Symbol is IMethodSymbol methodSymbol)
             {
                 //source.AppendLine($"// {input.typeDeclaration.Identifier}: generic: {methodSymbol.IsGenericMethod} {invocationExpression.Expression.GetType()}; + {invocationExpression}");
@@ -473,13 +473,9 @@ namespace Worlds.Generator
 
                             if (all.Add(new FoundDataType(DataKind.Component, genericType.GetFullTypeName())))
                             {
-                                source.AppendLine($"// {declaringTypeSymbol.Name}.{methodSymbol.Name}<{genericType.GetFullTypeName()}>();");
+                                source.AppendLine($"// component {invocationExpression} = {genericType.GetFullTypeName()}");
                             }
                         }
-                    }
-                    else
-                    {
-                        source.AppendLine($"//     {declaringTypeSymbol.Name}.{methodSymbol.Name} is not component");
                     }
 
                     if (IsArrayElementMethod(declaringTypeSymbol, methodSymbol.Name))
@@ -493,7 +489,7 @@ namespace Worlds.Generator
 
                             if (all.Add(new FoundDataType(DataKind.ArrayElement, genericType.GetFullTypeName())))
                             {
-                                source.AppendLine($"// {declaringTypeSymbol.Name}.{methodSymbol.Name}<{genericType.GetFullTypeName()}>();");
+                                source.AppendLine($"// array {invocationExpression} = {genericType.GetFullTypeName()}");
                             }
                         }
                     }
@@ -509,7 +505,7 @@ namespace Worlds.Generator
 
                             if (all.Add(new FoundDataType(DataKind.Tag, genericType.GetFullTypeName())))
                             {
-                                source.AppendLine($"// {declaringTypeSymbol.Name}.{methodSymbol.Name}<{genericType.GetFullTypeName()}>();");
+                                source.AppendLine($"// tag {invocationExpression} = {genericType.GetFullTypeName()}");
                             }
                         }
                     }
@@ -517,103 +513,85 @@ namespace Worlds.Generator
             }
             else
             {
-                if (typeDeclaration is not null)
+                //source.AppendLine($"// {invocationExpression.GetType()} (expression: {invocationExpression.Expression.GetType()}) = {invocationExpression}");
+                //if (invocationExpression.Expression is MemberAccessExpressionSyntax memAccess)
+                //{
+                //    source.AppendLine($"//     {memAccess.Name.GetType()} = {memAccess.Name}");
+                //}
+
+                if (invocationExpression.Expression is GenericNameSyntax || invocationExpression.Expression is MemberAccessExpressionSyntax)
                 {
-                    //source.AppendLine($"// {input.typeDeclaration.Identifier}: {invocationExpression.GetType()} + {invocationExpression.Expression.GetType()} + {invocationExpression}");
-                    if (invocationExpression.Expression is GenericNameSyntax || (invocationExpression.Expression is MemberAccessExpressionSyntax memberAccess && memberAccess.Name is GenericNameSyntax))
+                    if (isEntity)
                     {
-                        if (isEntity)
+                        //double check if the method is generic
+                        if (!invocationExpression.ToString().Contains("<"))
                         {
-                            if (GetMethodName(invocationExpression) is string methodName)
+                            //source.AppendLine($"// {invocationExpression}");
+                            bool isGeneric = false;
+                            foreach (SyntaxNode desc in invocationExpression.DescendantNodes())
                             {
-                                source.AppendLine($"// entity {typeDeclaration.Identifier} with method {methodName}: {invocationExpression.Expression}");
-                                if (IsComponentMethod(methodName))
+                                SymbolInfo symbolInfo = semanticModel.GetSymbolInfo(desc);
+                                if (symbolInfo.Symbol is INamedTypeSymbol typeSymbol)
                                 {
-                                    if (invocationExpression.Expression is GenericNameSyntax genericName)
+                                    //source.AppendLine($"// {typeSymbol.GetFullTypeName()}");
+                                    string parameterTypeName = typeSymbol.GetFullTypeName();
+                                    if (parameterTypeName != "Worlds.ComponentType")
                                     {
-                                        //print all generic types
-                                        foreach (TypeSyntax typeSyntax in genericName.TypeArgumentList.Arguments)
-                                        {
-                                            if (semanticModel.GetTypeInfo(typeSyntax).Type is ITypeSymbol genericType)
-                                            {
-                                                if (genericType is ITypeParameterSymbol)
-                                                {
-                                                    continue;
-                                                }
-
-                                                if (all.Add(new FoundDataType(DataKind.Component, genericType.GetFullTypeName())))
-                                                {
-                                                    source.AppendLine($"// entity: {typeDeclaration.Identifier}: {methodName}<{genericType.GetFullTypeName()}>();");
-                                                }
-                                            }
-                                        }
+                                        isGeneric = true;
+                                        break;
                                     }
-                                    else
+                                    else if (parameterTypeName != "Worlds.ArrayElementType")
                                     {
-                                        foreach (ArgumentSyntax argumentSyntax in invocationExpression.ArgumentList.Arguments)
-                                        {
-                                            if (semanticModel.GetTypeInfo(argumentSyntax.Expression).Type is ITypeSymbol genericType)
-                                            {
-                                                if (genericType is ITypeParameterSymbol)
-                                                {
-                                                    continue;
-                                                }
-
-                                                if (all.Add(new FoundDataType(DataKind.Component, genericType.GetFullTypeName())))
-                                                {
-                                                    source.AppendLine($"// entity: {typeDeclaration.Identifier}: {methodName}<{genericType.GetFullTypeName()}>(); + {invocationExpression.Expression} {invocationExpression.Expression.GetType()}");
-                                                }
-                                            }
-                                        }
+                                        isGeneric = true;
+                                        break;
+                                    }
+                                    else if (parameterTypeName != "Worlds.TagType")
+                                    {
+                                        isGeneric = true;
+                                        break;
                                     }
                                 }
-
-                                if (IsArrayElementMethod(methodName))
+                                else if (symbolInfo.Symbol is not null)
                                 {
-                                    if (invocationExpression.Expression is GenericNameSyntax genericName)
-                                    {
-                                        foreach (TypeSyntax typeSyntax in genericName.TypeArgumentList.Arguments)
-                                        {
-                                            if (semanticModel.GetTypeInfo(typeSyntax).Type is ITypeSymbol genericType)
-                                            {
-                                                if (genericType is ITypeParameterSymbol)
-                                                {
-                                                    continue;
-                                                }
+                                    //source.AppendLine($"//    {desc.GetType()} {desc} {symbolInfo.Symbol} {symbolInfo.Symbol.GetType()}");
+                                }
+                                else
+                                {
+                                    //source.AppendLine($"//    {desc.GetType()} {desc}");
+                                }
+                            }
 
-                                                if (all.Add(new FoundDataType(DataKind.ArrayElement, genericType.GetFullTypeName())))
-                                                {
-                                                    source.AppendLine($"// entity: {typeDeclaration.Identifier}: {methodName}<{genericType.GetFullTypeName()}>();");
-                                                }
-                                            }
-                                        }
-                                    }
+                            if (!isGeneric)
+                            {
+                                return;
+                            }
+                        }
 
-                                    //source.AppendLine($"// array: {input.typeDeclaration.Identifier}: {methodName} {invocationExpression.ArgumentList} {invocationExpression.Expression.GetType()}");
-                                    foreach (ArgumentSyntax argumentSyntax in invocationExpression.ArgumentList.Arguments)
+                        if (GetMethodName(invocationExpression) is string methodName)
+                        {
+                            //source.AppendLine($"// entity {typeDeclaration.Identifier} with method {methodName}: {invocationExpression.Expression}");
+                            if (IsComponentMethod(methodName))
+                            {
+                                if (invocationExpression.Expression is GenericNameSyntax genericName)
+                                {
+                                    //print all generic types
+                                    foreach (TypeSyntax typeSyntax in genericName.TypeArgumentList.Arguments)
                                     {
-                                        if (semanticModel.GetTypeInfo(argumentSyntax.Expression).Type is ITypeSymbol genericType)
+                                        if (semanticModel.GetTypeInfo(typeSyntax).Type is ITypeSymbol genericType)
                                         {
                                             if (genericType is ITypeParameterSymbol)
                                             {
                                                 continue;
                                             }
 
-                                            string fullTypeName = genericType.GetFullTypeName();
-                                            if (fullTypeName.StartsWith("Unmanaged.USpan<"))
+                                            if (all.Add(new FoundDataType(DataKind.Component, genericType.GetFullTypeName())))
                                             {
-                                                fullTypeName = fullTypeName.Substring(14, fullTypeName.Length - 15);
-                                            }
-
-                                            if (all.Add(new FoundDataType(DataKind.ArrayElement, fullTypeName)))
-                                            {
-                                                source.AppendLine($"// entity: {typeDeclaration.Identifier}: {methodName}<{fullTypeName}>();");
+                                                source.AppendLine($"// component {invocationExpression} = {genericType.GetFullTypeName()}");
                                             }
                                         }
                                     }
                                 }
-
-                                if (IsTagMethod(methodName))
+                                else
                                 {
                                     foreach (ArgumentSyntax argumentSyntax in invocationExpression.ArgumentList.Arguments)
                                     {
@@ -624,23 +602,89 @@ namespace Worlds.Generator
                                                 continue;
                                             }
 
-                                            if (all.Add(new FoundDataType(DataKind.Tag, genericType.GetFullTypeName())))
+                                            if (all.Add(new FoundDataType(DataKind.Component, genericType.GetFullTypeName())))
                                             {
-                                                source.AppendLine($"// entity: {typeDeclaration.Identifier}: {methodName}<{genericType.GetFullTypeName()}>();");
+                                                source.AppendLine($"// component {invocationExpression} = {genericType.GetFullTypeName()}");
                                             }
                                         }
                                     }
                                 }
                             }
-                            else
+
+                            if (IsArrayElementMethod(methodName))
                             {
-                                source.AppendLine($"// entity: {typeDeclaration.Identifier}: not known method {invocationExpression.Expression}+{invocationExpression.Expression.GetType()};");
+                                if (invocationExpression.Expression is GenericNameSyntax genericName)
+                                {
+                                    foreach (TypeSyntax typeSyntax in genericName.TypeArgumentList.Arguments)
+                                    {
+                                        if (semanticModel.GetTypeInfo(typeSyntax).Type is ITypeSymbol genericType)
+                                        {
+                                            if (genericType is ITypeParameterSymbol)
+                                            {
+                                                continue;
+                                            }
+
+                                            if (all.Add(new FoundDataType(DataKind.ArrayElement, genericType.GetFullTypeName())))
+                                            {
+                                                source.AppendLine($"// array {invocationExpression} = {genericType.GetFullTypeName()}");
+                                            }
+                                        }
+                                    }
+                                }
+
+                                //source.AppendLine($"// array: {input.typeDeclaration.Identifier}: {methodName} {invocationExpression.ArgumentList} {invocationExpression.Expression.GetType()}");
+                                foreach (ArgumentSyntax argumentSyntax in invocationExpression.ArgumentList.Arguments)
+                                {
+                                    if (semanticModel.GetTypeInfo(argumentSyntax.Expression).Type is ITypeSymbol genericType)
+                                    {
+                                        if (genericType is ITypeParameterSymbol)
+                                        {
+                                            continue;
+                                        }
+
+                                        string fullTypeName = genericType.GetFullTypeName();
+                                        const string USpanStart = "Unmanaged.USpan<";
+                                        if (fullTypeName.StartsWith(USpanStart))
+                                        {
+                                            //trim start and end
+                                            fullTypeName = fullTypeName.Substring(USpanStart.Length, fullTypeName.Length - USpanStart.Length - 1);
+                                        }
+
+                                        if (all.Add(new FoundDataType(DataKind.ArrayElement, fullTypeName)))
+                                        {
+                                            source.AppendLine($"// array {invocationExpression} = {genericType.GetFullTypeName()}");
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (IsTagMethod(methodName))
+                            {
+                                foreach (ArgumentSyntax argumentSyntax in invocationExpression.ArgumentList.Arguments)
+                                {
+                                    if (semanticModel.GetTypeInfo(argumentSyntax.Expression).Type is ITypeSymbol genericType)
+                                    {
+                                        if (genericType is ITypeParameterSymbol)
+                                        {
+                                            continue;
+                                        }
+
+                                        if (all.Add(new FoundDataType(DataKind.Tag, genericType.GetFullTypeName())))
+                                        {
+                                            source.AppendLine($"// tag {invocationExpression} = {genericType.GetFullTypeName()}");
+                                        }
+                                    }
+                                }
                             }
                         }
                         else
                         {
-                            source.AppendLine($"// not entity: {typeDeclaration.Identifier} {invocationExpression} {invocationExpression.GetType()}");
+                            //source.AppendLine($"// entity: {typeDeclaration.Identifier}: not known method {invocationExpression.Expression}+{invocationExpression.Expression.GetType()};");
                         }
+                    }
+                    else
+                    {
+                        //source.AppendLine($"// not entity: {typeDeclaration.Identifier} {invocationExpression} {invocationExpression.GetType()}");
                     }
                 }
             }
