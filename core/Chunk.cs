@@ -161,7 +161,7 @@ namespace Worlds
         public readonly USpan<T> GetComponents<T>(ComponentType componentType) where T : unmanaged
         {
             List* list = Implementation.GetComponents(value, componentType);
-            return List.AsSpan<T>(list);
+            return list->Items.AsSpan<T>(0, list->Count);
         }
 
         /// <summary>
@@ -170,8 +170,7 @@ namespace Worlds
         public readonly ref T GetComponent<T>(uint index, ComponentType componentType) where T : unmanaged
         {
             List* components = Implementation.GetComponents(value, componentType);
-            nint address = List.GetStartAddress(components);
-            return ref *(T*)(address + index * sizeof(T));
+            return ref components->Items.ReadElement<T>(index);
         }
 
         /// <summary>
@@ -180,8 +179,7 @@ namespace Worlds
         public readonly Allocation GetComponent(uint index, ComponentType componentType, ushort componentSize)
         {
             List* components = Implementation.GetComponents(value, componentType);
-            nint address = List.GetStartAddress(components);
-            return new((void*)(address + index * componentSize));
+            return components->Items.Read(index * componentSize);
         }
 
         public readonly override bool Equals(object? obj)
@@ -1683,7 +1681,8 @@ namespace Worlds
                     if (source->typeIndices.Contains(destinationComponentType))
                     {
                         List* sourceList = (List*)source->componentLists[destinationComponentType];
-                        List.Insert(destinationList, newIndex, List.GetElementBytes(sourceList, oldIndex));
+                        Allocation oldComponent = sourceList->Items.Read(oldIndex * sourceList->stride);
+                        List.Insert(destinationList, newIndex, oldComponent);
                     }
                     else
                     {

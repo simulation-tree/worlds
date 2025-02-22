@@ -820,7 +820,8 @@ namespace Worlds
             Implementation.ThrowIfEntityIsMissing(value, entity);
             Implementation.ThrowIfReferenceIsMissing(value, entity, reference);
 
-            return value->slots[entity].references.RemoveAt((uint)reference);
+            value->slots[entity].references.RemoveAt((uint)reference, out uint removed);
+            return removed;
         }
 
         /// <summary>
@@ -2201,7 +2202,7 @@ namespace Worlds
                 uint entity;
                 if (world->freeEntities.Count > 0)
                 {
-                    entity = world->freeEntities.RemoveAtBySwapping(0);
+                    world->freeEntities.RemoveAtBySwapping(0, out entity);
                 }
                 else
                 {
@@ -2225,7 +2226,7 @@ namespace Worlds
                         {
                             ArrayElementType arrayElementType = new(a);
                             ushort arrayElementSize = world->schema.GetSize(arrayElementType);
-                            arrays[(uint)arrayElementType] = (nint)Array.Allocate(0, arrayElementSize);
+                            arrays[(uint)arrayElementType] = (nint)Array.Allocate(0, arrayElementSize, true);
                         }
                     }
 
@@ -2507,10 +2508,10 @@ namespace Worlds
                 slot.chunk = destinationChunk;
                 previousChunk.MoveEntity(entity, destinationChunk);
 
-                Array* newArray = Array.Allocate(length, arrayElementSize);
+                Array* newArray = Array.Allocate(length, arrayElementSize, true);
                 slot.arrays[(uint)arrayElementType] = (nint)newArray;
                 NotifyArrayCreated(new(world), entity, arrayElementType);
-                return new((void*)Array.GetStartAddress(newArray));
+                return newArray->Items;
             }
 
             /// <summary>
@@ -2536,8 +2537,8 @@ namespace Worlds
 
                 ref Slot slot = ref world->slots[entity];
                 Array* array = (Array*)slot.arrays[(uint)arrayElementType];
-                length = Array.GetLength(array);
-                return new((void*)Array.GetStartAddress(array));
+                length = array->Length;
+                return array->Items;
             }
 
             /// <summary>
@@ -2551,7 +2552,7 @@ namespace Worlds
 
                 ref Slot slot = ref world->slots[entity];
                 Array* array = (Array*)slot.arrays[(uint)arrayElementType];
-                return Array.GetLength(array);
+                return array->Length;
             }
 
             /// <summary>
@@ -2567,7 +2568,7 @@ namespace Worlds
                 Array* array = (Array*)slot.arrays[(uint)arrayElementType];
                 Array.Resize(array, newLength, true);
                 NotifyArrayResized(new(world), entity, arrayElementType);
-                return new((void*)Array.GetStartAddress(array));
+                return array->Items;
             }
 
             /// <summary>
