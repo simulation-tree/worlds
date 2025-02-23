@@ -325,6 +325,11 @@
         return world.GetArrayLength<T>(value);
     }
 
+    public readonly uint GetArrayLength<T>(ArrayElementType arrayType) where T : unmanaged
+    {
+        return world.GetArrayLength<T>(value, arrayType);
+    }
+
     public readonly ref T GetArrayElement<T>(uint index) where T : unmanaged
     {
         return ref world.GetArrayElement<T>(value, index);
@@ -333,6 +338,11 @@
     public readonly USpan<T> GetArray<T>() where T : unmanaged
     {
         return world.GetArray<T>(value);
+    }
+
+    public readonly USpan<T> GetArray<T>(ArrayElementType arrayType) where T : unmanaged
+    {
+        return world.GetArray<T>(value, arrayType);
     }
 
     public readonly bool TryGetArray<T>(out USpan<T> array) where T : unmanaged
@@ -353,6 +363,11 @@
     public readonly USpan<T> ResizeArray<T>(uint newLength) where T : unmanaged
     {
         return world.ResizeArray<T>(value, newLength);
+    }
+
+    public readonly USpan<T> ResizeArray<T>(ArrayElementType arrayType, uint newLength) where T : unmanaged
+    {
+        return world.ResizeArray<T>(value, arrayType, newLength);
     }
 
     public readonly void DestroyArray<T>() where T : unmanaged

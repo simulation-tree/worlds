@@ -1025,6 +1025,16 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves the array of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
+        /// </summary>
+        public readonly USpan<T> ResizeArray<T>(uint entity, ArrayElementType arrayElementType, uint newLength) where T : unmanaged
+        {
+            ushort arrayElementSize = (ushort)sizeof(T);
+            Allocation array = Implementation.ResizeArray(value, entity, arrayElementType, arrayElementSize, newLength);
+            return array.AsSpan<T>(0, newLength);
+        }
+
+        /// <summary>
         /// Resizes the array of type <paramref name="arrayElementType"/> on the given <paramref name="entity"/>.
         /// </summary>
         public readonly Allocation ResizeArray(uint entity, ArrayElementType arrayElementType, uint newLength)
@@ -1105,6 +1115,14 @@ namespace Worlds
         public readonly uint GetArrayLength<T>(uint entity) where T : unmanaged
         {
             ArrayElementType arrayElementType = Schema.GetArrayElement<T>();
+            return Implementation.GetArrayLength(value, entity, arrayElementType);
+        }
+
+        /// <summary>
+        /// Retrieves the length of an existing array on this entity.
+        /// </summary>
+        public readonly uint GetArrayLength<T>(uint entity, ArrayElementType arrayElementType) where T : unmanaged
+        {
             return Implementation.GetArrayLength(value, entity, arrayElementType);
         }
 
