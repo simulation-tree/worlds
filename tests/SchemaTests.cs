@@ -61,10 +61,10 @@ namespace Worlds.Tests
             prefabSchema.RegisterComponent<char>();
             TagType thingTag = prefabSchema.RegisterTag<IsThing>();
 
-            using BinaryWriter writer = new();
+            using ByteWriter writer = new();
             writer.WriteObject(prefabSchema);
 
-            using BinaryReader reader = new(writer);
+            using ByteReader reader = new(writer);
             using Schema loadedSchema = reader.ReadObject<Schema>();
 
             Assert.That(loadedSchema.ContainsComponent<float>(), Is.True);
@@ -82,10 +82,10 @@ namespace Worlds.Tests
             schema.RegisterComponent<bool>();
             schema.RegisterArrayElement<byte>();
 
-            using BinaryWriter writer = new();
+            using ByteWriter writer = new();
             writer.WriteObject(schema);
 
-            using BinaryReader reader = new(writer);
+            using ByteReader reader = new(writer);
             using Schema loadedSchema = reader.ReadObject<Schema>();
 
             Assert.That(loadedSchema.ContainsTag<bool>(), Is.True);

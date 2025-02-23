@@ -10,7 +10,12 @@ namespace Worlds
     public readonly struct DataType : IEquatable<DataType>
     {
         public readonly byte index;
+
+        /// <summary>
+        /// Size of the data type in bytes.
+        /// </summary>
         public readonly ushort size;
+
         public readonly Kind kind;
 
         public readonly ComponentType ComponentType

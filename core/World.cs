@@ -245,12 +245,12 @@ namespace Worlds
             return ((nint)value).GetHashCode();
         }
 
-        readonly void ISerializable.Write(BinaryWriter writer)
+        readonly void ISerializable.Write(ByteWriter writer)
         {
             Implementation.Serialize(value, writer);
         }
 
-        void ISerializable.Read(BinaryReader reader)
+        void ISerializable.Read(ByteReader reader)
         {
             value = Implementation.Deserialize(reader);
         }
@@ -1611,7 +1611,7 @@ namespace Worlds
         /// <summary>
         /// Deserializes a world from the given <paramref name="reader"/>.
         /// </summary>
-        public static World Deserialize(BinaryReader reader)
+        public static World Deserialize(ByteReader reader)
         {
             return new(Implementation.Deserialize(reader));
         }
@@ -1620,7 +1620,7 @@ namespace Worlds
         /// Deserializes a world from the given <paramref name="reader"/>
         /// with a custom schema processor.
         /// </summary>
-        public static World Deserialize(BinaryReader reader, ProcessSchema process)
+        public static World Deserialize(ByteReader reader, ProcessSchema process)
         {
             return new(Implementation.Deserialize(reader, process));
         }
@@ -1629,7 +1629,7 @@ namespace Worlds
         /// Deserializes a world from the given <paramref name="reader"/>
         /// with a custom schema processor.
         /// </summary>
-        public static World Deserialize(BinaryReader reader, Func<TypeLayout, DataType.Kind, TypeLayout> process)
+        public static World Deserialize(ByteReader reader, Func<TypeLayout, DataType.Kind, TypeLayout> process)
         {
             return new(Implementation.Deserialize(reader, process));
         }
@@ -1901,7 +1901,7 @@ namespace Worlds
             /// <summary>
             /// Serializes the world into the <paramref name="writer"/>.
             /// </summary>
-            public static void Serialize(Implementation* value, BinaryWriter writer)
+            public static void Serialize(Implementation* value, ByteWriter writer)
             {
                 Allocations.ThrowIfNull(value);
 
@@ -1986,7 +1986,7 @@ namespace Worlds
             /// <summary>
             /// Deserializes a new <see cref="World"/> from the data in the given <paramref name="reader"/>.
             /// </summary>
-            public static Implementation* Deserialize(BinaryReader reader)
+            public static Implementation* Deserialize(ByteReader reader)
             {
                 return Deserialize(reader, null);
             }
@@ -1998,7 +1998,7 @@ namespace Worlds
             /// present types into ones that are compatible with the current runtime.
             /// </para>
             /// </summary>
-            public static Implementation* Deserialize(BinaryReader reader, ProcessSchema process)
+            public static Implementation* Deserialize(ByteReader reader, ProcessSchema process)
             {
                 return Deserialize(reader, (type, dataType) =>
                 {
@@ -2013,7 +2013,7 @@ namespace Worlds
             /// present types into ones that are compatible with the current runtime.
             /// </para>
             /// </summary>
-            public static Implementation* Deserialize(BinaryReader reader, Func<TypeLayout, DataType.Kind, TypeLayout>? process)
+            public static Implementation* Deserialize(ByteReader reader, Func<TypeLayout, DataType.Kind, TypeLayout>? process)
             {
                 Signature signature = reader.ReadValue<Signature>();
                 if (signature.Version != Version)

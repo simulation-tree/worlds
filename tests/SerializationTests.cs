@@ -30,12 +30,12 @@ namespace Worlds.Tests
                 apples.Add((entity, world.GetComponent<Fruit>(entity)));
             }
 
-            using BinaryWriter writer = new();
+            using ByteWriter writer = new();
             writer.WriteObject(world);
             world.Dispose();
 
             USpan<byte> data = writer.AsSpan();
-            using BinaryReader reader = new(data);
+            using ByteReader reader = new(data);
             using World loadedWorld = reader.ReadObject<World>();
             using List<uint> newEntities = new(loadedWorld.Entities);
             using List<(uint, Fruit)> newApples = new();
@@ -77,7 +77,7 @@ namespace Worlds.Tests
             prefabWorld.AddComponent(aa, new Fruit(43));
             prefabWorld.AddTag<IsThing>(aa);
 
-            using BinaryWriter writer = new();
+            using ByteWriter writer = new();
             writer.WriteObject(prefabWorld);
 
             using World world = CreateWorld();
@@ -87,7 +87,7 @@ namespace Worlds.Tests
             uint c = world.CreateEntity();
             world.AddComponent(c, new Cherry("Goodbye, World!"));
 
-            using BinaryReader reader = new(writer);
+            using ByteReader reader = new(writer);
             using World loadedWorld = reader.ReadObject<World>();
             world.Append(loadedWorld);
 
@@ -119,11 +119,11 @@ namespace Worlds.Tests
             prefabWorld.AddComponent(a, new Cherry("Hello, World!"));
             prefabWorld.AddTag<IsPrefab>(a);
 
-            using BinaryWriter writer = new();
+            using ByteWriter writer = new();
             writer.WriteObject(prefabWorld);
             prefabWorld.Dispose();
 
-            using BinaryReader reader = new(writer);
+            using ByteReader reader = new(writer);
             using World loadedWorld = reader.ReadObject<World>();
 
             Schema loadedSchema = loadedWorld.Schema;
@@ -147,10 +147,10 @@ namespace Worlds.Tests
             prefabWorld.AddComponent(a, new Cherry("Hello, World!"));
             prefabWorld.AddTag<IsPrefab>(a);
 
-            using BinaryWriter writer = new();
+            using ByteWriter writer = new();
             writer.WriteObject(prefabWorld);
 
-            using BinaryReader reader = new(writer);
+            using ByteReader reader = new(writer);
             using World loadedWorld = World.Deserialize(reader, Process);
 
             Schema loadedSchema = loadedWorld.Schema;

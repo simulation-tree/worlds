@@ -1302,7 +1302,7 @@ namespace Worlds
             return ((nint)schema).GetHashCode();
         }
 
-        readonly void ISerializable.Write(BinaryWriter writer)
+        readonly void ISerializable.Write(ByteWriter writer)
         {
             writer.WriteValue(schema->componentCount);
             writer.WriteValue(schema->arraysCount);
@@ -1320,7 +1320,7 @@ namespace Worlds
             writer.WriteSpan(tagTypeHashes);
         }
 
-        void ISerializable.Read(BinaryReader reader)
+        void ISerializable.Read(ByteReader reader)
         {
             schema = Implementation.Allocate();
             schema->componentCount = reader.ReadValue<byte>();

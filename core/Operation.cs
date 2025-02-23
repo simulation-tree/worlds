@@ -479,7 +479,7 @@ namespace Worlds
             return new(Implementation.Allocate());
         }
 
-        readonly void ISerializable.Write(BinaryWriter writer)
+        readonly void ISerializable.Write(ByteWriter writer)
         {
             writer.WriteValue(operation->count);
             writer.WriteValue(operation->bytesLength);
@@ -487,7 +487,7 @@ namespace Worlds
             writer.WriteSpan(operation->buffer.AsSpan(0, operation->bytesLength));
         }
 
-        void ISerializable.Read(BinaryReader reader)
+        void ISerializable.Read(ByteReader reader)
         {
             uint count = reader.ReadValue<uint>();
             uint bytesLength = reader.ReadValue<uint>();
