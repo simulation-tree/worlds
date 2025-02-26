@@ -4,46 +4,80 @@ using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Unmanaged;
+using Pointer = Worlds.Pointers.Chunk;
 
 namespace Worlds
 {
     /// <summary>
     /// Stores components of entities with the same component, array and tags.
     /// </summary>
+    [SkipLocalsInit]
     public unsafe struct Chunk : IDisposable, IEquatable<Chunk>
     {
-        private Implementation* value;
+        private Pointer* chunk;
 
         /// <summary>
         /// Checks if this chunk is disposed.
         /// </summary>
-        public readonly bool IsDisposed => value is null;
+        public readonly bool IsDisposed => chunk is null;
 
         /// <summary>
         /// Native address of this chunk.
         /// </summary>
-        public readonly nint Address => (nint)value;
+        public readonly nint Address => (nint)chunk;
 
         /// <summary>
         /// Returns the entities in this chunk.
         /// </summary>
-        public readonly USpan<uint> Entities => value->entities.AsSpan();
+        public readonly USpan<uint> Entities
+        {
+            get
+            {
+                Allocations.ThrowIfNull(chunk);
+
+                return chunk->entities.AsSpan();
+            }
+        }
 
         /// <summary>
         /// Amount of entities stored in this chunk.
         /// </summary>
-        public readonly uint Count => value->entities.Count;
+        public readonly uint Count
+        {
+            get
+            {
+                Allocations.ThrowIfNull(chunk);
+
+                return chunk->entities.Count;
+            }
+        }
 
         /// <summary>
         /// Returns the definition representing the types of components, arrays and tags
         /// this chunk is for.
         /// </summary>
-        public readonly Definition Definition => value->definition;
+        public readonly Definition Definition
+        {
+            get
+            {
+                Allocations.ThrowIfNull(chunk);
+
+                return chunk->definition;
+            }
+        }
 
         /// <summary>
         /// The schema that this chunk was created with.
         /// </summary>
-        public readonly Schema Schema => value->schema;
+        public readonly Schema Schema
+        {
+            get
+            {
+                Allocations.ThrowIfNull(chunk);
+
+                return chunk->schema;
+            }
+        }
 
         public readonly uint this[uint index] => Entities[index];
 
@@ -59,7 +93,13 @@ namespace Worlds
         /// </summary>
         public Chunk(Schema schema)
         {
-            value = Implementation.Allocate(default, schema);
+            Array<List> componentArrays = new(BitMask.Capacity);
+            ref Pointer chunk = ref Allocations.Allocate<Pointer>();
+            chunk = new(default, componentArrays, new(0), schema);
+            fixed (Pointer* pointer = &chunk)
+            {
+                this.chunk = pointer;
+            }
         }
 
         /// <summary>
@@ -67,13 +107,53 @@ namespace Worlds
         /// </summary>
         public Chunk(Definition definition, Schema schema)
         {
-            value = Implementation.Allocate(definition, schema);
+            Array<List> componentArrays = new(BitMask.Capacity);
+            USpan<byte> typeIndices = stackalloc byte[(int)BitMask.Capacity];
+            byte typeCount = 0;
+            for (uint c = 0; c < BitMask.Capacity; c++)
+            {
+                if (definition.ComponentTypes.Contains(c))
+                {
+                    ComponentType componentType = new(c);
+                    ushort componentSize = schema.GetSize(componentType);
+                    componentArrays[c] = new(4, componentSize);
+                    typeIndices[typeCount++] = (byte)c;
+                }
+            }
+
+            ref Pointer chunk = ref Allocations.Allocate<Pointer>();
+            chunk = new(definition, componentArrays, new(typeIndices.GetSpan(typeCount)), schema);
+            fixed (Pointer* pointer = &chunk)
+            {
+                this.chunk = pointer;
+            }
         }
 
         /// <inheritdoc/>
         public void Dispose()
         {
-            Implementation.Free(ref value);
+            Allocations.ThrowIfNull(chunk);
+
+            chunk->entities.Dispose();
+            uint typeCount = chunk->typeIndices.Length;
+            for (uint t = 0; t < typeCount; t++)
+            {
+                List components = chunk->componentLists[chunk->typeIndices[t]];
+                components.Dispose();
+            }
+
+            chunk->componentLists.Dispose();
+            chunk->typeIndices.Dispose();
+            Allocations.Free(ref chunk);
+        }
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfComponentTypeIsMissing(ComponentType componentType)
+        {
+            if (!chunk->definition.ComponentTypes.Contains(componentType))
+            {
+                throw new ArgumentException($"Component type `{componentType.ToString(chunk->schema)}` is missing from the chunk");
+            }
         }
 
         /// <inheritdoc/>
@@ -128,7 +208,17 @@ namespace Worlds
         /// </summary>
         public readonly uint AddEntity(uint entity)
         {
-            return Implementation.Add(value, entity);
+            Allocations.ThrowIfNull(chunk);
+
+            chunk->entities.Add(entity);
+            uint typeCount = chunk->typeIndices.Length;
+            for (uint t = 0; t < typeCount; t++)
+            {
+                List components = chunk->componentLists[chunk->typeIndices[t]];
+                components.AddDefault();
+            }
+
+            return chunk->entities.Count - 1;
         }
 
         /// <summary>
@@ -136,7 +226,16 @@ namespace Worlds
         /// </summary>
         public readonly void RemoveEntity(uint entity)
         {
-            Implementation.Remove(value, entity);
+            Allocations.ThrowIfNull(chunk);
+
+            uint index = chunk->entities.IndexOf(entity);
+            chunk->entities.RemoveAtBySwapping(index);
+            uint typeCount = chunk->typeIndices.Length;
+            for (uint t = 0; t < typeCount; t++)
+            {
+                List components = chunk->componentLists[chunk->typeIndices[t]];
+                components.RemoveAtBySwapping(index);
+            }
         }
 
         /// <summary>
@@ -144,7 +243,39 @@ namespace Worlds
         /// </summary>
         public readonly uint MoveEntity(uint entity, Chunk destination)
         {
-            return Implementation.Move(value, entity, destination.value);
+            Allocations.ThrowIfNull(chunk);
+            Allocations.ThrowIfNull(destination.chunk);
+
+            uint oldIndex = chunk->entities.IndexOf(entity);
+            chunk->entities.RemoveAtBySwapping(oldIndex);
+            uint newIndex = destination.chunk->entities.Count;
+            destination.chunk->entities.Add(entity);
+
+            //copy from source to destination
+            for (uint t = 0; t < destination.chunk->typeIndices.Length; t++)
+            {
+                byte destinationComponentType = destination.chunk->typeIndices[t];
+                List destinationComponents = destination.chunk->componentLists[destinationComponentType];
+                if (chunk->typeIndices.Contains(destinationComponentType))
+                {
+                    List sourceComponents = chunk->componentLists[destinationComponentType];
+                    Allocation oldComponent = sourceComponents[oldIndex];
+                    destinationComponents.Insert(newIndex, oldComponent);
+                }
+                else
+                {
+                    destinationComponents.AddDefault();
+                }
+            }
+
+            //remove from source
+            for (uint t = 0; t < chunk->typeIndices.Length; t++)
+            {
+                List components = chunk->componentLists[chunk->typeIndices[t]];
+                components.RemoveAtBySwapping(oldIndex);
+            }
+
+            return newIndex;
         }
 
         /// <summary>
@@ -152,7 +283,10 @@ namespace Worlds
         /// </summary>
         public readonly List GetComponents(ComponentType componentType)
         {
-            return Implementation.GetComponents(value, componentType);
+            Allocations.ThrowIfNull(chunk);
+            ThrowIfComponentTypeIsMissing(componentType);
+
+            return chunk->componentLists[componentType];
         }
 
         /// <summary>
@@ -160,8 +294,10 @@ namespace Worlds
         /// </summary>
         public readonly USpan<T> GetComponents<T>(ComponentType componentType) where T : unmanaged
         {
-            List list = Implementation.GetComponents(value, componentType);
-            return list.AsSpan<T>();
+            Allocations.ThrowIfNull(chunk);
+            ThrowIfComponentTypeIsMissing(componentType);
+
+            return chunk->componentLists[componentType].AsSpan<T>();
         }
 
         /// <summary>
@@ -169,8 +305,10 @@ namespace Worlds
         /// </summary>
         public readonly ref T GetComponent<T>(uint index, ComponentType componentType) where T : unmanaged
         {
-            List components = Implementation.GetComponents(value, componentType);
-            return ref components.Get<T>(index);
+            Allocations.ThrowIfNull(chunk);
+            ThrowIfComponentTypeIsMissing(componentType);
+
+            return ref chunk->componentLists[componentType].Get<T>(index);
         }
 
         /// <summary>
@@ -178,8 +316,10 @@ namespace Worlds
         /// </summary>
         public readonly Allocation GetComponent(uint index, ComponentType componentType)
         {
-            List components = Implementation.GetComponents(value, componentType);
-            return components[index];
+            Allocations.ThrowIfNull(chunk);
+            ThrowIfComponentTypeIsMissing(componentType);
+
+            return chunk->componentLists[componentType][index];
         }
 
         /// <summary>
@@ -187,9 +327,12 @@ namespace Worlds
         /// </summary>
         public readonly Allocation GetComponent(uint index, ComponentType componentType, out ushort componentSize)
         {
-            List components = Implementation.GetComponents(value, componentType);
+            Allocations.ThrowIfNull(chunk);
+            ThrowIfComponentTypeIsMissing(componentType);
+
+            List components = chunk->componentLists[componentType];
             componentSize = (ushort)components.Stride;
-            return components[index];
+            return chunk->componentLists[componentType][index];
         }
 
         public readonly override bool Equals(object? obj)
@@ -199,7 +342,7 @@ namespace Worlds
 
         public readonly bool Equals(Chunk other)
         {
-            return (nint)value == (nint)other.value;
+            return (nint)chunk == (nint)other.chunk;
         }
 
         public static bool operator ==(Chunk left, Chunk right)
@@ -210,16 +353,6 @@ namespace Worlds
         public static bool operator !=(Chunk left, Chunk right)
         {
             return !(left == right);
-        }
-
-        public readonly ref struct Entity
-        {
-            public readonly uint entity;
-
-            public Entity(uint entity)
-            {
-                this.entity = entity;
-            }
         }
 
         public readonly ref struct Entity<C1> where C1 : unmanaged
@@ -1562,169 +1695,6 @@ namespace Worlds
                     c16 = ptr16;
                 }
 #endif
-            }
-        }
-
-        public struct Implementation
-        {
-            public List<uint> entities;
-            public Array<List> componentLists;
-
-            public readonly Definition definition;
-            public readonly Schema schema;
-            private readonly Array<byte> typeIndices;
-
-            private Implementation(Definition definition, Array<List> componentLists, Array<byte> typeIndices, Schema schema)
-            {
-                entities = new(4);
-                this.typeIndices = typeIndices;
-                this.componentLists = componentLists;
-                this.definition = definition;
-                this.schema = schema;
-            }
-
-            /// <summary>
-            /// Allocates a new <see cref="Implementation"/> with the given <paramref name="definition"/>.
-            /// </summary>
-            [SkipLocalsInit]
-            public static Implementation* Allocate(Definition definition, Schema schema)
-            {
-                Array<List> componentArrays = new(BitMask.Capacity);
-                USpan<byte> typeIndices = stackalloc byte[(int)BitMask.Capacity];
-                byte typeCount = 0;
-                for (uint c = 0; c < BitMask.Capacity; c++)
-                {
-                    if (definition.ComponentTypes.Contains(c))
-                    {
-                        ComponentType componentType = new(c);
-                        ushort componentSize = schema.GetSize(componentType);
-                        componentArrays[c] = new(4, componentSize);
-                        typeIndices[typeCount++] = (byte)c;
-                    }
-                }
-
-                ref Implementation chunk = ref Allocations.Allocate<Implementation>();
-                chunk = new(definition, componentArrays, new(typeIndices.GetSpan(typeCount)), schema);
-                fixed (Implementation* pointer = &chunk)
-                {
-                    return pointer;
-                }
-            }
-
-            /// <summary>
-            /// Frees the given <paramref name="chunk"/>.
-            /// </summary>
-            public static void Free(ref Implementation* chunk)
-            {
-                Allocations.ThrowIfNull(chunk);
-
-                chunk->entities.Dispose();
-                uint typeCount = chunk->typeIndices.Length;
-                for (uint t = 0; t < typeCount; t++)
-                {
-                    List components = chunk->componentLists[chunk->typeIndices[t]];
-                    components.Dispose();
-                }
-
-                chunk->componentLists.Dispose();
-                chunk->typeIndices.Dispose();
-                Allocations.Free(ref chunk);
-            }
-
-            /// <summary>
-            /// Adds a new entity to the chunk.
-            /// </summary>
-            public static uint Add(Implementation* chunk, uint entity)
-            {
-                Allocations.ThrowIfNull(chunk);
-
-                chunk->entities.Add(entity);
-                uint typeCount = chunk->typeIndices.Length;
-                for (uint t = 0; t < typeCount; t++)
-                {
-                    List components = chunk->componentLists[chunk->typeIndices[t]];
-                    components.AddDefault();
-                }
-
-                return chunk->entities.Count - 1;
-            }
-
-            /// <summary>
-            /// Removes the <paramref name="entity"/> from the chunk.
-            /// </summary>
-            public static void Remove(Implementation* chunk, uint entity)
-            {
-                Allocations.ThrowIfNull(chunk);
-
-                uint index = chunk->entities.IndexOf(entity);
-                chunk->entities.RemoveAtBySwapping(index);
-                uint typeCount = chunk->typeIndices.Length;
-                for (uint t = 0; t < typeCount; t++)
-                {
-                    List components = chunk->componentLists[chunk->typeIndices[t]];
-                    components.RemoveAtBySwapping(index);
-                }
-            }
-
-            /// <summary>
-            /// Moves the <paramref name="entity"/> and all of its components to the <paramref name="destination"/> chunk.
-            /// </summary>
-            /// <returns>New local index in the <paramref name="destination"/> chunk.</returns>
-            public static uint Move(Implementation* source, uint entity, Implementation* destination)
-            {
-                Allocations.ThrowIfNull(source);
-                Allocations.ThrowIfNull(destination);
-
-                uint oldIndex = source->entities.IndexOf(entity);
-                source->entities.RemoveAtBySwapping(oldIndex);
-                uint newIndex = destination->entities.Count;
-                destination->entities.Add(entity);
-
-                //copy from source to destination
-                for (uint t = 0; t < destination->typeIndices.Length; t++)
-                {
-                    byte destinationComponentType = destination->typeIndices[t];
-                    List destinationComponents = destination->componentLists[destinationComponentType];
-                    if (source->typeIndices.Contains(destinationComponentType))
-                    {
-                        List sourceComponents = source->componentLists[destinationComponentType];
-                        Allocation oldComponent = sourceComponents[oldIndex];
-                        destinationComponents.Insert(newIndex, oldComponent);
-                    }
-                    else
-                    {
-                        destinationComponents.AddDefault();
-                    }
-                }
-
-                //remove from source
-                for (uint t = 0; t < source->typeIndices.Length; t++)
-                {
-                    List components = source->componentLists[source->typeIndices[t]];
-                    components.RemoveAtBySwapping(oldIndex);
-                }
-
-                return newIndex;
-            }
-
-            /// <summary>
-            /// Retrieves a list of components of the given <paramref name="componentType"/>.
-            /// </summary>
-            public static List GetComponents(Implementation* chunk, ComponentType componentType)
-            {
-                Allocations.ThrowIfNull(chunk);
-                ThrowIfComponentTypeIsMissing(chunk, componentType);
-
-                return chunk->componentLists[componentType];
-            }
-
-            [Conditional("DEBUG")]
-            private static void ThrowIfComponentTypeIsMissing(Implementation* chunk, ComponentType componentType)
-            {
-                if (!chunk->definition.ComponentTypes.Contains(componentType))
-                {
-                    throw new ArgumentException($"Component type `{componentType.ToString(chunk->schema)}` is missing from the chunk");
-                }
             }
         }
     }

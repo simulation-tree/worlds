@@ -38,8 +38,4 @@
 		</ProjectReference>
 	</ItemGroup>
 
-	<ItemGroup>
-	  <Folder Include="Pointers\" />
-	</ItemGroup>
-
 </Project>
