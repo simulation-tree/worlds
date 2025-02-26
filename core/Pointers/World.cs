@@ -9,12 +9,12 @@ namespace Worlds.Pointers
         public readonly Stack<uint> freeEntities;
         public readonly Dictionary<Definition, Worlds.Chunk> chunksMap;
         public readonly List<Worlds.Chunk> uniqueChunks;
-        public readonly Schema schema;
+        public readonly Worlds.Schema schema;
         public readonly List<(EntityCreatedOrDestroyed, ulong)> entityCreatedOrDestroyed;
         public readonly List<(EntityParentChanged, ulong)> entityParentChanged;
         public readonly List<(EntityDataChanged, ulong)> entityDataChanged;
 
-        internal World(Schema schema)
+        internal World(Worlds.Schema schema)
         {
             slots = new(4);
             slots.AddDefault(); //reserved

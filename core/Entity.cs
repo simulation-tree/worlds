@@ -215,17 +215,17 @@ namespace Worlds
             return new Entity(world, world.CloneEntity(value));
         }
 
-        public readonly bool Contains(ComponentType componentType)
+        public readonly bool ContainsComponent(ComponentType componentType)
         {
             return world.ContainsComponent(value, componentType);
         }
 
-        public readonly bool Contains(ArrayElementType arrayElementType)
+        public readonly bool ContainsArray(ArrayElementType arrayElementType)
         {
             return world.ContainsArray(value, arrayElementType);
         }
 
-        public readonly bool Contains(TagType tagType)
+        public readonly bool ContainsTag(TagType tagType)
         {
             return world.ContainsTag(value, tagType);
         }

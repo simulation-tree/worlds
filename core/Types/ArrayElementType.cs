@@ -71,7 +71,7 @@ namespace Worlds
         /// </summary>
         public readonly uint ToString(Schema schema, USpan<char> destination)
         {
-            return schema.GetArrayElementLayout(this).ToString(destination);
+            return schema.GetArrayLayout(this).ToString(destination);
         }
 
         /// <inheritdoc/>
@@ -97,7 +97,7 @@ namespace Worlds
         /// </summary>
         public readonly TypeLayout GetLayout(Schema schema)
         {
-            return schema.GetArrayElementLayout(this);
+            return schema.GetArrayLayout(this);
         }
 
         public static bool operator ==(ArrayElementType left, ArrayElementType right)

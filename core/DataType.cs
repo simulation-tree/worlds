@@ -122,7 +122,7 @@ namespace Worlds
                 ArrayElementType arrayElementType = new(index);
                 if (schema.Contains(arrayElementType))
                 {
-                    return schema.GetArrayElementLayout(arrayElementType).ToString(destination);
+                    return schema.GetArrayLayout(arrayElementType).ToString(destination);
                 }
             }
             else if (kind == Kind.Tag)
@@ -190,27 +190,6 @@ namespace Worlds
         public static bool operator !=(DataType left, DataType right)
         {
             return !(left == right);
-        }
-
-        public static implicit operator ComponentType(DataType type)
-        {
-            type.ThrowIfNotComponent();
-
-            return new(type.index);
-        }
-
-        public static implicit operator ArrayElementType(DataType type)
-        {
-            type.ThrowIfNotArrayElement();
-
-            return new(type.index);
-        }
-
-        public static implicit operator TagType(DataType type)
-        {
-            type.ThrowIfNotTag();
-
-            return new(type.index);
         }
 
         public static implicit operator byte(DataType type)
