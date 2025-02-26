@@ -306,7 +306,7 @@ namespace Worlds.Generator
                                                 continue;
                                             }
 
-                                            if (all.Add(new FoundDataType(DataKind.Component, genericType.GetFullTypeName())))
+                                            if (TryAdd(all, DataKind.Component, genericType.GetFullTypeName()))
                                             {
                                                 source.AppendLine($"// component {descendant} = {genericType.GetFullTypeName()}");
                                             }
@@ -351,7 +351,7 @@ namespace Worlds.Generator
                                                 continue;
                                             }
 
-                                            if (all.Add(new FoundDataType(DataKind.Component, componentType.GetFullTypeName())))
+                                            if (TryAdd(all, DataKind.Component, componentType.GetFullTypeName()))
                                             {
                                                 source.AppendLine($"// component {descendant} = {genericType.GetFullTypeName()}");
                                             }
@@ -408,7 +408,7 @@ namespace Worlds.Generator
                                             continue;
                                         }
 
-                                        if (all.Add(new FoundDataType(DataKind.Component, genericType.GetFullTypeName())))
+                                        if (TryAdd(all, DataKind.Component, genericType.GetFullTypeName()))
                                         {
                                             source.AppendLine($"// component {descendant} = {genericType.GetFullTypeName()}");
                                         }
@@ -450,6 +450,23 @@ namespace Worlds.Generator
             return valid;
         }
 
+        private static bool TryAdd(HashSet<FoundDataType> all, DataKind kind, string fullTypeName)
+        {
+            //todo: the check against data types here is because of methods that accept both a generic, and the data type
+            //need a smarter way to fetch the generic type out
+            if (fullTypeName == "?" || fullTypeName == "Worlds.ComponentType" || fullTypeName == "Worlds.ArrayElementType" || fullTypeName == "Worlds.TagType")
+            {
+                return false;
+            }
+
+            if (all.Add(new FoundDataType(kind, fullTypeName)))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         private static void Handle(SourceBuilder source, HashSet<FoundDataType> all, SemanticModel semanticModel, bool isEntity, InvocationExpressionSyntax invocationExpression)
         {
             //source.AppendLine($"// 1111 {typeDeclaration?.Identifier}: {invocationExpression.GetType()} + {invocationExpression.Expression.GetType()} + {invocationExpression};");
@@ -471,7 +488,7 @@ namespace Worlds.Generator
                                 continue;
                             }
 
-                            if (all.Add(new FoundDataType(DataKind.Component, genericType.GetFullTypeName())))
+                            if (TryAdd(all, DataKind.Component, genericType.GetFullTypeName()))
                             {
                                 source.AppendLine($"// component {invocationExpression} = {genericType.GetFullTypeName()}");
                             }
@@ -487,7 +504,7 @@ namespace Worlds.Generator
                                 continue;
                             }
 
-                            if (all.Add(new FoundDataType(DataKind.ArrayElement, genericType.GetFullTypeName())))
+                            if (TryAdd(all, DataKind.ArrayElement, genericType.GetFullTypeName()))
                             {
                                 source.AppendLine($"// array {invocationExpression} = {genericType.GetFullTypeName()}");
                             }
@@ -503,7 +520,7 @@ namespace Worlds.Generator
                                 continue;
                             }
 
-                            if (all.Add(new FoundDataType(DataKind.Tag, genericType.GetFullTypeName())))
+                            if (TryAdd(all, DataKind.Tag, genericType.GetFullTypeName()))
                             {
                                 source.AppendLine($"// tag {invocationExpression} = {genericType.GetFullTypeName()}");
                             }
@@ -584,7 +601,7 @@ namespace Worlds.Generator
                                                 continue;
                                             }
 
-                                            if (all.Add(new FoundDataType(DataKind.Component, genericType.GetFullTypeName())))
+                                            if (TryAdd(all, DataKind.Component, genericType.GetFullTypeName()))
                                             {
                                                 source.AppendLine($"// component {invocationExpression} = {genericType.GetFullTypeName()}");
                                             }
@@ -602,7 +619,7 @@ namespace Worlds.Generator
                                                 continue;
                                             }
 
-                                            if (all.Add(new FoundDataType(DataKind.Component, genericType.GetFullTypeName())))
+                                            if (TryAdd(all, DataKind.Component, genericType.GetFullTypeName()))
                                             {
                                                 source.AppendLine($"// component {invocationExpression} = {genericType.GetFullTypeName()}");
                                             }
@@ -624,7 +641,7 @@ namespace Worlds.Generator
                                                 continue;
                                             }
 
-                                            if (all.Add(new FoundDataType(DataKind.ArrayElement, genericType.GetFullTypeName())))
+                                            if (TryAdd(all, DataKind.ArrayElement, genericType.GetFullTypeName()))
                                             {
                                                 source.AppendLine($"// array {invocationExpression} = {genericType.GetFullTypeName()}");
                                             }
@@ -650,7 +667,7 @@ namespace Worlds.Generator
                                             fullTypeName = fullTypeName.Substring(USpanStart.Length, fullTypeName.Length - USpanStart.Length - 1);
                                         }
 
-                                        if (all.Add(new FoundDataType(DataKind.ArrayElement, fullTypeName)))
+                                        if (TryAdd(all, DataKind.ArrayElement, fullTypeName))
                                         {
                                             source.AppendLine($"// array {invocationExpression} = {genericType.GetFullTypeName()}");
                                         }
@@ -669,7 +686,7 @@ namespace Worlds.Generator
                                             continue;
                                         }
 
-                                        if (all.Add(new FoundDataType(DataKind.Tag, genericType.GetFullTypeName())))
+                                        if (TryAdd(all, DataKind.Tag, genericType.GetFullTypeName()))
                                         {
                                             source.AppendLine($"// tag {invocationExpression} = {genericType.GetFullTypeName()}");
                                         }

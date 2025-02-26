@@ -334,7 +334,7 @@ namespace Worlds
         {
             USpan<char> buffer = stackalloc char[(int)Capacity];
             uint length = ToString(buffer);
-            return buffer.Slice(0, length).ToString();
+            return buffer.GetSpan(length).ToString();
         }
 
         /// <summary>
@@ -382,13 +382,16 @@ namespace Worlds
         /// </summary>
         public readonly bool Contains(byte index)
         {
-            return index switch
+            unchecked
             {
-                < 64 => (a & 1UL << index) != 0,
-                < 128 => (b & 1UL << index - 64) != 0,
-                < 192 => (c & 1UL << index - 128) != 0,
-                _ => (d & 1UL << index - 192) != 0,
-            };
+                return index switch
+                {
+                    < 64 => (a & 1UL << index) != 0,
+                    < 128 => (b & 1UL << index - 64) != 0,
+                    < 192 => (c & 1UL << index - 128) != 0,
+                    _ => (d & 1UL << index - 192) != 0,
+                };
+            }
         }
 
         /// <summary>
@@ -396,13 +399,16 @@ namespace Worlds
         /// </summary>
         public readonly bool Contains(uint index)
         {
-            return index switch
+            unchecked
             {
-                < 64 => (a & 1UL << (int)index) != 0,
-                < 128 => (b & 1UL << (int)index - 64) != 0,
-                < 192 => (c & 1UL << (int)index - 128) != 0,
-                _ => (d & 1UL << (int)index - 192) != 0,
-            };
+                return index switch
+                {
+                    < 64 => (a & 1UL << (int)index) != 0,
+                    < 128 => (b & 1UL << (int)index - 64) != 0,
+                    < 192 => (c & 1UL << (int)index - 128) != 0,
+                    _ => (d & 1UL << (int)index - 192) != 0,
+                };
+            }
         }
 
         /// <summary>
@@ -410,20 +416,23 @@ namespace Worlds
         /// </summary>
         public void Set(byte index)
         {
-            switch (index)
+            unchecked
             {
-                case < 64:
-                    a |= 1UL << index;
-                    break;
-                case < 128:
-                    b |= 1UL << index - 64;
-                    break;
-                case < 192:
-                    c |= 1UL << index - 128;
-                    break;
-                default:
-                    d |= 1UL << index - 192;
-                    break;
+                switch (index)
+                {
+                    case < 64:
+                        a |= 1UL << index;
+                        break;
+                    case < 128:
+                        b |= 1UL << index - 64;
+                        break;
+                    case < 192:
+                        c |= 1UL << index - 128;
+                        break;
+                    default:
+                        d |= 1UL << index - 192;
+                        break;
+                }
             }
         }
 
@@ -432,20 +441,23 @@ namespace Worlds
         /// </summary>
         public void Set(uint index)
         {
-            switch (index)
+            unchecked
             {
-                case < 64:
-                    a |= 1UL << (int)index;
-                    break;
-                case < 128:
-                    b |= 1UL << (int)index - 64;
-                    break;
-                case < 192:
-                    c |= 1UL << (int)index - 128;
-                    break;
-                default:
-                    d |= 1UL << (int)index - 192;
-                    break;
+                switch (index)
+                {
+                    case < 64:
+                        a |= 1UL << (int)index;
+                        break;
+                    case < 128:
+                        b |= 1UL << (int)index - 64;
+                        break;
+                    case < 192:
+                        c |= 1UL << (int)index - 128;
+                        break;
+                    default:
+                        d |= 1UL << (int)index - 192;
+                        break;
+                }
             }
         }
 
@@ -465,20 +477,23 @@ namespace Worlds
         /// </summary>
         public void Clear(byte index)
         {
-            switch (index)
+            unchecked
             {
-                case < 64:
-                    a &= ~(1UL << index);
-                    break;
-                case < 128:
-                    b &= ~(1UL << index - 64);
-                    break;
-                case < 192:
-                    c &= ~(1UL << index - 128);
-                    break;
-                default:
-                    d &= ~(1UL << index - 192);
-                    break;
+                switch (index)
+                {
+                    case < 64:
+                        a &= ~(1UL << index);
+                        break;
+                    case < 128:
+                        b &= ~(1UL << index - 64);
+                        break;
+                    case < 192:
+                        c &= ~(1UL << index - 128);
+                        break;
+                    default:
+                        d &= ~(1UL << index - 192);
+                        break;
+                }
             }
         }
 

@@ -1,4 +1,5 @@
 ﻿using Collections;
+using Collections.Generic;
 using System;
 using Types;
 using Unmanaged;
@@ -854,7 +855,7 @@ namespace Worlds
                 operation.count = 0;
                 operation.bytesLength = 0;
                 operation.bytesCapacity = minimumCapacity;
-                operation.buffer = new(minimumCapacity);
+                operation.buffer = Allocation.Create(minimumCapacity);
                 fixed (Implementation* pointer = &operation)
                 {
                     return pointer;

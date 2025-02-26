@@ -75,6 +75,10 @@
 
             Assert.That(c, Is.EqualTo(a));
             Assert.That(world.GetReferenceCount(c), Is.EqualTo(0));
+
+            world.AddReference(c, b);
+
+            Assert.That(world.GetReferenceCount(c), Is.EqualTo(1));
         }
 
         [Test]

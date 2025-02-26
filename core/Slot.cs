@@ -1,5 +1,6 @@
-﻿using Collections;
+﻿using Collections.Generic;
 using System;
+using Array = Collections.Array;
 
 namespace Worlds
 {
@@ -14,7 +15,7 @@ namespace Worlds
         public Chunk chunk;
         public List<uint> children;
         public List<uint> references;
-        public Array<nint> arrays;
+        public Array<Array> arrays;
 
         public readonly Definition Definition => chunk.Definition;
         public readonly bool ContainsArrays => (flags & Flags.ContainsArrays) != 0;
@@ -42,7 +43,8 @@ namespace Worlds
             ContainsReferences = 4,
             ArraysOutdated = 8,
             ChildrenOutdated = 16,
-            ReferencesOutdated = 32
+            ReferencesOutdated = 32,
+            Outdated = ArraysOutdated | ChildrenOutdated | ReferencesOutdated
         }
     }
 }

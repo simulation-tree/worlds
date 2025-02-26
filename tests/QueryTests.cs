@@ -1,7 +1,9 @@
 ﻿using Collections;
+using Collections.Generic;
 using System;
 using System.Diagnostics;
 using Unmanaged;
+using Unmanaged.Tests;
 
 namespace Worlds.Tests
 {
@@ -484,9 +486,16 @@ namespace Worlds.Tests
             Assert.That(entities.Contains(d), Is.True);
         }
 
+#if !DEBUG
         [Test]
         public void BenchmarkMethods()
         {
+            if (IsRunningRemotely())
+            {
+                return;
+            }
+
+            const uint Iterations = 8;
             using World world = CreateWorld();
             BitMask componentTypes = world.Schema.GetComponents<Apple, Berry, Cherry>();
             BitMask otherComponentTypes = world.Schema.GetComponents<Apple, Berry>();
@@ -495,85 +504,53 @@ namespace Worlds.Tests
             ComponentType cherryType = world.Schema.GetComponent<Cherry>();
             uint sampleCount = 120000;
             uint count = 0;
-            Stopwatch stopwatch = Stopwatch.StartNew();
-            for (uint i = 0; i < sampleCount; i++)
+            Benchmark creation = new(() =>
             {
-                if ((i % 9 == 0) || (i % 2 == 0))
+                for (uint i = 0; i < sampleCount; i++)
                 {
-                    if (i % 3 == 0)
+                    if ((i % 9 == 0) || (i % 2 == 0))
                     {
-                        Definition definition = new(componentTypes, default, default);
-                        world.CreateEntity(definition);
-                    }
-                    else
-                    {
-                        Definition definition = new(otherComponentTypes, default, default);
-                        world.CreateEntity(definition);
-                    }
+                        if (i % 3 == 0)
+                        {
+                            Definition definition = new(componentTypes, default, default);
+                            world.CreateEntity(definition);
+                        }
+                        else
+                        {
+                            Definition definition = new(otherComponentTypes, default, default);
+                            world.CreateEntity(definition);
+                        }
 
-                    count++;
+                        count++;
+                    }
                 }
-            }
+            });
 
-            stopwatch.Stop();
-            float creationTime = stopwatch.ElapsedTicks / (float)Stopwatch.Frequency;
-            Console.WriteLine($"Creating {count} entities took {creationTime * 1000}ms");
+            Console.WriteLine($"Creation: {creation.Run(1)}");
 
             using List<(uint, Apple, Berry, Cherry)> results = new();
 
             //benchmark query
             ComponentQuery<Apple, Berry, Cherry> componentQuery = new(world);
-            stopwatch.Restart();
+            Benchmark componentQueryBench = new(() =>
             {
+                results.Clear();
                 foreach (var r in componentQuery)
                 {
                     results.Add((r.entity, r.component1, r.component2, r.component3));
                 }
-            }
+            });
 
-            stopwatch.Stop();
+            Console.WriteLine($"ComponentQuery: {componentQueryBench.Run(Iterations)}");
             uint queryCount = results.Count;
-            float componentQueryTime = stopwatch.ElapsedTicks / (float)Stopwatch.Frequency;
-            Console.WriteLine($"ComponentQuery took {componentQueryTime * 1000}ms");
 
             //benchmarking manually iterating over map
-            results.Clear();
-            stopwatch.Restart();
+            Benchmark manualOverMap = new(() =>
             {
+                results.Clear();
                 Dictionary<Definition, Chunk> chunks = world.ChunksMap;
-                foreach (Definition key in chunks.Keys)
+                foreach (Chunk chunk in chunks.Values)
                 {
-                    if (key.ComponentTypes.ContainsAll(componentTypes))
-                    {
-                        Chunk chunk = chunks[key];
-                        USpan<uint> entities = chunk.Entities;
-                        USpan<Apple> apples = chunk.GetComponents<Apple>(appleType);
-                        USpan<Berry> berries = chunk.GetComponents<Berry>(berryType);
-                        USpan<Cherry> cherries = chunk.GetComponents<Cherry>(cherryType);
-                        for (uint e = 0; e < entities.Length; e++)
-                        {
-                            uint entity = entities[e];
-                            ref Apple apple = ref apples[e];
-                            ref Berry berry = ref berries[e];
-                            ref Cherry cherry = ref cherries[e];
-                            results.Add((entity, apple, berry, cherry));
-                        }
-                    }
-                }
-            }
-
-            stopwatch.Stop();
-            Assert.That(results.Count, Is.EqualTo(queryCount));
-            float manualOverMapTime = stopwatch.ElapsedTicks / (float)Stopwatch.Frequency;
-            Console.WriteLine($"Manual iteration over map took {manualOverMapTime * 1000}ms");
-
-            //benchmarking manually iterating over list
-            results.Clear();
-            stopwatch.Restart();
-            {
-                for (uint i = 0; i < world.Chunks.Length; i++)
-                {
-                    Chunk chunk = world.Chunks[i];
                     if (chunk.Definition.ComponentTypes.ContainsAll(componentTypes))
                     {
                         USpan<uint> entities = chunk.Entities;
@@ -590,17 +567,42 @@ namespace Worlds.Tests
                         }
                     }
                 }
-            }
+            });
 
-            stopwatch.Stop();
+            Console.WriteLine($"Iteration over map: {manualOverMap.Run(Iterations)}");
             Assert.That(results.Count, Is.EqualTo(queryCount));
-            float manualOverListTime = stopwatch.ElapsedTicks / (float)Stopwatch.Frequency;
-            Console.WriteLine($"Manual iteration over list took {manualOverListTime * 1000}ms");
+
+            //benchmarking manually iterating over list
+            Benchmark manualOverSpan = new(() =>
+            {
+                results.Clear();
+                foreach (Chunk chunk in world.Chunks)
+                {
+                    if (chunk.Definition.ComponentTypes.ContainsAll(componentTypes))
+                    {
+                        USpan<uint> entities = chunk.Entities;
+                        USpan<Apple> apples = chunk.GetComponents<Apple>(appleType);
+                        USpan<Berry> berries = chunk.GetComponents<Berry>(berryType);
+                        USpan<Cherry> cherries = chunk.GetComponents<Cherry>(cherryType);
+                        for (uint e = 0; e < entities.Length; e++)
+                        {
+                            uint entity = entities[e];
+                            ref Apple apple = ref apples[e];
+                            ref Berry berry = ref berries[e];
+                            ref Cherry cherry = ref cherries[e];
+                            results.Add((entity, apple, berry, cherry));
+                        }
+                    }
+                }
+            });
+
+            Console.WriteLine($"Iteration over span: {manualOverSpan.Run(Iterations)}");
+            Assert.That(results.Count, Is.EqualTo(queryCount));
 
             //benchmarking with query type
-            results.Clear();
-            stopwatch.Restart();
+            Benchmark queryBench = new(() =>
             {
+                results.Clear();
                 Query query = new(world);
                 query.RequireComponents(componentTypes);
                 foreach (uint entity in query)
@@ -610,17 +612,11 @@ namespace Worlds.Tests
                     ref Cherry cherry = ref world.GetComponent<Cherry>(entity);
                     results.Add((entity, apple, berry, cherry));
                 }
-            }
+            });
 
-            stopwatch.Stop();
+            Console.WriteLine($"Query: {queryBench.Run(1)}");
             Assert.That(results.Count, Is.EqualTo(queryCount));
-            float queryTime = stopwatch.ElapsedTicks / (float)Stopwatch.Frequency;
-            Console.WriteLine($"Query took {queryTime * 1000}ms");
-
-            //print ratios
-            Console.WriteLine($"Manual over map vs component query  : {manualOverMapTime / componentQueryTime}x");
-            Console.WriteLine($"Manual over list vs component query : {manualOverListTime / componentQueryTime}x");
-            Console.WriteLine($"Query vs component query            : {queryTime / componentQueryTime}x");
         }
+#endif
     }
 }

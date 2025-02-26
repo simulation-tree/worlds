@@ -1382,8 +1382,8 @@ namespace Worlds
 
             public static Implementation* Allocate()
             {
-                Allocation sizes = new(SizesLength, true);
-                Allocation typeHashes = new(TypeHashesLength, true);
+                Allocation sizes = Allocation.CreateZeroed(SizesLength);
+                Allocation typeHashes = Allocation.CreateZeroed(TypeHashesLength);
                 ref Implementation schema = ref Allocations.Allocate<Implementation>();
                 schema = new(sizes, typeHashes, globalSchemaCount);
                 globalSchemaCount++;
@@ -1424,7 +1424,7 @@ namespace Worlds
 
             public static USpan<ushort> GetComponentSizes(Implementation* schema)
             {
-                return schema->sizes.AsSpan<ushort>(0, BitMask.Capacity);
+                return schema->sizes.GetSpan<ushort>(BitMask.Capacity);
             }
 
             public static USpan<ushort> GetArrayElementSizes(Implementation* schema)
@@ -1434,7 +1434,7 @@ namespace Worlds
 
             public static USpan<long> GetComponentTypeHashes(Implementation* schema)
             {
-                return schema->typeHashes.AsSpan<long>(0, BitMask.Capacity);
+                return schema->typeHashes.GetSpan<long>(BitMask.Capacity);
             }
 
             public static USpan<long> GetArrayTypeHashes(Implementation* schema)

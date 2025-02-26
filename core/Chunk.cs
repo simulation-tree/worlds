@@ -1,5 +1,5 @@
 ﻿using Collections;
-using Collections.Implementations;
+using Collections.Generic;
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -81,7 +81,7 @@ namespace Worlds
         {
             USpan<char> buffer = stackalloc char[512];
             uint length = ToString(buffer);
-            return buffer.Slice(0, length).ToString();
+            return buffer.GetSpan(length).ToString();
         }
 
         /// <summary>
@@ -150,7 +150,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the list of all components of the given <paramref name="componentType"/>.
         /// </summary>
-        public readonly List* GetComponents(ComponentType componentType)
+        public readonly List GetComponents(ComponentType componentType)
         {
             return Implementation.GetComponents(value, componentType);
         }
@@ -160,8 +160,8 @@ namespace Worlds
         /// </summary>
         public readonly USpan<T> GetComponents<T>(ComponentType componentType) where T : unmanaged
         {
-            List* list = Implementation.GetComponents(value, componentType);
-            return list->Items.AsSpan<T>(0, list->Count);
+            List list = Implementation.GetComponents(value, componentType);
+            return list.AsSpan<T>();
         }
 
         /// <summary>
@@ -169,17 +169,27 @@ namespace Worlds
         /// </summary>
         public readonly ref T GetComponent<T>(uint index, ComponentType componentType) where T : unmanaged
         {
-            List* components = Implementation.GetComponents(value, componentType);
-            return ref components->Items.ReadElement<T>(index);
+            List components = Implementation.GetComponents(value, componentType);
+            return ref components.Get<T>(index);
         }
 
         /// <summary>
         /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> at <paramref name="index"/>.
         /// </summary>
-        public readonly Allocation GetComponent(uint index, ComponentType componentType, ushort componentSize)
+        public readonly Allocation GetComponent(uint index, ComponentType componentType)
         {
-            List* components = Implementation.GetComponents(value, componentType);
-            return components->Items.Read(index * componentSize);
+            List components = Implementation.GetComponents(value, componentType);
+            return components[index];
+        }
+
+        /// <summary>
+        /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> at <paramref name="index"/>.
+        /// </summary>
+        public readonly Allocation GetComponent(uint index, ComponentType componentType, out ushort componentSize)
+        {
+            List components = Implementation.GetComponents(value, componentType);
+            componentSize = (ushort)components.Stride;
+            return components[index];
         }
 
         public readonly override bool Equals(object? obj)
@@ -1558,13 +1568,13 @@ namespace Worlds
         public struct Implementation
         {
             public List<uint> entities;
-            public Array<nint> componentLists;
+            public Array<List> componentLists;
 
             public readonly Definition definition;
             public readonly Schema schema;
             private readonly Array<byte> typeIndices;
 
-            private Implementation(Definition definition, Array<nint> componentLists, Array<byte> typeIndices, Schema schema)
+            private Implementation(Definition definition, Array<List> componentLists, Array<byte> typeIndices, Schema schema)
             {
                 entities = new(4);
                 this.typeIndices = typeIndices;
@@ -1579,7 +1589,7 @@ namespace Worlds
             [SkipLocalsInit]
             public static Implementation* Allocate(Definition definition, Schema schema)
             {
-                Array<nint> componentArrays = new(BitMask.Capacity);
+                Array<List> componentArrays = new(BitMask.Capacity);
                 USpan<byte> typeIndices = stackalloc byte[(int)BitMask.Capacity];
                 byte typeCount = 0;
                 for (uint c = 0; c < BitMask.Capacity; c++)
@@ -1588,13 +1598,13 @@ namespace Worlds
                     {
                         ComponentType componentType = new(c);
                         ushort componentSize = schema.GetSize(componentType);
-                        componentArrays[c] = (nint)List.Allocate(4, componentSize);
+                        componentArrays[c] = new(4, componentSize);
                         typeIndices[typeCount++] = (byte)c;
                     }
                 }
 
                 ref Implementation chunk = ref Allocations.Allocate<Implementation>();
-                chunk = new(definition, componentArrays, new(typeIndices.Slice(0, typeCount)), schema);
+                chunk = new(definition, componentArrays, new(typeIndices.GetSpan(typeCount)), schema);
                 fixed (Implementation* pointer = &chunk)
                 {
                     return pointer;
@@ -1612,9 +1622,8 @@ namespace Worlds
                 uint typeCount = chunk->typeIndices.Length;
                 for (uint t = 0; t < typeCount; t++)
                 {
-                    ComponentType componentType = new(chunk->typeIndices[t]);
-                    List* components = (List*)chunk->componentLists[componentType];
-                    List.Free(ref components);
+                    List components = chunk->componentLists[chunk->typeIndices[t]];
+                    components.Dispose();
                 }
 
                 chunk->componentLists.Dispose();
@@ -1633,9 +1642,8 @@ namespace Worlds
                 uint typeCount = chunk->typeIndices.Length;
                 for (uint t = 0; t < typeCount; t++)
                 {
-                    ComponentType componentType = new(chunk->typeIndices[t]);
-                    List* list = (List*)chunk->componentLists[componentType];
-                    List.AddDefault(list);
+                    List components = chunk->componentLists[chunk->typeIndices[t]];
+                    components.AddDefault();
                 }
 
                 return chunk->entities.Count - 1;
@@ -1653,9 +1661,8 @@ namespace Worlds
                 uint typeCount = chunk->typeIndices.Length;
                 for (uint t = 0; t < typeCount; t++)
                 {
-                    ComponentType componentType = new(chunk->typeIndices[t]);
-                    List* list = (List*)chunk->componentLists[componentType];
-                    List.RemoveAtBySwapping(list, index);
+                    List components = chunk->componentLists[chunk->typeIndices[t]];
+                    components.RemoveAtBySwapping(index);
                 }
             }
 
@@ -1676,26 +1683,25 @@ namespace Worlds
                 //copy from source to destination
                 for (uint t = 0; t < destination->typeIndices.Length; t++)
                 {
-                    ComponentType destinationComponentType = new(destination->typeIndices[t]);
-                    List* destinationList = (List*)destination->componentLists[destinationComponentType];
+                    byte destinationComponentType = destination->typeIndices[t];
+                    List destinationComponents = destination->componentLists[destinationComponentType];
                     if (source->typeIndices.Contains(destinationComponentType))
                     {
-                        List* sourceList = (List*)source->componentLists[destinationComponentType];
-                        Allocation oldComponent = sourceList->Items.Read(oldIndex * sourceList->stride);
-                        List.Insert(destinationList, newIndex, oldComponent);
+                        List sourceComponents = source->componentLists[destinationComponentType];
+                        Allocation oldComponent = sourceComponents[oldIndex];
+                        destinationComponents.Insert(newIndex, oldComponent);
                     }
                     else
                     {
-                        List.AddDefault(destinationList);
+                        destinationComponents.AddDefault();
                     }
                 }
 
                 //remove from source
                 for (uint t = 0; t < source->typeIndices.Length; t++)
                 {
-                    ComponentType sourceComponentType = new(source->typeIndices[t]);
-                    List* sourceList = (List*)source->componentLists[sourceComponentType];
-                    List.RemoveAtBySwapping(sourceList, oldIndex);
+                    List components = source->componentLists[source->typeIndices[t]];
+                    components.RemoveAtBySwapping(oldIndex);
                 }
 
                 return newIndex;
@@ -1704,12 +1710,12 @@ namespace Worlds
             /// <summary>
             /// Retrieves a list of components of the given <paramref name="componentType"/>.
             /// </summary>
-            public static List* GetComponents(Implementation* chunk, ComponentType componentType)
+            public static List GetComponents(Implementation* chunk, ComponentType componentType)
             {
                 Allocations.ThrowIfNull(chunk);
                 ThrowIfComponentTypeIsMissing(chunk, componentType);
 
-                return (List*)chunk->componentLists[componentType];
+                return chunk->componentLists[componentType];
             }
 
             [Conditional("DEBUG")]

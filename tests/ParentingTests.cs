@@ -38,6 +38,24 @@
 
             Assert.That(world.GetChildCount(a), Is.EqualTo(0));
             Assert.That(world.GetChildCount(b), Is.EqualTo(1));
+
+            world.DestroyEntity(c);
+
+            Assert.That(world.GetChildCount(b), Is.EqualTo(0));
+
+            world.SetParent(b, a);
+
+            Assert.That(world.GetChildCount(a), Is.EqualTo(1));
+
+            world.DestroyEntity(a);
+            uint d = world.CreateEntity();
+            uint e = world.CreateEntity();
+
+            Assert.That(world.GetChildCount(d), Is.EqualTo(0));
+
+            world.SetParent(e, d);
+
+            Assert.That(world.GetChildCount(d), Is.EqualTo(1));
         }
 
         [Test]

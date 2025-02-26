@@ -9,23 +9,29 @@ namespace Worlds.Tests
         public void DestroyEntityWithArray()
         {
             World world = CreateWorld();
-            uint entity = world.CreateEntity();
-            USpan<SimpleComponent> list = world.CreateArray<SimpleComponent>(entity, 2);
+            uint a = world.CreateEntity();
+            USpan<SimpleComponent> list = world.CreateArray<SimpleComponent>(a, 2);
             list[0] = new("Hello World 1");
             list[1] = new("Hello World 2");
-            world.DestroyEntity(entity);
+            world.DestroyEntity(a);
 
-            Assert.That(world.ContainsEntity(entity), Is.False);
+            Assert.That(world.ContainsEntity(a), Is.False);
 #if DEBUG
             Assert.Throws<NullReferenceException>(() =>
             {
-                world.ContainsArray<SimpleComponent>(entity);
+                world.ContainsArray<SimpleComponent>(a);
             });
 #endif
 
-            uint sameEntity = world.CreateEntity();
-            Assert.That(world.ContainsEntity(sameEntity), Is.True);
-            Assert.That(world.ContainsArray<SimpleComponent>(sameEntity), Is.False);
+            uint b = world.CreateEntity();
+            Assert.That(world.ContainsEntity(b), Is.True);
+            Assert.That(world.ContainsArray<SimpleComponent>(b), Is.False);
+
+            world.CreateArray<SimpleComponent>(b, 2);
+
+            Assert.That(world.ContainsArray<SimpleComponent>(b), Is.True);
+            Assert.That(world.GetArrayLength<SimpleComponent>(b), Is.EqualTo(2));
+
             world.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }
