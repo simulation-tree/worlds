@@ -40,6 +40,8 @@ namespace Worlds.Generator
             builder.AppendLine("using System.Threading;");
             builder.AppendLine("using System.Threading.Tasks;");
             builder.AppendLine("using Unmanaged;");
+            builder.AppendLine("using Collections.Generic;");
+            builder.AppendLine("using Array = Collections.Array;");
             builder.AppendLine();
 
             //inside a namespace if needed

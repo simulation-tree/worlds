@@ -61,7 +61,7 @@ namespace Worlds.Tests
 
             Assert.That(loadedWorld.ContainsEntity(list), Is.True);
             Assert.That(loadedWorld.ContainsArray<Character>(list), Is.True);
-            Assert.That(loadedWorld.GetArray<Character>(list).As<char>().ToString(), Is.EqualTo("Well hello there list"));
+            Assert.That(loadedWorld.GetArray<Character>(list).AsSpan().As<char>().ToString(), Is.EqualTo("Well hello there list"));
         }
 
         [Test]

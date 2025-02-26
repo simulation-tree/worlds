@@ -3,6 +3,7 @@ using Collections.Generic;
 using System;
 using Types;
 using Unmanaged;
+using Array = Collections.Array;
 
 namespace Worlds
 {
@@ -660,8 +661,8 @@ namespace Worlds
                     USpan<byte> elements = operation.ReadBytes(layout.Size * arrayLength, ref bytePosition);
                     for (uint i = 0; i < selection.Count; i++)
                     {
-                        Allocation array = world.CreateArray(selection[i], elementType, arrayLength);
-                        array.Write(0, elements);
+                        Array array = world.CreateArray(selection[i], elementType, arrayLength);
+                        array.Items.Write(0, elements);
                     }
                 }
                 else
@@ -680,7 +681,8 @@ namespace Worlds
                 uint newLength = operation.Read<uint>(ref bytePosition);
                 for (uint i = 0; i < selection.Count; i++)
                 {
-                    world.ResizeArray(selection[i], elementType, newLength);
+                    Array array = world.GetArray(selection[i], elementType);
+                    array.Length = newLength;
                 }
             }
 
@@ -693,8 +695,8 @@ namespace Worlds
                 USpan<byte> elements = operation.ReadBytes(layout.Size * length, ref bytePosition);
                 for (uint i = 0; i < selection.Count; i++)
                 {
-                    Allocation array = world.GetArray(selection[i], elementType, out _);
-                    array.Write(index * layout.Size, elements);
+                    Array array = world.GetArray(selection[i], elementType);
+                    array.Items.Write(index * layout.Size, elements);
                 }
             }
 
@@ -707,13 +709,13 @@ namespace Worlds
                 for (uint i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
-                    Allocation array = world.GetArray(entity, elementType, out uint arrayLength);
-                    if (arrayLength != expectedArrayLength)
+                    Array array = world.GetArray(entity, elementType);
+                    if (array.Length != expectedArrayLength)
                     {
-                        array = world.ResizeArray(entity, elementType, expectedArrayLength);
+                        array.Length = expectedArrayLength;
                     }
 
-                    array.Write(0, elements);
+                    array.Items.Write(0, elements);
                 }
             }
 
@@ -728,18 +730,18 @@ namespace Worlds
                     uint entity = selection[i];
                     if (world.ContainsArray(entity, elementType))
                     {
-                        Allocation array = world.GetArray(entity, elementType, out uint arrayLength);
-                        if (arrayLength != expectedArrayLength)
+                        Array array = world.GetArray(entity, elementType);
+                        if (array.Length != expectedArrayLength)
                         {
-                            array = world.ResizeArray(entity, elementType, expectedArrayLength);
+                            array.Length = expectedArrayLength;
                         }
 
-                        array.Write(0, elements);
+                        array.Items.Write(0, elements);
                     }
                     else
                     {
-                        Allocation array = world.CreateArray(entity, elementType, expectedArrayLength);
-                        array.Write(0, elements);
+                        Array array = world.CreateArray(entity, elementType, expectedArrayLength);
+                        array.Items.Write(0, elements);
                     }
                 }
             }

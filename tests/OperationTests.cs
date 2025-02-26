@@ -95,7 +95,7 @@ namespace Worlds.Tests
             Assert.That(world.GetComponent<TestComponent>(firstEntity).value, Is.EqualTo(4));
             Assert.That(world.GetComponent<TestComponent>(secondEntity).value, Is.EqualTo(5));
             Assert.That(world.GetComponent<TestComponent>(thirdEntity).value, Is.EqualTo(6));
-            Assert.That(world.GetArray<Character>(thirdEntity).As<char>().ToString(), Is.EqualTo("abc"));
+            Assert.That(world.GetArray<Character>(thirdEntity).AsSpan().As<char>().ToString(), Is.EqualTo("abc"));
             Assert.That(world.GetParent(firstEntity), Is.EqualTo(default(uint)));
             Assert.That(world.GetParent(secondEntity), Is.EqualTo(default(uint)));
             Assert.That(world.GetParent(thirdEntity), Is.EqualTo(firstEntity));
@@ -129,7 +129,7 @@ namespace Worlds.Tests
             operation.Perform(world);
 
             uint entity = world[0];
-            USpan<Character> list = world.GetArray<Character>(entity);
+            USpan<Character> list = world.GetArray<Character>(entity).AsSpan();
             Assert.That(list.As<char>().ToString(), Is.EqualTo(testString));
         }
 
@@ -147,7 +147,7 @@ namespace Worlds.Tests
             uint entity = world[0];
             Assert.That(world.ContainsArray<Character>(entity), Is.True);
 
-            USpan<Character> list = world.GetArray<Character>(entity);
+            USpan<Character> list = world.GetArray<Character>(entity).AsSpan();
             Assert.That((char)list[0], Is.EqualTo('a'));
             Assert.That((char)list[1], Is.EqualTo('\0'));
             Assert.That((char)list[2], Is.EqualTo('\0'));
@@ -159,7 +159,7 @@ namespace Worlds.Tests
             operation.SetArrayElements<Character>(1, ['b', 'c']);
 
             operation.Perform(world);
-            list = world.GetArray<Character>(entity);
+            list = world.GetArray<Character>(entity).AsSpan();
             Assert.That((char)list[0], Is.EqualTo('a'));
             Assert.That((char)list[1], Is.EqualTo('b'));
             Assert.That((char)list[2], Is.EqualTo('c'));

@@ -926,41 +926,41 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Creates a new uninitialized array with the given <paramref name="length"/> and <paramref name="arrayElementType"/>.
+        /// Creates a new empty array with the given <paramref name="length"/> and <paramref name="arrayElementType"/>.
         /// </summary>
-        public readonly Allocation CreateArray(uint entity, ArrayElementType arrayElementType, uint length = 0)
+        public readonly Array CreateArray(uint entity, ArrayElementType arrayElementType, uint length = 0)
         {
             ushort arrayElementSize = Schema.GetSize(arrayElementType);
             return Implementation.CreateArray(value, entity, arrayElementType, arrayElementSize, length);
         }
 
         /// <summary>
-        /// Creates a new uninitialized array with the given <paramref name="length"/> and <paramref name="arrayElementType"/>.
+        /// Creates a new empty array with the given <paramref name="length"/> and <paramref name="arrayElementType"/>.
         /// </summary>
-        public readonly Allocation CreateArray(uint entity, DataType arrayElementType, uint length = 0)
+        public readonly Array CreateArray(uint entity, DataType arrayElementType, uint length = 0)
         {
             ushort arrayElementSize = arrayElementType.size;
             return Implementation.CreateArray(value, entity, arrayElementType, arrayElementSize, length);
         }
 
         /// <summary>
-        /// Creates a new uninitialized array on this <paramref name="entity"/>.
+        /// Creates a new empty array on this <paramref name="entity"/>.
         /// </summary>
-        public readonly USpan<T> CreateArray<T>(uint entity, uint length = 0) where T : unmanaged
+        public readonly Array<T> CreateArray<T>(uint entity, uint length = 0) where T : unmanaged
         {
             ArrayElementType arrayElementType = Schema.GetArrayElement<T>();
             ushort arrayElementSize = (ushort)sizeof(T);
-            Allocation array = Implementation.CreateArray(value, entity, arrayElementType, arrayElementSize, length);
-            return array.GetSpan<T>(length);
+            Array array = Implementation.CreateArray(value, entity, arrayElementType, arrayElementSize, length);
+            return array.AsArray<T>();
         }
 
         /// <summary>
-        /// Creates a new array containing the given span.
+        /// Creates a new array containing the given <paramref name="values"/>.
         /// </summary>
         public readonly void CreateArray<T>(uint entity, USpan<T> values) where T : unmanaged
         {
-            USpan<T> array = CreateArray<T>(entity, values.Length);
-            values.CopyTo(array);
+            Array<T> array = CreateArray<T>(entity, values.Length);
+            values.CopyTo(array.AsSpan());
         }
 
         /// <summary>
@@ -991,99 +991,34 @@ namespace Worlds
         /// <summary>
         /// Retrieves the array of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
         /// </summary>
-        public readonly USpan<T> GetArray<T>(uint entity) where T : unmanaged
+        public readonly Array<T> GetArray<T>(uint entity) where T : unmanaged
         {
             ArrayElementType arrayElementType = Schema.GetArrayElement<T>();
-            Allocation array = Implementation.GetArray(value, entity, arrayElementType, out uint length);
-            return array.GetSpan<T>(length);
+            Array array = Implementation.GetArray(value, entity, arrayElementType);
+            return array.AsArray<T>();
         }
 
         /// <summary>
         /// Retrieves the array of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
         /// </summary>
-        public readonly USpan<T> GetArray<T>(uint entity, ArrayElementType arrayType) where T : unmanaged
+        public readonly Array<T> GetArray<T>(uint entity, ArrayElementType arrayType) where T : unmanaged
         {
-            Allocation array = Implementation.GetArray(value, entity, arrayType, out uint length);
-            return array.GetSpan<T>(length);
+            Array array = Implementation.GetArray(value, entity, arrayType);
+            return array.AsArray<T>();
         }
 
         /// <summary>
         /// Retrieves the array of the given <paramref name="arrayElementType"/> from the given <paramref name="entity"/>.
         /// </summary>
-        public readonly Allocation GetArray(uint entity, ArrayElementType arrayElementType, out uint length)
+        public readonly Array GetArray(uint entity, ArrayElementType arrayElementType)
         {
-            return Implementation.GetArray(value, entity, arrayElementType, out length);
-        }
-
-        /// <summary>
-        /// Retrieves the array of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
-        /// </summary>
-        public readonly USpan<T> ResizeArray<T>(uint entity, uint newLength) where T : unmanaged
-        {
-            ArrayElementType arrayElementType = Schema.GetArrayElement<T>();
-            ushort arrayElementSize = (ushort)sizeof(T);
-            Allocation array = Implementation.ResizeArray(value, entity, arrayElementType, arrayElementSize, newLength);
-            return array.GetSpan<T>(newLength);
-        }
-
-        /// <summary>
-        /// Retrieves the array of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
-        /// </summary>
-        public readonly USpan<T> ResizeArray<T>(uint entity, ArrayElementType arrayElementType, uint newLength) where T : unmanaged
-        {
-            ushort arrayElementSize = (ushort)sizeof(T);
-            Allocation array = Implementation.ResizeArray(value, entity, arrayElementType, arrayElementSize, newLength);
-            return array.GetSpan<T>(newLength);
-        }
-
-        /// <summary>
-        /// Resizes the array of type <paramref name="arrayElementType"/> on the given <paramref name="entity"/>.
-        /// </summary>
-        public readonly Allocation ResizeArray(uint entity, ArrayElementType arrayElementType, uint newLength)
-        {
-            ushort arrayElementSize = Schema.GetSize(arrayElementType);
-            return Implementation.ResizeArray(value, entity, arrayElementType, arrayElementSize, newLength);
-        }
-
-        /// <summary>
-        /// Resizes the array of type <paramref name="arrayElementType"/> on the given <paramref name="entity"/>.
-        /// </summary>
-        public readonly Allocation ResizeArray(uint entity, DataType arrayElementType, uint newLength)
-        {
-            ushort arrayElementSize = arrayElementType.size;
-            return Implementation.ResizeArray(value, entity, arrayElementType, arrayElementSize, newLength);
-        }
-
-        /// <summary>
-        /// Resizes the array of type <typeparamref name="T"/> on the given <paramref name="entity"/>.
-        /// </summary>
-        public readonly USpan<T> ExpandArray<T>(uint entity, int deltaChange) where T : unmanaged
-        {
-            ArrayElementType arrayElementType = Schema.GetArrayElement<T>();
-            ushort arrayElementSize = (ushort)sizeof(T);
-            uint length = Implementation.GetArrayLength(value, entity, arrayElementType);
-            uint newLength = (uint)Math.Max(0, length + deltaChange);
-            Allocation array = Implementation.ResizeArray(value, entity, arrayElementType, arrayElementSize, newLength);
-            return array.GetSpan<T>(newLength);
-        }
-
-        /// <summary>
-        /// Increases the length of the array of type <typeparamref name="T"/> on the given <paramref name="entity"/>.
-        /// </summary>
-        public readonly USpan<T> ExpandArray<T>(uint entity, uint lengthIncrement) where T : unmanaged
-        {
-            ArrayElementType arrayElementType = Schema.GetArrayElement<T>();
-            ushort arrayElementSize = (ushort)sizeof(T);
-            uint length = Implementation.GetArrayLength(value, entity, arrayElementType);
-            uint newLength = length + lengthIncrement;
-            Allocation array = Implementation.ResizeArray(value, entity, arrayElementType, arrayElementSize, newLength);
-            return array.GetSpan<T>(newLength);
+            return Implementation.GetArray(value, entity, arrayElementType);
         }
 
         /// <summary>
         /// Attempts to retrieve an array of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
         /// </summary>
-        public readonly bool TryGetArray<T>(uint entity, out USpan<T> array) where T : unmanaged
+        public readonly bool TryGetArray<T>(uint entity, out Array<T> array) where T : unmanaged
         {
             DataType arrayElementType = Schema.GetArrayElementDataType<T>();
             if (ContainsArray(entity, arrayElementType))
@@ -1107,8 +1042,8 @@ namespace Worlds
 
             ArrayElementType arrayElementType = Schema.GetArrayElement<T>();
             Implementation.ThrowIfArrayIsMissing(value, entity, arrayElementType);
-            Allocation array = Implementation.GetArray(value, entity, arrayElementType, out _);
-            return ref array.Read<T>(index * (uint)sizeof(T));
+            Array array = Implementation.GetArray(value, entity, arrayElementType);
+            return ref array.Get<T>(index);
         }
 
         /// <summary>
@@ -1385,13 +1320,13 @@ namespace Worlds
         public readonly object[] GetArrayObject(uint entity, ArrayElementType arrayElementType)
         {
             TypeLayout layout = arrayElementType.GetLayout(Schema);
-            Allocation array = GetArray(entity, arrayElementType, out uint length);
+            Array array = GetArray(entity, arrayElementType);
             ushort size = layout.Size;
-            object[] arrayObject = new object[length];
-            for (uint i = 0; i < length; i++)
+            object[] arrayObject = new object[array.Length];
+            for (uint i = 0; i < array.Length; i++)
             {
-                USpan<byte> bytes = array.AsSpan<byte>(i * size, size);
-                arrayObject[i] = layout.CreateInstance(bytes);
+                Allocation allocation = array[i];
+                arrayObject[i] = layout.CreateInstance(allocation.GetSpan(size));
             }
 
             return arrayObject;
@@ -1541,19 +1476,20 @@ namespace Worlds
                 if (arrayElementTypes.Contains(a))
                 {
                     ArrayElementType arrayElementType = new(a);
-                    Allocation sourceArray = Implementation.GetArray(value, sourceEntity, arrayElementType, out uint sourceLength);
-                    Allocation destinationArray;
+                    Array sourceArray = Implementation.GetArray(value, sourceEntity, arrayElementType);
+                    Array destinationArray;
                     ushort arrayElementSize = schema.GetSize(arrayElementType);
                     if (!destinationWorld.Contains(destinationEntity, arrayElementType))
                     {
-                        destinationArray = Implementation.CreateArray(destinationWorld.value, destinationEntity, arrayElementType, arrayElementSize, sourceLength);
+                        destinationArray = Implementation.CreateArray(destinationWorld.value, destinationEntity, arrayElementType, arrayElementSize, sourceArray.Length);
                     }
                     else
                     {
-                        destinationArray = Implementation.ResizeArray(destinationWorld.value, destinationEntity, arrayElementType, arrayElementSize, sourceLength);
+                        destinationArray = Implementation.GetArray(destinationWorld.value, destinationEntity, arrayElementType);
+                        destinationArray.Length = sourceArray.Length;
                     }
 
-                    sourceArray.CopyTo(destinationArray, sourceLength * arrayElementSize);
+                    sourceArray.AsSpan().CopyTo(destinationArray.AsSpan(), sourceArray.Length * arrayElementSize);
                 }
             }
         }
@@ -1950,9 +1886,9 @@ namespace Worlds
                         if (definition.ArrayElementTypes.Contains(arrayElementType))
                         {
                             writer.WriteValue(arrayElementType);
-                            Allocation array = world.GetArray(e, arrayElementType, out uint length);
-                            writer.WriteValue(length);
-                            writer.WriteSpan(array.GetSpan(length * value->schema.GetSize(arrayElementType)));
+                            Array array = world.GetArray(e, arrayElementType);
+                            writer.WriteValue(array.Length);
+                            writer.WriteSpan(array.AsSpan());
                         }
                     }
 
@@ -2093,9 +2029,10 @@ namespace Worlds
                     {
                         ArrayElementType arrayElementType = reader.ReadValue<ArrayElementType>();
                         uint length = reader.ReadValue<uint>();
-                        Allocation array = CreateArray(value, createdEntity, arrayElementType, schema.GetSize(arrayElementType), length);
-                        USpan<byte> arrayData = reader.ReadSpan<byte>(length * schema.GetSize(arrayElementType));
-                        arrayData.CopyTo(array.GetSpan(length * schema.GetSize(arrayElementType)));
+                        ushort arrayElementSize = schema.GetSize(arrayElementType);
+                        Array array = CreateArray(value, createdEntity, arrayElementType, arrayElementSize, length);
+                        USpan<byte> arrayData = reader.ReadSpan<byte>(length * arrayElementSize);
+                        arrayData.CopyTo(array.AsSpan());
                     }
 
                     //read tags
@@ -2441,7 +2378,7 @@ namespace Worlds
             /// <summary>
             /// Creates an array of the given <paramref name="arrayElementType"/> for the given <paramref name="entity"/>.
             /// </summary>
-            public static Allocation CreateArray(Implementation* world, uint entity, ArrayElementType arrayElementType, ushort arrayElementSize, uint length)
+            public static Array CreateArray(Implementation* world, uint entity, ArrayElementType arrayElementType, ushort arrayElementSize, uint length)
             {
                 Allocations.ThrowIfNull(world);
                 ThrowIfEntityIsMissing(world, entity);
@@ -2486,7 +2423,7 @@ namespace Worlds
                 Array newArray = new(length, arrayElementSize);
                 slot.arrays[(uint)arrayElementType] = newArray;
                 NotifyArrayCreated(new(world), entity, arrayElementType);
-                return newArray.Items;
+                return newArray;
             }
 
             /// <summary>
@@ -2504,16 +2441,14 @@ namespace Worlds
             /// <summary>
             /// Retrieves the array of the given <paramref name="arrayElementType"/> for the given <paramref name="entity"/>.
             /// </summary>
-            public static Allocation GetArray(Implementation* world, uint entity, ArrayElementType arrayElementType, out uint length)
+            public static Array GetArray(Implementation* world, uint entity, ArrayElementType arrayElementType)
             {
                 Allocations.ThrowIfNull(world);
                 ThrowIfEntityIsMissing(world, entity);
                 ThrowIfArrayIsMissing(world, entity, arrayElementType);
 
                 ref Slot slot = ref world->slots[entity];
-                ref Array array = ref slot.arrays[(uint)arrayElementType];
-                length = array.Length;
-                return array.Items;
+                return slot.arrays[(uint)arrayElementType];
             }
 
             /// <summary>
@@ -2527,28 +2462,6 @@ namespace Worlds
 
                 ref Slot slot = ref world->slots[entity];
                 return slot.arrays[(uint)arrayElementType].Length;
-            }
-
-            /// <summary>
-            /// Resizes the array of the given <paramref name="arrayElementType"/> for the given <paramref name="entity"/>.
-            /// </summary>
-            public static Allocation ResizeArray(Implementation* world, uint entity, ArrayElementType arrayElementType, ushort arrayElementSize, uint newLength)
-            {
-                Allocations.ThrowIfNull(world);
-                ThrowIfEntityIsMissing(world, entity);
-                ThrowIfArrayIsMissing(world, entity, arrayElementType);
-
-                ref Slot slot = ref world->slots[entity];
-                ref Array array = ref slot.arrays[(uint)arrayElementType];
-                uint oldLength = array.Length;
-                array.Length = newLength;
-                if (oldLength < newLength)
-                {
-                    array.Clear(oldLength, newLength - oldLength);
-                }
-
-                NotifyArrayResized(new(world), entity, arrayElementType);
-                return array.Items;
             }
 
             /// <summary>

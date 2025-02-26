@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Collections.Generic;
+using System;
 using Unmanaged;
 
 namespace Worlds.Tests
@@ -10,7 +11,7 @@ namespace Worlds.Tests
         {
             World world = CreateWorld();
             uint a = world.CreateEntity();
-            USpan<SimpleComponent> list = world.CreateArray<SimpleComponent>(a, 2);
+            Array<SimpleComponent> list = world.CreateArray<SimpleComponent>(a, 2);
             list[0] = new("Hello World 1");
             list[1] = new("Hello World 2");
             world.DestroyEntity(a);
@@ -53,13 +54,13 @@ namespace Worlds.Tests
         {
             World world = CreateWorld();
             uint entity = world.CreateEntity();
-            USpan<SimpleComponent> list = world.CreateArray<SimpleComponent>(entity, 4);
+            Array<SimpleComponent> list = world.CreateArray<SimpleComponent>(entity, 4);
             list[0] = new("apple");
             Assert.That(list.Length, Is.EqualTo(4));
             world.DestroyEntity(entity);
             uint another = world.CreateEntity(); //same as `entity`
             Assert.That(another, Is.EqualTo(entity));
-            USpan<SimpleComponent> anotherList = world.CreateArray<SimpleComponent>(another, 1);
+            Array<SimpleComponent> anotherList = world.CreateArray<SimpleComponent>(another, 1);
             anotherList[0] = new("banana");
             Assert.That(anotherList.Length, Is.EqualTo(1));
             world.DestroyEntity(another);
@@ -72,16 +73,16 @@ namespace Worlds.Tests
         {
             using World world = CreateWorld();
             uint a = world.CreateEntity();
-            USpan<SimpleComponent> list = world.CreateArray<SimpleComponent>(a, 2);
+            Array<SimpleComponent> list = world.CreateArray<SimpleComponent>(a, 2);
 
             Assert.That(list.Length, Is.EqualTo(2));
 
             list[0] = new("apple");
             list[1] = new("banana");
 
-            list = world.ResizeArray<SimpleComponent>(a, 4);
+            list.Length = 4;
 
-            Assert.That(list.Length, Is.EqualTo(4));
+            Assert.That(world.GetArrayLength<SimpleComponent>(a), Is.EqualTo(4));
             Assert.That(list[0].data.ToString(), Is.EqualTo("apple"));
             Assert.That(list[1].data.ToString(), Is.EqualTo("banana"));
         }

@@ -225,24 +225,14 @@
         world.RemoveComponent(value, componentType);
     }
 
-    public readonly Allocation CreateArray(ArrayElementType arrayElementType, uint length = 0)
+    public readonly Array CreateArray(ArrayElementType arrayElementType, uint length = 0)
     {
         return world.CreateArray(value, arrayElementType, length);
     }
 
-    public readonly Allocation GetArray(ArrayElementType arrayElementType)
+    public readonly Array GetArray(ArrayElementType arrayElementType)
     {
-        return world.GetArray(value, arrayElementType, out _);
-    }
-
-    public readonly Allocation GetArray(ArrayElementType arrayElementType, out uint length)
-    {
-        return world.GetArray(value, arrayElementType, out length);
-    }
-
-    public readonly Allocation ResizeArray(ArrayElementType arrayElementType, uint newLength)
-    {
-        return world.ResizeArray(value, arrayElementType, newLength);
+        return world.GetArray(value, arrayElementType);
     }
 
     public readonly void DestroyArray(ArrayElementType arrayElementType)
@@ -335,17 +325,17 @@
         return ref world.GetArrayElement<T>(value, index);
     }
 
-    public readonly USpan<T> GetArray<T>() where T : unmanaged
+    public readonly Array<T> GetArray<T>() where T : unmanaged
     {
         return world.GetArray<T>(value);
     }
 
-    public readonly USpan<T> GetArray<T>(ArrayElementType arrayType) where T : unmanaged
+    public readonly Array<T> GetArray<T>(ArrayElementType arrayType) where T : unmanaged
     {
         return world.GetArray<T>(value, arrayType);
     }
 
-    public readonly bool TryGetArray<T>(out USpan<T> array) where T : unmanaged
+    public readonly bool TryGetArray<T>(out Array<T> array) where T : unmanaged
     {
         return world.TryGetArray(value, out array);
     }
@@ -355,19 +345,9 @@
         world.CreateArray(value, elements);
     }
 
-    public readonly USpan<T> CreateArray<T>(uint length = 0) where T : unmanaged
+    public readonly Array<T> CreateArray<T>(uint length = 0) where T : unmanaged
     {
         return world.CreateArray<T>(value, length);
-    }
-
-    public readonly USpan<T> ResizeArray<T>(uint newLength) where T : unmanaged
-    {
-        return world.ResizeArray<T>(value, newLength);
-    }
-
-    public readonly USpan<T> ResizeArray<T>(ArrayElementType arrayType, uint newLength) where T : unmanaged
-    {
-        return world.ResizeArray<T>(value, arrayType, newLength);
     }
 
     public readonly void DestroyArray<T>() where T : unmanaged
