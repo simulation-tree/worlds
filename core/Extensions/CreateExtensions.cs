@@ -8,9 +8,8 @@
             DataType componentType1 = schema.GetComponentDataType<T1>();
             BitMask componentTypesMask = default;
             componentTypesMask.Set(componentType1);
-            Definition definition = new(componentTypesMask, default, default);
-            uint entity = world.CreateEntity(definition, out Chunk chunk, out uint index);
-            chunk.GetComponent<T1>(index, componentType1) = component1;
+            uint entity = world.CreateEntity(componentTypesMask, out Chunk chunk, out uint index);
+            chunk.SetComponent(index, componentType1, component1);
             return entity;
         }
 
@@ -22,10 +21,9 @@
             BitMask componentTypesMask = default;
             componentTypesMask.Set(componentType1);
             componentTypesMask.Set(componentType2);
-            Definition definition = new(componentTypesMask, default, default);
-            uint entity = world.CreateEntity(definition, out Chunk chunk, out uint index);
-            chunk.GetComponent<T1>(index, componentType1) = component1;
-            chunk.GetComponent<T2>(index, componentType2) = component2;
+            uint entity = world.CreateEntity(componentTypesMask, out Chunk chunk, out uint index);
+            chunk.SetComponent(index, componentType1, component1);
+            chunk.SetComponent(index, componentType2, component2);
             return entity;
         }
 
@@ -39,11 +37,10 @@
             componentTypesMask.Set(componentType1);
             componentTypesMask.Set(componentType2);
             componentTypesMask.Set(componentType3);
-            Definition definition = new(componentTypesMask, default, default);
-            uint entity = world.CreateEntity(definition, out Chunk chunk, out uint index);
-            chunk.GetComponent<T1>(index, componentType1) = component1;
-            chunk.GetComponent<T2>(index, componentType2) = component2;
-            chunk.GetComponent<T3>(index, componentType3) = component3;
+            uint entity = world.CreateEntity(componentTypesMask, out Chunk chunk, out uint index);
+            chunk.SetComponent(index, componentType1, component1);
+            chunk.SetComponent(index, componentType2, component2);
+            chunk.SetComponent(index, componentType3, component3);
             return entity;
         }
 
@@ -59,12 +56,11 @@
             componentTypesMask.Set(componentType2);
             componentTypesMask.Set(componentType3);
             componentTypesMask.Set(componentType4);
-            Definition definition = new(componentTypesMask, default, default);
-            uint entity = world.CreateEntity(definition, out Chunk chunk, out uint index);
-            chunk.GetComponent<T1>(index, componentType1) = component1;
-            chunk.GetComponent<T2>(index, componentType2) = component2;
-            chunk.GetComponent<T3>(index, componentType3) = component3;
-            chunk.GetComponent<T4>(index, componentType4) = component4;
+            uint entity = world.CreateEntity(componentTypesMask, out Chunk chunk, out uint index);
+            chunk.SetComponent(index, componentType1, component1);
+            chunk.SetComponent(index, componentType2, component2);
+            chunk.SetComponent(index, componentType3, component3);
+            chunk.SetComponent(index, componentType4, component4);
             return entity;
         }
 
@@ -82,13 +78,12 @@
             componentTypesMask.Set(componentType3);
             componentTypesMask.Set(componentType4);
             componentTypesMask.Set(componentType5);
-            Definition definition = new(componentTypesMask, default, default);
-            uint entity = world.CreateEntity(definition, out Chunk chunk, out uint index);
-            chunk.GetComponent<T1>(index, componentType1) = component1;
-            chunk.GetComponent<T2>(index, componentType2) = component2;
-            chunk.GetComponent<T3>(index, componentType3) = component3;
-            chunk.GetComponent<T4>(index, componentType4) = component4;
-            chunk.GetComponent<T5>(index, componentType5) = component5;
+            uint entity = world.CreateEntity(componentTypesMask, out Chunk chunk, out uint index);
+            chunk.SetComponent(index, componentType1, component1);
+            chunk.SetComponent(index, componentType2, component2);
+            chunk.SetComponent(index, componentType3, component3);
+            chunk.SetComponent(index, componentType4, component4);
+            chunk.SetComponent(index, componentType5, component5);
             return entity;
         }
 
@@ -108,14 +103,13 @@
             componentTypesMask.Set(componentType4);
             componentTypesMask.Set(componentType5);
             componentTypesMask.Set(componentType6);
-            Definition definition = new(componentTypesMask, default, default);
-            uint entity = world.CreateEntity(definition, out Chunk chunk, out uint index);
-            chunk.GetComponent<T1>(index, componentType1) = component1;
-            chunk.GetComponent<T2>(index, componentType2) = component2;
-            chunk.GetComponent<T3>(index, componentType3) = component3;
-            chunk.GetComponent<T4>(index, componentType4) = component4;
-            chunk.GetComponent<T5>(index, componentType5) = component5;
-            chunk.GetComponent<T6>(index, componentType6) = component6;
+            uint entity = world.CreateEntity(componentTypesMask, out Chunk chunk, out uint index);
+            chunk.SetComponent(index, componentType1, component1);
+            chunk.SetComponent(index, componentType2, component2);
+            chunk.SetComponent(index, componentType3, component3);
+            chunk.SetComponent(index, componentType4, component4);
+            chunk.SetComponent(index, componentType5, component5);
+            chunk.SetComponent(index, componentType6, component6);
             return entity;
         }
 
@@ -137,15 +131,14 @@
             componentTypesMask.Set(componentType5);
             componentTypesMask.Set(componentType6);
             componentTypesMask.Set(componentType7);
-            Definition definition = new(componentTypesMask, default, default);
-            uint entity = world.CreateEntity(definition, out Chunk chunk, out uint index);
-            chunk.GetComponent<T1>(index, componentType1) = component1;
-            chunk.GetComponent<T2>(index, componentType2) = component2;
-            chunk.GetComponent<T3>(index, componentType3) = component3;
-            chunk.GetComponent<T4>(index, componentType4) = component4;
-            chunk.GetComponent<T5>(index, componentType5) = component5;
-            chunk.GetComponent<T6>(index, componentType6) = component6;
-            chunk.GetComponent<T7>(index, componentType7) = component7;
+            uint entity = world.CreateEntity(componentTypesMask, out Chunk chunk, out uint index);
+            chunk.SetComponent(index, componentType1, component1);
+            chunk.SetComponent(index, componentType2, component2);
+            chunk.SetComponent(index, componentType3, component3);
+            chunk.SetComponent(index, componentType4, component4);
+            chunk.SetComponent(index, componentType5, component5);
+            chunk.SetComponent(index, componentType6, component6);
+            chunk.SetComponent(index, componentType7, component7);
             return entity;
         }
 
@@ -169,16 +162,15 @@
             componentTypesMask.Set(componentType6);
             componentTypesMask.Set(componentType7);
             componentTypesMask.Set(componentType8);
-            Definition definition = new(componentTypesMask, default, default);
-            uint entity = world.CreateEntity(definition, out Chunk chunk, out uint index);
-            chunk.GetComponent<T1>(index, componentType1) = component1;
-            chunk.GetComponent<T2>(index, componentType2) = component2;
-            chunk.GetComponent<T3>(index, componentType3) = component3;
-            chunk.GetComponent<T4>(index, componentType4) = component4;
-            chunk.GetComponent<T5>(index, componentType5) = component5;
-            chunk.GetComponent<T6>(index, componentType6) = component6;
-            chunk.GetComponent<T7>(index, componentType7) = component7;
-            chunk.GetComponent<T8>(index, componentType8) = component8;
+            uint entity = world.CreateEntity(componentTypesMask, out Chunk chunk, out uint index);
+            chunk.SetComponent(index, componentType1, component1);
+            chunk.SetComponent(index, componentType2, component2);
+            chunk.SetComponent(index, componentType3, component3);
+            chunk.SetComponent(index, componentType4, component4);
+            chunk.SetComponent(index, componentType5, component5);
+            chunk.SetComponent(index, componentType6, component6);
+            chunk.SetComponent(index, componentType7, component7);
+            chunk.SetComponent(index, componentType8, component8);
             return entity;
         }
 
@@ -204,17 +196,16 @@
             componentTypesMask.Set(componentType7);
             componentTypesMask.Set(componentType8);
             componentTypesMask.Set(componentType9);
-            Definition definition = new(componentTypesMask, default, default);
-            uint entity = world.CreateEntity(definition, out Chunk chunk, out uint index);
-            chunk.GetComponent<T1>(index, componentType1) = component1;
-            chunk.GetComponent<T2>(index, componentType2) = component2;
-            chunk.GetComponent<T3>(index, componentType3) = component3;
-            chunk.GetComponent<T4>(index, componentType4) = component4;
-            chunk.GetComponent<T5>(index, componentType5) = component5;
-            chunk.GetComponent<T6>(index, componentType6) = component6;
-            chunk.GetComponent<T7>(index, componentType7) = component7;
-            chunk.GetComponent<T8>(index, componentType8) = component8;
-            chunk.GetComponent<T9>(index, componentType9) = component9;
+            uint entity = world.CreateEntity(componentTypesMask, out Chunk chunk, out uint index);
+            chunk.SetComponent(index, componentType1, component1);
+            chunk.SetComponent(index, componentType2, component2);
+            chunk.SetComponent(index, componentType3, component3);
+            chunk.SetComponent(index, componentType4, component4);
+            chunk.SetComponent(index, componentType5, component5);
+            chunk.SetComponent(index, componentType6, component6);
+            chunk.SetComponent(index, componentType7, component7);
+            chunk.SetComponent(index, componentType8, component8);
+            chunk.SetComponent(index, componentType9, component9);
             return entity;
         }
 
@@ -242,18 +233,17 @@
             componentTypesMask.Set(componentType8);
             componentTypesMask.Set(componentType9);
             componentTypesMask.Set(componentType10);
-            Definition definition = new(componentTypesMask, default, default);
-            uint entity = world.CreateEntity(definition, out Chunk chunk, out uint index);
-            chunk.GetComponent<T1>(index, componentType1) = component1;
-            chunk.GetComponent<T2>(index, componentType2) = component2;
-            chunk.GetComponent<T3>(index, componentType3) = component3;
-            chunk.GetComponent<T4>(index, componentType4) = component4;
-            chunk.GetComponent<T5>(index, componentType5) = component5;
-            chunk.GetComponent<T6>(index, componentType6) = component6;
-            chunk.GetComponent<T7>(index, componentType7) = component7;
-            chunk.GetComponent<T8>(index, componentType8) = component8;
-            chunk.GetComponent<T9>(index, componentType9) = component9;
-            chunk.GetComponent<T10>(index, componentType10) = component10;
+            uint entity = world.CreateEntity(componentTypesMask, out Chunk chunk, out uint index);
+            chunk.SetComponent(index, componentType1, component1);
+            chunk.SetComponent(index, componentType2, component2);
+            chunk.SetComponent(index, componentType3, component3);
+            chunk.SetComponent(index, componentType4, component4);
+            chunk.SetComponent(index, componentType5, component5);
+            chunk.SetComponent(index, componentType6, component6);
+            chunk.SetComponent(index, componentType7, component7);
+            chunk.SetComponent(index, componentType8, component8);
+            chunk.SetComponent(index, componentType9, component9);
+            chunk.SetComponent(index, componentType10, component10);
             return entity;
         }
 
@@ -283,19 +273,18 @@
             componentTypesMask.Set(componentType9);
             componentTypesMask.Set(componentType10);
             componentTypesMask.Set(componentType11);
-            Definition definition = new(componentTypesMask, default, default);
-            uint entity = world.CreateEntity(definition, out Chunk chunk, out uint index);
-            chunk.GetComponent<T1>(index, componentType1) = component1;
-            chunk.GetComponent<T2>(index, componentType2) = component2;
-            chunk.GetComponent<T3>(index, componentType3) = component3;
-            chunk.GetComponent<T4>(index, componentType4) = component4;
-            chunk.GetComponent<T5>(index, componentType5) = component5;
-            chunk.GetComponent<T6>(index, componentType6) = component6;
-            chunk.GetComponent<T7>(index, componentType7) = component7;
-            chunk.GetComponent<T8>(index, componentType8) = component8;
-            chunk.GetComponent<T9>(index, componentType9) = component9;
-            chunk.GetComponent<T10>(index, componentType10) = component10;
-            chunk.GetComponent<T11>(index, componentType11) = component11;
+            uint entity = world.CreateEntity(componentTypesMask, out Chunk chunk, out uint index);
+            chunk.SetComponent(index, componentType1, component1);
+            chunk.SetComponent(index, componentType2, component2);
+            chunk.SetComponent(index, componentType3, component3);
+            chunk.SetComponent(index, componentType4, component4);
+            chunk.SetComponent(index, componentType5, component5);
+            chunk.SetComponent(index, componentType6, component6);
+            chunk.SetComponent(index, componentType7, component7);
+            chunk.SetComponent(index, componentType8, component8);
+            chunk.SetComponent(index, componentType9, component9);
+            chunk.SetComponent(index, componentType10, component10);
+            chunk.SetComponent(index, componentType11, component11);
             return entity;
         }
 
@@ -327,20 +316,19 @@
             componentTypesMask.Set(componentType10);
             componentTypesMask.Set(componentType11);
             componentTypesMask.Set(componentType12);
-            Definition definition = new(componentTypesMask, default, default);
-            uint entity = world.CreateEntity(definition, out Chunk chunk, out uint index);
-            chunk.GetComponent<T1>(index, componentType1) = component1;
-            chunk.GetComponent<T2>(index, componentType2) = component2;
-            chunk.GetComponent<T3>(index, componentType3) = component3;
-            chunk.GetComponent<T4>(index, componentType4) = component4;
-            chunk.GetComponent<T5>(index, componentType5) = component5;
-            chunk.GetComponent<T6>(index, componentType6) = component6;
-            chunk.GetComponent<T7>(index, componentType7) = component7;
-            chunk.GetComponent<T8>(index, componentType8) = component8;
-            chunk.GetComponent<T9>(index, componentType9) = component9;
-            chunk.GetComponent<T10>(index, componentType10) = component10;
-            chunk.GetComponent<T11>(index, componentType11) = component11;
-            chunk.GetComponent<T12>(index, componentType12) = component12;
+            uint entity = world.CreateEntity(componentTypesMask, out Chunk chunk, out uint index);
+            chunk.SetComponent(index, componentType1, component1);
+            chunk.SetComponent(index, componentType2, component2);
+            chunk.SetComponent(index, componentType3, component3);
+            chunk.SetComponent(index, componentType4, component4);
+            chunk.SetComponent(index, componentType5, component5);
+            chunk.SetComponent(index, componentType6, component6);
+            chunk.SetComponent(index, componentType7, component7);
+            chunk.SetComponent(index, componentType8, component8);
+            chunk.SetComponent(index, componentType9, component9);
+            chunk.SetComponent(index, componentType10, component10);
+            chunk.SetComponent(index, componentType11, component11);
+            chunk.SetComponent(index, componentType12, component12);
             return entity;
         }
 
@@ -374,21 +362,20 @@
             componentTypesMask.Set(componentType11);
             componentTypesMask.Set(componentType12);
             componentTypesMask.Set(componentType13);
-            Definition definition = new(componentTypesMask, default, default);
-            uint entity = world.CreateEntity(definition, out Chunk chunk, out uint index);
-            chunk.GetComponent<T1>(index, componentType1) = component1;
-            chunk.GetComponent<T2>(index, componentType2) = component2;
-            chunk.GetComponent<T3>(index, componentType3) = component3;
-            chunk.GetComponent<T4>(index, componentType4) = component4;
-            chunk.GetComponent<T5>(index, componentType5) = component5;
-            chunk.GetComponent<T6>(index, componentType6) = component6;
-            chunk.GetComponent<T7>(index, componentType7) = component7;
-            chunk.GetComponent<T8>(index, componentType8) = component8;
-            chunk.GetComponent<T9>(index, componentType9) = component9;
-            chunk.GetComponent<T10>(index, componentType10) = component10;
-            chunk.GetComponent<T11>(index, componentType11) = component11;
-            chunk.GetComponent<T12>(index, componentType12) = component12;
-            chunk.GetComponent<T13>(index, componentType13) = component13;
+            uint entity = world.CreateEntity(componentTypesMask, out Chunk chunk, out uint index);
+            chunk.SetComponent(index, componentType1, component1);
+            chunk.SetComponent(index, componentType2, component2);
+            chunk.SetComponent(index, componentType3, component3);
+            chunk.SetComponent(index, componentType4, component4);
+            chunk.SetComponent(index, componentType5, component5);
+            chunk.SetComponent(index, componentType6, component6);
+            chunk.SetComponent(index, componentType7, component7);
+            chunk.SetComponent(index, componentType8, component8);
+            chunk.SetComponent(index, componentType9, component9);
+            chunk.SetComponent(index, componentType10, component10);
+            chunk.SetComponent(index, componentType11, component11);
+            chunk.SetComponent(index, componentType12, component12);
+            chunk.SetComponent(index, componentType13, component13);
             return entity;
         }
 
@@ -424,22 +411,21 @@
             componentTypesMask.Set(componentType12);
             componentTypesMask.Set(componentType13);
             componentTypesMask.Set(componentType14);
-            Definition definition = new(componentTypesMask, default, default);
-            uint entity = world.CreateEntity(definition, out Chunk chunk, out uint index);
-            chunk.GetComponent<T1>(index, componentType1) = component1;
-            chunk.GetComponent<T2>(index, componentType2) = component2;
-            chunk.GetComponent<T3>(index, componentType3) = component3;
-            chunk.GetComponent<T4>(index, componentType4) = component4;
-            chunk.GetComponent<T5>(index, componentType5) = component5;
-            chunk.GetComponent<T6>(index, componentType6) = component6;
-            chunk.GetComponent<T7>(index, componentType7) = component7;
-            chunk.GetComponent<T8>(index, componentType8) = component8;
-            chunk.GetComponent<T9>(index, componentType9) = component9;
-            chunk.GetComponent<T10>(index, componentType10) = component10;
-            chunk.GetComponent<T11>(index, componentType11) = component11;
-            chunk.GetComponent<T12>(index, componentType12) = component12;
-            chunk.GetComponent<T13>(index, componentType13) = component13;
-            chunk.GetComponent<T14>(index, componentType14) = component14;
+            uint entity = world.CreateEntity(componentTypesMask, out Chunk chunk, out uint index);
+            chunk.SetComponent(index, componentType1, component1);
+            chunk.SetComponent(index, componentType2, component2);
+            chunk.SetComponent(index, componentType3, component3);
+            chunk.SetComponent(index, componentType4, component4);
+            chunk.SetComponent(index, componentType5, component5);
+            chunk.SetComponent(index, componentType6, component6);
+            chunk.SetComponent(index, componentType7, component7);
+            chunk.SetComponent(index, componentType8, component8);
+            chunk.SetComponent(index, componentType9, component9);
+            chunk.SetComponent(index, componentType10, component10);
+            chunk.SetComponent(index, componentType11, component11);
+            chunk.SetComponent(index, componentType12, component12);
+            chunk.SetComponent(index, componentType13, component13);
+            chunk.SetComponent(index, componentType14, component14);
             return entity;
         }
 
@@ -477,23 +463,22 @@
             componentTypesMask.Set(componentType13);
             componentTypesMask.Set(componentType14);
             componentTypesMask.Set(componentType15);
-            Definition definition = new(componentTypesMask, default, default);
-            uint entity = world.CreateEntity(definition, out Chunk chunk, out uint index);
-            chunk.GetComponent<T1>(index, componentType1) = component1;
-            chunk.GetComponent<T2>(index, componentType2) = component2;
-            chunk.GetComponent<T3>(index, componentType3) = component3;
-            chunk.GetComponent<T4>(index, componentType4) = component4;
-            chunk.GetComponent<T5>(index, componentType5) = component5;
-            chunk.GetComponent<T6>(index, componentType6) = component6;
-            chunk.GetComponent<T7>(index, componentType7) = component7;
-            chunk.GetComponent<T8>(index, componentType8) = component8;
-            chunk.GetComponent<T9>(index, componentType9) = component9;
-            chunk.GetComponent<T10>(index, componentType10) = component10;
-            chunk.GetComponent<T11>(index, componentType11) = component11;
-            chunk.GetComponent<T12>(index, componentType12) = component12;
-            chunk.GetComponent<T13>(index, componentType13) = component13;
-            chunk.GetComponent<T14>(index, componentType14) = component14;
-            chunk.GetComponent<T15>(index, componentType15) = component15;
+            uint entity = world.CreateEntity(componentTypesMask, out Chunk chunk, out uint index);
+            chunk.SetComponent(index, componentType1, component1);
+            chunk.SetComponent(index, componentType2, component2);
+            chunk.SetComponent(index, componentType3, component3);
+            chunk.SetComponent(index, componentType4, component4);
+            chunk.SetComponent(index, componentType5, component5);
+            chunk.SetComponent(index, componentType6, component6);
+            chunk.SetComponent(index, componentType7, component7);
+            chunk.SetComponent(index, componentType8, component8);
+            chunk.SetComponent(index, componentType9, component9);
+            chunk.SetComponent(index, componentType10, component10);
+            chunk.SetComponent(index, componentType11, component11);
+            chunk.SetComponent(index, componentType12, component12);
+            chunk.SetComponent(index, componentType13, component13);
+            chunk.SetComponent(index, componentType14, component14);
+            chunk.SetComponent(index, componentType15, component15);
             return entity;
         }
 
@@ -533,24 +518,23 @@
             componentTypesMask.Set(componentType14);
             componentTypesMask.Set(componentType15);
             componentTypesMask.Set(componentType16);
-            Definition definition = new(componentTypesMask, default, default);
-            uint entity = world.CreateEntity(definition, out Chunk chunk, out uint index);
-            chunk.GetComponent<T1>(index, componentType1) = component1;
-            chunk.GetComponent<T2>(index, componentType2) = component2;
-            chunk.GetComponent<T3>(index, componentType3) = component3;
-            chunk.GetComponent<T4>(index, componentType4) = component4;
-            chunk.GetComponent<T5>(index, componentType5) = component5;
-            chunk.GetComponent<T6>(index, componentType6) = component6;
-            chunk.GetComponent<T7>(index, componentType7) = component7;
-            chunk.GetComponent<T8>(index, componentType8) = component8;
-            chunk.GetComponent<T9>(index, componentType9) = component9;
-            chunk.GetComponent<T10>(index, componentType10) = component10;
-            chunk.GetComponent<T11>(index, componentType11) = component11;
-            chunk.GetComponent<T12>(index, componentType12) = component12;
-            chunk.GetComponent<T13>(index, componentType13) = component13;
-            chunk.GetComponent<T14>(index, componentType14) = component14;
-            chunk.GetComponent<T15>(index, componentType15) = component15;
-            chunk.GetComponent<T16>(index, componentType16) = component16;
+            uint entity = world.CreateEntity(componentTypesMask, out Chunk chunk, out uint index);
+            chunk.SetComponent(index, componentType1, component1);
+            chunk.SetComponent(index, componentType2, component2);
+            chunk.SetComponent(index, componentType3, component3);
+            chunk.SetComponent(index, componentType4, component4);
+            chunk.SetComponent(index, componentType5, component5);
+            chunk.SetComponent(index, componentType6, component6);
+            chunk.SetComponent(index, componentType7, component7);
+            chunk.SetComponent(index, componentType8, component8);
+            chunk.SetComponent(index, componentType9, component9);
+            chunk.SetComponent(index, componentType10, component10);
+            chunk.SetComponent(index, componentType11, component11);
+            chunk.SetComponent(index, componentType12, component12);
+            chunk.SetComponent(index, componentType13, component13);
+            chunk.SetComponent(index, componentType14, component14);
+            chunk.SetComponent(index, componentType15, component15);
+            chunk.SetComponent(index, componentType16, component16);
             return entity;
         }
     }
