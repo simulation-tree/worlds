@@ -423,6 +423,7 @@ namespace Worlds
                 if (!destroyed)
                 {
                     Entity entity = new(world, value);
+                    Schema schema = world.Schema;
 #if DEBUG
                     World.createStackTraces.TryGetValue(entity, out creation);
 #endif
@@ -473,7 +474,7 @@ namespace Worlds
                     {
                         ComponentType componentType = componentTypes[i];
                         components[i] = world.GetComponentObject(value, componentType);
-                        this.componentTypes[i] = componentType.GetLayout(world.Schema).SystemType;
+                        this.componentTypes[i] = componentType.GetLayout(schema).SystemType;
                     }
 
                     USpan<ArrayElementType> arrayTypes = stackalloc ArrayElementType[(int)BitMask.Capacity];
@@ -484,7 +485,7 @@ namespace Worlds
                     {
                         ArrayElementType arrayType = arrayTypes[i];
                         arrays[i] = world.GetArrayObject(value, arrayType);
-                        this.arrayTypes[i] = arrayType.GetLayout(world.Schema).SystemType;
+                        this.arrayTypes[i] = arrayType.GetLayout(schema).SystemType;
                     }
 
                     USpan<TagType> tagTypes = stackalloc TagType[(int)BitMask.Capacity];
@@ -493,7 +494,7 @@ namespace Worlds
                     for (uint i = 0; i < count; i++)
                     {
                         TagType tagType = tagTypes[i];
-                        this.tagTypes[i] = tagType.GetLayout(world.Schema).SystemType;
+                        this.tagTypes[i] = tagType.GetLayout(schema).SystemType;
                     }
                 }
                 else

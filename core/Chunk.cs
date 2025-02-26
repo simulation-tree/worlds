@@ -343,7 +343,7 @@ namespace Worlds
             Allocations.ThrowIfNull(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
 
-            chunk->componentLists[componentType].Set<T>(index, value);
+            chunk->componentLists[componentType].Set(index, value);
         }
 
         public readonly override bool Equals(object? obj)

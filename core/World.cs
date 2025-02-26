@@ -64,7 +64,15 @@ namespace Worlds
         /// <summary>
         /// All available slots.
         /// </summary>
-        private readonly List<Slot> Slots => world->slots;
+        private readonly List<Slot> Slots
+        {
+            get
+            {
+                Allocations.ThrowIfNull(world);
+
+                return world->slots;
+            }
+        }
 
         /// <summary>
         /// All previously used entities that are now free.
@@ -525,10 +533,12 @@ namespace Worlds
         /// </summary>
         public readonly void Append(World sourceWorld)
         {
+            Allocations.ThrowIfNull(world);
+
             List<Slot> sourceSlots = sourceWorld.world->slots;
             for (uint e = 1; e < sourceSlots.Count; e++)
             {
-                if (sourceWorld.Free.Contains(e))
+                if (sourceWorld.world->freeEntities.Contains(e))
                 {
                     continue;
                 }
@@ -551,19 +561,21 @@ namespace Worlds
         /// </summary>
         public readonly void ListenToEntityCreationOrDestruction(EntityCreatedOrDestroyed function, ulong userData = default)
         {
+            Allocations.ThrowIfNull(world);
+
             world->entityCreatedOrDestroyed.Add((function, userData));
         }
 
         /// <summary>
         /// Adds a function that listens to when data on an entity changes.
         /// <para>
-        /// Components added or removed,
-        /// arrays created, destroyed or resized,
-        /// tags added or removed.
+        /// Components, arrays and tags added or removed.
         /// </para>
         /// </summary>
         public readonly void ListenToEntityDataChanges(EntityDataChanged function, ulong userData = default)
         {
+            Allocations.ThrowIfNull(world);
+
             world->entityDataChanged.Add((function, userData));
         }
 
@@ -572,6 +584,8 @@ namespace Worlds
         /// </summary>
         public readonly void ListenToEntityParentChanges(EntityParentChanged function, ulong userData = default)
         {
+            Allocations.ThrowIfNull(world);
+
             world->entityParentChanged.Add((function, userData));
         }
 
@@ -629,6 +643,7 @@ namespace Worlds
         /// </summary>
         public readonly byte CopyComponentTypesTo(uint entity, USpan<ComponentType> buffer)
         {
+            Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
 
             return world->slots[entity].Definition.CopyComponentTypesTo(buffer);
@@ -640,6 +655,7 @@ namespace Worlds
         /// </summary>
         public readonly bool IsEnabled(uint entity)
         {
+            Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
 
             return world->slots[entity].state == Slot.State.Enabled;
@@ -651,6 +667,7 @@ namespace Worlds
         /// </summary>
         public readonly bool IsLocallyEnabled(uint entity)
         {
+            Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
 
             ref Slot.State state = ref world->slots[entity].state;
@@ -663,6 +680,7 @@ namespace Worlds
         /// </summary>
         public readonly void SetEnabled(uint entity, bool enabled)
         {
+            Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
 
             ref Slot entitySlot = ref world->slots[entity];
@@ -704,7 +722,7 @@ namespace Worlds
 
                 if (!world->chunksMap.TryGetValue(newDefinition, out Chunk newChunk))
                 {
-                    newChunk = new Chunk(newDefinition, Schema);
+                    newChunk = new Chunk(newDefinition, world->schema);
                     world->chunksMap.Add(newDefinition, newChunk);
                     world->uniqueChunks.Add(newChunk);
                 }
@@ -755,7 +773,7 @@ namespace Worlds
 
                         if (!world->chunksMap.TryGetValue(newDefinition, out Chunk newChunk))
                         {
-                            newChunk = new Chunk(newDefinition, Schema);
+                            newChunk = new Chunk(newDefinition, world->schema);
                             world->chunksMap.Add(newDefinition, newChunk);
                             world->uniqueChunks.Add(newChunk);
                         }
@@ -1775,7 +1793,7 @@ namespace Worlds
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
 
-            ArrayElementType arrayType = Schema.GetArrayElement<T>();
+            ArrayElementType arrayType = world->schema.GetArrayElement<T>();
             ThrowIfArrayIsAlreadyPresent(entity, arrayType);
 
             ref Slot slot = ref world->slots[entity];
@@ -1825,6 +1843,9 @@ namespace Worlds
         /// </summary>
         public readonly void CreateArray<T>(uint entity, USpan<T> values) where T : unmanaged
         {
+            Allocations.ThrowIfNull(world);
+            ThrowIfEntityIsMissing(entity);
+
             Array<T> array = CreateArray<T>(entity, values.Length);
             values.CopyTo(array.AsSpan());
         }
@@ -1834,7 +1855,9 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsArray<T>(uint entity) where T : unmanaged
         {
-            ArrayElementType arrayElementType = Schema.GetArrayElement<T>();
+            Allocations.ThrowIfNull(world);
+
+            ArrayElementType arrayElementType = world->schema.GetArrayElement<T>();
             return ContainsArray(entity, arrayElementType);
         }
 
@@ -1908,7 +1931,7 @@ namespace Worlds
         /// </summary>
         public readonly bool TryGetArray<T>(uint entity, out Array<T> array) where T : unmanaged
         {
-            DataType arrayElementType = Schema.GetArrayElementDataType<T>();
+            DataType arrayElementType = world->schema.GetArrayElementDataType<T>();
             if (ContainsArray(entity, arrayElementType))
             {
                 array = GetArray<T>(entity, arrayElementType);
@@ -1928,7 +1951,7 @@ namespace Worlds
         {
             ThrowIfEntityIsMissing(entity);
 
-            ArrayElementType arrayType = Schema.GetArrayElement<T>();
+            ArrayElementType arrayType = world->schema.GetArrayElement<T>();
             ThrowIfArrayIsMissing(entity, arrayType);
 
             ref Slot slot = ref world->slots[entity];
@@ -1942,7 +1965,7 @@ namespace Worlds
         {
             ThrowIfEntityIsMissing(entity);
 
-            ArrayElementType arrayType = Schema.GetArrayElement<T>();
+            ArrayElementType arrayType = world->schema.GetArrayElement<T>();
             ThrowIfArrayIsMissing(entity, arrayType);
 
             ref Slot slot = ref world->slots[entity];
@@ -2251,7 +2274,7 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsAnyComponent<T>() where T : unmanaged
         {
-            ComponentType componentType = Schema.GetComponent<T>();
+            ComponentType componentType = world->schema.GetComponent<T>();
             foreach (Chunk chunk in world->uniqueChunks)
             {
                 if (chunk.Definition.Contains(componentType))
@@ -2271,7 +2294,11 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsComponent<T>(uint entity) where T : unmanaged
         {
-            return ContainsComponent(entity, Schema.GetComponent<T>());
+            Allocations.ThrowIfNull(world);
+            ThrowIfEntityIsMissing(entity);
+
+            ComponentType componentType = world->schema.GetComponent<T>();
+            return world->slots[entity].Definition.ComponentTypes.Contains(componentType);
         }
 
         /// <summary>
@@ -2318,7 +2345,7 @@ namespace Worlds
         /// </summary>
         public readonly T GetComponentOrDefault<T>(uint entity, T defaultValue = default) where T : unmanaged
         {
-            ComponentType componentType = Schema.GetComponent<T>();
+            ComponentType componentType = world->schema.GetComponent<T>();
             if (ContainsComponent(entity, componentType))
             {
                 return GetComponent<T>(entity, componentType);
