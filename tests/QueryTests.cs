@@ -495,7 +495,7 @@ namespace Worlds.Tests
                 return;
             }
 
-            const uint Iterations = 8;
+            const uint Iterations = 16;
             using World world = CreateWorld();
             BitMask componentTypes = world.Schema.GetComponents<Apple, Berry, Cherry>();
             BitMask otherComponentTypes = world.Schema.GetComponents<Apple, Berry>();
@@ -512,13 +512,11 @@ namespace Worlds.Tests
                     {
                         if (i % 3 == 0)
                         {
-                            Definition definition = new(componentTypes, default, default);
-                            world.CreateEntity(definition);
+                            world.CreateEntity(componentTypes);
                         }
                         else
                         {
-                            Definition definition = new(otherComponentTypes, default, default);
-                            world.CreateEntity(definition);
+                            world.CreateEntity(otherComponentTypes);
                         }
 
                         count++;

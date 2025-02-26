@@ -52,7 +52,7 @@ namespace Worlds
         public Entity(World world, uint value)
         {
             //todo: emit an error saying that "hey 0 is not allowed"
-            World.Implementation.ThrowIfEntityIsMissing(world, value);
+            ThrowIfEntityIsMissing(world, value);
 
             this.world = world;
             this.value = value;
@@ -217,17 +217,17 @@ namespace Worlds
 
         public readonly bool Contains(ComponentType componentType)
         {
-            return world.Contains(value, componentType);
+            return world.ContainsComponent(value, componentType);
         }
 
         public readonly bool Contains(ArrayElementType arrayElementType)
         {
-            return world.Contains(value, arrayElementType);
+            return world.ContainsArray(value, arrayElementType);
         }
 
         public readonly bool Contains(TagType tagType)
         {
-            return world.Contains(value, tagType);
+            return world.ContainsTag(value, tagType);
         }
 
         public readonly void AddComponent(ComponentType componentType)
@@ -240,19 +240,19 @@ namespace Worlds
             world.RemoveComponent(value, componentType);
         }
 
-        public readonly Array CreateArray(ArrayElementType arrayElementType, uint length = 0)
+        public readonly Array CreateArray(ArrayElementType arrayType, uint length = 0)
         {
-            return world.CreateArray(value, arrayElementType, length);
+            return world.CreateArray(value, arrayType, length);
         }
 
-        public readonly Array GetArray(ArrayElementType arrayElementType)
+        public readonly Array GetArray(ArrayElementType arrayType)
         {
-            return world.GetArray(value, arrayElementType);
+            return world.GetArray(value, arrayType);
         }
 
-        public readonly void DestroyArray(ArrayElementType arrayElementType)
+        public readonly void DestroyArray(ArrayElementType arrayType)
         {
-            world.DestroyArray(value, arrayElementType);
+            world.DestroyArray(value, arrayType);
         }
 
         public readonly bool ContainsComponent<T>() where T : unmanaged
@@ -285,9 +285,9 @@ namespace Worlds
             return ref world.AddComponent<T>(value);
         }
 
-        public readonly ref T AddComponent<T>(T component) where T : unmanaged
+        public readonly void AddComponent<T>(T component) where T : unmanaged
         {
-            return ref world.AddComponent(value, component);
+            world.AddComponent(value, component);
         }
 
         public readonly void RemoveComponent<T>() where T : unmanaged
@@ -375,6 +375,15 @@ namespace Worlds
             return HashCode.Combine(world, value);
         }
 
+        [Conditional("DEBUG")]
+        private static void ThrowIfEntityIsMissing(World world, uint entity)
+        {
+            if (!world.ContainsEntity(entity))
+            {
+                throw new NullReferenceException($"Entity `{entity}` is missing");
+            }
+        }
+
         public static bool operator ==(Entity left, Entity right)
         {
             return left.Equals(right);
@@ -415,7 +424,7 @@ namespace Worlds
                 {
                     Entity entity = new(world, value);
 #if DEBUG
-                    World.Implementation.createStackTraces.TryGetValue(entity, out creation);
+                    World.createStackTraces.TryGetValue(entity, out creation);
 #endif
                     enabled = world.IsEnabled(value);
                     uint parent = world.GetParent(value);

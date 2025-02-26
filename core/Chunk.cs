@@ -335,6 +335,17 @@ namespace Worlds
             return chunk->componentLists[componentType][index];
         }
 
+        /// <summary>
+        /// Assigns the component for entity at <paramref name="index"/> to <paramref name="value"/>.
+        /// </summary>
+        public readonly void SetComponent<T>(uint index, ComponentType componentType, T value) where T : unmanaged
+        {
+            Allocations.ThrowIfNull(chunk);
+            ThrowIfComponentTypeIsMissing(componentType);
+
+            chunk->componentLists[componentType].Set<T>(index, value);
+        }
+
         public readonly override bool Equals(object? obj)
         {
             return obj is Chunk chunk && Equals(chunk);

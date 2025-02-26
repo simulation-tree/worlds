@@ -200,19 +200,14 @@
         return new Entity(world, world.CloneEntity(value)).As<{{TypeName}}>();
     }
 
-    public readonly bool Contains(ComponentType componentType)
+    public readonly bool ContainsComponent(ComponentType componentType)
     {
-        return world.Contains(value, componentType);
+        return world.ContainsComponent(value, componentType);
     }
 
-    public readonly bool Contains(ArrayElementType arrayElementType)
+    public readonly bool ContainsArray(ArrayElementType arrayType)
     {
-        return world.Contains(value, arrayElementType);
-    }
-
-    public readonly bool Contains(TagType tagType)
-    {
-        return world.Contains(value, tagType);
+        return world.ContainsArray(value, arrayType);
     }
 
     public readonly void AddComponent(ComponentType componentType)
@@ -247,7 +242,7 @@
 
     public readonly bool ContainsTag(TagType tagType)
     {
-        return world.Contains(value, tagType);
+        return world.ContainsTag(value, tagType);
     }
 
     public readonly void RemoveTag(TagType tagType)
@@ -295,9 +290,9 @@
         return ref world.AddComponent<T>(value);
     }
 
-    public readonly ref T AddComponent<T>(T component) where T : unmanaged
+    public readonly void AddComponent<T>(T component) where T : unmanaged
     {
-        return ref world.AddComponent(value, component);
+        world.AddComponent(value, component);
     }
 
     public readonly void RemoveComponent<T>() where T : unmanaged
@@ -315,9 +310,9 @@
         return world.GetArrayLength<T>(value);
     }
 
-    public readonly uint GetArrayLength<T>(ArrayElementType arrayType) where T : unmanaged
+    public readonly uint GetArrayLength(ArrayElementType arrayType)
     {
-        return world.GetArrayLength<T>(value, arrayType);
+        return world.GetArrayLength(value, arrayType);
     }
 
     public readonly ref T GetArrayElement<T>(uint index) where T : unmanaged
