@@ -279,23 +279,12 @@ namespace Worlds
         /// <summary>
         /// Retrieves the list of all components of the given <paramref name="componentType"/>.
         /// </summary>
-        public readonly List GetComponents(ComponentType componentType)
+        public readonly List GetComponents(uint componentType)
         {
             Allocations.ThrowIfNull(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
 
-            return chunk->componentLists[componentType.index];
-        }
-
-        /// <summary>
-        /// Retrieves a span containing all <typeparamref name="T"/> components.
-        /// </summary>
-        public readonly USpan<T> GetComponents<T>(ComponentType componentType) where T : unmanaged
-        {
-            Allocations.ThrowIfNull(chunk);
-            ThrowIfComponentTypeIsMissing(componentType);
-
-            return chunk->componentLists[componentType.index].AsSpan<T>();
+            return chunk->componentLists[componentType];
         }
 
         /// <summary>
@@ -312,31 +301,12 @@ namespace Worlds
         /// <summary>
         /// Retrieves a reference to the component of type <paramref name="componentType"/>.
         /// </summary>
-        public readonly ref T GetComponent<T>(uint index, ComponentType componentType) where T : unmanaged
-        {
-            Allocations.ThrowIfNull(chunk);
-            ThrowIfComponentTypeIsMissing(componentType);
-
-            return ref chunk->componentLists[componentType.index].Get<T>(index);
-        }
-
-        /// <summary>
-        /// Retrieves a reference to the component of type <paramref name="componentType"/>.
-        /// </summary>
         public readonly ref T GetComponent<T>(uint index, uint componentType) where T : unmanaged
         {
             Allocations.ThrowIfNull(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
 
             return ref chunk->componentLists[componentType].Get<T>(index);
-        }
-
-        /// <summary>
-        /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> at <paramref name="index"/>.
-        /// </summary>
-        public readonly Allocation GetComponent(uint index, ComponentType componentType)
-        {
-            return GetComponent(index, componentType.index);
         }
 
         /// <summary>
@@ -353,19 +323,6 @@ namespace Worlds
         /// <summary>
         /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> at <paramref name="index"/>.
         /// </summary>
-        public readonly Allocation GetComponent(uint index, ComponentType componentType, out ushort componentSize)
-        {
-            Allocations.ThrowIfNull(chunk);
-            ThrowIfComponentTypeIsMissing(componentType);
-
-            List components = chunk->componentLists[componentType.index];
-            componentSize = (ushort)components.Stride;
-            return components[index];
-        }
-
-        /// <summary>
-        /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> at <paramref name="index"/>.
-        /// </summary>
         public readonly Allocation GetComponent(uint index, uint componentType, out ushort componentSize)
         {
             Allocations.ThrowIfNull(chunk);
@@ -374,14 +331,6 @@ namespace Worlds
             List components = chunk->componentLists[componentType];
             componentSize = (ushort)components.Stride;
             return components[index];
-        }
-
-        /// <summary>
-        /// Assigns the component for entity at <paramref name="index"/> to <paramref name="value"/>.
-        /// </summary>
-        public readonly void SetComponent<T>(uint index, ComponentType componentType, T value) where T : unmanaged
-        {
-            SetComponent(index, componentType.index, value);
         }
 
         /// <summary>

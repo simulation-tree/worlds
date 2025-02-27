@@ -359,20 +359,6 @@ namespace Worlds
             }
         }
 
-        private readonly void NotifyComponentAdded(uint entity, ComponentType componentType)
-        {
-            List<(EntityDataChanged, ulong)> events = world->entityDataChanged;
-            if (events.Count > 0)
-            {
-                DataType type = world->schema.GetComponentDataType(componentType);
-                for (uint i = 0; i < events.Count; i++)
-                {
-                    (EntityDataChanged callback, ulong userData) = events[i];
-                    callback.Invoke(this, entity, type, ChangeType.Added, userData);
-                }
-            }
-        }
-
         private readonly void NotifyComponentAdded(uint entity, uint componentType)
         {
             List<(EntityDataChanged, ulong)> events = world->entityDataChanged;
@@ -383,20 +369,6 @@ namespace Worlds
                 {
                     (EntityDataChanged callback, ulong userData) = events[i];
                     callback.Invoke(this, entity, type, ChangeType.Added, userData);
-                }
-            }
-        }
-
-        private readonly void NotifyComponentRemoved(uint entity, ComponentType componentType)
-        {
-            List<(EntityDataChanged, ulong)> events = world->entityDataChanged;
-            if (events.Count > 0)
-            {
-                DataType type = world->schema.GetComponentDataType(componentType);
-                for (uint i = 0; i < events.Count; i++)
-                {
-                    (EntityDataChanged callback, ulong userData) = events[i];
-                    callback.Invoke(this, entity, type, ChangeType.Removed, userData);
                 }
             }
         }
@@ -556,7 +528,7 @@ namespace Worlds
                     if (definition.ComponentTypes.Contains(c))
                     {
                         writer.WriteValue((byte)c);
-                        USpan<byte> componentBytes = GetComponentBytes(e, new(c));
+                        USpan<byte> componentBytes = GetComponentBytes(e, c);
                         writer.WriteSpan(componentBytes);
                     }
                 }
@@ -1560,18 +1532,6 @@ namespace Worlds
             return (rint)count;
         }
 
-        /// <summary>
-        /// Writes all tag types on <paramref name="entity"/> to <paramref name="destination"/>.
-        /// </summary>
-        public readonly byte CopyTagTypesTo(uint entity, USpan<TagType> destination)
-        {
-            Allocations.ThrowIfNull(world);
-            ThrowIfEntityIsMissing(entity);
-
-            Definition definition = world->slots[entity].Definition;
-            return definition.CopyTagTypesTo(destination);
-        }
-
         public readonly bool ContainsTag<T>(uint entity) where T : unmanaged
         {
             Allocations.ThrowIfNull(world);
@@ -1580,11 +1540,6 @@ namespace Worlds
             uint tagType = world->schema.GetTagTypeIndex<T>();
             ref Slot slot = ref world->slots[entity];
             return slot.Definition.TagTypes.Contains(tagType);
-        }
-
-        public readonly bool ContainsTag(uint entity, TagType tagType)
-        {
-            return ContainsTag(entity, tagType.index);
         }
 
         public readonly bool ContainsTag(uint entity, uint tagType)
@@ -1619,11 +1574,6 @@ namespace Worlds
             slot.chunk = destinationChunk;
             uint index = previousChunk.MoveEntity(entity, destinationChunk);
             NotifyTagAdded(entity, tagType);
-        }
-
-        public readonly void AddTag(uint entity, TagType tagType)
-        {
-            AddTag(entity, tagType.index);
         }
 
         public readonly void AddTag(uint entity, uint tagType)
@@ -1676,11 +1626,6 @@ namespace Worlds
             NotifyTagRemoved(entity, tagType);
         }
 
-        public readonly void RemoveTag(uint entity, TagType tagType)
-        {
-            RemoveTag(entity, tagType.index);
-        }
-
         public readonly void RemoveTag(uint entity, uint tagType)
         {
             Allocations.ThrowIfNull(world);
@@ -1708,27 +1653,6 @@ namespace Worlds
         /// <summary>
         /// Retrieves the types of all arrays on this entity.
         /// </summary>
-        public readonly byte CopyArrayElementTypesTo(uint entity, USpan<ArrayElementType> destination)
-        {
-            ThrowIfEntityIsMissing(entity);
-
-            ref Chunk chunk = ref world->slots[entity].chunk;
-            BitMask arrayElementTypes = chunk.Definition.ArrayTypes;
-            byte count = 0;
-            for (uint a = 0; a < BitMask.Capacity; a++)
-            {
-                if (arrayElementTypes.Contains(a))
-                {
-                    destination[count++] = new(a);
-                }
-            }
-
-            return count;
-        }
-
-        /// <summary>
-        /// Retrieves the types of all arrays on this entity.
-        /// </summary>
         public readonly BitMask GetArrayElementTypes(uint entity)
         {
             ThrowIfEntityIsMissing(entity);
@@ -1746,11 +1670,6 @@ namespace Worlds
         /// <summary>
         /// Creates a new empty array with the given <paramref name="length"/> and <paramref name="arrayType"/>.
         /// </summary>
-        public readonly Array CreateArray(uint entity, ArrayElementType arrayType, uint length = 0)
-        {
-            return CreateArray(entity, arrayType.index, length);
-        }
-
         public readonly Array CreateArray(uint entity, uint arrayType, uint length = 0)
         {
             Allocations.ThrowIfNull(world);
@@ -1803,11 +1722,6 @@ namespace Worlds
         /// <summary>
         /// Creates a new empty array with the given <paramref name="length"/> and <paramref name="arrayType"/>.
         /// </summary>
-        public readonly Array CreateArray(uint entity, ArrayElementType arrayType, uint stride, uint length = 0)
-        {
-            return CreateArray(entity, arrayType.index, stride, length);
-        }
-
         public readonly Array CreateArray(uint entity, uint arrayType, uint stride, uint length = 0)
         {
             Allocations.ThrowIfNull(world);
@@ -1989,11 +1903,6 @@ namespace Worlds
         /// <summary>
         /// Checks if the given <paramref name="entity"/> contains an array of the given <paramref name="arrayType"/>.
         /// </summary>
-        public readonly bool ContainsArray(uint entity, ArrayElementType arrayType)
-        {
-            return ContainsArray(entity, arrayType.index);
-        }
-
         public readonly bool ContainsArray(uint entity, uint arrayType)
         {
             Allocations.ThrowIfNull(world);
@@ -2020,11 +1929,6 @@ namespace Worlds
         /// <summary>
         /// Retrieves the array of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
         /// </summary>
-        public readonly Array<T> GetArray<T>(uint entity, ArrayElementType arrayType) where T : unmanaged
-        {
-            return GetArray<T>(entity, arrayType.index);
-        }
-
         public readonly Array<T> GetArray<T>(uint entity, uint arrayType) where T : unmanaged
         {
             Allocations.ThrowIfNull(world);
@@ -2038,11 +1942,6 @@ namespace Worlds
         /// <summary>
         /// Retrieves the array of the given <paramref name="arrayType"/> from the given <paramref name="entity"/>.
         /// </summary>
-        public readonly Array GetArray(uint entity, ArrayElementType arrayType)
-        {
-            return GetArray(entity, arrayType.index);
-        }
-
         public readonly Array GetArray(uint entity, uint arrayType)
         {
             Allocations.ThrowIfNull(world);
@@ -2106,13 +2005,13 @@ namespace Worlds
         /// <summary>
         /// Retrieves the length of an existing array on this entity.
         /// </summary>
-        public readonly uint GetArrayLength(uint entity, ArrayElementType arrayType)
+        public readonly uint GetArrayLength(uint entity, uint arrayType)
         {
             ThrowIfEntityIsMissing(entity);
             ThrowIfArrayIsMissing(entity, arrayType);
 
             ref Slot slot = ref world->slots[entity];
-            return slot.arrays[arrayType.index].Length;
+            return slot.arrays[arrayType].Length;
         }
 
         /// <summary>
@@ -2149,11 +2048,6 @@ namespace Worlds
         /// <summary>
         /// Destroys the array of the given <paramref name="arrayType"/> on the given <paramref name="entity"/>.
         /// </summary>
-        public readonly void DestroyArray(uint entity, ArrayElementType arrayType)
-        {
-            DestroyArray(entity, arrayType.index);
-        }
-
         public readonly void DestroyArray(uint entity, uint arrayType)
         {
             Allocations.ThrowIfNull(world);
@@ -2242,11 +2136,6 @@ namespace Worlds
         /// <summary>
         /// Adds a new default component with the given type.
         /// </summary>
-        public readonly Allocation AddComponent(uint entity, ComponentType componentType)
-        {
-            return AddComponent(entity, componentType.index);
-        }
-
         public readonly Allocation AddComponent(uint entity, uint componentType)
         {
             Allocations.ThrowIfNull(world);
@@ -2274,7 +2163,7 @@ namespace Worlds
         /// <summary>
         /// Adds a new default component with the given type.
         /// </summary>
-        public readonly Allocation AddComponent(uint entity, ComponentType componentType, out ushort componentSize)
+        public readonly Allocation AddComponent(uint entity, uint componentType, out ushort componentSize)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
@@ -2299,19 +2188,10 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Adds a new component of the given <paramref name="componentType"/> with <paramref name="source"/> bytes
+        /// Adds a new component of the given <paramref name="componentType"/> with <paramref name="componentBytes"/> bytes
         /// to <paramref name="entity"/>.
         /// </summary>
-        public readonly void AddComponentBytes(uint entity, ComponentType componentType, USpan<byte> source)
-        {
-            AddComponentBytes(entity, componentType.index, source);
-        }
-
-        /// <summary>
-        /// Adds a new component of the given <paramref name="componentType"/> with <paramref name="source"/> bytes
-        /// to <paramref name="entity"/>.
-        /// </summary>
-        public readonly void AddComponentBytes(uint entity, uint componentType, USpan<byte> source)
+        public readonly void AddComponentBytes(uint entity, uint componentType, USpan<byte> componentBytes)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
@@ -2332,7 +2212,7 @@ namespace Worlds
             slot.chunk = destinationChunk;
             uint index = previousChunk.MoveEntity(entity, destinationChunk);
             Allocation component = destinationChunk.GetComponent(index, componentType, out ushort componentSize);
-            source.CopyTo(component, Math.Min(componentSize, source.Length)); //todo: efficiency: this could be eliminated, but would need awareness given to the user about the size of the component
+            componentBytes.CopyTo(component, Math.Min(componentSize, componentBytes.Length)); //todo: efficiency: this could be eliminated, but would need awareness given to the user about the size of the component
         }
 
         /// <summary>
@@ -2367,11 +2247,6 @@ namespace Worlds
         /// <summary>
         /// Removes the component of the given <paramref name="componentType"/> from the given <paramref name="entity"/>.
         /// </summary>
-        public readonly void RemoveComponent(uint entity, ComponentType componentType)
-        {
-            RemoveComponent(entity, componentType.index);
-        }
-
         public readonly void RemoveComponent(uint entity, uint componentType)
         {
             Allocations.ThrowIfNull(world);
@@ -2430,13 +2305,8 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Checks if the given <paramref name="entity"/> contains a component of <paramref name="componentType"/>.
+        /// Checks if the given <paramref name="entity"/> contains the <paramref name="componentType"/>.
         /// </summary>
-        public readonly bool ContainsComponent(uint entity, ComponentType componentType)
-        {
-            return ContainsComponent(entity, componentType.index);
-        }
-
         public readonly bool ContainsComponent(uint entity, uint componentType)
         {
             Allocations.ThrowIfNull(world);
@@ -2486,7 +2356,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves a reference to the component of type <typeparamref name="T"/>.
         /// </summary>
-        public readonly ref T GetComponent<T>(uint entity, ComponentType componentType) where T : unmanaged
+        public readonly ref T GetComponent<T>(uint entity, uint componentType) where T : unmanaged
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
@@ -2495,15 +2365,6 @@ namespace Worlds
             ref Chunk chunk = ref world->slots[entity].chunk;
             uint index = chunk.Entities.IndexOf(entity);
             return ref chunk.GetComponent<T>(index, componentType);
-        }
-
-        /// <summary>
-        /// Retrieves the component of the given <paramref name="componentType"/> from the given <paramref name="entity"/>
-        /// as a pointer.
-        /// </summary>
-        public readonly Allocation GetComponent(uint entity, ComponentType componentType)
-        {
-            return GetComponent(entity, componentType.index);
         }
 
         public readonly Allocation GetComponent(uint entity, uint componentType)
@@ -2521,7 +2382,7 @@ namespace Worlds
         /// Retrieves the component of the given <paramref name="componentType"/> from the given <paramref name="entity"/>
         /// as a pointer.
         /// </summary>
-        public readonly Allocation GetComponent(uint entity, ComponentType componentType, out ushort componentSize)
+        public readonly Allocation GetComponent(uint entity, uint componentType, out ushort componentSize)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
@@ -2535,7 +2396,7 @@ namespace Worlds
         /// <summary>
         /// Fetches the bytes of a component from the given <paramref name="entity"/>.
         /// </summary>
-        public readonly USpan<byte> GetComponentBytes(uint entity, ComponentType componentType)
+        public readonly USpan<byte> GetComponentBytes(uint entity, uint componentType)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
@@ -2550,11 +2411,11 @@ namespace Worlds
         /// <summary>
         /// Retrieves the component from the given <paramref name="entity"/> as an <see cref="object"/>.
         /// </summary>
-        public readonly object GetComponentObject(uint entity, ComponentType componentType)
+        public readonly object GetComponentObject(uint entity, uint componentType)
         {
             Allocations.ThrowIfNull(world);
 
-            TypeLayout layout = componentType.GetLayout(world->schema);
+            TypeLayout layout = world->schema.GetComponentLayout(componentType);
             USpan<byte> bytes = GetComponentBytes(entity, componentType);
             return layout.CreateInstance(bytes);
         }
@@ -2641,17 +2502,9 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Assigns the given <paramref name="componentData"/> to the given <paramref name="entity"/>.
+        /// Assigns the given <paramref name="componentBytes"/> to the given <paramref name="entity"/>.
         /// </summary>
-        public readonly void SetComponentBytes(uint entity, ComponentType componentType, USpan<byte> componentData)
-        {
-            SetComponentBytes(entity, componentType.index, componentData);
-        }
-
-        /// <summary>
-        /// Assigns the given <paramref name="componentData"/> to the given <paramref name="entity"/>.
-        /// </summary>
-        public readonly void SetComponentBytes(uint entity, uint componentType, USpan<byte> componentData)
+        public readonly void SetComponentBytes(uint entity, uint componentType, USpan<byte> componentBytes)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
@@ -2660,7 +2513,7 @@ namespace Worlds
             ref Chunk chunk = ref world->slots[entity].chunk;
             uint index = chunk.Entities.IndexOf(entity);
             Allocation component = chunk.GetComponent(index, componentType, out ushort componentSize);
-            componentData.CopyTo(component, componentSize);
+            componentBytes.CopyTo(component, componentSize);
         }
 
         /// <summary>
@@ -2828,17 +2681,6 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfComponentMissing(uint entity, ComponentType componentType)
-        {
-            BitMask componentTypes = world->slots[entity].Definition.ComponentTypes;
-            if (!componentTypes.Contains(componentType.index))
-            {
-                Entity thisEntity = new(new(world), entity);
-                throw new NullReferenceException($"Component `{componentType.ToString(world->schema)}` not found on `{entity}`");
-            }
-        }
-
-        [Conditional("DEBUG")]
         private readonly void ThrowIfComponentMissing(uint entity, uint componentType)
         {
             BitMask componentTypes = world->slots[entity].Definition.ComponentTypes;
@@ -2846,16 +2688,6 @@ namespace Worlds
             {
                 Entity thisEntity = new(new(world), entity);
                 throw new NullReferenceException($"Component `{new ComponentType(componentType).ToString(world->schema)}` not found on `{entity}`");
-            }
-        }
-
-        [Conditional("DEBUG")]
-        private readonly void ThrowIfComponentAlreadyPresent(uint entity, ComponentType componentType)
-        {
-            BitMask componentTypes = world->slots[entity].Definition.ComponentTypes;
-            if (componentTypes.Contains(componentType.index))
-            {
-                throw new InvalidOperationException($"Component `{componentType.ToString(world->schema)}` already present on `{entity}`");
             }
         }
 
@@ -3041,7 +2873,7 @@ namespace Worlds
                 for (uint i = 0; i < componentCount; i++)
                 {
                     byte c = reader.ReadValue<byte>();
-                    Allocation component = value.AddComponent(createdEntity, new(c), out ushort componentSize);
+                    Allocation component = value.AddComponent(createdEntity, c, out ushort componentSize);
                     USpan<byte> componentData = reader.ReadSpan<byte>(componentSize);
                     componentData.CopyTo(component, componentSize);
                 }
@@ -3053,7 +2885,7 @@ namespace Worlds
                     byte a = reader.ReadValue<byte>();
                     uint length = reader.ReadValue<uint>();
                     ushort arrayElementSize = schema.GetArrayTypeSize(a);
-                    Array array = value.CreateArray(createdEntity, new(a), arrayElementSize, length);
+                    Array array = value.CreateArray(createdEntity, a, arrayElementSize, length);
                     USpan<byte> arrayData = reader.ReadSpan<byte>(length * arrayElementSize);
                     arrayData.CopyTo(array.AsSpan());
                 }
@@ -3063,7 +2895,7 @@ namespace Worlds
                 for (uint i = 0; i < tagCount; i++)
                 {
                     byte t = reader.ReadValue<byte>();
-                    value.AddTag(createdEntity, new(t));
+                    value.AddTag(createdEntity, t);
                 }
             }
 
