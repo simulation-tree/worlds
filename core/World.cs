@@ -2,6 +2,7 @@
 using Collections.Generic;
 using System;
 using System.Diagnostics;
+using System.Security.AccessControl;
 using Types;
 using Unmanaged;
 using Worlds.Functions;
@@ -567,7 +568,7 @@ namespace Worlds
                     if (definition.ArrayTypes.Contains(a))
                     {
                         writer.WriteValue((byte)a);
-                        Array array = GetArray(e, new(a));
+                        Array array = GetArray(e, a);
                         writer.WriteValue(array.Length);
                         writer.WriteSpan(array.AsSpan());
                     }
@@ -1097,8 +1098,27 @@ namespace Worlds
         /// </summary>
         public readonly void Become(uint entity, Definition definition)
         {
-            Archetype archetype = new(definition, world->schema);
-            Become(entity, archetype);
+            Allocations.ThrowIfNull(world);
+            ThrowIfEntityIsMissing(entity);
+
+            Definition currentDefinition = world->slots[entity].Definition;
+            for (uint i = 0; i < BitMask.Capacity; i++)
+            {
+                if (definition.ContainsComponent(i) && !currentDefinition.ContainsComponent(i))
+                {
+                    AddComponent(entity, i);
+                }
+
+                if (definition.ContainsArray(i) && !currentDefinition.ContainsArray(i))
+                {
+                    CreateArray(entity, i);
+                }
+
+                if (definition.ContainsTag(i) && !currentDefinition.ContainsTag(i))
+                {
+                    AddTag(entity, i);
+                }
+            }
         }
 
         /// <summary>
@@ -1107,27 +1127,25 @@ namespace Worlds
         /// </summary>
         public readonly void Become(uint entity, Archetype archetype)
         {
+            Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
 
             Definition currentDefinition = world->slots[entity].Definition;
             for (uint i = 0; i < BitMask.Capacity; i++)
             {
-                ComponentType componentType = new(i);
-                if (archetype.ContainsComponentType(componentType) && !currentDefinition.Contains(componentType))
+                if (archetype.ContainsComponent(i) && !currentDefinition.ContainsComponent(i))
                 {
-                    AddComponent(entity, componentType);
+                    AddComponent(entity, i);
                 }
 
-                ArrayElementType arrayElementType = new(i);
-                if (archetype.ContainsArrayType(arrayElementType) && !currentDefinition.Contains(arrayElementType))
+                if (archetype.ContainsArray(i) && !currentDefinition.ContainsArray(i))
                 {
-                    CreateArray(entity, arrayElementType);
+                    CreateArray(entity, i);
                 }
 
-                TagType tagType = new(i);
-                if (archetype.Contains(tagType) && !currentDefinition.Contains(tagType))
+                if (archetype.ContainsTag(i) && !currentDefinition.ContainsTag(i))
                 {
-                    AddTag(entity, tagType);
+                    AddTag(entity, i);
                 }
             }
         }
@@ -1566,10 +1584,15 @@ namespace Worlds
 
         public readonly bool ContainsTag(uint entity, TagType tagType)
         {
+            return ContainsTag(entity, tagType.index);
+        }
+
+        public readonly bool ContainsTag(uint entity, uint tagType)
+        {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
 
-            return world->slots[entity].Definition.TagTypes.Contains(tagType.index);
+            return world->slots[entity].Definition.TagTypes.Contains(tagType);
         }
 
         public readonly void AddTag<T>(uint entity) where T : unmanaged
@@ -1599,6 +1622,11 @@ namespace Worlds
         }
 
         public readonly void AddTag(uint entity, TagType tagType)
+        {
+            AddTag(entity, tagType.index);
+        }
+
+        public readonly void AddTag(uint entity, uint tagType)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
@@ -1649,6 +1677,11 @@ namespace Worlds
         }
 
         public readonly void RemoveTag(uint entity, TagType tagType)
+        {
+            RemoveTag(entity, tagType.index);
+        }
+
+        public readonly void RemoveTag(uint entity, uint tagType)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
@@ -1715,6 +1748,11 @@ namespace Worlds
         /// </summary>
         public readonly Array CreateArray(uint entity, ArrayElementType arrayType, uint length = 0)
         {
+            return CreateArray(entity, arrayType.index, length);
+        }
+
+        public readonly Array CreateArray(uint entity, uint arrayType, uint length = 0)
+        {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
             ThrowIfArrayIsAlreadyPresent(entity, arrayType);
@@ -1757,7 +1795,7 @@ namespace Worlds
             previousChunk.MoveEntity(entity, destinationChunk);
 
             Array newArray = new(length, stride);
-            slot.arrays[arrayType.index] = newArray;
+            slot.arrays[arrayType] = newArray;
             NotifyArrayCreated(entity, arrayType);
             return newArray;
         }
@@ -1766,6 +1804,11 @@ namespace Worlds
         /// Creates a new empty array with the given <paramref name="length"/> and <paramref name="arrayType"/>.
         /// </summary>
         public readonly Array CreateArray(uint entity, ArrayElementType arrayType, uint stride, uint length = 0)
+        {
+            return CreateArray(entity, arrayType.index, stride, length);
+        }
+
+        public readonly Array CreateArray(uint entity, uint arrayType, uint stride, uint length = 0)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
@@ -1808,7 +1851,7 @@ namespace Worlds
             previousChunk.MoveEntity(entity, destinationChunk);
 
             Array newArray = new(length, stride);
-            slot.arrays[arrayType.index] = newArray;
+            slot.arrays[arrayType] = newArray;
             NotifyArrayCreated(entity, arrayType);
             return newArray;
         }
@@ -1948,10 +1991,15 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsArray(uint entity, ArrayElementType arrayType)
         {
+            return ContainsArray(entity, arrayType.index);
+        }
+
+        public readonly bool ContainsArray(uint entity, uint arrayType)
+        {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
 
-            return world->slots[entity].Definition.ArrayTypes.Contains(arrayType.index);
+            return world->slots[entity].Definition.ArrayTypes.Contains(arrayType);
         }
 
         /// <summary>
@@ -1974,12 +2022,17 @@ namespace Worlds
         /// </summary>
         public readonly Array<T> GetArray<T>(uint entity, ArrayElementType arrayType) where T : unmanaged
         {
+            return GetArray<T>(entity, arrayType.index);
+        }
+
+        public readonly Array<T> GetArray<T>(uint entity, uint arrayType) where T : unmanaged
+        {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
             ThrowIfArrayIsMissing(entity, arrayType);
 
             ref Slot slot = ref world->slots[entity];
-            return slot.arrays[arrayType.index].AsArray<T>();
+            return slot.arrays[arrayType].AsArray<T>();
         }
 
         /// <summary>
@@ -1987,12 +2040,17 @@ namespace Worlds
         /// </summary>
         public readonly Array GetArray(uint entity, ArrayElementType arrayType)
         {
+            return GetArray(entity, arrayType.index);
+        }
+
+        public readonly Array GetArray(uint entity, uint arrayType)
+        {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
             ThrowIfArrayIsMissing(entity, arrayType);
 
             ref Slot slot = ref world->slots[entity];
-            return slot.arrays[arrayType.index];
+            return slot.arrays[arrayType];
         }
 
         /// <summary>
@@ -2093,12 +2151,17 @@ namespace Worlds
         /// </summary>
         public readonly void DestroyArray(uint entity, ArrayElementType arrayType)
         {
+            DestroyArray(entity, arrayType.index);
+        }
+
+        public readonly void DestroyArray(uint entity, uint arrayType)
+        {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
             ThrowIfArrayIsMissing(entity, arrayType);
 
             ref Slot slot = ref world->slots[entity];
-            ref Array array = ref slot.arrays[arrayType.index];
+            ref Array array = ref slot.arrays[arrayType];
             array.Dispose();
 
             Chunk previousChunk = slot.chunk;
@@ -2180,6 +2243,11 @@ namespace Worlds
         /// Adds a new default component with the given type.
         /// </summary>
         public readonly Allocation AddComponent(uint entity, ComponentType componentType)
+        {
+            return AddComponent(entity, componentType.index);
+        }
+
+        public readonly Allocation AddComponent(uint entity, uint componentType)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
@@ -2292,6 +2360,11 @@ namespace Worlds
         /// </summary>
         public readonly void RemoveComponent(uint entity, ComponentType componentType)
         {
+            RemoveComponent(entity, componentType.index);
+        }
+
+        public readonly void RemoveComponent(uint entity, uint componentType)
+        {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentMissing(entity, componentType);
@@ -2352,10 +2425,15 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsComponent(uint entity, ComponentType componentType)
         {
+            return ContainsComponent(entity, componentType.index);
+        }
+
+        public readonly bool ContainsComponent(uint entity, uint componentType)
+        {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
 
-            return world->slots[entity].Definition.ComponentTypes.Contains(componentType.index);
+            return world->slots[entity].Definition.ComponentTypes.Contains(componentType);
         }
 
         /// <summary>
@@ -2415,6 +2493,11 @@ namespace Worlds
         /// as a pointer.
         /// </summary>
         public readonly Allocation GetComponent(uint entity, ComponentType componentType)
+        {
+            return GetComponent(entity, componentType.index);
+        }
+
+        public readonly Allocation GetComponent(uint entity, uint componentType)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
@@ -2589,14 +2672,13 @@ namespace Worlds
             {
                 if (sourceComponentTypes.ComponentTypes.Contains(c))
                 {
-                    ComponentType componentType = new(c);
-                    if (!destinationWorld.ContainsComponent(destinationEntity, componentType))
+                    if (!destinationWorld.ContainsComponent(destinationEntity, c))
                     {
-                        destinationWorld.AddComponent(destinationEntity, componentType);
+                        destinationWorld.AddComponent(destinationEntity, c);
                     }
 
-                    Allocation sourceComponent = sourceChunk.GetComponent(sourceIndex, componentType, out ushort componentSize);
-                    Allocation destinationComponent = destinationWorld.GetComponent(destinationEntity, componentType);
+                    Allocation sourceComponent = sourceChunk.GetComponent(sourceIndex, c, out ushort componentSize);
+                    Allocation destinationComponent = destinationWorld.GetComponent(destinationEntity, c);
                     sourceComponent.CopyTo(destinationComponent, componentSize);
                 }
             }
@@ -2614,16 +2696,15 @@ namespace Worlds
             {
                 if (arrayElementTypes.Contains(a))
                 {
-                    ArrayElementType arrayElementType = new(a);
-                    Array sourceArray = GetArray(sourceEntity, arrayElementType);
+                    Array sourceArray = GetArray(sourceEntity, a);
                     Array destinationArray;
-                    if (!destinationWorld.ContainsArray(destinationEntity, arrayElementType))
+                    if (!destinationWorld.ContainsArray(destinationEntity, a))
                     {
-                        destinationArray = CreateArray(destinationEntity, arrayElementType, sourceArray.Stride, sourceArray.Length);
+                        destinationArray = CreateArray(destinationEntity, a, sourceArray.Stride, sourceArray.Length);
                     }
                     else
                     {
-                        destinationArray = GetArray(destinationEntity, arrayElementType);
+                        destinationArray = GetArray(destinationEntity, a);
                         destinationArray.Length = sourceArray.Length;
                     }
 
@@ -2639,10 +2720,9 @@ namespace Worlds
             {
                 if (tagTypes.Contains(t))
                 {
-                    TagType tagType = new(t);
-                    if (!destinationWorld.ContainsTag(destinationEntity, tagType))
+                    if (!destinationWorld.ContainsTag(destinationEntity, t))
                     {
-                        destinationWorld.AddTag(destinationEntity, tagType);
+                        destinationWorld.AddTag(destinationEntity, t);
                     }
                 }
             }

@@ -199,19 +199,34 @@ namespace Worlds
             return other.arrayElementTypes == arrayElementTypes && other.componentTypes == componentTypes && other.tagTypes == tagTypes;
         }
 
-        public readonly bool Contains(ComponentType componentType)
+        public readonly bool ContainsComponent(ComponentType componentType)
         {
             return componentTypes.Contains(componentType.index);
         }
 
-        public readonly bool Contains(ArrayElementType arrayType)
+        public readonly bool ContainsArray(ArrayElementType arrayType)
         {
             return arrayElementTypes.Contains(arrayType.index);
         }
 
-        public readonly bool Contains(TagType tagType)
+        public readonly bool ContainsTag(TagType tagType)
         {
             return tagTypes.Contains(tagType.index);
+        }
+
+        public readonly bool ContainsComponent(uint index)
+        {
+            return componentTypes.Contains(index);
+        }
+
+        public readonly bool ContainsArray(uint index)
+        {
+            return arrayElementTypes.Contains(index);
+        }
+
+        public readonly bool ContainsTag(uint index)
+        {
+            return tagTypes.Contains(index);
         }
 
         /// <summary>

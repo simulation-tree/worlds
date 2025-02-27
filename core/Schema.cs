@@ -427,8 +427,8 @@ namespace Worlds
             ArrayElementType arrayType = new(schema->arraysCount);
             USpan<ushort> arrayElementSizes = schema->sizes.AsSpan<ushort>(BitMask.Capacity, BitMask.Capacity);
             USpan<long> arrayElementHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-            arrayElementSizes[arrayType.index] = type.Size;
-            arrayElementHashes[arrayType.index] = type.Hash;
+            arrayElementSizes[schema->arraysCount] = type.Size;
+            arrayElementHashes[schema->arraysCount] = type.Hash;
             schema->arraysCount++;
             schema->definitionMask.AddArrayType(arrayType);
             return arrayType;

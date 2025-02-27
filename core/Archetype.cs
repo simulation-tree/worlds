@@ -7,6 +7,9 @@ namespace Worlds
     /// <summary>
     /// Contains all component, array element and tag types,
     /// including their sizes.
+    /// <para>
+    /// Used by <see cref="IEntity"/> types to describe themselves.
+    /// </para>
     /// </summary>
     public struct Archetype : IEquatable<Archetype>
     {
@@ -107,19 +110,34 @@ namespace Worlds
             return HashCode.Combine(definition, schema);
         }
 
-        public readonly bool ContainsComponentType(ComponentType componentType)
+        public readonly bool ContainsComponent(ComponentType componentType)
         {
             return definition.ComponentTypes.Contains(componentType.index);
         }
 
-        public readonly bool ContainsArrayType(ArrayElementType arrayType)
+        public readonly bool ContainsArray(ArrayElementType arrayType)
         {
             return definition.ArrayTypes.Contains(arrayType.index);
         }
 
-        public readonly bool Contains(TagType tagType)
+        public readonly bool ContainsTag(TagType tagType)
         {
             return definition.TagTypes.Contains(tagType.index);
+        }
+
+        public readonly bool ContainsComponent(uint index)
+        {
+            return definition.ComponentTypes.Contains(index);
+        }
+
+        public readonly bool ContainsArray(uint index)
+        {
+            return definition.ArrayTypes.Contains(index);
+        }
+
+        public readonly bool ContainsTag(uint index)
+        {
+            return definition.TagTypes.Contains(index);
         }
 
         public readonly bool ContainsComponent<T>() where T : unmanaged
@@ -170,11 +188,11 @@ namespace Worlds
         /// </summary>
         public unsafe void AddArrayType<T>() where T : unmanaged
         {
-            ArrayElementType arrayType = schema.GetArrayType<T>();
+            uint arrayType = schema.GetArrayTypeIndex<T>();
             ThrowIfArrayElementTypeIsPresent(arrayType);
 
             definition.AddArrayType(arrayType);
-            arrayElementSizes[arrayType.index] = (ushort)sizeof(T);
+            arrayElementSizes[arrayType] = (ushort)sizeof(T);
         }
 
         /// <summary>
@@ -303,6 +321,15 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
+        private readonly void ThrowIfComponentTypeIsPresent(uint componentType)
+        {
+            if (definition.ComponentTypes.Contains(componentType))
+            {
+                throw new InvalidOperationException($"Component type `{new ComponentType(componentType).ToString(schema)}` is already present in the archetype");
+            }
+        }
+
+        [Conditional("DEBUG")]
         private readonly void ThrowIfArrayElementTypeIsPresent(ArrayElementType arrayType)
         {
             if (definition.ArrayTypes.Contains(arrayType.index))
@@ -312,11 +339,29 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
+        private readonly void ThrowIfArrayElementTypeIsPresent(uint arrayType)
+        {
+            if (definition.ArrayTypes.Contains(arrayType))
+            {
+                throw new InvalidOperationException($"Array type `{new ArrayElementType(arrayType).ToString(schema)}` is already present in the archetype");
+            }
+        }
+
+        [Conditional("DEBUG")]
         private readonly void ThrowIfTagTypeIsPresent(TagType tagType)
         {
             if (definition.TagTypes.Contains(tagType.index))
             {
                 throw new InvalidOperationException($"Tag type `{tagType.ToString(schema)}` is already present in the archetype");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfTagTypeIsPresent(uint tagType)
+        {
+            if (definition.TagTypes.Contains(tagType))
+            {
+                throw new InvalidOperationException($"Tag type `{new TagType(tagType).ToString(schema)}` is already present in the archetype");
             }
         }
 

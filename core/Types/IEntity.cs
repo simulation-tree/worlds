@@ -9,7 +9,8 @@ namespace Worlds
     {
         /// <summary>
         /// Describes the <see cref="ComponentType"/>s, <see cref="ArrayElementType"/>s
-        /// and <see cref="TagType"/>s that should be present on entities of this type.
+        /// and <see cref="TagType"/>s that should be present on entities of this type
+        /// in order to comply with this type.
         /// </summary>
         void Describe(ref Archetype archetype);
     }

@@ -336,10 +336,18 @@ namespace Worlds
         /// </summary>
         public readonly Allocation GetComponent(uint index, ComponentType componentType)
         {
+            return GetComponent(index, componentType.index);
+        }
+
+        /// <summary>
+        /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> at <paramref name="index"/>.
+        /// </summary>
+        public readonly Allocation GetComponent(uint index, uint componentType)
+        {
             Allocations.ThrowIfNull(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
 
-            return chunk->componentLists[componentType.index][index];
+            return chunk->componentLists[componentType][index];
         }
 
         /// <summary>
@@ -356,14 +364,24 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Assigns the component for entity at <paramref name="index"/> to <paramref name="value"/>.
+        /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> at <paramref name="index"/>.
         /// </summary>
-        public readonly void SetComponent<T>(uint index, ComponentType componentType, T value) where T : unmanaged
+        public readonly Allocation GetComponent(uint index, uint componentType, out ushort componentSize)
         {
             Allocations.ThrowIfNull(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
 
-            chunk->componentLists[componentType.index].Set(index, value);
+            List components = chunk->componentLists[componentType];
+            componentSize = (ushort)components.Stride;
+            return components[index];
+        }
+
+        /// <summary>
+        /// Assigns the component for entity at <paramref name="index"/> to <paramref name="value"/>.
+        /// </summary>
+        public readonly void SetComponent<T>(uint index, ComponentType componentType, T value) where T : unmanaged
+        {
+            SetComponent(index, componentType.index, value);
         }
 
         /// <summary>
