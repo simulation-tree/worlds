@@ -154,6 +154,15 @@ namespace Worlds
             }
         }
 
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfEntityIsMissing(uint entity)
+        {
+            if (!chunk->entities.Contains(entity))
+            {
+                throw new ArgumentException($"Entity `{entity}` is missing from the chunk");
+            }
+        }
+
         /// <inheritdoc/>
         public readonly override string ToString()
         {
@@ -310,6 +319,18 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves a reference to the component of type <paramref name="componentType"/>.
+        /// </summary>
+        public readonly ref T GetComponentOfEntity<T>(uint entity, uint componentType) where T : unmanaged
+        {
+            Allocations.ThrowIfNull(chunk);
+            ThrowIfComponentTypeIsMissing(componentType);
+            ThrowIfEntityIsMissing(entity);
+
+            return ref chunk->componentLists[componentType].Get<T>(chunk->entities.IndexOf(entity));
+        }
+
+        /// <summary>
         /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> at <paramref name="index"/>.
         /// </summary>
         public readonly Allocation GetComponent(uint index, uint componentType)
@@ -318,6 +339,18 @@ namespace Worlds
             ThrowIfComponentTypeIsMissing(componentType);
 
             return chunk->componentLists[componentType][index];
+        }
+
+        /// <summary>
+        /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> of <paramref name="entity"/>.
+        /// </summary>
+        public readonly Allocation GetComponentOfEntity(uint entity, uint componentType)
+        {
+            Allocations.ThrowIfNull(chunk);
+            ThrowIfComponentTypeIsMissing(componentType);
+            ThrowIfEntityIsMissing(entity);
+
+            return chunk->componentLists[componentType][chunk->entities.IndexOf(entity)];
         }
 
         /// <summary>
@@ -334,6 +367,20 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> of <paramref name="entity"/>.
+        /// </summary>
+        public readonly Allocation GetComponentOfEntity(uint entity, uint componentType, out ushort componentSize)
+        {
+            Allocations.ThrowIfNull(chunk);
+            ThrowIfComponentTypeIsMissing(componentType);
+            ThrowIfEntityIsMissing(entity);
+
+            List components = chunk->componentLists[componentType];
+            componentSize = (ushort)components.Stride;
+            return components[chunk->entities.IndexOf(entity)];
+        }
+
+        /// <summary>
         /// Assigns the component for entity at <paramref name="index"/> to <paramref name="value"/>.
         /// </summary>
         public readonly void SetComponent<T>(uint index, uint componentType, T value) where T : unmanaged
@@ -342,6 +389,18 @@ namespace Worlds
             ThrowIfComponentTypeIsMissing(componentType);
 
             chunk->componentLists[componentType].Set(index, value);
+        }
+
+        /// <summary>
+        /// Assigns the component for <paramref name="entity"/> to <paramref name="value"/>.
+        /// </summary>
+        public readonly void SetComponentOfEntity<T>(uint entity, uint componentType, T value) where T : unmanaged
+        {
+            Allocations.ThrowIfNull(chunk);
+            ThrowIfComponentTypeIsMissing(componentType);
+            ThrowIfEntityIsMissing(entity);
+
+            chunk->componentLists[componentType].Set(chunk->entities.IndexOf(entity), value);
         }
 
         public readonly override bool Equals(object? obj)

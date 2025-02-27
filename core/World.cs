@@ -2,7 +2,6 @@
 using Collections.Generic;
 using System;
 using System.Diagnostics;
-using System.Security.AccessControl;
 using Types;
 using Unmanaged;
 using Worlds.Functions;
@@ -565,14 +564,11 @@ namespace Worlds
                     continue;
                 }
 
-                if (TryGetReferences(e, out USpan<uint> references))
+                USpan<uint> references = GetReferences(e);
+                writer.WriteValue(references.Length);
+                for (uint r = 0; r < references.Length; r++)
                 {
-                    writer.WriteValue(references.Length);
-                    writer.WriteSpan(references);
-                }
-                else
-                {
-                    writer.WriteValue(0);
+                    writer.WriteValue(r);
                 }
             }
         }
@@ -1274,27 +1270,6 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Tries to retrieve all children of the <paramref name="entity"/> entity.
-        /// </summary>
-        public readonly bool TryGetChildren(uint entity, out USpan<uint> children)
-        {
-            Allocations.ThrowIfNull(world);
-            ThrowIfEntityIsMissing(entity);
-
-            ref Slot slot = ref world->slots[entity];
-            if (slot.ContainsChildren && !slot.ChildrenOutdated)
-            {
-                children = world->slots[entity].children.AsSpan();
-                return true;
-            }
-            else
-            {
-                children = default;
-                return false;
-            }
-        }
-
-        /// <summary>
         /// Retrieves all entities referenced by <paramref name="entity"/>.
         /// </summary>
         public readonly USpan<uint> GetReferences(uint entity)
@@ -1310,27 +1285,6 @@ namespace Worlds
             else
             {
                 return default;
-            }
-        }
-
-        /// <summary>
-        /// Tries to retrieve all entities referenced by <paramref name="entity"/>.
-        /// </summary>
-        public readonly bool TryGetReferences(uint entity, out USpan<uint> references)
-        {
-            Allocations.ThrowIfNull(world);
-            ThrowIfEntityIsMissing(entity);
-
-            ref Slot slot = ref world->slots[entity];
-            if (slot.ContainsReferences && !slot.ReferencesOutdated)
-            {
-                references = world->slots[entity].references.AsSpan(1);
-                return true;
-            }
-            else
-            {
-                references = default;
-                return false;
             }
         }
 
@@ -2326,9 +2280,7 @@ namespace Worlds
             uint componentType = world->schema.GetComponentTypeIndex<T>();
             ThrowIfComponentMissing(entity, componentType);
 
-            ref Chunk chunk = ref world->slots[entity].chunk;
-            uint index = chunk.Entities.IndexOf(entity);
-            return ref chunk.GetComponent<T>(index, componentType);
+            return ref world->slots[entity].chunk.GetComponentOfEntity<T>(entity, componentType);
         }
 
         /// <summary>
@@ -2341,11 +2293,10 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
 
             uint componentType = world->schema.GetComponentTypeIndex<T>();
-            if (world->slots[entity].Definition.ComponentTypes.Contains(componentType))
+            ref Slot slot = ref world->slots[entity];
+            if (slot.Definition.ComponentTypes.Contains(componentType))
             {
-                ref Chunk chunk = ref world->slots[entity].chunk;
-                uint index = chunk.Entities.IndexOf(entity);
-                return chunk.GetComponent<T>(index, componentType);
+                return slot.chunk.GetComponentOfEntity<T>(entity, componentType);
             }
             else
             {
@@ -2362,9 +2313,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentMissing(entity, componentType);
 
-            ref Chunk chunk = ref world->slots[entity].chunk;
-            uint index = chunk.Entities.IndexOf(entity);
-            return ref chunk.GetComponent<T>(index, componentType);
+            return ref world->slots[entity].chunk.GetComponentOfEntity<T>(entity, componentType);
         }
 
         public readonly Allocation GetComponent(uint entity, uint componentType)
@@ -2373,9 +2322,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentMissing(entity, componentType);
 
-            ref Chunk chunk = ref world->slots[entity].chunk;
-            uint index = chunk.Entities.IndexOf(entity);
-            return chunk.GetComponent(index, componentType);
+            return world->slots[entity].chunk.GetComponentOfEntity(entity, componentType);
         }
 
         /// <summary>
@@ -2388,9 +2335,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentMissing(entity, componentType);
 
-            ref Chunk chunk = ref world->slots[entity].chunk;
-            uint index = chunk.Entities.IndexOf(entity);
-            return chunk.GetComponent(index, componentType, out componentSize);
+            return world->slots[entity].chunk.GetComponentOfEntity(entity, componentType, out componentSize);
         }
 
         /// <summary>
@@ -2402,9 +2347,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentMissing(entity, componentType);
 
-            ref Chunk chunk = ref world->slots[entity].chunk;
-            uint index = chunk.Entities.IndexOf(entity);
-            Allocation component = chunk.GetComponent(index, componentType, out ushort componentSize);
+            Allocation component = world->slots[entity].chunk.GetComponentOfEntity(entity, componentType, out ushort componentSize);
             return new(component.Pointer, componentSize);
         }
 
@@ -2453,8 +2396,7 @@ namespace Worlds
             contains = chunk.Definition.ComponentTypes.Contains(componentType);
             if (contains)
             {
-                uint index = chunk.Entities.IndexOf(entity);
-                return ref chunk.GetComponent<T>(index, componentType);
+                return ref chunk.GetComponentOfEntity<T>(entity, componentType);
             }
             else
             {
@@ -2474,8 +2416,7 @@ namespace Worlds
             ref Chunk chunk = ref world->slots[entity].chunk;
             if (chunk.Definition.ComponentTypes.Contains(componentType))
             {
-                uint index = chunk.Entities.IndexOf(entity);
-                component = chunk.GetComponent<T>(index, componentType);
+                component = chunk.GetComponentOfEntity<T>(entity, componentType);
                 return true;
             }
             else
@@ -2496,9 +2437,7 @@ namespace Worlds
             uint componentType = world->schema.GetComponentTypeIndex<T>();
             ThrowIfComponentMissing(entity, componentType);
 
-            ref Chunk chunk = ref world->slots[entity].chunk;
-            uint index = chunk.Entities.IndexOf(entity);
-            chunk.SetComponent(index, componentType, component);
+            world->slots[entity].chunk.SetComponentOfEntity(entity, componentType, component);
         }
 
         /// <summary>
@@ -2510,9 +2449,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentMissing(entity, componentType);
 
-            ref Chunk chunk = ref world->slots[entity].chunk;
-            uint index = chunk.Entities.IndexOf(entity);
-            Allocation component = chunk.GetComponent(index, componentType, out ushort componentSize);
+            Allocation component = world->slots[entity].chunk.GetComponentOfEntity(entity, componentType, out ushort componentSize);
             componentBytes.CopyTo(component, componentSize);
         }
 
@@ -2521,6 +2458,7 @@ namespace Worlds
         /// </summary>
         public readonly Chunk GetChunk(uint entity)
         {
+            Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
 
             return world->slots[entity].chunk;
