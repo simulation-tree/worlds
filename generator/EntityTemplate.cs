@@ -10,7 +10,7 @@
     public readonly uint value;
 
     public readonly bool IsDestroyed => !world.ContainsEntity(value);
-    public readonly uint References => world.GetReferenceCount(value);
+    public readonly USpan<uint> References => world.GetReferences(value);
 
     public readonly bool IsEnabled
     {
@@ -27,13 +27,7 @@
         }
     }
         
-    public readonly USpan<uint> Children
-    {
-        get
-        {
-            return world.TryGetChildren(value, out USpan<uint> children) ? children : default;
-        }
-    }
+    public readonly USpan<uint> Children => world.GetChildren(value);
     
     public readonly bool IsCompliant
     {

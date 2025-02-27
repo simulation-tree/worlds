@@ -13,7 +13,7 @@ namespace Worlds
         public readonly uint value;
 
         public readonly bool IsDestroyed => !world.ContainsEntity(value);
-        public readonly uint References => world.GetReferenceCount(value);
+        public readonly USpan<uint> References => world.GetReferences(value);
 
         public readonly bool IsEnabled
         {
@@ -30,13 +30,7 @@ namespace Worlds
             }
         }
 
-        public readonly USpan<uint> Children
-        {
-            get
-            {
-                return world.TryGetChildren(value, out USpan<uint> children) ? children : default;
-            }
-        }
+        public readonly USpan<uint> Children => world.GetChildren(value);
 
 #if NET
         [Obsolete("Default constructor not supported", true)]
@@ -438,30 +432,18 @@ namespace Worlds
                         this.parent = default;
                     }
 
-                    if (world.TryGetChildren(value, out USpan<uint> children))
+                    USpan<uint> children = world.GetChildren(value);
+                    this.children = new Entity[children.Length];
+                    for (uint i = 0; i < children.Length; i++)
                     {
-                        this.children = new Entity[children.Length];
-                        for (uint i = 0; i < children.Length; i++)
-                        {
-                            this.children[i] = new Entity(world, children[i]);
-                        }
-                    }
-                    else
-                    {
-                        this.children = new Entity[] { };
+                        this.children[i] = new Entity(world, children[i]);
                     }
 
-                    if (world.TryGetReferences(value, out USpan<uint> references))
+                    USpan<uint> references = world.GetReferences(value);
+                    this.references = new Entity[references.Length];
+                    for (uint i = 0; i < references.Length; i++)
                     {
-                        this.references = new Entity[references.Length];
-                        for (uint i = 0; i < references.Length; i++)
-                        {
-                            this.references[i] = new Entity(world, references[i]);
-                        }
-                    }
-                    else
-                    {
-                        this.references = new Entity[] { };
+                        this.references[i] = new Entity(world, references[i]);
                     }
 
                     Chunk chunk = world.GetChunk(value);
