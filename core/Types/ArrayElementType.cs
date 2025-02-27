@@ -10,7 +10,7 @@ namespace Worlds
     /// </summary>
     public readonly struct ArrayElementType : IEquatable<ArrayElementType>
     {
-        private readonly byte index;
+        public readonly uint index;
 
 #if NET
         /// <summary>
@@ -37,7 +37,7 @@ namespace Worlds
         {
             ThrowIfOutOfRange(value);
 
-            this.index = (byte)value;
+            this.index = value;
         }
 
         /// <inheritdoc/>
@@ -77,7 +77,7 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override bool Equals(object? obj)
         {
-            return obj is Type type && Equals(type);
+            return obj is ArrayElementType type && Equals(type);
         }
 
         /// <inheritdoc/>
@@ -89,7 +89,10 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return index;
+            unchecked
+            {
+                return (int)index;
+            }
         }
 
         /// <summary>
@@ -110,9 +113,9 @@ namespace Worlds
             return !(left == right);
         }
 
-        public static implicit operator byte(ArrayElementType arrayElementType)
+        public static implicit operator uint(ArrayElementType type)
         {
-            return arrayElementType.index;
+            return type.index;
         }
 
         [Conditional("DEBUG")]

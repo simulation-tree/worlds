@@ -112,8 +112,8 @@ namespace Worlds.Tests
         public unsafe void CheckSchemaOfLoadedWorld()
         {
             World prefabWorld = CreateWorld();
-            ComponentType fruitType = prefabWorld.Schema.GetComponent<Fruit>();
-            ComponentType cherryType = prefabWorld.Schema.GetComponent<Cherry>();
+            ComponentType fruitType = prefabWorld.Schema.GetComponentType<Fruit>();
+            ComponentType cherryType = prefabWorld.Schema.GetComponentType<Cherry>();
             uint a = prefabWorld.CreateEntity();
             prefabWorld.AddComponent(a, new Fruit(42));
             prefabWorld.AddComponent(a, new Cherry("Hello, World!"));
@@ -129,7 +129,7 @@ namespace Worlds.Tests
             Schema loadedSchema = loadedWorld.Schema;
             Assert.That(loadedSchema.TryGetComponentType(TypeRegistry.Get<Fruit>(), out ComponentType loadedFruitType), Is.True);
             Assert.That(loadedSchema.TryGetComponentType(TypeRegistry.Get<Cherry>(), out ComponentType loadedCherryType), Is.True);
-            Assert.That(loadedSchema.ContainsTag<IsPrefab>(), Is.True);
+            Assert.That(loadedSchema.ContainsTagType<IsPrefab>(), Is.True);
             Assert.That(loadedFruitType, Is.EqualTo(fruitType));
             Assert.That(loadedCherryType, Is.EqualTo(cherryType));
         }
@@ -168,10 +168,10 @@ namespace Worlds.Tests
                 }
             }
 
-            Assert.That(loadedSchema.ContainsComponent<Another>(), Is.True);
-            Assert.That(loadedSchema.ContainsComponent<Fruit>(), Is.False);
-            Assert.That(loadedSchema.ContainsComponent<Cherry>(), Is.True);
-            Assert.That(loadedSchema.ContainsTag<IsPrefab>(), Is.True);
+            Assert.That(loadedSchema.ContainsComponentType<Another>(), Is.True);
+            Assert.That(loadedSchema.ContainsComponentType<Fruit>(), Is.False);
+            Assert.That(loadedSchema.ContainsComponentType<Cherry>(), Is.True);
+            Assert.That(loadedSchema.ContainsTagType<IsPrefab>(), Is.True);
             Assert.That(loadedWorld.ContainsEntity(a), Is.True);
             Assert.That(loadedWorld.GetComponent<Another>(a).data, Is.EqualTo(42));
             Assert.That(loadedWorld.GetComponent<Cherry>(a).stones.ToString(), Is.EqualTo("Hello, World!"));

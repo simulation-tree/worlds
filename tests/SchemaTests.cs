@@ -11,27 +11,27 @@ namespace Worlds.Tests
         public void AddToSchema()
         {
             using Schema schema = new();
-            Assert.That(schema.ContainsComponent<Stress>(), Is.False);
+            Assert.That(schema.ContainsComponentType<Stress>(), Is.False);
             schema.RegisterComponent<Stress>();
-            Assert.That(schema.ContainsComponent<Stress>(), Is.True);
+            Assert.That(schema.ContainsComponentType<Stress>(), Is.True);
         }
 
         [Test]
         public void Copying()
         {
             using Schema schema = new();
-            Assert.That(schema.ContainsComponent<Stress>(), Is.False);
+            Assert.That(schema.ContainsComponentType<Stress>(), Is.False);
             schema.RegisterComponent<Stress>();
             TagType thingTag = schema.RegisterTag<IsThing>();
-            Assert.That(schema.ContainsComponent<Stress>(), Is.True);
-            Assert.That(schema.ContainsTag<IsThing>(), Is.True);
+            Assert.That(schema.ContainsComponentType<Stress>(), Is.True);
+            Assert.That(schema.ContainsTagType<IsThing>(), Is.True);
 
             using Schema copy = new();
             copy.CopyFrom(schema);
 
-            Assert.That(copy.ContainsComponent<Stress>(), Is.True);
-            Assert.That(copy.ContainsTag<IsThing>(), Is.True);
-            Assert.That(copy.Contains(thingTag), Is.True);
+            Assert.That(copy.ContainsComponentType<Stress>(), Is.True);
+            Assert.That(copy.ContainsTagType<IsThing>(), Is.True);
+            Assert.That(copy.ContainsTagType(thingTag), Is.True);
         }
 
         [Test]
@@ -68,10 +68,10 @@ namespace Worlds.Tests
             using ByteReader reader = new(writer);
             using Schema loadedSchema = reader.ReadObject<Schema>();
 
-            Assert.That(loadedSchema.ContainsComponent<float>(), Is.True);
-            Assert.That(loadedSchema.ContainsComponent<char>(), Is.True);
-            Assert.That(loadedSchema.ContainsTag<IsThing>(), Is.True);
-            Assert.That(loadedSchema.Contains(thingTag), Is.True);
+            Assert.That(loadedSchema.ContainsComponentType<float>(), Is.True);
+            Assert.That(loadedSchema.ContainsComponentType<char>(), Is.True);
+            Assert.That(loadedSchema.ContainsTagType<IsThing>(), Is.True);
+            Assert.That(loadedSchema.ContainsTagType(thingTag), Is.True);
         }
 
         [Test]
@@ -89,10 +89,10 @@ namespace Worlds.Tests
             using ByteReader reader = new(writer);
             using Schema loadedSchema = reader.ReadObject<Schema>();
 
-            Assert.That(loadedSchema.ContainsTag<bool>(), Is.True);
-            Assert.That(loadedSchema.ContainsTag<byte>(), Is.True);
-            Assert.That(loadedSchema.ContainsComponent<bool>(), Is.True);
-            Assert.That(loadedSchema.ContainsArrayElement<byte>(), Is.True);
+            Assert.That(loadedSchema.ContainsTagType<bool>(), Is.True);
+            Assert.That(loadedSchema.ContainsTagType<byte>(), Is.True);
+            Assert.That(loadedSchema.ContainsComponentType<bool>(), Is.True);
+            Assert.That(loadedSchema.ContainsArrayType<byte>(), Is.True);
         }
 
         [Test]
@@ -108,7 +108,7 @@ namespace Worlds.Tests
             DataType boolType = schema.GetComponentDataType<bool>();
             DataType byteType = schema.GetComponentDataType<byte>();
             DataType shortType = schema.GetComponentDataType<short>();
-            DataType charType = schema.GetArrayElementDataType<char>();
+            DataType charType = schema.GetArrayDataType<char>();
             DataType intType = schema.GetTagDataType<int>();
 
             Assert.That(boolType.size, Is.EqualTo(sizeof(bool)));
@@ -127,9 +127,9 @@ namespace Worlds.Tests
         public void LoadCustomBank()
         {
             using Schema schema = new();
-            Assert.That(schema.ContainsComponent<DateTime>(), Is.False);
+            Assert.That(schema.ContainsComponentType<DateTime>(), Is.False);
             schema.Load<CustomSchemaBank>();
-            Assert.That(schema.ContainsComponent<DateTime>(), Is.True);
+            Assert.That(schema.ContainsComponentType<DateTime>(), Is.True);
         }
     }
 }

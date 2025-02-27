@@ -38,7 +38,6 @@ namespace Worlds.Generator
             componentInvocations.Add(new("World", "ContainsAnyComponent"));
             arrayElementInvocations.Add(new("World", "CreateArray"));
             arrayElementInvocations.Add(new("World", "DestroyArray"));
-            arrayElementInvocations.Add(new("World", "ResizeArray"));
             arrayElementInvocations.Add(new("World", "ContainsArray"));
             arrayElementInvocations.Add(new("World", "GetArray"));
             arrayElementInvocations.Add(new("World", "GetArrayLength"));
@@ -54,7 +53,6 @@ namespace Worlds.Generator
             componentInvocations.Add(new("Entity", "TryGetComponent"));
             arrayElementInvocations.Add(new("Entity", "CreateArray"));
             arrayElementInvocations.Add(new("Entity", "DestroyArray"));
-            arrayElementInvocations.Add(new("Entity", "ResizeArray"));
             arrayElementInvocations.Add(new("Entity", "ContainsArray"));
             arrayElementInvocations.Add(new("Entity", "GetArray"));
             arrayElementInvocations.Add(new("Entity", "GetArrayLength"));
@@ -64,16 +62,15 @@ namespace Worlds.Generator
 
             componentInvocations.Add(new("Chunk", "GetComponents"));
             componentInvocations.Add(new("Chunk", "GetComponent"));
+            componentInvocations.Add(new("Chunk", "SetComponent"));
 
-            componentInvocations.Add(new("Schema", "GetComponent"));
+            componentInvocations.Add(new("Schema", "GetComponentType"));
             componentInvocations.Add(new("Schema", "GetComponents"));
             componentInvocations.Add(new("Schema", "GetComponentDataType"));
-            componentInvocations.Add(new("Schema", "GetComponentSize"));
-            arrayElementInvocations.Add(new("Schema", "GetArrayElement"));
+            arrayElementInvocations.Add(new("Schema", "GetArrayType"));
             arrayElementInvocations.Add(new("Schema", "GetArrayElements"));
-            arrayElementInvocations.Add(new("Schema", "GetArrayElementDataType"));
-            arrayElementInvocations.Add(new("Schema", "GetArrayElementSize"));
-            tagInvocations.Add(new("Schema", "GetTag"));
+            arrayElementInvocations.Add(new("Schema", "GetArrayDataType"));
+            tagInvocations.Add(new("Schema", "GetTagType"));
             tagInvocations.Add(new("Schema", "GetTagDataType"));
 
             componentInvocations.Add(new("ComponentQuery", "RequireComponent"));
@@ -88,7 +85,6 @@ namespace Worlds.Generator
             componentInvocations.Add(new("Operation", "SetComponent"));
             componentInvocations.Add(new("Operation", "AddOrSetComponent"));
             arrayElementInvocations.Add(new("Operation", "CreateArray"));
-            arrayElementInvocations.Add(new("Operation", "ResizeArray"));
             arrayElementInvocations.Add(new("Operation", "SetArrayElements"));
             arrayElementInvocations.Add(new("Operation", "SetArrayElement"));
             arrayElementInvocations.Add(new("Operation", "SetArray"));
@@ -99,19 +95,15 @@ namespace Worlds.Generator
 
             componentInvocations.Add(new("Definition", "AddComponentTypes"));
             componentInvocations.Add(new("Definition", "AddComponentType"));
-            componentInvocations.Add(new("Definition", "GetComponentSize"));
             arrayElementInvocations.Add(new("Definition", "AddArrayType"));
             arrayElementInvocations.Add(new("Definition", "AddArrayTypes"));
-            arrayElementInvocations.Add(new("Definition", "GetArrayElementSize"));
             tagInvocations.Add(new("Definition", "AddTagTypes"));
             tagInvocations.Add(new("Definition", "AddTagType"));
 
             componentInvocations.Add(new("Archetype", "AddComponentTypes"));
             componentInvocations.Add(new("Archetype", "AddComponentType"));
-            componentInvocations.Add(new("Archetype", "GetComponentSize"));
             arrayElementInvocations.Add(new("Archetype", "AddArrayType"));
             arrayElementInvocations.Add(new("Archetype", "AddArrayTypes"));
-            arrayElementInvocations.Add(new("Archetype", "GetArrayElementSize"));
             tagInvocations.Add(new("Archetype", "AddTagTypes"));
             tagInvocations.Add(new("Archetype", "AddTagType"));
         }

@@ -498,6 +498,31 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Resets the bit at position <paramref name="index"/> to 0.
+        /// </summary>
+        public void Clear(uint index)
+        {
+            unchecked
+            {
+                switch (index)
+                {
+                    case < 64:
+                        a &= ~(1UL << (int)index);
+                        break;
+                    case < 128:
+                        b &= ~(1UL << (int)index - 64);
+                        break;
+                    case < 192:
+                        c &= ~(1UL << (int)index - 128);
+                        break;
+                    default:
+                        d &= ~(1UL << (int)index - 192);
+                        break;
+                }
+            }
+        }
+
+        /// <summary>
         /// Retrieves a cheap hashcode prone to collisions.
         /// </summary>
         public readonly override int GetHashCode()

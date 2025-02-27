@@ -20,7 +20,7 @@ namespace Worlds
         /// <summary>
         /// Mask of array types in this definition.
         /// </summary>
-        public readonly BitMask ArrayElementTypes => arrayElementTypes;
+        public readonly BitMask ArrayTypes => arrayElementTypes;
 
         /// <summary>
         /// Mask of tag types in this definition.
@@ -201,17 +201,17 @@ namespace Worlds
 
         public readonly bool Contains(ComponentType componentType)
         {
-            return componentTypes.Contains(componentType);
+            return componentTypes.Contains(componentType.index);
         }
 
-        public readonly bool Contains(ArrayElementType arrayElementType)
+        public readonly bool Contains(ArrayElementType arrayType)
         {
-            return arrayElementTypes.Contains(arrayElementType);
+            return arrayElementTypes.Contains(arrayType.index);
         }
 
         public readonly bool Contains(TagType tagType)
         {
-            return tagTypes.Contains(tagType);
+            return tagTypes.Contains(tagType.index);
         }
 
         /// <summary>
@@ -219,12 +219,12 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsComponent<T>(Schema schema) where T : unmanaged
         {
-            if (!schema.ContainsComponent<T>())
+            if (!schema.ContainsComponentType<T>())
             {
                 return false;
             }
 
-            return componentTypes.Contains(schema.GetComponent<T>());
+            return componentTypes.Contains(schema.GetComponentTypeIndex<T>());
         }
 
         /// <summary>
@@ -232,52 +232,30 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsArray<T>(Schema schema) where T : unmanaged
         {
-            if (!schema.ContainsArrayElement<T>())
+            if (!schema.ContainsArrayType<T>())
             {
                 return false;
             }
 
-            return arrayElementTypes.Contains(schema.GetArrayElement<T>());
+            return arrayElementTypes.Contains(schema.GetArrayType<T>().index);
         }
 
         public readonly bool ContainsTag<T>(Schema schema) where T : unmanaged
         {
-            if (!schema.ContainsTag<T>())
+            if (!schema.ContainsTagType<T>())
             {
                 return false;
             }
 
-            return tagTypes.Contains(schema.GetTag<T>());
+            return tagTypes.Contains(schema.GetTagType<T>().index);
         }
 
         /// <summary>
-        /// Adds the specified <paramref name="componentTypes"/> to this definition.
+        /// Adds the given <paramref name="arrayTypes"/> bit mask to this definition.
         /// </summary>
-        public void AddComponentTypes(USpan<ComponentType> componentTypes)
+        public void AddArrayElementTypes(BitMask arrayTypes)
         {
-            foreach (ComponentType componentType in componentTypes)
-            {
-                this.componentTypes.Set(componentType);
-            }
-        }
-
-        /// <summary>
-        /// Adds the given <paramref name="arrayElementTypes"/> bit mask to this definition.
-        /// </summary>
-        public void AddArrayElementTypes(BitMask arrayElementTypes)
-        {
-            this.arrayElementTypes |= arrayElementTypes;
-        }
-
-        /// <summary>
-        /// Adds the specified <paramref name="arrayElementTypes"/> to this definition.
-        /// </summary>
-        public void AddArrayElementTypes(USpan<ArrayElementType> arrayElementTypes)
-        {
-            foreach (ArrayElementType arrayElementType in arrayElementTypes)
-            {
-                this.arrayElementTypes.Set(arrayElementType);
-            }
+            this.arrayElementTypes |= arrayTypes;
         }
 
         /// <summary>
@@ -285,20 +263,30 @@ namespace Worlds
         /// </summary>
         public void AddComponentType(ComponentType componentType)
         {
-            componentTypes.Set(componentType);
+            componentTypes.Set(componentType.index);
         }
 
         public void RemoveComponentType(ComponentType componentType)
         {
-            componentTypes.Clear(componentType);
+            componentTypes.Clear(componentType.index);
+        }
+
+        public void AddComponentType(uint index)
+        {
+            componentTypes.Set(index);
+        }
+
+        public void RemoveComponentType(uint index)
+        {
+            componentTypes.Clear(index);
         }
 
         /// <summary>
-        /// Adds the specified <typeparamref name="C1"/> component type to this definition.
+        /// Adds the specified <typeparamref name="T"/> component type to this definition.
         /// </summary>
-        public void AddComponentType<C1>(Schema schema) where C1 : unmanaged
+        public void AddComponentType<T>(Schema schema) where T : unmanaged
         {
-            componentTypes.Set(schema.GetComponent<C1>());
+            componentTypes.Set(schema.GetComponentTypeIndex<T>());
         }
 
         /// <summary>
@@ -368,16 +356,26 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Adds the specified <paramref name="arrayElementType"/> to this definition.
+        /// Adds the specified <paramref name="arrayType"/> to this definition.
         /// </summary>
-        public void AddArrayType(ArrayElementType arrayElementType)
+        public void AddArrayType(ArrayElementType arrayType)
         {
-            arrayElementTypes.Set(arrayElementType);
+            arrayElementTypes.Set(arrayType.index);
         }
 
-        public void RemoveArrayElementType(ArrayElementType arrayElementType)
+        public void AddArrayType(uint arrayType)
         {
-            arrayElementTypes.Clear(arrayElementType);
+            arrayElementTypes.Set(arrayType);
+        }
+
+        public void RemoveArrayType(ArrayElementType arrayType)
+        {
+            arrayElementTypes.Clear(arrayType.index);
+        }
+
+        public void RemoveArrayType(uint arrayType)
+        {
+            arrayElementTypes.Clear(arrayType);
         }
 
         /// <summary>
@@ -460,17 +458,37 @@ namespace Worlds
 
         public void AddTagType(TagType tagType)
         {
-            tagTypes.Set(tagType);
+            tagTypes.Set(tagType.index);
         }
 
         public void RemoveTagType(TagType tagType)
+        {
+            tagTypes.Clear(tagType.index);
+        }
+
+        public void AddTagType(byte tagType)
+        {
+            tagTypes.Set(tagType);
+        }
+
+        public void RemoveTagType(byte tagType)
+        {
+            tagTypes.Clear(tagType);
+        }
+
+        public void AddTagType(uint tagType)
+        {
+            tagTypes.Set(tagType);
+        }
+
+        public void RemoveTagType(uint tagType)
         {
             tagTypes.Clear(tagType);
         }
 
         public void AddTagType<T>(Schema schema) where T : unmanaged
         {
-            tagTypes.Set(schema.GetTag<T>());
+            tagTypes.Set(schema.GetTagType<T>().index);
         }
 
         public void AddTagTypes(BitMask tagTypes)

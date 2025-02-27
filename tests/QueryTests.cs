@@ -495,14 +495,14 @@ namespace Worlds.Tests
                 return;
             }
 
-            const uint Iterations = 16;
+            const uint Iterations = 64;
             using World world = CreateWorld();
             BitMask componentTypes = world.Schema.GetComponents<Apple, Berry, Cherry>();
             BitMask otherComponentTypes = world.Schema.GetComponents<Apple, Berry>();
-            ComponentType appleType = world.Schema.GetComponent<Apple>();
-            ComponentType berryType = world.Schema.GetComponent<Berry>();
-            ComponentType cherryType = world.Schema.GetComponent<Cherry>();
-            uint sampleCount = 120000;
+            uint appleType = world.Schema.GetComponentTypeIndex<Apple>();
+            uint berryType = world.Schema.GetComponentTypeIndex<Berry>();
+            uint cherryType = world.Schema.GetComponentTypeIndex<Cherry>();
+            uint sampleCount = 2000000;
             uint count = 0;
             Benchmark creation = new(() =>
             {
@@ -525,6 +525,7 @@ namespace Worlds.Tests
             });
 
             Console.WriteLine($"Creation: {creation.Run(1)}");
+            Console.WriteLine($"Entities: {count}");
 
             using List<(uint, Apple, Berry, Cherry)> results = new();
 
@@ -574,8 +575,9 @@ namespace Worlds.Tests
             Benchmark manualOverSpan = new(() =>
             {
                 results.Clear();
-                foreach (Chunk chunk in world.Chunks)
+                for (uint c = 0; c < world.Chunks.Length; c++)
                 {
+                    Chunk chunk = world.Chunks[c];
                     if (chunk.Definition.ComponentTypes.ContainsAll(componentTypes))
                     {
                         USpan<uint> entities = chunk.Entities;
@@ -595,24 +597,6 @@ namespace Worlds.Tests
             });
 
             Console.WriteLine($"Iteration over span: {manualOverSpan.Run(Iterations)}");
-            Assert.That(results.Count, Is.EqualTo(queryCount));
-
-            //benchmarking with query type
-            Benchmark queryBench = new(() =>
-            {
-                results.Clear();
-                Query query = new(world);
-                query.RequireComponents(componentTypes);
-                foreach (uint entity in query)
-                {
-                    ref Apple apple = ref world.GetComponent<Apple>(entity);
-                    ref Berry berry = ref world.GetComponent<Berry>(entity);
-                    ref Cherry cherry = ref world.GetComponent<Cherry>(entity);
-                    results.Add((entity, apple, berry, cherry));
-                }
-            });
-
-            Console.WriteLine($"Query: {queryBench.Run(1)}");
             Assert.That(results.Count, Is.EqualTo(queryCount));
         }
 #endif

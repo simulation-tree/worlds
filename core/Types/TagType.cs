@@ -12,7 +12,7 @@ namespace Worlds
         /// </summary>
         public static readonly TagType Disabled = new(BitMask.MaxValue);
 
-        private readonly byte index;
+        public readonly uint index;
 
 #if NET
         /// <summary>
@@ -39,7 +39,7 @@ namespace Worlds
         {
             ThrowIfOutOfRange(value);
 
-            this.index = (byte)value;
+            this.index = value;
         }
 
         /// <inheritdoc/>
@@ -91,7 +91,10 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return index;
+            unchecked
+            {
+                return (int)index;
+            }
         }
 
         public readonly TypeLayout GetLayout(Schema schema)
@@ -111,9 +114,9 @@ namespace Worlds
             return !left.Equals(right);
         }
 
-        public static implicit operator byte(TagType tagType)
+        public static implicit operator uint(TagType type)
         {
-            return tagType.index;
+            return type.index;
         }
 
         [Conditional("DEBUG")]

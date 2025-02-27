@@ -29,7 +29,7 @@ namespace Worlds
                             continue;
                         }
 
-                        if ((key.ArrayElementTypes & required.ArrayElementTypes) != required.ArrayElementTypes)
+                        if ((key.ArrayTypes & required.ArrayTypes) != required.ArrayTypes)
                         {
                             continue;
                         }
@@ -45,7 +45,7 @@ namespace Worlds
                             continue;
                         }
 
-                        if (key.ArrayElementTypes.ContainsAny(exclude.ArrayElementTypes))
+                        if (key.ArrayTypes.ContainsAny(exclude.ArrayTypes))
                         {
                             continue;
                         }
@@ -167,7 +167,7 @@ namespace Worlds
                         continue;
                     }
 
-                    if ((key.ArrayElementTypes & required.ArrayElementTypes) != required.ArrayElementTypes)
+                    if ((key.ArrayTypes & required.ArrayTypes) != required.ArrayTypes)
                     {
                         continue;
                     }
@@ -183,7 +183,7 @@ namespace Worlds
                         continue;
                     }
 
-                    if (key.ArrayElementTypes.ContainsAny(exclude.ArrayElementTypes))
+                    if (key.ArrayTypes.ContainsAny(exclude.ArrayTypes))
                     {
                         continue;
                     }
@@ -232,7 +232,7 @@ namespace Worlds
                         continue;
                     }
 
-                    if ((key.ArrayElementTypes & required.ArrayElementTypes) != required.ArrayElementTypes)
+                    if ((key.ArrayTypes & required.ArrayTypes) != required.ArrayTypes)
                     {
                         continue;
                     }
@@ -248,7 +248,7 @@ namespace Worlds
                         continue;
                     }
 
-                    if (key.ArrayElementTypes.ContainsAny(exclude.ArrayElementTypes))
+                    if (key.ArrayTypes.ContainsAny(exclude.ArrayTypes))
                     {
                         continue;
                     }
@@ -290,7 +290,7 @@ namespace Worlds
                                 continue;
                             }
 
-                            if ((key.ArrayElementTypes & required.ArrayElementTypes) != required.ArrayElementTypes)
+                            if ((key.ArrayTypes & required.ArrayTypes) != required.ArrayTypes)
                             {
                                 continue;
                             }
@@ -306,7 +306,7 @@ namespace Worlds
                                 continue;
                             }
 
-                            if (key.ArrayElementTypes.ContainsAny(exclude.ArrayElementTypes))
+                            if (key.ArrayTypes.ContainsAny(exclude.ArrayTypes))
                             {
                                 continue;
                             }

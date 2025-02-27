@@ -486,20 +486,20 @@ namespace Worlds
 
             private readonly Allocation chunks;
             private readonly uint chunkCount;
-            private readonly ComponentType c1;
-            private readonly ComponentType c2;
-            private readonly ComponentType c3;
-            private readonly ComponentType c4;
-            private readonly ComponentType c5;
-            private readonly ComponentType c6;
-            private readonly ComponentType c7;
-            private readonly ComponentType c8;
-            private readonly ComponentType c9;
-            private readonly ComponentType c10;
-            private readonly ComponentType c11;
-            private readonly ComponentType c12;
-            private readonly ComponentType c13;
-            private readonly ComponentType c14;
+            private readonly uint c1;
+            private readonly uint c2;
+            private readonly uint c3;
+            private readonly uint c4;
+            private readonly uint c5;
+            private readonly uint c6;
+            private readonly uint c7;
+            private readonly uint c8;
+            private readonly uint c9;
+            private readonly uint c10;
+            private readonly uint c11;
+            private readonly uint c12;
+            private readonly uint c13;
+            private readonly uint c14;
             private uint entityIndex;
             private uint chunkIndex;
             private USpan<uint> entities;
@@ -561,7 +561,7 @@ namespace Worlds
                             continue;
                         }
 
-                        if ((key.ArrayElementTypes & required.ArrayElementTypes) != required.ArrayElementTypes)
+                        if ((key.ArrayTypes & required.ArrayTypes) != required.ArrayTypes)
                         {
                             continue;
                         }
@@ -577,7 +577,7 @@ namespace Worlds
                             continue;
                         }
 
-                        if (key.ArrayElementTypes.ContainsAny(exclude.ArrayElementTypes))
+                        if (key.ArrayTypes.ContainsAny(exclude.ArrayTypes))
                         {
                             continue;
                         }
@@ -595,20 +595,20 @@ namespace Worlds
                 chunkIndex = 0;
                 if (chunkCount > 0)
                 {
-                    c1 = schema.GetComponent<C1>();
-                    c2 = schema.GetComponent<C2>();
-                    c3 = schema.GetComponent<C3>();
-                    c4 = schema.GetComponent<C4>();
-                    c5 = schema.GetComponent<C5>();
-                    c6 = schema.GetComponent<C6>();
-                    c7 = schema.GetComponent<C7>();
-                    c8 = schema.GetComponent<C8>();
-                    c9 = schema.GetComponent<C9>();
-                    c10 = schema.GetComponent<C10>();
-                    c11 = schema.GetComponent<C11>();
-                    c12 = schema.GetComponent<C12>();
-                    c13 = schema.GetComponent<C13>();
-                    c14 = schema.GetComponent<C14>();
+                    c1 = schema.GetComponentTypeIndex<C1>();
+                    c2 = schema.GetComponentTypeIndex<C2>();
+                    c3 = schema.GetComponentTypeIndex<C3>();
+                    c4 = schema.GetComponentTypeIndex<C4>();
+                    c5 = schema.GetComponentTypeIndex<C5>();
+                    c6 = schema.GetComponentTypeIndex<C6>();
+                    c7 = schema.GetComponentTypeIndex<C7>();
+                    c8 = schema.GetComponentTypeIndex<C8>();
+                    c9 = schema.GetComponentTypeIndex<C9>();
+                    c10 = schema.GetComponentTypeIndex<C10>();
+                    c11 = schema.GetComponentTypeIndex<C11>();
+                    c12 = schema.GetComponentTypeIndex<C12>();
+                    c13 = schema.GetComponentTypeIndex<C13>();
+                    c14 = schema.GetComponentTypeIndex<C14>();
                     chunks = new(NativeMemory.Alloc(chunkCount * stride));
                     chunks.CopyFrom(chunksBuffer.Pointer, stride * chunkCount);
                     UpdateChunkFields(ref chunksBuffer[0]);

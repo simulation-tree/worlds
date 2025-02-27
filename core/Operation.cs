@@ -468,7 +468,9 @@ namespace Worlds
 
             if (operation->count > 0)
             {
-                using Performing performing = new(this, world);
+                using List<uint> history = new(4);
+                using List<uint> selection = new(4);
+                Performing performing = new(this, world, history, selection);
                 performing.Do();
             }
         }
@@ -486,7 +488,7 @@ namespace Worlds
             writer.WriteValue(operation->count);
             writer.WriteValue(operation->bytesLength);
             writer.WriteValue(operation->bytesCapacity);
-            writer.WriteSpan(operation->buffer.AsSpan(0, operation->bytesLength));
+            writer.WriteSpan(new USpan<byte>(operation->buffer.Pointer, operation->bytesLength));
         }
 
         void ISerializable.Read(ByteReader reader)
@@ -499,9 +501,10 @@ namespace Worlds
             operation->bytesLength = bytesLength;
             operation->bytesCapacity = bytesCapacity;
             Allocation.Resize(ref operation->buffer, bytesCapacity);
+            reader.ReadSpan<byte>(bytesLength).CopyTo(operation->buffer, bytesLength);
         }
 
-        internal struct Performing : IDisposable
+        internal ref struct Performing
         {
             private readonly List<uint> history;
             private readonly List<uint> selection;
@@ -509,19 +512,13 @@ namespace Worlds
             private readonly World world;
             private uint bytePosition;
 
-            public Performing(Operation operation, World world)
+            public Performing(Operation operation, World world, List<uint> history, List<uint> selection)
             {
-                history = new(4);
-                selection = new(4);
                 this.operation = operation;
                 this.world = world;
+                this.history = history;
+                this.selection = selection;
                 bytePosition = 0;
-            }
-
-            public readonly void Dispose()
-            {
-                history.Dispose();
-                selection.Dispose();
             }
 
             private void CreateEntities()
@@ -647,7 +644,7 @@ namespace Worlds
             private void CreateArray()
             {
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
-                DataType dataType = world.Schema.GetArrayElementDataType(layout);
+                DataType dataType = world.Schema.GetArrayDataType(layout);
                 uint arrayLength = operation.Read<uint>(ref bytePosition);
                 for (uint i = 0; i < selection.Count; i++)
                 {
@@ -658,7 +655,7 @@ namespace Worlds
             private void CreateAndInitializeArray()
             {
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
-                DataType dataType = world.Schema.GetArrayElementDataType(layout);
+                DataType dataType = world.Schema.GetArrayDataType(layout);
                 uint arrayLength = operation.Read<uint>(ref bytePosition);
                 if (arrayLength > 0)
                 {
@@ -671,7 +668,7 @@ namespace Worlds
                 }
                 else
                 {
-                    ArrayElementType arrayType = dataType.ArrayElementType;
+                    ArrayElementType arrayType = dataType.ArrayType;
                     for (uint i = 0; i < selection.Count; i++)
                     {
                         world.CreateArray(selection[i], arrayType);
@@ -682,8 +679,8 @@ namespace Worlds
             private void ResizeArray()
             {
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
-                DataType dataType = world.Schema.GetArrayElementDataType(layout);
-                ArrayElementType arrayType = dataType.ArrayElementType;
+                DataType dataType = world.Schema.GetArrayDataType(layout);
+                ArrayElementType arrayType = dataType.ArrayType;
                 uint newLength = operation.Read<uint>(ref bytePosition);
                 for (uint i = 0; i < selection.Count; i++)
                 {
@@ -697,8 +694,8 @@ namespace Worlds
                 uint index = operation.Read<uint>(ref bytePosition);
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
                 uint length = operation.Read<uint>(ref bytePosition);
-                DataType dataType = world.Schema.GetArrayElementDataType(layout);
-                ArrayElementType arrayType = dataType.ArrayElementType;
+                DataType dataType = world.Schema.GetArrayDataType(layout);
+                ArrayElementType arrayType = dataType.ArrayType;
                 uint stride = dataType.size;
                 USpan<byte> elements = operation.ReadBytes(stride * length, ref bytePosition);
                 for (uint i = 0; i < selection.Count; i++)
@@ -711,8 +708,8 @@ namespace Worlds
             private void SetArray()
             {
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
-                DataType dataType = world.Schema.GetArrayElementDataType(layout);
-                ArrayElementType arrayType = dataType.ArrayElementType;
+                DataType dataType = world.Schema.GetArrayDataType(layout);
+                ArrayElementType arrayType = dataType.ArrayType;
                 uint expectedArrayLength = operation.Read<uint>(ref bytePosition);
                 USpan<byte> elements = operation.ReadBytes(dataType.size * expectedArrayLength, ref bytePosition);
                 for (uint i = 0; i < selection.Count; i++)
@@ -731,8 +728,8 @@ namespace Worlds
             private void CreateOrSetArray()
             {
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
-                DataType dataType = world.Schema.GetArrayElementDataType(layout);
-                ArrayElementType arrayType = dataType.ArrayElementType;
+                DataType dataType = world.Schema.GetArrayDataType(layout);
+                ArrayElementType arrayType = dataType.ArrayType;
                 uint expectedArrayLength = operation.Read<uint>(ref bytePosition);
                 USpan<byte> elements = operation.ReadBytes(dataType.size * expectedArrayLength, ref bytePosition);
                 for (uint i = 0; i < selection.Count; i++)

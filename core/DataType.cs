@@ -28,7 +28,7 @@ namespace Worlds
             }
         }
 
-        public readonly ArrayElementType ArrayElementType
+        public readonly ArrayElementType ArrayType
         {
             get
             {
@@ -62,21 +62,21 @@ namespace Worlds
 
         public DataType(ComponentType componentType, ushort size)
         {
-            index = componentType;
+            index = (byte)componentType.index;
             kind = Kind.Component;
             this.size = size;
         }
 
-        public DataType(ArrayElementType arrayElementType, ushort size)
+        public DataType(ArrayElementType arrayType, ushort size)
         {
-            index = arrayElementType;
+            index = (byte)arrayType.index;
             kind = Kind.ArrayElement;
             this.size = size;
         }
 
         public DataType(TagType tagType)
         {
-            index = tagType;
+            index = (byte)tagType.index;
             kind = Kind.Tag;
             size = 0;
         }
@@ -84,6 +84,13 @@ namespace Worlds
         public DataType(byte index, Kind kind, ushort size)
         {
             this.index = index;
+            this.kind = kind;
+            this.size = size;
+        }
+
+        public DataType(uint index, Kind kind, ushort size)
+        {
+            this.index = (byte)index;
             this.kind = kind;
             this.size = size;
         }
@@ -112,7 +119,7 @@ namespace Worlds
             if (kind == Kind.Component)
             {
                 ComponentType componentType = new(index);
-                if (schema.Contains(componentType))
+                if (schema.ContainsComponentType(componentType))
                 {
                     return schema.GetComponentLayout(componentType).ToString(destination);
                 }
@@ -120,7 +127,7 @@ namespace Worlds
             else if (kind == Kind.ArrayElement)
             {
                 ArrayElementType arrayElementType = new(index);
-                if (schema.Contains(arrayElementType))
+                if (schema.ContainsArrayType(arrayElementType))
                 {
                     return schema.GetArrayLayout(arrayElementType).ToString(destination);
                 }
@@ -128,7 +135,7 @@ namespace Worlds
             else if (kind == Kind.Tag)
             {
                 TagType tagType = new(index);
-                if (schema.Contains(tagType))
+                if (schema.ContainsTagType(tagType))
                 {
                     return schema.GetTagLayout(tagType).ToString(destination);
                 }

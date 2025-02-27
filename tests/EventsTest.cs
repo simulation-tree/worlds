@@ -58,7 +58,7 @@ namespace Worlds.Tests
 
             Assert.That(events.Count, Is.EqualTo(1));
             Assert.That(events[0].entity, Is.EqualTo(d));
-            Assert.That(events[0].component, Is.EqualTo(world.Schema.GetComponent<Another>()));
+            Assert.That(events[0].component, Is.EqualTo(world.Schema.GetComponentType<Another>()));
             Assert.That(events[0].added, Is.True);
             events.Clear();
 
@@ -66,7 +66,7 @@ namespace Worlds.Tests
 
             Assert.That(events.Count, Is.EqualTo(1));
             Assert.That(events[0].entity, Is.EqualTo(d));
-            Assert.That(events[0].component, Is.EqualTo(world.Schema.GetComponent<Another>()));
+            Assert.That(events[0].component, Is.EqualTo(world.Schema.GetComponentType<Another>()));
             Assert.That(events[0].added, Is.False);
 
             [UnmanagedCallersOnly]

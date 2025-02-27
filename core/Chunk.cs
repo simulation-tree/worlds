@@ -104,8 +104,7 @@ namespace Worlds
             {
                 if (definition.ComponentTypes.Contains(c))
                 {
-                    ComponentType componentType = new(c);
-                    ushort componentSize = schema.GetSize(componentType);
+                    ushort componentSize = schema.GetComponentTypeSize(c);
                     componentArrays[c] = new(4, componentSize);
                     typeIndices[typeCount++] = (byte)c;
                 }
@@ -140,9 +139,18 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfComponentTypeIsMissing(ComponentType componentType)
         {
-            if (!chunk->definition.ComponentTypes.Contains(componentType))
+            if (!chunk->definition.ComponentTypes.Contains(componentType.index))
             {
                 throw new ArgumentException($"Component type `{componentType.ToString()}` is missing from the chunk");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfComponentTypeIsMissing(uint componentType)
+        {
+            if (!chunk->definition.ComponentTypes.Contains(componentType))
+            {
+                throw new ArgumentException($"Component type `{new ComponentType(componentType).ToString()}` is missing from the chunk");
             }
         }
 
@@ -276,13 +284,24 @@ namespace Worlds
             Allocations.ThrowIfNull(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
 
-            return chunk->componentLists[componentType];
+            return chunk->componentLists[componentType.index];
         }
 
         /// <summary>
         /// Retrieves a span containing all <typeparamref name="T"/> components.
         /// </summary>
         public readonly USpan<T> GetComponents<T>(ComponentType componentType) where T : unmanaged
+        {
+            Allocations.ThrowIfNull(chunk);
+            ThrowIfComponentTypeIsMissing(componentType);
+
+            return chunk->componentLists[componentType.index].AsSpan<T>();
+        }
+
+        /// <summary>
+        /// Retrieves a span containing all <typeparamref name="T"/> components.
+        /// </summary>
+        public readonly USpan<T> GetComponents<T>(uint componentType) where T : unmanaged
         {
             Allocations.ThrowIfNull(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
@@ -298,6 +317,17 @@ namespace Worlds
             Allocations.ThrowIfNull(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
 
+            return ref chunk->componentLists[componentType.index].Get<T>(index);
+        }
+
+        /// <summary>
+        /// Retrieves a reference to the component of type <paramref name="componentType"/>.
+        /// </summary>
+        public readonly ref T GetComponent<T>(uint index, uint componentType) where T : unmanaged
+        {
+            Allocations.ThrowIfNull(chunk);
+            ThrowIfComponentTypeIsMissing(componentType);
+
             return ref chunk->componentLists[componentType].Get<T>(index);
         }
 
@@ -309,7 +339,7 @@ namespace Worlds
             Allocations.ThrowIfNull(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
 
-            return chunk->componentLists[componentType][index];
+            return chunk->componentLists[componentType.index][index];
         }
 
         /// <summary>
@@ -320,15 +350,26 @@ namespace Worlds
             Allocations.ThrowIfNull(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
 
-            List components = chunk->componentLists[componentType];
+            List components = chunk->componentLists[componentType.index];
             componentSize = (ushort)components.Stride;
-            return chunk->componentLists[componentType][index];
+            return components[index];
         }
 
         /// <summary>
         /// Assigns the component for entity at <paramref name="index"/> to <paramref name="value"/>.
         /// </summary>
         public readonly void SetComponent<T>(uint index, ComponentType componentType, T value) where T : unmanaged
+        {
+            Allocations.ThrowIfNull(chunk);
+            ThrowIfComponentTypeIsMissing(componentType);
+
+            chunk->componentLists[componentType.index].Set(index, value);
+        }
+
+        /// <summary>
+        /// Assigns the component for entity at <paramref name="index"/> to <paramref name="value"/>.
+        /// </summary>
+        public readonly void SetComponent<T>(uint index, uint componentType, T value) where T : unmanaged
         {
             Allocations.ThrowIfNull(chunk);
             ThrowIfComponentTypeIsMissing(componentType);

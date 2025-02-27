@@ -153,7 +153,7 @@ public static class SharedFunctions
         StringBuilder builder = new();
         for (uint i = 1; i <= count + 1; i++)
         {
-            builder.Append("private readonly ComponentType c");
+            builder.Append("private readonly uint c");
             builder.Append(i);
             builder.Append(';');
 
@@ -174,7 +174,7 @@ public static class SharedFunctions
         {
             builder.Append('c');
             builder.Append(i);
-            builder.Append(" = schema.GetComponent<");
+            builder.Append(" = schema.GetComponentTypeIndex<");
             builder.Append(GenericTypePrefix);
             builder.Append(i);
             builder.Append(">();");

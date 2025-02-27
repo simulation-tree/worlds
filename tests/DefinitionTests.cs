@@ -67,15 +67,15 @@ namespace Worlds.Tests
             a.AddArrayElementType<Float>(schema);
 
             Assert.That(a.ComponentTypes.Count, Is.EqualTo(2));
-            Assert.That(a.ArrayElementTypes.Count, Is.EqualTo(2));
+            Assert.That(a.ArrayTypes.Count, Is.EqualTo(2));
             USpan<ComponentType> componentTypes = stackalloc ComponentType[(int)BitMask.Capacity];
             USpan<ArrayElementType> arrayElementTypes = stackalloc ArrayElementType[(int)BitMask.Capacity];
             a.CopyComponentTypesTo(componentTypes);
             a.CopyArrayTypesTo(arrayElementTypes);
-            Assert.That(componentTypes.Contains(schema.GetComponent<Integer>()), Is.True);
-            Assert.That(componentTypes.Contains(schema.GetComponent<Character>()), Is.True);
-            Assert.That(arrayElementTypes.Contains(schema.GetArrayElement<Double>()), Is.True);
-            Assert.That(arrayElementTypes.Contains(schema.GetArrayElement<Float>()), Is.True);
+            Assert.That(componentTypes.Contains(schema.GetComponentType<Integer>()), Is.True);
+            Assert.That(componentTypes.Contains(schema.GetComponentType<Character>()), Is.True);
+            Assert.That(arrayElementTypes.Contains(schema.GetArrayType<Double>()), Is.True);
+            Assert.That(arrayElementTypes.Contains(schema.GetArrayType<Float>()), Is.True);
         }
 
         [Test]
@@ -90,7 +90,7 @@ namespace Worlds.Tests
             definition.AddComponentType<Float>(schema);
 
             Assert.That(definition.ComponentTypes.Count, Is.EqualTo(4));
-            Assert.That(definition.ArrayElementTypes.Count, Is.EqualTo(0));
+            Assert.That(definition.ArrayTypes.Count, Is.EqualTo(0));
             Assert.That(definition.ContainsComponent<Integer>(schema), Is.True);
             Assert.That(definition.ContainsComponent<Character>(schema), Is.True);
             Assert.That(definition.ContainsComponent<Double>(schema), Is.True);

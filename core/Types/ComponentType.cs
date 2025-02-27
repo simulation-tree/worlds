@@ -10,7 +10,7 @@ namespace Worlds
     /// </summary>
     public readonly struct ComponentType : IEquatable<ComponentType>
     {
-        private readonly byte index;
+        public readonly uint index;
 
 #if NET
         /// <summary>
@@ -37,7 +37,7 @@ namespace Worlds
         {
             ThrowIfOutOfRange(value);
 
-            this.index = (byte)value;
+            this.index = value;
         }
 
         /// <inheritdoc/>
@@ -71,7 +71,7 @@ namespace Worlds
         /// </summary>
         public readonly uint ToString(Schema schema, USpan<char> destination)
         {
-            if (schema.Contains(this))
+            if (schema.ContainsComponentType(this))
             {
                 return schema.GetComponentLayout(this).ToString(destination);
             }
@@ -84,7 +84,7 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override bool Equals(object? obj)
         {
-            return obj is Type type && Equals(type);
+            return obj is ComponentType type && Equals(type);
         }
 
         /// <inheritdoc/>
@@ -96,7 +96,10 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return index;
+            unchecked
+            {
+                return (int)index;
+            }
         }
 
         /// <summary>
@@ -117,9 +120,14 @@ namespace Worlds
             return !(left == right);
         }
 
-        public static implicit operator byte(ComponentType componentType)
+        public static implicit operator uint(ComponentType type)
         {
-            return componentType.index;
+            return type.index;
+        }
+
+        public static implicit operator byte(ComponentType type)
+        {
+            return (byte)type.index;
         }
 
         [Conditional("DEBUG")]

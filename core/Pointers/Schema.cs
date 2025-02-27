@@ -9,7 +9,7 @@ namespace Worlds.Pointers
         internal byte componentCount;
         internal byte arraysCount;
         internal byte tagsCount;
-        internal BitMask tagsMask;
+        internal Definition definitionMask;
         internal readonly Allocation sizes;
         internal readonly Allocation typeHashes;
 
@@ -18,6 +18,7 @@ namespace Worlds.Pointers
             componentCount = 0;
             arraysCount = 0;
             tagsCount = 0;
+            definitionMask = default;
             sizes = Allocation.CreateZeroed(Worlds.Schema.SizesLengthInBytes);
             typeHashes = Allocation.CreateZeroed(Worlds.Schema.TypeHashesLengthInBytes);
             this.schemaIndex = schemaIndex;

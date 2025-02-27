@@ -19,8 +19,8 @@ namespace Worlds.Tests
         public void AddEntityWithComponents()
         {
             Schema schema = CreateSchema();
-            ComponentType integerType = schema.GetComponent<Integer>();
-            ComponentType floatType = schema.GetComponent<Float>();
+            ComponentType integerType = schema.GetComponentType<Integer>();
+            ComponentType floatType = schema.GetComponentType<Float>();
 
             Definition definition = new();
             definition.AddComponentTypes<Integer, Float>(schema);
@@ -48,8 +48,8 @@ namespace Worlds.Tests
         public void RemovingEntity()
         {
             Schema schema = CreateSchema();
-            ComponentType integerType = schema.GetComponent<Integer>();
-            ComponentType floatType = schema.GetComponent<Float>();
+            ComponentType integerType = schema.GetComponentType<Integer>();
+            ComponentType floatType = schema.GetComponentType<Float>();
 
             Definition definition = new();
             definition.AddComponentTypes<Integer, Float>(schema);
@@ -75,8 +75,8 @@ namespace Worlds.Tests
         public void MovingEntity()
         {
             Schema schema = CreateSchema();
-            ComponentType integerType = schema.GetComponent<Integer>();
-            ComponentType floatType = schema.GetComponent<Float>();
+            ComponentType integerType = schema.GetComponentType<Integer>();
+            ComponentType floatType = schema.GetComponentType<Float>();
 
             Chunk chunkA = new(default, schema);
             uint entity = 7;
