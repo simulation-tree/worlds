@@ -66,40 +66,30 @@ namespace Worlds
             }
         }
 
-        /// <summary>
-        /// The schema that this chunk was created with.
-        /// </summary>
-        public readonly Schema Schema
-        {
-            get
-            {
-                Allocations.ThrowIfNull(chunk);
-
-                return chunk->schema;
-            }
-        }
-
         public readonly uint this[uint index] => Entities[index];
 
 #if NET
-        [Obsolete("Default constructor not supported", true)]
-        public Chunk()
-        {
-            throw new NotSupportedException();
-        }
-#endif
         /// <summary>
         /// Creates a new chunk.
         /// </summary>
-        public Chunk(Schema schema)
+        public Chunk()
         {
             Array<List> componentArrays = new(BitMask.Capacity);
             ref Pointer chunk = ref Allocations.Allocate<Pointer>();
-            chunk = new(default, componentArrays, new(0), schema);
+            chunk = new(default, componentArrays, new(0));
             fixed (Pointer* pointer = &chunk)
             {
                 this.chunk = pointer;
             }
+        }
+#endif
+
+        /// <summary>
+        /// Initializes an existing chunk from the given <paramref name="pointer"/>.
+        /// </summary>
+        public Chunk(void* pointer)
+        {
+            chunk = (Pointer*)pointer;
         }
 
         /// <summary>
@@ -122,7 +112,7 @@ namespace Worlds
             }
 
             ref Pointer chunk = ref Allocations.Allocate<Pointer>();
-            chunk = new(definition, componentArrays, new(typeIndices.GetSpan(typeCount)), schema);
+            chunk = new(definition, componentArrays, new(typeIndices.GetSpan(typeCount)));
             fixed (Pointer* pointer = &chunk)
             {
                 this.chunk = pointer;
@@ -152,7 +142,7 @@ namespace Worlds
         {
             if (!chunk->definition.ComponentTypes.Contains(componentType))
             {
-                throw new ArgumentException($"Component type `{componentType.ToString(chunk->schema)}` is missing from the chunk");
+                throw new ArgumentException($"Component type `{componentType.ToString()}` is missing from the chunk");
             }
         }
 
@@ -176,7 +166,7 @@ namespace Worlds
                 if (componentTypes.Contains(i))
                 {
                     ComponentType componentType = new(i);
-                    length += componentType.ToString(Schema, buffer.Slice(length));
+                    length += componentType.ToString(buffer.Slice(length));
                     buffer[length++] = ',';
                     buffer[length++] = ' ';
                 }
@@ -364,6 +354,20 @@ namespace Worlds
         public static bool operator !=(Chunk left, Chunk right)
         {
             return !(left == right);
+        }
+
+        /// <summary>
+        /// Creates a new empty chunk.
+        /// </summary>
+        public static Chunk Create()
+        {
+            Array<List> componentArrays = new(BitMask.Capacity);
+            ref Pointer chunk = ref Allocations.Allocate<Pointer>();
+            chunk = new(default, componentArrays, new(0));
+            fixed (Pointer* pointer = &chunk)
+            {
+                return new(pointer);
+            }
         }
 
         public readonly ref struct Entity<C1> where C1 : unmanaged

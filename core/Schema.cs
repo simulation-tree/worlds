@@ -302,7 +302,7 @@ namespace Worlds
             Allocations.ThrowIfNull(schema);
             ThrowIfComponentIsMissing(componentType);
 
-            USpan<long> componentTypeHashes = schema->typeHashes.GetSpan<long>(BitMask.Capacity);
+            USpan<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
             long hash = componentTypeHashes[(uint)componentType];
             return TypeRegistry.Get(hash);
         }
@@ -312,7 +312,7 @@ namespace Worlds
             Allocations.ThrowIfNull(schema);
             ThrowIfComponentIsMissing(new ComponentType(index));
 
-            USpan<long> componentTypeHashes = schema->typeHashes.GetSpan<long>(BitMask.Capacity);
+            USpan<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
             long hash = componentTypeHashes[index];
             return TypeRegistry.Get(hash);
         }
@@ -384,8 +384,8 @@ namespace Worlds
 
             ThrowIfTooManyComponents();
 
-            USpan<ushort> componentSizes = schema->sizes.GetSpan<ushort>(BitMask.Capacity);
-            USpan<long> componentHashes = schema->typeHashes.GetSpan<long>(BitMask.Capacity);
+            USpan<ushort> componentSizes = new(schema->sizes.Pointer, BitMask.Capacity);
+            USpan<long> componentHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
             ComponentType componentType = new(schema->componentCount);
             componentSizes[(uint)componentType] = type.Size;
             componentHashes[(uint)componentType] = type.Hash;
@@ -491,7 +491,7 @@ namespace Worlds
         {
             Allocations.ThrowIfNull(schema);
 
-            USpan<long> componentTypeHashes = schema->typeHashes.GetSpan<long>(BitMask.Capacity);
+            USpan<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
             return componentTypeHashes.Contains(fullTypeName.GetLongHashCode());
         }
 
@@ -499,7 +499,7 @@ namespace Worlds
         {
             Allocations.ThrowIfNull(schema);
 
-            USpan<long> componentTypeHashes = schema->typeHashes.GetSpan<long>(BitMask.Capacity);
+            USpan<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
             return componentTypeHashes.Contains(type.Hash);
         }
 
@@ -507,7 +507,7 @@ namespace Worlds
         {
             Allocations.ThrowIfNull(schema);
 
-            USpan<long> componentTypeHashes = schema->typeHashes.GetSpan<long>(BitMask.Capacity);
+            USpan<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
             bool contains = componentTypeHashes.TryIndexOf(type.Hash, out uint index);
             componentType = new((byte)index);
             return contains;
@@ -564,7 +564,7 @@ namespace Worlds
                 return false;
             }
 
-            USpan<long> componentTypeHashes = schema->typeHashes.GetSpan<long>(BitMask.Capacity);
+            USpan<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
             return componentTypeHashes.Contains(TypeLayoutHashCodeCache<T>.value);
         }
 
@@ -574,7 +574,7 @@ namespace Worlds
 
             if (!SchemaTypeCache<T>.TryGetComponent(this, out ComponentType componentType))
             {
-                USpan<long> componentTypeHashes = schema->typeHashes.GetSpan<long>(BitMask.Capacity);
+                USpan<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
                 uint index = componentTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
                 componentType = new((byte)index);
                 SchemaTypeCache<T>.Set(this, componentType);
@@ -590,7 +590,7 @@ namespace Worlds
 
             if (!SchemaTypeCache<T>.TryGetComponent(this, out ComponentType componentType))
             {
-                USpan<long> componentTypeHashes = schema->typeHashes.GetSpan<long>(BitMask.Capacity);
+                USpan<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
                 uint index = componentTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
                 componentType = new((byte)index);
                 SchemaTypeCache<T>.Set(this, componentType);
@@ -604,7 +604,7 @@ namespace Worlds
         {
             ThrowIfComponentIsMissing(type);
 
-            USpan<long> componentTypeHashes = schema->typeHashes.GetSpan<long>(BitMask.Capacity);
+            USpan<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
             uint index = componentTypeHashes.IndexOf(type.Hash);
             return new((byte)index, DataType.Kind.Component, type.Size);
         }
@@ -1424,8 +1424,8 @@ namespace Worlds
             writer.WriteValue(schema->arraysCount);
             writer.WriteValue(schema->tagsCount);
             writer.WriteValue(schema->tagsMask);
-            USpan<ushort> sizes = schema->sizes.GetSpan<ushort>(BitMask.Capacity * 2);
-            USpan<long> typeHashes = schema->typeHashes.GetSpan<long>(BitMask.Capacity * 3);
+            USpan<ushort> sizes = new(schema->sizes.Pointer, BitMask.Capacity * 2);
+            USpan<long> typeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity * 3);
             writer.WriteSpan(sizes);
             writer.WriteSpan(typeHashes);
         }

@@ -7,13 +7,11 @@ namespace Worlds.Tests
         [Test]
         public void AddEntityNoComponents()
         {
-            Schema schema = CreateSchema();
-            Chunk chunk = new(schema);
+            Chunk chunk = new();
             chunk.AddEntity(7);
             Assert.That(chunk.Entities.Length, Is.EqualTo(1));
             Assert.That(chunk.Entities[0], Is.EqualTo(7));
             chunk.Dispose();
-            schema.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 

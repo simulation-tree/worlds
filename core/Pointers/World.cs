@@ -3,7 +3,7 @@ using Worlds.Functions;
 
 namespace Worlds.Pointers
 {
-    public unsafe struct World
+    public readonly struct World
     {
         public readonly List<Slot> slots;
         public readonly Stack<uint> freeEntities;
@@ -27,7 +27,7 @@ namespace Worlds.Pointers
             entityParentChanged = new(4);
             entityDataChanged = new(4);
 
-            Worlds.Chunk defaultChunk = new(schema);
+            Worlds.Chunk defaultChunk = Worlds.Chunk.Create();
             chunksMap.Add(default, defaultChunk);
             uniqueChunks.Add(defaultChunk);
         }

@@ -2362,7 +2362,7 @@ namespace Worlds
             ref Chunk chunk = ref world->slots[entity].chunk;
             uint index = chunk.Entities.IndexOf(entity);
             Allocation component = chunk.GetComponent(index, componentType, out ushort componentSize);
-            return component.GetSpan(componentSize);
+            return new(component.Pointer, componentSize);
         }
 
         /// <summary>
@@ -2391,7 +2391,7 @@ namespace Worlds
             for (uint i = 0; i < array.Length; i++)
             {
                 Allocation allocation = array[i];
-                arrayObject[i] = layout.CreateInstance(allocation.GetSpan(size));
+                arrayObject[i] = layout.CreateInstance(new(allocation.Pointer, size));
             }
 
             return arrayObject;
