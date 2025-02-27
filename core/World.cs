@@ -2302,7 +2302,16 @@ namespace Worlds
         /// Adds a new component of the given <paramref name="componentType"/> with <paramref name="source"/> bytes
         /// to <paramref name="entity"/>.
         /// </summary>
-        public readonly void AddComponent(uint entity, ComponentType componentType, USpan<byte> source)
+        public readonly void AddComponentBytes(uint entity, ComponentType componentType, USpan<byte> source)
+        {
+            AddComponentBytes(entity, componentType.index, source);
+        }
+
+        /// <summary>
+        /// Adds a new component of the given <paramref name="componentType"/> with <paramref name="source"/> bytes
+        /// to <paramref name="entity"/>.
+        /// </summary>
+        public readonly void AddComponentBytes(uint entity, uint componentType, USpan<byte> source)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
@@ -2635,6 +2644,14 @@ namespace Worlds
         /// Assigns the given <paramref name="componentData"/> to the given <paramref name="entity"/>.
         /// </summary>
         public readonly void SetComponentBytes(uint entity, ComponentType componentType, USpan<byte> componentData)
+        {
+            SetComponentBytes(entity, componentType.index, componentData);
+        }
+
+        /// <summary>
+        /// Assigns the given <paramref name="componentData"/> to the given <paramref name="entity"/>.
+        /// </summary>
+        public readonly void SetComponentBytes(uint entity, uint componentType, USpan<byte> componentData)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);

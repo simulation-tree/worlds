@@ -581,11 +581,11 @@ namespace Worlds
             {
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetComponentDataType(layout);
-                ComponentType componentType = dataType.ComponentType;
+                uint componentType = dataType.index;
                 USpan<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
                 for (uint i = 0; i < selection.Count; i++)
                 {
-                    world.AddComponent(selection[i], componentType, component);
+                    world.AddComponentBytes(selection[i], componentType, component);
                 }
             }
 
@@ -593,7 +593,7 @@ namespace Worlds
             {
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetComponentDataType(layout);
-                ComponentType componentType = dataType.ComponentType;
+                uint componentType = dataType.index;
                 USpan<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
                 for (uint i = 0; i < selection.Count; i++)
                 {
@@ -605,7 +605,7 @@ namespace Worlds
             {
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetComponentDataType(layout);
-                ComponentType componentType = dataType.ComponentType;
+                uint componentType = dataType.index;
                 USpan<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
                 for (uint i = 0; i < selection.Count; i++)
                 {
@@ -616,7 +616,7 @@ namespace Worlds
                     }
                     else
                     {
-                        world.AddComponent(entity, componentType, component);
+                        world.AddComponentBytes(entity, componentType, component);
                     }
                 }
             }
