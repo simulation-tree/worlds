@@ -1,8 +1,6 @@
-﻿using Collections.Generic;
-using System;
+﻿using System;
 using System.Diagnostics;
 using Unmanaged;
-using Array = Collections.Array;
 
 namespace Worlds
 {
@@ -234,12 +232,12 @@ namespace Worlds
             world.RemoveComponent(value, componentType);
         }
 
-        public readonly Array CreateArray(ArrayElementType arrayType, uint length = 0)
+        public readonly Values CreateArray(ArrayElementType arrayType, uint length = 0)
         {
             return world.CreateArray(value, arrayType, length);
         }
 
-        public readonly Array GetArray(ArrayElementType arrayType)
+        public readonly Values GetArray(ArrayElementType arrayType)
         {
             return world.GetArray(value, arrayType);
         }
@@ -304,12 +302,12 @@ namespace Worlds
             return ref world.GetArrayElement<T>(value, index);
         }
 
-        public readonly Array<T> GetArray<T>() where T : unmanaged
+        public readonly Values<T> GetArray<T>() where T : unmanaged
         {
             return world.GetArray<T>(value);
         }
 
-        public readonly bool TryGetArray<T>(out Array<T> array) where T : unmanaged
+        public readonly bool TryGetArray<T>(out Values<T> array) where T : unmanaged
         {
             return world.TryGetArray(value, out array);
         }
@@ -319,7 +317,7 @@ namespace Worlds
             world.CreateArray(value, elements);
         }
 
-        public readonly Array<T> CreateArray<T>(uint length = 0) where T : unmanaged
+        public readonly Values<T> CreateArray<T>(uint length = 0) where T : unmanaged
         {
             return world.CreateArray<T>(value, length);
         }

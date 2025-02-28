@@ -1,6 +1,5 @@
 ﻿using Collections.Generic;
 using System;
-using Array = Collections.Array;
 
 namespace Worlds
 {
@@ -15,7 +14,7 @@ namespace Worlds
         public Chunk chunk;
         public List<uint> children;
         public List<uint> references;
-        public Array<Array> arrays;
+        public Array<Values> arrays;
 
         public readonly Definition Definition => chunk.Definition;
         public readonly bool ContainsArrays => (flags & Flags.ContainsArrays) != 0;

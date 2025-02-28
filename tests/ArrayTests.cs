@@ -1,5 +1,4 @@
-﻿using Collections.Generic;
-using System;
+﻿using System;
 using Unmanaged;
 
 namespace Worlds.Tests
@@ -11,7 +10,7 @@ namespace Worlds.Tests
         {
             World world = CreateWorld();
             uint a = world.CreateEntity();
-            Array<SimpleComponent> list = world.CreateArray<SimpleComponent>(a, 2);
+            Values<SimpleComponent> list = world.CreateArray<SimpleComponent>(a, 2);
             list[0] = new("Hello World 1");
             list[1] = new("Hello World 2");
             world.DestroyEntity(a);
@@ -54,13 +53,13 @@ namespace Worlds.Tests
         {
             World world = CreateWorld();
             uint entity = world.CreateEntity();
-            Array<SimpleComponent> list = world.CreateArray<SimpleComponent>(entity, 4);
+            Values<SimpleComponent> list = world.CreateArray<SimpleComponent>(entity, 4);
             list[0] = new("apple");
             Assert.That(list.Length, Is.EqualTo(4));
             world.DestroyEntity(entity);
             uint another = world.CreateEntity(); //same as `entity`
             Assert.That(another, Is.EqualTo(entity));
-            Array<SimpleComponent> anotherList = world.CreateArray<SimpleComponent>(another, 1);
+            Values<SimpleComponent> anotherList = world.CreateArray<SimpleComponent>(another, 1);
             anotherList[0] = new("banana");
             Assert.That(anotherList.Length, Is.EqualTo(1));
             world.DestroyEntity(another);
@@ -73,7 +72,7 @@ namespace Worlds.Tests
         {
             using World world = CreateWorld();
             uint a = world.CreateEntity();
-            Array<SimpleComponent> list = world.CreateArray<SimpleComponent>(a, 2);
+            Values<SimpleComponent> list = world.CreateArray<SimpleComponent>(a, 2);
 
             Assert.That(list.Length, Is.EqualTo(2));
 

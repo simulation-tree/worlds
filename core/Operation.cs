@@ -3,7 +3,6 @@ using Collections.Generic;
 using System;
 using Types;
 using Unmanaged;
-using Array = Collections.Array;
 
 namespace Worlds
 {
@@ -659,11 +658,11 @@ namespace Worlds
                 uint arrayLength = operation.Read<uint>(ref bytePosition);
                 if (arrayLength > 0)
                 {
-                    USpan<byte> elements = operation.ReadBytes(layout.Size * arrayLength, ref bytePosition);
+                    USpan<byte> elements = operation.ReadBytes(dataType.size * arrayLength, ref bytePosition);
                     for (uint i = 0; i < selection.Count; i++)
                     {
-                        Array array = world.CreateArray(selection[i], dataType, arrayLength);
-                        array.Items.Write(0, elements);
+                        Values array = world.CreateArray(selection[i], dataType, arrayLength);
+                        array.Write(elements);
                     }
                 }
                 else
@@ -684,7 +683,7 @@ namespace Worlds
                 uint newLength = operation.Read<uint>(ref bytePosition);
                 for (uint i = 0; i < selection.Count; i++)
                 {
-                    Array array = world.GetArray(selection[i], arrayType);
+                    Values array = world.GetArray(selection[i], arrayType);
                     array.Length = newLength;
                 }
             }
@@ -700,8 +699,8 @@ namespace Worlds
                 USpan<byte> elements = operation.ReadBytes(stride * length, ref bytePosition);
                 for (uint i = 0; i < selection.Count; i++)
                 {
-                    Array array = world.GetArray(selection[i], arrayType);
-                    array.Items.Write(index * stride, elements);
+                    Values array = world.GetArray(selection[i], arrayType);
+                    array.Write(index * stride, elements);
                 }
             }
 
@@ -715,13 +714,13 @@ namespace Worlds
                 for (uint i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
-                    Array array = world.GetArray(entity, arrayType);
+                    Values array = world.GetArray(entity, arrayType);
                     if (array.Length != expectedArrayLength)
                     {
                         array.Length = expectedArrayLength;
                     }
 
-                    array.Items.Write(0, elements);
+                    array.Write(elements);
                 }
             }
 
@@ -735,21 +734,21 @@ namespace Worlds
                 for (uint i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
+                    Values array;
                     if (world.ContainsArray(entity, arrayType))
                     {
-                        Array array = world.GetArray(entity, arrayType);
+                        array = world.GetArray(entity, arrayType);
                         if (array.Length != expectedArrayLength)
                         {
                             array.Length = expectedArrayLength;
                         }
-
-                        array.Items.Write(0, elements);
                     }
                     else
                     {
-                        Array array = world.CreateArray(entity, arrayType, expectedArrayLength);
-                        array.Items.Write(0, elements);
+                        array = world.CreateArray(entity, arrayType, expectedArrayLength);
                     }
+
+                    array.Write(elements);
                 }
             }
 

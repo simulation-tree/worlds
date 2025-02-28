@@ -214,12 +214,12 @@
         world.RemoveComponent(value, componentType);
     }
 
-    public readonly Array CreateArray(ArrayElementType arrayElementType, uint length = 0)
+    public readonly Values CreateArray(ArrayElementType arrayElementType, uint length = 0)
     {
         return world.CreateArray(value, arrayElementType, length);
     }
 
-    public readonly Array GetArray(ArrayElementType arrayElementType)
+    public readonly Values GetArray(ArrayElementType arrayElementType)
     {
         return world.GetArray(value, arrayElementType);
     }
@@ -314,17 +314,17 @@
         return ref world.GetArrayElement<T>(value, index);
     }
 
-    public readonly Array<T> GetArray<T>() where T : unmanaged
+    public readonly Values<T> GetArray<T>() where T : unmanaged
     {
         return world.GetArray<T>(value);
     }
 
-    public readonly Array<T> GetArray<T>(ArrayElementType arrayType) where T : unmanaged
+    public readonly Values<T> GetArray<T>(ArrayElementType arrayType) where T : unmanaged
     {
         return world.GetArray<T>(value, arrayType);
     }
 
-    public readonly bool TryGetArray<T>(out Array<T> array) where T : unmanaged
+    public readonly bool TryGetArray<T>(out Values<T> array) where T : unmanaged
     {
         return world.TryGetArray(value, out array);
     }
@@ -334,7 +334,7 @@
         world.CreateArray(value, elements);
     }
 
-    public readonly Array<T> CreateArray<T>(uint length = 0) where T : unmanaged
+    public readonly Values<T> CreateArray<T>(uint length = 0) where T : unmanaged
     {
         return world.CreateArray<T>(value, length);
     }

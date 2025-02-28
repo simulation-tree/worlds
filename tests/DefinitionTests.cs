@@ -1,5 +1,4 @@
-﻿using Collections.Generic;
-using System;
+﻿using System;
 using Unmanaged;
 
 namespace Worlds.Tests
@@ -127,7 +126,7 @@ namespace Worlds.Tests
             uint entity = world.CreateEntity(definition);
             Byte defaultByte = world.GetComponent<Byte>(entity);
             Float defaultFloat = world.GetComponent<Float>(entity);
-            Array<Character> defaultCharArray = world.GetArray<Character>(entity);
+            Values<Character> defaultCharArray = world.GetArray<Character>(entity);
 
             Assert.That(defaultByte, Is.EqualTo(default(Byte)));
             Assert.That(defaultFloat, Is.EqualTo(default(Float)));

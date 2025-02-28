@@ -234,10 +234,11 @@ namespace Worlds
                 {
                     for (uint a = 0; a < BitMask.Capacity; a++)
                     {
-                        ref Array array = ref slot.arrays[a];
-                        if (!array.IsDisposed)
+                        ref Values array = ref slot.arrays[a];
+                        if (array.pointer is not null)
                         {
                             array.Dispose();
+                            array = default;
                         }
                     }
 
@@ -539,7 +540,7 @@ namespace Worlds
                     if (definition.ArrayTypes.Contains(a))
                     {
                         writer.WriteValue((byte)a);
-                        Array array = GetArray(e, a);
+                        Values array = GetArray(e, a);
                         writer.WriteValue(array.Length);
                         writer.WriteSpan(array.AsSpan());
                     }
@@ -929,14 +930,14 @@ namespace Worlds
             BitMask arrayElementTypes = definition.ArrayTypes;
             if (!arrayElementTypes.IsEmpty)
             {
-                ref Array<Array> arrays = ref slot.arrays;
+                ref Array<Values> arrays = ref slot.arrays;
                 arrays = new(BitMask.Capacity);
                 for (uint a = 0; a < BitMask.Capacity; a++)
                 {
                     if (arrayElementTypes.Contains(a))
                     {
                         ushort arrayElementSize = world->schema.GetArrayTypeSize(a);
-                        arrays[a] = new(0, arrayElementSize);
+                        arrays[a] = new(new Array(0, arrayElementSize));
                     }
                 }
 
@@ -977,14 +978,14 @@ namespace Worlds
             BitMask arrayElementTypes = definition.ArrayTypes;
             if (!arrayElementTypes.IsEmpty)
             {
-                ref Array<Array> arrays = ref slot.arrays;
+                ref Array<Values> arrays = ref slot.arrays;
                 arrays = new(BitMask.Capacity);
                 for (uint a = 0; a < BitMask.Capacity; a++)
                 {
                     if (arrayElementTypes.Contains(a))
                     {
                         ushort arrayElementSize = world->schema.GetArrayTypeSize(a);
-                        arrays[a] = new(0, arrayElementSize);
+                        arrays[a] = new(new Array(0, arrayElementSize));
                     }
                 }
 
@@ -1624,7 +1625,7 @@ namespace Worlds
         /// <summary>
         /// Creates a new empty array with the given <paramref name="length"/> and <paramref name="arrayType"/>.
         /// </summary>
-        public readonly Array CreateArray(uint entity, uint arrayType, uint length = 0)
+        public readonly Values CreateArray(uint entity, uint arrayType, uint length = 0)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
@@ -1646,10 +1647,11 @@ namespace Worlds
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
                 for (uint i = 0; i < slot.arrays.Length; i++)
                 {
-                    ref Array array = ref slot.arrays[i];
-                    if (!array.IsDisposed)
+                    ref Values array = ref slot.arrays[i];
+                    if (array.pointer is not null)
                     {
                         array.Dispose();
+                        array = default;
                     }
                 }
             }
@@ -1667,7 +1669,7 @@ namespace Worlds
             slot.chunk = destinationChunk;
             previousChunk.MoveEntity(entity, destinationChunk);
 
-            Array newArray = new(length, stride);
+            Values newArray = new(new Array(length, stride));
             slot.arrays[arrayType] = newArray;
             NotifyArrayCreated(entity, arrayType);
             return newArray;
@@ -1676,7 +1678,7 @@ namespace Worlds
         /// <summary>
         /// Creates a new empty array with the given <paramref name="length"/> and <paramref name="arrayType"/>.
         /// </summary>
-        public readonly Array CreateArray(uint entity, uint arrayType, uint stride, uint length = 0)
+        public readonly Values CreateArray(uint entity, uint arrayType, uint stride, uint length = 0)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
@@ -1697,10 +1699,11 @@ namespace Worlds
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
                 for (uint i = 0; i < slot.arrays.Length; i++)
                 {
-                    ref Array array = ref slot.arrays[i];
-                    if (!array.IsDisposed)
+                    ref Values array = ref slot.arrays[i];
+                    if (array.pointer is not null)
                     {
                         array.Dispose();
+                        array = default;
                     }
                 }
             }
@@ -1718,7 +1721,7 @@ namespace Worlds
             slot.chunk = destinationChunk;
             previousChunk.MoveEntity(entity, destinationChunk);
 
-            Array newArray = new(length, stride);
+            Values newArray = new(new Array(length, stride));
             slot.arrays[arrayType] = newArray;
             NotifyArrayCreated(entity, arrayType);
             return newArray;
@@ -1727,7 +1730,7 @@ namespace Worlds
         /// <summary>
         /// Creates a new empty array with the given <paramref name="length"/> and <paramref name="dataType"/>.
         /// </summary>
-        public readonly Array CreateArray(uint entity, DataType dataType, uint length = 0)
+        public readonly Values CreateArray(uint entity, DataType dataType, uint length = 0)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
@@ -1750,10 +1753,11 @@ namespace Worlds
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
                 for (uint i = 0; i < slot.arrays.Length; i++)
                 {
-                    ref Array array = ref slot.arrays[i];
-                    if (!array.IsDisposed)
+                    ref Values array = ref slot.arrays[i];
+                    if (array.pointer is not null)
                     {
                         array.Dispose();
+                        array = default;
                     }
                 }
             }
@@ -1771,7 +1775,7 @@ namespace Worlds
             slot.chunk = destinationChunk;
             previousChunk.MoveEntity(entity, destinationChunk);
 
-            Array newArray = new(length, dataType.size);
+            Values newArray = new(new Array(length, dataType.size));
             slot.arrays[arrayType.index] = newArray;
             NotifyArrayCreated(entity, arrayType);
             return newArray;
@@ -1780,7 +1784,7 @@ namespace Worlds
         /// <summary>
         /// Creates a new empty array on this <paramref name="entity"/>.
         /// </summary>
-        public readonly Array<T> CreateArray<T>(uint entity, uint length = 0) where T : unmanaged
+        public readonly Values<T> CreateArray<T>(uint entity, uint length = 0) where T : unmanaged
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
@@ -1803,10 +1807,11 @@ namespace Worlds
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
                 for (uint i = 0; i < slot.arrays.Length; i++)
                 {
-                    ref Array array = ref slot.arrays[i];
-                    if (!array.IsDisposed)
+                    ref Values array = ref slot.arrays[i];
+                    if (array.pointer is not null)
                     {
                         array.Dispose();
+                        array = default;
                     }
                 }
             }
@@ -1824,10 +1829,10 @@ namespace Worlds
             slot.chunk = destinationChunk;
             previousChunk.MoveEntity(entity, destinationChunk);
 
-            Array newArray = new(length, (ushort)sizeof(T));
+            Values<T> newArray = new(new Array<T>(length));
             slot.arrays[arrayType] = newArray;
             NotifyArrayCreated(entity, arrayType);
-            return newArray.AsArray<T>();
+            return newArray;
         }
 
         /// <summary>
@@ -1838,8 +1843,48 @@ namespace Worlds
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
 
-            Array<T> array = CreateArray<T>(entity, values.Length);
-            values.CopyTo(array.AsSpan());
+            uint arrayType = world->schema.GetArrayTypeIndex<T>();
+            ThrowIfArrayIsAlreadyPresent(entity, arrayType);
+
+            ref Slot slot = ref world->slots[entity];
+            Chunk previousChunk = slot.chunk;
+            Definition previousDefinition = previousChunk.Definition;
+
+            if (!slot.ContainsArrays)
+            {
+                slot.arrays = new(BitMask.Capacity);
+                slot.flags |= Slot.Flags.ContainsArrays;
+                slot.flags &= ~Slot.Flags.ArraysOutdated;
+            }
+            else if (slot.ArraysOutdated)
+            {
+                slot.flags &= ~Slot.Flags.ArraysOutdated;
+                for (uint i = 0; i < slot.arrays.Length; i++)
+                {
+                    ref Values array = ref slot.arrays[i];
+                    if (array.pointer is not null)
+                    {
+                        array.Dispose();
+                        array = default;
+                    }
+                }
+            }
+
+            Definition newDefinition = previousDefinition;
+            newDefinition.AddArrayType(arrayType);
+
+            if (!world->chunksMap.TryGetValue(newDefinition, out Chunk destinationChunk))
+            {
+                destinationChunk = new(newDefinition, world->schema);
+                world->chunksMap.Add(newDefinition, destinationChunk);
+                world->uniqueChunks.Add(destinationChunk);
+            }
+
+            slot.chunk = destinationChunk;
+            previousChunk.MoveEntity(entity, destinationChunk);
+
+            slot.arrays[arrayType] = new(new Array<T>(values));
+            NotifyArrayCreated(entity, arrayType);
         }
 
         /// <summary>
@@ -1868,7 +1913,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the array of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
         /// </summary>
-        public readonly Array<T> GetArray<T>(uint entity) where T : unmanaged
+        public readonly Values<T> GetArray<T>(uint entity) where T : unmanaged
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
@@ -1876,40 +1921,37 @@ namespace Worlds
             uint arrayType = world->schema.GetArrayTypeIndex<T>();
             ThrowIfArrayIsMissing(entity, arrayType);
 
-            ref Slot slot = ref world->slots[entity];
-            return slot.arrays[arrayType].AsArray<T>();
+            return new(world->slots[entity].arrays[arrayType].pointer);
         }
 
         /// <summary>
         /// Retrieves the array of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
         /// </summary>
-        public readonly Array<T> GetArray<T>(uint entity, uint arrayType) where T : unmanaged
+        public readonly Values<T> GetArray<T>(uint entity, uint arrayType) where T : unmanaged
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
             ThrowIfArrayIsMissing(entity, arrayType);
 
-            ref Slot slot = ref world->slots[entity];
-            return slot.arrays[arrayType].AsArray<T>();
+            return new(world->slots[entity].arrays[arrayType].pointer);
         }
 
         /// <summary>
         /// Retrieves the array of the given <paramref name="arrayType"/> from the given <paramref name="entity"/>.
         /// </summary>
-        public readonly Array GetArray(uint entity, uint arrayType)
+        public readonly Values GetArray(uint entity, uint arrayType)
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
             ThrowIfArrayIsMissing(entity, arrayType);
 
-            ref Slot slot = ref world->slots[entity];
-            return slot.arrays[arrayType];
+            return world->slots[entity].arrays[arrayType];
         }
 
         /// <summary>
         /// Attempts to retrieve an array of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
         /// </summary>
-        public readonly bool TryGetArray<T>(uint entity, out Array<T> array) where T : unmanaged
+        public readonly bool TryGetArray<T>(uint entity, out Values<T> array) where T : unmanaged
         {
             Allocations.ThrowIfNull(world);
             ThrowIfEntityIsMissing(entity);
@@ -1918,7 +1960,7 @@ namespace Worlds
             ref Slot slot = ref world->slots[entity];
             if (slot.Definition.ArrayTypes.Contains(arrayType))
             {
-                array = slot.arrays[arrayType].AsArray<T>();
+                array = new(slot.arrays[arrayType].pointer);
                 return true;
             }
             else
@@ -1980,8 +2022,9 @@ namespace Worlds
             ThrowIfArrayIsMissing(entity, arrayType);
 
             ref Slot slot = ref world->slots[entity];
-            ref Array array = ref slot.arrays[arrayType];
+            ref Values array = ref slot.arrays[arrayType];
             array.Dispose();
+            array = default;
 
             Chunk previousChunk = slot.chunk;
             Definition newDefinition = previousChunk.Definition;
@@ -2009,8 +2052,9 @@ namespace Worlds
             ThrowIfArrayIsMissing(entity, arrayType);
 
             ref Slot slot = ref world->slots[entity];
-            ref Array array = ref slot.arrays[arrayType];
+            ref Values array = ref slot.arrays[arrayType];
             array.Dispose();
+            array = default;
 
             Chunk previousChunk = slot.chunk;
             Definition newDefinition = previousChunk.Definition;
@@ -2371,7 +2415,7 @@ namespace Worlds
             Allocations.ThrowIfNull(world);
 
             TypeLayout layout = arrayElementType.GetLayout(world->schema);
-            Array array = GetArray(entity, arrayElementType);
+            Values array = GetArray(entity, arrayElementType);
             ushort size = layout.Size;
             object[] arrayObject = new object[array.Length];
             for (uint i = 0; i < array.Length; i++)
@@ -2504,8 +2548,8 @@ namespace Worlds
             {
                 if (arrayElementTypes.Contains(a))
                 {
-                    Array sourceArray = GetArray(sourceEntity, a);
-                    Array destinationArray;
+                    Values sourceArray = GetArray(sourceEntity, a);
+                    Values destinationArray;
                     if (!destinationWorld.ContainsArray(destinationEntity, a))
                     {
                         destinationArray = CreateArray(destinationEntity, a, sourceArray.Stride, sourceArray.Length);
@@ -2823,7 +2867,7 @@ namespace Worlds
                     byte a = reader.ReadValue<byte>();
                     uint length = reader.ReadValue<uint>();
                     ushort arrayElementSize = schema.GetArrayTypeSize(a);
-                    Array array = value.CreateArray(createdEntity, a, arrayElementSize, length);
+                    Values array = value.CreateArray(createdEntity, a, arrayElementSize, length);
                     USpan<byte> arrayData = reader.ReadSpan<byte>(length * arrayElementSize);
                     arrayData.CopyTo(array.AsSpan());
                 }
