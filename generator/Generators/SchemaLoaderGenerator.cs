@@ -62,7 +62,7 @@ namespace Worlds.Generator
                     List<ITypeSymbol> schemaBankTypes = new();
                     foreach (ITypeSymbol type in compilation.GetAllTypes())
                     {
-                        if (!type.HasInterface(SchemaBankGenerator.InterfaceName))
+                        if (!type.HasInterface(SchemaBankGenerator.SchemaBankInterfaceName))
                         {
                             continue;
                         }

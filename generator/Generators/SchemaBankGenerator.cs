@@ -1,7 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
@@ -13,7 +12,8 @@ namespace Worlds.Generator
     public class SchemaBankGenerator : IIncrementalGenerator
     {
         public const string TypeNameFormat = "{0}SchemaBank";
-        public const string InterfaceName = "Worlds.ISchemaBank";
+        public const string SchemaBankInterfaceName = "Worlds.ISchemaBank";
+        public const string EntityInterfaceName = "Worlds.IEntity";
 
         private static readonly List<InvocationMatch> componentInvocations;
         private static readonly List<InvocationMatch> arrayElementInvocations;
@@ -184,7 +184,7 @@ namespace Worlds.Generator
         private static bool IsComponentMethod(ITypeSymbol declaringType, string methodName)
         {
             string declaringTypeName = declaringType.Name;
-            bool isEntity = declaringType.HasInterface("Worlds.IEntity");
+            bool isEntity = declaringType.HasInterface(EntityInterfaceName);
             foreach (InvocationMatch componentInvocation in componentInvocations)
             {
                 if (componentInvocation.declaringTypeName == declaringTypeName || (componentInvocation.declaringTypeName == "Entity" && isEntity))
@@ -215,7 +215,7 @@ namespace Worlds.Generator
         private static bool IsArrayElementMethod(ITypeSymbol declaringType, string methodName)
         {
             string declaringTypeName = declaringType.Name;
-            bool isEntity = declaringType.HasInterface("Worlds.IEntity");
+            bool isEntity = declaringType.HasInterface(EntityInterfaceName);
             foreach (InvocationMatch arrayElementInvocation in arrayElementInvocations)
             {
                 if (arrayElementInvocation.declaringTypeName == declaringTypeName || (arrayElementInvocation.declaringTypeName == "Entity" && isEntity))
@@ -246,7 +246,7 @@ namespace Worlds.Generator
         private static bool IsTagMethod(ITypeSymbol declaringType, string methodName)
         {
             string declaringTypeName = declaringType.Name;
-            bool isEntity = declaringType.HasInterface("Worlds.IEntity");
+            bool isEntity = declaringType.HasInterface(EntityInterfaceName);
             foreach (InvocationMatch tagInvocation in tagInvocations)
             {
                 if (tagInvocation.declaringTypeName == declaringTypeName || (tagInvocation.declaringTypeName == "Entity" && isEntity))
@@ -261,11 +261,10 @@ namespace Worlds.Generator
             return false;
         }
 
-        public static IReadOnlyCollection<FoundDataType> GetMentionedDataTypes(SourceBuilder source, IReadOnlyList<Input> inputs)
+        public static IReadOnlyList<DataType> GetMentionedDataTypes(SourceBuilder source, IReadOnlyList<Input> inputs)
         {
-            HashSet<FoundDataType> all = new();
+            DataTypeCollection collection = new();
             HashSet<(TypeDeclarationSyntax typeDeclaration, SemanticModel semanticModel)> types = new();
-            HashSet<(SyntaxNode node, SemanticModel semanticModel)> remaining = new();
             foreach (Input input in inputs)
             {
                 SyntaxNode rootNode = input.rootNode;
@@ -280,7 +279,7 @@ namespace Worlds.Generator
                     {
                         if (descendant is InvocationExpressionSyntax invocationExpression)
                         {
-                            Handle(source, all, semanticModel, false, invocationExpression);
+                            Handle(source, collection, semanticModel, false, invocationExpression);
                         }
                         else if (descendant is VariableDeclarationSyntax variableDeclaration)
                         {
@@ -298,7 +297,7 @@ namespace Worlds.Generator
                                                 continue;
                                             }
 
-                                            if (TryAdd(all, DataKind.Component, genericType.GetFullTypeName()))
+                                            if (collection.TryAdd(DataKind.Component, genericType.GetFullTypeName()))
                                             {
                                                 source.AppendLine($"// component {descendant} = {genericType.GetFullTypeName()}");
                                             }
@@ -315,7 +314,7 @@ namespace Worlds.Generator
                         {
                             if (expressionStatement.Expression is InvocationExpressionSyntax wrappedInvocationExpression)
                             {
-                                Handle(source, all, semanticModel, false, wrappedInvocationExpression);
+                                Handle(source, collection, semanticModel, false, wrappedInvocationExpression);
                             }
 
                             //source.AppendLine($"// expression: {input.typeDeclaration.Identifier} {expressionStatement.Expression} {expressionStatement.Expression.GetType()}");
@@ -343,7 +342,7 @@ namespace Worlds.Generator
                                                 continue;
                                             }
 
-                                            if (TryAdd(all, DataKind.Component, componentType.GetFullTypeName()))
+                                            if (collection.TryAdd(DataKind.Component, componentType.GetFullTypeName()))
                                             {
                                                 source.AppendLine($"// component {descendant} = {genericType.GetFullTypeName()}");
                                             }
@@ -373,7 +372,7 @@ namespace Worlds.Generator
                 bool isEntity = false;
                 if (semanticModel.GetDeclaredSymbol(typeDeclaration) is INamedTypeSymbol typeSymbol)
                 {
-                    isEntity = typeSymbol.HasInterface("Worlds.IEntity");
+                    isEntity = typeSymbol.HasInterface(EntityInterfaceName);
                 }
 
                 //source.AppendLine($"// {typeDeclaration.Identifier}: {isEntity};");
@@ -382,7 +381,7 @@ namespace Worlds.Generator
                 {
                     if (descendant is InvocationExpressionSyntax invocationExpression)
                     {
-                        Handle(source, all, semanticModel, isEntity, invocationExpression);
+                        Handle(source, collection, semanticModel, isEntity, invocationExpression);
                     }
                     else if (descendant is VariableDeclarationSyntax variableDeclaration)
                     {
@@ -400,7 +399,7 @@ namespace Worlds.Generator
                                             continue;
                                         }
 
-                                        if (TryAdd(all, DataKind.Component, genericType.GetFullTypeName()))
+                                        if (collection.TryAdd(DataKind.Component, genericType.GetFullTypeName()))
                                         {
                                             source.AppendLine($"// component {descendant} = {genericType.GetFullTypeName()}");
                                         }
@@ -417,7 +416,7 @@ namespace Worlds.Generator
                     {
                         if (expressionStatement.Expression is InvocationExpressionSyntax wrappedInvocationExpression)
                         {
-                            Handle(source, all, semanticModel, isEntity, wrappedInvocationExpression);
+                            Handle(source, collection, semanticModel, isEntity, wrappedInvocationExpression);
                         }
 
                         //source.AppendLine($"// expression: {input.typeDeclaration.Identifier} {expressionStatement.Expression} {expressionStatement.Expression.GetType()}");
@@ -430,8 +429,8 @@ namespace Worlds.Generator
             }
 
             //remove type names that are ?
-            List<FoundDataType> valid = new();
-            foreach (FoundDataType type in all)
+            List<DataType> valid = new();
+            foreach (DataType type in collection)
             {
                 if (type.fullTypeName != "?")
                 {
@@ -442,24 +441,7 @@ namespace Worlds.Generator
             return valid;
         }
 
-        private static bool TryAdd(HashSet<FoundDataType> all, DataKind kind, string fullTypeName)
-        {
-            //todo: the check against data types here is because of methods that accept both a generic, and the data type
-            //need a smarter way to fetch the generic type out
-            if (fullTypeName == "?" || fullTypeName == "Worlds.ComponentType" || fullTypeName == "Worlds.ArrayElementType" || fullTypeName == "Worlds.TagType")
-            {
-                return false;
-            }
-
-            if (all.Add(new FoundDataType(kind, fullTypeName)))
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        private static void Handle(SourceBuilder source, HashSet<FoundDataType> all, SemanticModel semanticModel, bool isEntity, InvocationExpressionSyntax invocationExpression)
+        private static void Handle(SourceBuilder source, DataTypeCollection collection, SemanticModel semanticModel, bool isEntity, InvocationExpressionSyntax invocationExpression)
         {
             //source.AppendLine($"// 1111 {typeDeclaration?.Identifier}: {invocationExpression.GetType()} + {invocationExpression.Expression.GetType()} + {invocationExpression};");
             if (semanticModel.GetSymbolInfo(invocationExpression).Symbol is IMethodSymbol methodSymbol)
@@ -480,7 +462,7 @@ namespace Worlds.Generator
                                 continue;
                             }
 
-                            if (TryAdd(all, DataKind.Component, genericType.GetFullTypeName()))
+                            if (collection.TryAdd(DataKind.Component, genericType.GetFullTypeName()))
                             {
                                 source.AppendLine($"// component {invocationExpression} = {genericType.GetFullTypeName()}");
                             }
@@ -496,7 +478,7 @@ namespace Worlds.Generator
                                 continue;
                             }
 
-                            if (TryAdd(all, DataKind.ArrayElement, genericType.GetFullTypeName()))
+                            if (collection.TryAdd(DataKind.ArrayElement, genericType.GetFullTypeName()))
                             {
                                 source.AppendLine($"// array {invocationExpression} = {genericType.GetFullTypeName()}");
                             }
@@ -512,7 +494,7 @@ namespace Worlds.Generator
                                 continue;
                             }
 
-                            if (TryAdd(all, DataKind.Tag, genericType.GetFullTypeName()))
+                            if (collection.TryAdd(DataKind.Tag, genericType.GetFullTypeName()))
                             {
                                 source.AppendLine($"// tag {invocationExpression} = {genericType.GetFullTypeName()}");
                             }
@@ -593,7 +575,7 @@ namespace Worlds.Generator
                                                 continue;
                                             }
 
-                                            if (TryAdd(all, DataKind.Component, genericType.GetFullTypeName()))
+                                            if (collection.TryAdd(DataKind.Component, genericType.GetFullTypeName()))
                                             {
                                                 source.AppendLine($"// component {invocationExpression} = {genericType.GetFullTypeName()}");
                                             }
@@ -611,7 +593,7 @@ namespace Worlds.Generator
                                                 continue;
                                             }
 
-                                            if (TryAdd(all, DataKind.Component, genericType.GetFullTypeName()))
+                                            if (collection.TryAdd(DataKind.Component, genericType.GetFullTypeName()))
                                             {
                                                 source.AppendLine($"// component {invocationExpression} = {genericType.GetFullTypeName()}");
                                             }
@@ -633,7 +615,7 @@ namespace Worlds.Generator
                                                 continue;
                                             }
 
-                                            if (TryAdd(all, DataKind.ArrayElement, genericType.GetFullTypeName()))
+                                            if (collection.TryAdd(DataKind.ArrayElement, genericType.GetFullTypeName()))
                                             {
                                                 source.AppendLine($"// array {invocationExpression} = {genericType.GetFullTypeName()}");
                                             }
@@ -659,7 +641,7 @@ namespace Worlds.Generator
                                             fullTypeName = fullTypeName.Substring(USpanStart.Length, fullTypeName.Length - USpanStart.Length - 1);
                                         }
 
-                                        if (TryAdd(all, DataKind.ArrayElement, fullTypeName))
+                                        if (collection.TryAdd(DataKind.ArrayElement, fullTypeName))
                                         {
                                             source.AppendLine($"// array {invocationExpression} = {genericType.GetFullTypeName()}");
                                         }
@@ -678,7 +660,7 @@ namespace Worlds.Generator
                                             continue;
                                         }
 
-                                        if (TryAdd(all, DataKind.Tag, genericType.GetFullTypeName()))
+                                        if (collection.TryAdd(DataKind.Tag, genericType.GetFullTypeName()))
                                         {
                                             source.AppendLine($"// tag {invocationExpression} = {genericType.GetFullTypeName()}");
                                         }
@@ -703,9 +685,9 @@ namespace Worlds.Generator
         {
             SourceBuilder source = new();
             string? assemblyName = null;
-            IReadOnlyCollection<FoundDataType> results = GetMentionedDataTypes(source, inputs);
+            IReadOnlyList<DataType> collection = GetMentionedDataTypes(source, inputs);
 
-            if (results.Count == 0)
+            if (collection.Count == 0)
             {
                 typeName = string.Empty;
                 sourceCode = string.Empty;
@@ -759,19 +741,19 @@ namespace Worlds.Generator
             source.Append("public readonly struct ");
             source.Append(typeName);
             source.Append(" : ");
-            source.Append(InterfaceName);
+            source.Append(SchemaBankInterfaceName);
             source.AppendLine();
 
             source.BeginGroup();
             {
                 source.Append("readonly void ");
-                source.Append(InterfaceName);
+                source.Append(SchemaBankInterfaceName);
                 source.Append(".Load(Schema schema)");
                 source.AppendLine();
 
                 source.BeginGroup();
                 {
-                    foreach (FoundDataType result in results)
+                    foreach (DataType result in collection)
                     {
                         source.Append("schema.Register");
                         if (result.kind == DataKind.Component)
@@ -816,58 +798,6 @@ namespace Worlds.Generator
                 this.rootNode = rootNode;
                 this.semanticModel = semanticModel;
             }
-        }
-
-        public readonly struct FoundDataType : IEquatable<FoundDataType>
-        {
-            public readonly DataKind kind;
-            public readonly string fullTypeName;
-
-            public FoundDataType(DataKind kind, string fullTypeName)
-            {
-                this.kind = kind;
-                this.fullTypeName = fullTypeName;
-            }
-
-            public readonly override bool Equals(object? obj)
-            {
-                return obj is FoundDataType type && Equals(type);
-            }
-
-            public readonly bool Equals(FoundDataType other)
-            {
-                return kind == other.kind && fullTypeName == other.fullTypeName;
-            }
-
-            public readonly override int GetHashCode()
-            {
-                int hashCode = -1702990006;
-                hashCode = hashCode * -1521134295 + kind.GetHashCode();
-                for (int i = 0; i < fullTypeName.Length; i++)
-                {
-                    hashCode = hashCode * -1521134295 + fullTypeName[i];
-                }
-
-                return hashCode;
-            }
-
-            public static bool operator ==(FoundDataType left, FoundDataType right)
-            {
-                return left.Equals(right);
-            }
-
-            public static bool operator !=(FoundDataType left, FoundDataType right)
-            {
-                return !(left == right);
-            }
-        }
-
-        public enum DataKind
-        {
-            Unknown,
-            Component,
-            ArrayElement,
-            Tag
         }
 
         public struct InvocationMatch
