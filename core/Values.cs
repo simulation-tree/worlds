@@ -1,5 +1,6 @@
 ﻿using Collections.Generic;
 using System;
+using System.Diagnostics;
 using Unmanaged;
 using Array = Collections.Array;
 using Pointer = Collections.Pointers.Array;
@@ -37,12 +38,29 @@ namespace Worlds
             this.pointer = array;
         }
 
-        public readonly USpan<T> AsSpan()
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfSizeMismatch<X>() where X : unmanaged
         {
-            return new(pointer->items.Pointer, pointer->length);
+            if (sizeof(T) != sizeof(X))
+            {
+                throw new InvalidOperationException($"Size mismatch between {typeof(T).Name} and {typeof(X).Name}");
+            }
+        }
+        public readonly Values<X> As<X>() where X : unmanaged
+        {
+            ThrowIfSizeMismatch<X>();
+
+            return new(pointer);
         }
 
         public readonly USpan<X> AsSpan<X>() where X : unmanaged
+        {
+            ThrowIfSizeMismatch<X>();
+
+            return new(pointer->items.Pointer, pointer->length);
+        }
+
+        public readonly USpan<T> AsSpan()
         {
             return new(pointer->items.Pointer, pointer->length);
         }
@@ -54,6 +72,8 @@ namespace Worlds
 
         public readonly USpan<X> AsSpan<X>(uint start) where X : unmanaged
         {
+            ThrowIfSizeMismatch<X>();
+
             return pointer->items.AsSpan<X>(start, pointer->length - start);
         }
 
@@ -62,9 +82,12 @@ namespace Worlds
             return new Span<T>(pointer->items.Pointer, (int)pointer->length).GetEnumerator();
         }
 
-        public readonly void CopyFrom(USpan<T> values)
+        /// <summary>
+        /// Copies data from the given <paramref name="span"/> into the array without resizing.
+        /// </summary>
+        public readonly void CopyFrom(USpan<T> span)
         {
-            pointer->items.Write(values);
+            pointer->items.Write(span);
         }
 
         public static implicit operator Values(Values<T> values)
