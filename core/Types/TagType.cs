@@ -7,6 +7,10 @@ namespace Worlds
 {
     public readonly struct TagType : IEquatable<TagType>
     {
+#if DEBUG
+        internal static readonly System.Collections.Generic.Dictionary<uint, TypeLayout> debugCachedTypes = new();
+#endif
+
         /// <summary>
         /// Tag type stating that the entity is disabled.
         /// </summary>

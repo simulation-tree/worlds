@@ -405,6 +405,8 @@ namespace Worlds
             componentHashes[componentType.index] = type.Hash;
             schema->componentCount++;
             schema->definitionMask.AddComponentType(componentType);
+
+            StoreComponentTypeForDebug(componentType, type);
             return componentType;
         }
 
@@ -431,6 +433,7 @@ namespace Worlds
             arrayElementHashes[schema->arraysCount] = type.Hash;
             schema->arraysCount++;
             schema->definitionMask.AddArrayType(arrayType);
+            StoreArrayTypeForDebug(arrayType, type);
             return arrayType;
         }
 
@@ -455,51 +458,70 @@ namespace Worlds
             tagHashes[tagType.index] = type.Hash;
             schema->definitionMask.AddTagType(tagType);
             schema->tagsCount++;
+            StoreTagTypeForDebug(tagType, type);
             return tagType;
         }
 
         public readonly bool ContainsComponentType(ComponentType componentType)
         {
+            Allocations.ThrowIfNull(schema);
+
             return schema->definitionMask.ComponentTypes.Contains(componentType.index);
         }
 
         public readonly bool ContainsArrayType(ArrayElementType arrayType)
         {
+            Allocations.ThrowIfNull(schema);
+
             return schema->definitionMask.ArrayTypes.Contains(arrayType.index);
         }
 
         public readonly bool ContainsTagType(TagType tagType)
         {
+            Allocations.ThrowIfNull(schema);
+
             return schema->definitionMask.TagTypes.Contains(tagType.index);
         }
 
         public readonly bool ContainsComponentType(byte index)
         {
+            Allocations.ThrowIfNull(schema);
+
             return schema->definitionMask.ComponentTypes.Contains(index);
         }
 
         public readonly bool ContainsComponentType(uint index)
         {
+            Allocations.ThrowIfNull(schema);
+
             return schema->definitionMask.ComponentTypes.Contains(index);
         }
 
         public readonly bool ContainsArrayType(byte index)
         {
+            Allocations.ThrowIfNull(schema);
+
             return schema->definitionMask.ArrayTypes.Contains(index);
         }
 
         public readonly bool ContainsArrayType(uint index)
         {
+            Allocations.ThrowIfNull(schema);
+
             return schema->definitionMask.ArrayTypes.Contains(index);
         }
 
         public readonly bool ContainsTagType(byte index)
         {
+            Allocations.ThrowIfNull(schema);
+
             return schema->definitionMask.TagTypes.Contains(index);
         }
 
         public readonly bool ContainsTagType(uint index)
         {
+            Allocations.ThrowIfNull(schema);
+
             return schema->definitionMask.TagTypes.Contains(index);
         }
 
@@ -1322,6 +1344,30 @@ namespace Worlds
             {
                 return new(pointer);
             }
+        }
+
+        [Conditional("DEBUG")]
+        private static void StoreComponentTypeForDebug(ComponentType componentType, TypeLayout type)
+        {
+#if DEBUG
+            ComponentType.debugCachedTypes[componentType.index] = type;
+#endif
+        }
+
+        [Conditional("DEBUG")]
+        private static void StoreArrayTypeForDebug(ArrayElementType arrayType, TypeLayout type)
+        {
+#if DEBUG
+            ArrayElementType.debugCachedTypes[arrayType.index] = type;
+#endif
+        }
+
+        [Conditional("DEBUG")]
+        private static void StoreTagTypeForDebug(TagType tagType, TypeLayout type)
+        {
+#if DEBUG
+            TagType.debugCachedTypes[tagType.index] = type;
+#endif
         }
 
         [Conditional("DEBUG")]

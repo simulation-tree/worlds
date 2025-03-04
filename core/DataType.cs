@@ -97,14 +97,24 @@ namespace Worlds
 
         public readonly override string ToString()
         {
-            USpan<char> buffer = stackalloc char[256];
-            uint length = ToString(buffer);
-            return buffer.GetSpan(length).ToString();
-        }
+#if DEBUG
+            if (kind == Kind.Component)
+            {
+                return ComponentType.debugCachedTypes[index].ToString();
+            }
+            else if (kind == Kind.ArrayElement)
+            {
+                return ArrayElementType.debugCachedTypes[index].ToString();
+            }
+            else if (kind == Kind.Tag)
+            {
+                return TagType.debugCachedTypes[index].ToString();
+            }
+#endif
 
-        public readonly uint ToString(USpan<char> destination)
-        {
-            return index.ToString(destination);
+            USpan<char> buffer = stackalloc char[256];
+            uint length = index.ToString(buffer);
+            return buffer.GetSpan(length).ToString();
         }
 
         public readonly string ToString(Schema schema)
@@ -171,17 +181,17 @@ namespace Worlds
             }
         }
 
-        public override bool Equals(object? obj)
+        public readonly override bool Equals(object? obj)
         {
             return obj is DataType type && Equals(type);
         }
 
-        public bool Equals(DataType other)
+        public readonly bool Equals(DataType other)
         {
             return index == other.index && kind == other.kind;
         }
 
-        public override int GetHashCode()
+        public readonly override int GetHashCode()
         {
             unchecked
             {

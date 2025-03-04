@@ -10,6 +10,10 @@ namespace Worlds
     /// </summary>
     public readonly struct ArrayElementType : IEquatable<ArrayElementType>
     {
+#if DEBUG
+        internal static readonly System.Collections.Generic.Dictionary<uint, TypeLayout> debugCachedTypes = new();
+#endif
+
         public readonly uint index;
 
 #if NET
