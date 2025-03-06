@@ -384,7 +384,7 @@ namespace Worlds
 
         public readonly ComponentType RegisterComponent<T>() where T : unmanaged
         {
-            ComponentType newComponentType = RegisterComponent(TypeRegistry.Get<T>());
+            ComponentType newComponentType = RegisterComponent(TypeRegistry.GetOrRegister<T>());
             SchemaTypeCache<T>.SetComponentType(this, newComponentType);
             return newComponentType;
         }
@@ -412,7 +412,7 @@ namespace Worlds
 
         public readonly ArrayElementType RegisterArrayElement<T>() where T : unmanaged
         {
-            ArrayElementType arrayType = RegisterArrayElement(TypeRegistry.Get<T>());
+            ArrayElementType arrayType = RegisterArrayElement(TypeRegistry.GetOrRegister<T>());
             SchemaTypeCache<T>.SetArrayType(this, arrayType);
             return arrayType;
         }
@@ -439,7 +439,7 @@ namespace Worlds
 
         public readonly TagType RegisterTag<T>() where T : unmanaged
         {
-            TagType tagType = RegisterTag(TypeRegistry.Get<T>());
+            TagType tagType = RegisterTag(TypeRegistry.GetOrRegister<T>());
             SchemaTypeCache<T>.SetTagType(this, tagType);
             return tagType;
         }
