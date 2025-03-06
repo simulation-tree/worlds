@@ -11,7 +11,7 @@
         <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
         <Title>Worlds Core</Title>
         <Authors>popcron</Authors>
-        <Company>game-simulation</Company>
+        <Company>game-simulations</Company>
         <Description>Native ECS library</Description>
         <RepositoryUrl>https://github.com/game-simulations/worlds</RepositoryUrl>
         <PackageReadmeFile>README.md</PackageReadmeFile>
