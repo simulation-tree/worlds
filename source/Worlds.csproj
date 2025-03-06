@@ -1,37 +1,38 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
-		<ImplicitUsings>disable</ImplicitUsings>
-		<IncludeBuildOutput>false</IncludeBuildOutput>
-		<IncludeContentInPack>true</IncludeContentInPack>
-		<NoWarn>$(NoWarn);NU5128</NoWarn>
-		<Nullable>enable</Nullable>
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<GenerateDocumentationFile>True</GenerateDocumentationFile>
-		<Title>Worlds</Title>
-		<Authors>popcron</Authors>
-		<Company>game-simulations</Company>
-		<Description>Native C# library for ECS</Description>
-		<RepositoryUrl>https://github.com/game-simulations/worlds</RepositoryUrl>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<IsAotCompatible>True</IsAotCompatible>
-		<IsTrimmable>True</IsTrimmable>
-		<NoStandardLib>true</NoStandardLib>
-	</PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <IncludeContentInPack>true</IncludeContentInPack>
+        <NoWarn>$(NoWarn);NU5128</NoWarn>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <GenerateDocumentationFile>True</GenerateDocumentationFile>
+        <Title>Worlds</Title>
+        <Authors>popcron</Authors>
+        <Company>game-simulation</Company>
+        <Description>Native C# library for ECS</Description>
+        <RepositoryUrl>https://github.com/game-simulations/worlds</RepositoryUrl>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <IsAotCompatible>True</IsAotCompatible>
+        <IsTrimmable>True</IsTrimmable>
+        <NoStandardLib>true</NoStandardLib>
+        <PackageId/>
+    </PropertyGroup>
 
-	<ItemGroup>
-		<None Include="..\README.md">
-			<Pack>True</Pack>
-			<PackagePath>\</PackagePath>
-		</None>
-	</ItemGroup>
+    <ItemGroup>
+        <None Include="..\README.md">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+    </ItemGroup>
 
-	<ItemGroup>
-		<ProjectReference Include="..\generator\Worlds.Generator.csproj" />
-		<ProjectReference Include="..\core\Worlds.Core.csproj" />
-		<ProjectReference Include="..\..\types\source\Types.csproj" />
-		<ProjectReference Include="..\..\unmanaged\source\Unmanaged.csproj" />
-	</ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\generator\Worlds.Generator.csproj"/>
+        <ProjectReference Include="..\core\Worlds.Core.csproj"/>
+        <ProjectReference Include="..\..\types\source\Types.csproj"/>
+        <ProjectReference Include="..\..\unmanaged\source\Unmanaged.csproj"/>
+    </ItemGroup>
 
 </Project>

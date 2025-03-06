@@ -1,41 +1,42 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
-		<ImplicitUsings>disable</ImplicitUsings>
-		<Nullable>enable</Nullable>
-		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-		<GenerateDocumentationFile>True</GenerateDocumentationFile>
-		<IsAotCompatible>True</IsAotCompatible>
-		<WarningLevel>8</WarningLevel>
-		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-		<Title>Worlds Core</Title>
-		<Authors>popcron</Authors>
-		<Company>game-simulations</Company>
-		<Description>Native ECS library</Description>
-		<RepositoryUrl>https://github.com/game-simulations/worlds</RepositoryUrl>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageTags>ecs;native</PackageTags>
-		<NoWarn>1701;1702;CS1591</NoWarn>
-		<NoStandardLib>true</NoStandardLib>
-		<RootNamespace>Worlds</RootNamespace>
-	</PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+        <GenerateDocumentationFile>True</GenerateDocumentationFile>
+        <IsAotCompatible>True</IsAotCompatible>
+        <WarningLevel>8</WarningLevel>
+        <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+        <Title>Worlds Core</Title>
+        <Authors>popcron</Authors>
+        <Company>game-simulation</Company>
+        <Description>Native ECS library</Description>
+        <RepositoryUrl>https://github.com/game-simulations/worlds</RepositoryUrl>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageTags>ecs;native</PackageTags>
+        <NoWarn>1701;1702;CS1591</NoWarn>
+        <NoStandardLib>true</NoStandardLib>
+        <RootNamespace>Worlds</RootNamespace>
+        <PackageId/>
+    </PropertyGroup>
 
-	<ItemGroup>
-		<None Include="..\README.md">
-			<Pack>True</Pack>
-			<PackagePath>\</PackagePath>
-		</None>
-	</ItemGroup>
+    <ItemGroup>
+        <None Include="..\README.md">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+    </ItemGroup>
 
-	<ItemGroup>
-		<ProjectReference Include="..\..\collections\source\Collections.csproj" />
-		<ProjectReference Include="..\..\types\core\Types.Core.csproj" />
-		<ProjectReference Include="..\..\unmanaged\core\Unmanaged.Core.csproj" />
-		<ProjectReference Include="..\..\unmanaged\generator\Unmanaged.Generator.csproj">
-			<OutputItemType>Analyzer</OutputItemType>
-			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-		</ProjectReference>
-	</ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\collections\source\Collections.csproj"/>
+        <ProjectReference Include="..\..\types\core\Types.Core.csproj"/>
+        <ProjectReference Include="..\..\unmanaged\core\Unmanaged.Core.csproj"/>
+        <ProjectReference Include="..\..\unmanaged\generator\Unmanaged.Generator.csproj">
+            <OutputItemType>Analyzer</OutputItemType>
+            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+        </ProjectReference>
+    </ItemGroup>
 
 </Project>
