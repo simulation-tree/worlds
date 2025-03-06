@@ -35,7 +35,7 @@ namespace Worlds
         {
             get
             {
-                Allocations.ThrowIfNull(operation);
+                MemoryAddress.ThrowIfDefault(operation);
 
                 return operation->count;
             }
@@ -67,13 +67,13 @@ namespace Worlds
 
         private readonly void WriteInstructionType(InstructionType type)
         {
-            Allocations.ThrowIfNull(operation);
+            MemoryAddress.ThrowIfDefault(operation);
 
             uint newLength = operation->bytesLength + 1;
             if (operation->bytesCapacity < newLength)
             {
                 operation->bytesCapacity *= 2;
-                Allocation.Resize(ref operation->buffer, operation->bytesCapacity);
+                MemoryAddress.Resize(ref operation->buffer, operation->bytesCapacity);
             }
 
             operation->buffer.Write(operation->bytesLength, (byte)type);
@@ -83,14 +83,14 @@ namespace Worlds
 
         private readonly void WriteTypeLayout(TypeLayout type)
         {
-            Allocations.ThrowIfNull(operation);
+            MemoryAddress.ThrowIfDefault(operation);
 
             const uint Add = 8;
             uint newLength = operation->bytesLength + Add;
             if (operation->bytesCapacity < newLength)
             {
-                operation->bytesCapacity = Allocations.GetNextPowerOf2(newLength);
-                Allocation.Resize(ref operation->buffer, operation->bytesCapacity);
+                operation->bytesCapacity = newLength.GetNextPowerOf2();
+                MemoryAddress.Resize(ref operation->buffer, operation->bytesCapacity);
             }
 
             operation->buffer.Write(operation->bytesLength, type.Hash);
@@ -99,14 +99,14 @@ namespace Worlds
 
         private readonly void WriteValue<T>(T value) where T : unmanaged
         {
-            Allocations.ThrowIfNull(operation);
+            MemoryAddress.ThrowIfDefault(operation);
 
             uint add = (uint)sizeof(T);
             uint newLength = operation->bytesLength + add;
             if (operation->bytesCapacity < newLength)
             {
-                operation->bytesCapacity = Allocations.GetNextPowerOf2(newLength);
-                Allocation.Resize(ref operation->buffer, operation->bytesCapacity);
+                operation->bytesCapacity = newLength.GetNextPowerOf2();
+                MemoryAddress.Resize(ref operation->buffer, operation->bytesCapacity);
             }
 
             operation->buffer.Write(operation->bytesLength, value);
@@ -115,14 +115,14 @@ namespace Worlds
 
         private readonly void WriteSpan<T>(USpan<T> span) where T : unmanaged
         {
-            Allocations.ThrowIfNull(operation);
+            MemoryAddress.ThrowIfDefault(operation);
 
             uint add = (uint)sizeof(T) * span.Length;
             uint newLength = operation->bytesLength + add;
             if (operation->bytesCapacity < newLength)
             {
-                operation->bytesCapacity = Allocations.GetNextPowerOf2(newLength);
-                Allocation.Resize(ref operation->buffer, operation->bytesCapacity);
+                operation->bytesCapacity = newLength.GetNextPowerOf2();
+                MemoryAddress.Resize(ref operation->buffer, operation->bytesCapacity);
             }
 
             operation->buffer.Write(operation->bytesLength, span);
@@ -131,7 +131,7 @@ namespace Worlds
 
         private readonly InstructionType ReadInstructionType(ref uint bytePosition)
         {
-            Allocations.ThrowIfNull(operation);
+            MemoryAddress.ThrowIfDefault(operation);
 
             InstructionType type = operation->buffer.Read<InstructionType>(bytePosition);
             bytePosition++;
@@ -140,7 +140,7 @@ namespace Worlds
 
         private readonly TypeLayout ReadTypeLayout(ref uint bytePosition)
         {
-            Allocations.ThrowIfNull(operation);
+            MemoryAddress.ThrowIfDefault(operation);
 
             long hash = operation->buffer.Read<long>(bytePosition);
             bytePosition += sizeof(long);
@@ -149,7 +149,7 @@ namespace Worlds
 
         private readonly T Read<T>(ref uint bytePosition) where T : unmanaged
         {
-            Allocations.ThrowIfNull(operation);
+            MemoryAddress.ThrowIfDefault(operation);
 
             T value = operation->buffer.Read<T>(bytePosition);
             bytePosition += (uint)sizeof(T);
@@ -158,7 +158,7 @@ namespace Worlds
 
         private readonly USpan<byte> ReadBytes(uint byteLength, ref uint bytePosition)
         {
-            Allocations.ThrowIfNull(operation);
+            MemoryAddress.ThrowIfDefault(operation);
 
             USpan<byte> bytes = operation->buffer.AsSpan(bytePosition, byteLength);
             bytePosition += byteLength;
@@ -167,7 +167,7 @@ namespace Worlds
 
         private readonly USpan<T> ReadSpan<T>(uint length, ref uint bytePosition) where T : unmanaged
         {
-            Allocations.ThrowIfNull(operation);
+            MemoryAddress.ThrowIfDefault(operation);
 
             uint add = (uint)sizeof(T) * length;
             USpan<byte> bytes = operation->buffer.AsSpan(bytePosition, add);
@@ -181,7 +181,7 @@ namespace Worlds
         /// </summary>
         public readonly void Clear()
         {
-            Allocations.ThrowIfNull(operation);
+            MemoryAddress.ThrowIfDefault(operation);
 
             operation->bytesLength = 0;
             operation->count = 0;
@@ -463,7 +463,7 @@ namespace Worlds
         /// </summary>
         public readonly void Perform(World world)
         {
-            Allocations.ThrowIfNull(operation);
+            MemoryAddress.ThrowIfDefault(operation);
 
             if (operation->count > 0)
             {
@@ -499,7 +499,7 @@ namespace Worlds
             operation->count = count;
             operation->bytesLength = bytesLength;
             operation->bytesCapacity = bytesCapacity;
-            Allocation.Resize(ref operation->buffer, bytesCapacity);
+            MemoryAddress.Resize(ref operation->buffer, bytesCapacity);
             reader.ReadSpan<byte>(bytesLength).CopyTo(operation->buffer, bytesLength);
         }
 
@@ -854,16 +854,16 @@ namespace Worlds
             public uint count;
             public uint bytesLength;
             public uint bytesCapacity;
-            public Allocation buffer;
+            public MemoryAddress buffer;
 
             public static Implementation* Allocate(uint minimumCapacity = 4)
             {
-                minimumCapacity = Math.Max(1, Allocations.GetNextPowerOf2(minimumCapacity));
-                ref Implementation operation = ref Allocations.Allocate<Implementation>();
+                minimumCapacity = Math.Max(1, minimumCapacity.GetNextPowerOf2());
+                ref Implementation operation = ref MemoryAddress.Allocate<Implementation>();
                 operation.count = 0;
                 operation.bytesLength = 0;
                 operation.bytesCapacity = minimumCapacity;
-                operation.buffer = Allocation.Create(minimumCapacity);
+                operation.buffer = MemoryAddress.Allocate(minimumCapacity);
                 fixed (Implementation* pointer = &operation)
                 {
                     return pointer;
@@ -872,10 +872,10 @@ namespace Worlds
 
             public static void Free(ref Implementation* operation)
             {
-                Allocations.ThrowIfNull(operation);
+                MemoryAddress.ThrowIfDefault(operation);
 
                 operation->buffer.Dispose();
-                Allocations.Free(ref operation);
+                MemoryAddress.Free(ref operation);
             }
         }
     }

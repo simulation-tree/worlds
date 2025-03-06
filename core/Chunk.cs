@@ -33,7 +33,7 @@ namespace Worlds
         {
             get
             {
-                Allocations.ThrowIfNull(chunk);
+                MemoryAddress.ThrowIfDefault(chunk);
 
                 return chunk->entities.AsSpan();
             }
@@ -46,7 +46,7 @@ namespace Worlds
         {
             get
             {
-                Allocations.ThrowIfNull(chunk);
+                MemoryAddress.ThrowIfDefault(chunk);
 
                 return chunk->entities.Count;
             }
@@ -60,7 +60,7 @@ namespace Worlds
         {
             get
             {
-                Allocations.ThrowIfNull(chunk);
+                MemoryAddress.ThrowIfDefault(chunk);
 
                 return chunk->definition;
             }
@@ -75,7 +75,7 @@ namespace Worlds
         public Chunk()
         {
             Array<List> componentArrays = new(BitMask.Capacity);
-            ref Pointer chunk = ref Allocations.Allocate<Pointer>();
+            ref Pointer chunk = ref MemoryAddress.Allocate<Pointer>();
             chunk = new(default, componentArrays, new(0));
             fixed (Pointer* pointer = &chunk)
             {
@@ -110,7 +110,7 @@ namespace Worlds
                 }
             }
 
-            ref Pointer chunk = ref Allocations.Allocate<Pointer>();
+            ref Pointer chunk = ref MemoryAddress.Allocate<Pointer>();
             chunk = new(definition, componentArrays, new(typeIndices.GetSpan(typeCount)));
             fixed (Pointer* pointer = &chunk)
             {
@@ -121,7 +121,7 @@ namespace Worlds
         /// <inheritdoc/>
         public void Dispose()
         {
-            Allocations.ThrowIfNull(chunk);
+            MemoryAddress.ThrowIfDefault(chunk);
 
             chunk->entities.Dispose();
             uint typeCount = chunk->typeIndices.Length;
@@ -133,7 +133,7 @@ namespace Worlds
 
             chunk->componentLists.Dispose();
             chunk->typeIndices.Dispose();
-            Allocations.Free(ref chunk);
+            MemoryAddress.Free(ref chunk);
         }
 
         [Conditional("DEBUG")]
@@ -215,7 +215,7 @@ namespace Worlds
         /// </summary>
         public readonly uint AddEntity(uint entity)
         {
-            Allocations.ThrowIfNull(chunk);
+            MemoryAddress.ThrowIfDefault(chunk);
 
             chunk->entities.Add(entity);
             uint typeCount = chunk->typeIndices.Length;
@@ -233,7 +233,7 @@ namespace Worlds
         /// </summary>
         public readonly void RemoveEntity(uint entity)
         {
-            Allocations.ThrowIfNull(chunk);
+            MemoryAddress.ThrowIfDefault(chunk);
 
             uint index = chunk->entities.IndexOf(entity);
             chunk->entities.RemoveAtBySwapping(index);
@@ -250,8 +250,8 @@ namespace Worlds
         /// </summary>
         public readonly uint MoveEntity(uint entity, Chunk destination)
         {
-            Allocations.ThrowIfNull(chunk);
-            Allocations.ThrowIfNull(destination.chunk);
+            MemoryAddress.ThrowIfDefault(chunk);
+            MemoryAddress.ThrowIfDefault(destination.chunk);
 
             uint oldIndex = chunk->entities.IndexOf(entity);
             chunk->entities.RemoveAtBySwapping(oldIndex);
@@ -266,7 +266,7 @@ namespace Worlds
                 if (chunk->typeIndices.Contains(destinationComponentType))
                 {
                     List sourceComponents = chunk->componentLists[destinationComponentType];
-                    Allocation oldComponent = sourceComponents[oldIndex];
+                    MemoryAddress oldComponent = sourceComponents[oldIndex];
                     destinationComponents.Insert(newIndex, oldComponent);
                 }
                 else
@@ -290,7 +290,7 @@ namespace Worlds
         /// </summary>
         public readonly List GetComponents(uint componentType)
         {
-            Allocations.ThrowIfNull(chunk);
+            MemoryAddress.ThrowIfDefault(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
 
             return chunk->componentLists[componentType];
@@ -301,7 +301,7 @@ namespace Worlds
         /// </summary>
         public readonly USpan<T> GetComponents<T>(uint componentType) where T : unmanaged
         {
-            Allocations.ThrowIfNull(chunk);
+            MemoryAddress.ThrowIfDefault(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
 
             return chunk->componentLists[componentType].AsSpan<T>();
@@ -312,7 +312,7 @@ namespace Worlds
         /// </summary>
         public readonly ref T GetComponent<T>(uint index, uint componentType) where T : unmanaged
         {
-            Allocations.ThrowIfNull(chunk);
+            MemoryAddress.ThrowIfDefault(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
 
             return ref chunk->componentLists[componentType].Get<T>(index);
@@ -323,7 +323,7 @@ namespace Worlds
         /// </summary>
         public readonly ref T GetComponentOfEntity<T>(uint entity, uint componentType) where T : unmanaged
         {
-            Allocations.ThrowIfNull(chunk);
+            MemoryAddress.ThrowIfDefault(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
             ThrowIfEntityIsMissing(entity);
 
@@ -333,9 +333,9 @@ namespace Worlds
         /// <summary>
         /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> at <paramref name="index"/>.
         /// </summary>
-        public readonly Allocation GetComponent(uint index, uint componentType)
+        public readonly MemoryAddress GetComponent(uint index, uint componentType)
         {
-            Allocations.ThrowIfNull(chunk);
+            MemoryAddress.ThrowIfDefault(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
 
             return chunk->componentLists[componentType][index];
@@ -344,9 +344,9 @@ namespace Worlds
         /// <summary>
         /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> of <paramref name="entity"/>.
         /// </summary>
-        public readonly Allocation GetComponentOfEntity(uint entity, uint componentType)
+        public readonly MemoryAddress GetComponentOfEntity(uint entity, uint componentType)
         {
-            Allocations.ThrowIfNull(chunk);
+            MemoryAddress.ThrowIfDefault(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
             ThrowIfEntityIsMissing(entity);
 
@@ -356,9 +356,9 @@ namespace Worlds
         /// <summary>
         /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> at <paramref name="index"/>.
         /// </summary>
-        public readonly Allocation GetComponent(uint index, uint componentType, out ushort componentSize)
+        public readonly MemoryAddress GetComponent(uint index, uint componentType, out ushort componentSize)
         {
-            Allocations.ThrowIfNull(chunk);
+            MemoryAddress.ThrowIfDefault(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
 
             List components = chunk->componentLists[componentType];
@@ -369,9 +369,9 @@ namespace Worlds
         /// <summary>
         /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> of <paramref name="entity"/>.
         /// </summary>
-        public readonly Allocation GetComponentOfEntity(uint entity, uint componentType, out ushort componentSize)
+        public readonly MemoryAddress GetComponentOfEntity(uint entity, uint componentType, out ushort componentSize)
         {
-            Allocations.ThrowIfNull(chunk);
+            MemoryAddress.ThrowIfDefault(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
             ThrowIfEntityIsMissing(entity);
 
@@ -385,7 +385,7 @@ namespace Worlds
         /// </summary>
         public readonly void SetComponent<T>(uint index, uint componentType, T value) where T : unmanaged
         {
-            Allocations.ThrowIfNull(chunk);
+            MemoryAddress.ThrowIfDefault(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
 
             chunk->componentLists[componentType].Set(index, value);
@@ -396,7 +396,7 @@ namespace Worlds
         /// </summary>
         public readonly void SetComponentOfEntity<T>(uint entity, uint componentType, T value) where T : unmanaged
         {
-            Allocations.ThrowIfNull(chunk);
+            MemoryAddress.ThrowIfDefault(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
             ThrowIfEntityIsMissing(entity);
 
@@ -429,7 +429,7 @@ namespace Worlds
         public static Chunk Create()
         {
             Array<List> componentArrays = new(BitMask.Capacity);
-            ref Pointer chunk = ref Allocations.Allocate<Pointer>();
+            ref Pointer chunk = ref MemoryAddress.Allocate<Pointer>();
             chunk = new(default, componentArrays, new(0));
             fixed (Pointer* pointer = &chunk)
             {

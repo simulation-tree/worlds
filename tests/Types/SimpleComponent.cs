@@ -4,9 +4,9 @@ namespace Worlds.Tests
 {
     public struct SimpleComponent
     {
-        public FixedString data;
+        public ASCIIText256 data;
 
-        public SimpleComponent(FixedString data)
+        public SimpleComponent(ASCIIText256 data)
         {
             this.data = data;
         }

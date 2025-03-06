@@ -12,7 +12,6 @@ namespace Worlds.Tests
             Assert.That(chunk.Entities.Length, Is.EqualTo(1));
             Assert.That(chunk.Entities[0], Is.EqualTo(7));
             chunk.Dispose();
-            Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
@@ -41,7 +40,6 @@ namespace Worlds.Tests
             Assert.That(floatComponents[0], Is.EqualTo((Float)3.14f));
             chunk.Dispose();
             schema.Dispose();
-            Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
@@ -68,7 +66,6 @@ namespace Worlds.Tests
             Assert.That(floatComponents.Length, Is.EqualTo(0));
             chunk.Dispose();
             schema.Dispose();
-            Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
@@ -115,7 +112,6 @@ namespace Worlds.Tests
             chunkB.Dispose();
             chunkC.Dispose();
             schema.Dispose();
-            Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]

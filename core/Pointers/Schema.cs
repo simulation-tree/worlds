@@ -10,8 +10,8 @@ namespace Worlds.Pointers
         internal byte arraysCount;
         internal byte tagsCount;
         internal Definition definitionMask;
-        internal readonly Allocation sizes;
-        internal readonly Allocation typeHashes;
+        internal readonly MemoryAddress sizes;
+        internal readonly MemoryAddress typeHashes;
 
         internal Schema(uint schemaIndex)
         {
@@ -19,8 +19,8 @@ namespace Worlds.Pointers
             arraysCount = 0;
             tagsCount = 0;
             definitionMask = default;
-            sizes = Allocation.CreateZeroed(Worlds.Schema.SizesLengthInBytes);
-            typeHashes = Allocation.CreateZeroed(Worlds.Schema.TypeHashesLengthInBytes);
+            sizes = MemoryAddress.AllocateZeroed(Worlds.Schema.SizesLengthInBytes);
+            typeHashes = MemoryAddress.AllocateZeroed(Worlds.Schema.TypeHashesLengthInBytes);
             this.schemaIndex = schemaIndex;
         }
     }

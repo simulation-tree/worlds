@@ -5,9 +5,9 @@ namespace Worlds.Tests
 {
     public struct Cherry : IEquatable<Cherry>
     {
-        public FixedString stones;
+        public ASCIIText256 stones;
 
-        public Cherry(FixedString stones)
+        public Cherry(ASCIIText256 stones)
         {
             this.stones = stones;
         }

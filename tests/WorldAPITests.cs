@@ -10,9 +10,11 @@ namespace Worlds.Tests
         public void CreateAndDisposeWorld()
         {
             World world = CreateWorld();
+
+            Assert.That(world.IsDisposed, Is.False);
+
             world.Dispose();
 
-            Assert.That(Allocations.Count, Is.EqualTo(0));
             Assert.That(world.IsDisposed, Is.True);
         }
 
@@ -21,7 +23,7 @@ namespace Worlds.Tests
         {
             World world = CreateWorld();
             world.Dispose();
-            Assert.Throws<NullReferenceException>(() => world.Dispose());
+            Assert.Throws<InvalidOperationException>(() => world.Dispose());
         }
 
         [Test]
@@ -287,7 +289,6 @@ namespace Worlds.Tests
             Assert.That(world.GetChildCount(b), Is.EqualTo(0));
             Assert.That(world.GetChildCount(c), Is.EqualTo(1));
             world.Dispose();
-            Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
@@ -360,7 +361,7 @@ namespace Worlds.Tests
             Assert.That(world.ContainsEntity(clone), Is.True);
             Assert.That(world.ContainsComponent<SimpleComponent>(clone), Is.True);
             Assert.That(world.ContainsComponent<Another>(clone), Is.True);
-            Assert.That(world.GetComponent<SimpleComponent>(clone).data, Is.EqualTo(new FixedString("apple")));
+            Assert.That(world.GetComponent<SimpleComponent>(clone).data, Is.EqualTo(new ASCIIText256("apple")));
             Assert.That(world.GetComponent<Another>(clone).data, Is.EqualTo(5));
             Values<Character> cloneArray = world.GetArray<Character>(clone);
             Assert.That(cloneArray.Length, Is.EqualTo(5));

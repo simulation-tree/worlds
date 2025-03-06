@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.InteropServices;
 using Unmanaged;
 
 namespace Worlds
@@ -484,7 +483,7 @@ namespace Worlds
         {
             private static readonly uint stride = (uint)sizeof(Chunk);
 
-            private readonly Allocation chunks;
+            private readonly MemoryAddress chunks;
             private readonly uint chunkCount;
             private readonly uint c1;
             private readonly uint c2;
@@ -585,8 +584,7 @@ namespace Worlds
                     c6 = schema.GetComponentTypeIndex<C6>();
                     c7 = schema.GetComponentTypeIndex<C7>();
                     c8 = schema.GetComponentTypeIndex<C8>();
-                    chunks = new(NativeMemory.Alloc(chunkCount * stride));
-                    chunks.CopyFrom(chunksBuffer.Pointer, stride * chunkCount);
+                    chunks = MemoryAddress.Allocate(chunksBuffer.GetSpan(chunkCount));
                     UpdateChunkFields(ref chunksBuffer[0]);
                 }
             }
@@ -606,7 +604,7 @@ namespace Worlds
                     chunkIndex++;
                     if (chunkIndex < chunkCount)
                     {
-                        UpdateChunkFields(ref chunks.Read<Chunk>(chunkIndex * stride));
+                        UpdateChunkFields(ref chunks.ReadElement<Chunk>(chunkIndex));
                         entityIndex = 1;
                         return true;
                     }
@@ -634,7 +632,7 @@ namespace Worlds
             {
                 if (chunkCount > 0)
                 {
-                    NativeMemory.Free(chunks);
+                    chunks.Dispose();
                 }
             }
         }

@@ -1,5 +1,4 @@
 ﻿using System;
-using Unmanaged;
 
 namespace Worlds.Tests
 {
@@ -33,7 +32,6 @@ namespace Worlds.Tests
             Assert.That(world.GetArrayLength<SimpleComponent>(b), Is.EqualTo(2));
 
             world.Dispose();
-            Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
@@ -45,7 +43,6 @@ namespace Worlds.Tests
             world.DestroyArray<SimpleComponent>(entity);
             Assert.That(world.ContainsArray<SimpleComponent>(entity), Is.False);
             world.Dispose();
-            Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
@@ -64,7 +61,6 @@ namespace Worlds.Tests
             Assert.That(anotherList.Length, Is.EqualTo(1));
             world.DestroyEntity(another);
             world.Dispose();
-            Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]

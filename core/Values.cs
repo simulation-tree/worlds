@@ -20,7 +20,7 @@ namespace Worlds
                 if (pointer->length != value)
                 {
                     uint oldLength = pointer->length;
-                    Allocation.Resize(ref pointer->items, (uint)sizeof(T) * value);
+                    MemoryAddress.Resize(ref pointer->items, (uint)sizeof(T) * value);
                     pointer->length = value;
                 }
             }
@@ -108,14 +108,14 @@ namespace Worlds
                 if (pointer->length != value)
                 {
                     uint oldLength = pointer->length;
-                    Allocation.Resize(ref pointer->items, pointer->stride * value);
+                    MemoryAddress.Resize(ref pointer->items, pointer->stride * value);
                     pointer->length = value;
                 }
             }
         }
 
         public readonly uint Stride => pointer->stride;
-        public readonly Allocation this[uint index] => new((void*)((nint)pointer->items + pointer->stride * index));
+        public readonly MemoryAddress this[uint index] => new(pointer->items.Pointer + pointer->stride * index);
 
         internal Values(Array array)
         {
@@ -153,7 +153,7 @@ namespace Worlds
             pointer->items.Write(bytePosition, values);
         }
 
-        public readonly Allocation Read(uint bytePosition)
+        public readonly MemoryAddress Read(uint bytePosition)
         {
             return pointer->items.Read(bytePosition);
         }

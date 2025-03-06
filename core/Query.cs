@@ -73,7 +73,7 @@ namespace Worlds
 
         public unsafe Query(World world, Definition required = default, Definition exclude = default)
         {
-            Allocations.ThrowIfNull((void*)world.Address);
+            MemoryAddress.ThrowIfDefault((void*)world.Address);
 
             this.world = world;
             this.required = required;
