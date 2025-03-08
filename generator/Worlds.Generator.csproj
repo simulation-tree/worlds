@@ -9,8 +9,8 @@
         <IncludeSymbols>false</IncludeSymbols>
         <Title>Worlds Generator</Title>
         <Authors>popcron</Authors>
-        <Company>game-simulations</Company>
-        <RepositoryUrl>https://github.com/game-simulations/worlds</RepositoryUrl>
+        <Company>simulation-tree</Company>
+        <RepositoryUrl>https://github.com/simulation-tree/worlds</RepositoryUrl>
         <PackageId/>
     </PropertyGroup>
 

@@ -1,6 +1,6 @@
 # Worlds
 
-[![Test](https://github.com/game-simulations/worlds/actions/workflows/test.yml/badge.svg)](https://github.com/game-simulations/worlds/actions/workflows/test.yml)
+[![Test](https://github.com/simulation-tree/worlds/actions/workflows/test.yml/badge.svg)](https://github.com/simulation-tree/worlds/actions/workflows/test.yml)
 
 Library for implementing data as _components_, _arrays_, and _tags_, found on _entities_.
 
@@ -33,7 +33,7 @@ public struct Fruit(uint value)
     public uint value = value;
 }
 ```
-> The `TypeRegistryLoader` is part of the [`types`](https://github.com/game-simulations/types) project and it initializes metadata for all types.
+> The `TypeRegistryLoader` is part of the [`types`](https://github.com/simulation-tree/types) project and it initializes metadata for all types.
 
 ### Schema loader
 

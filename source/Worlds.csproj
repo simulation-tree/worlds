@@ -11,9 +11,9 @@
         <GenerateDocumentationFile>True</GenerateDocumentationFile>
         <Title>Worlds</Title>
         <Authors>popcron</Authors>
-        <Company>game-simulations</Company>
+        <Company>simulation-tree</Company>
         <Description>Native C# library for ECS</Description>
-        <RepositoryUrl>https://github.com/game-simulations/worlds</RepositoryUrl>
+        <RepositoryUrl>https://github.com/simulation-tree/worlds</RepositoryUrl>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IsAotCompatible>True</IsAotCompatible>
         <IsTrimmable>True</IsTrimmable>
