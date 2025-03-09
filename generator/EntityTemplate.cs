@@ -10,7 +10,7 @@
     public readonly uint value;
 
     public readonly bool IsDestroyed => !world.ContainsEntity(value);
-    public readonly USpan<uint> References => world.GetReferences(value);
+    public readonly ReadOnlySpan<uint> References => world.GetReferences(value);
 
     public readonly bool IsEnabled
     {
@@ -27,7 +27,7 @@
         }
     }
         
-    public readonly USpan<uint> Children => world.GetChildren(value);
+    public readonly ReadOnlySpan<uint> Children => world.GetChildren(value);
     
     public readonly bool IsCompliant
     {
@@ -214,7 +214,7 @@
         world.RemoveComponent(value, componentType);
     }
 
-    public readonly Values CreateArray(ArrayElementType arrayElementType, uint length = 0)
+    public readonly Values CreateArray(ArrayElementType arrayElementType, int length = 0)
     {
         return world.CreateArray(value, arrayElementType, length);
     }
@@ -299,17 +299,17 @@
         return world.ContainsArray<T>(value);
     }
 
-    public readonly uint GetArrayLength<T>() where T : unmanaged
+    public readonly int GetArrayLength<T>() where T : unmanaged
     {
         return world.GetArrayLength<T>(value);
     }
 
-    public readonly uint GetArrayLength(ArrayElementType arrayType)
+    public readonly int GetArrayLength(ArrayElementType arrayType)
     {
         return world.GetArrayLength(value, arrayType);
     }
 
-    public readonly ref T GetArrayElement<T>(uint index) where T : unmanaged
+    public readonly ref T GetArrayElement<T>(int index) where T : unmanaged
     {
         return ref world.GetArrayElement<T>(value, index);
     }
@@ -329,12 +329,17 @@
         return world.TryGetArray(value, out array);
     }
 
-    public readonly void CreateArray<T>(USpan<T> elements) where T : unmanaged
+    public readonly void CreateArray<T>(ReadOnlySpan<T> elements) where T : unmanaged
     {
         world.CreateArray(value, elements);
     }
 
-    public readonly Values<T> CreateArray<T>(uint length = 0) where T : unmanaged
+    public readonly void CreateArray<T>(Span<T> elements) where T : unmanaged
+    {
+        world.CreateArray(value, elements);
+    }
+
+    public readonly Values<T> CreateArray<T>(int length = 0) where T : unmanaged
     {
         return world.CreateArray<T>(value, length);
     }

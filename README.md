@@ -69,9 +69,9 @@ using (World world = new())
 Unlike components, arrays offer a way to store multiple of the same type,
 and can be resized:
 ```cs
-USpan<char> many = world.CreateArray(entity, "Hello world".AsSpan());
-USpan<char> moreMany = world.ResizeArray<char>(entity, 5);
-Assert.That(moreMany.ToString(), Is.EqualTo("Hello"));
+Values<char> many = world.CreateArray(entity, "Hello world".AsSpan());
+many.Length = 5;
+Assert.That(moreMany.AsSpan().ToString(), Is.EqualTo("Hello"));
 ```
 
 ### Fetching data and querying
@@ -104,7 +104,7 @@ void Do()
     {
         if (chunk.Contains(componentType))
         {
-            USpan<Fruit> components = chunk.GetComponents<Fruit>(componentType);
+            Span<Fruit> components = chunk.GetComponents<Fruit>(componentType);
             foreach (uint entity in chunk.Entities)
             {
                 ref Fruit component = ref components[entity];
@@ -237,7 +237,7 @@ entity.CreateArray<char>("Hello world".AsSpan());
 
 using BinaryWriter writer = new();
 writer.WriteObject(prefabWorld);
-USpan<byte> bytes = writer.AsSpan();
+Span<byte> bytes = writer.AsSpan();
 
 using BinaryReader reader = new(bytes);
 using World loadedWorld = reader.ReadObject<World>();

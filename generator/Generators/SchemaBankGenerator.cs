@@ -634,11 +634,11 @@ namespace Worlds.Generator
                                         }
 
                                         string fullTypeName = genericType.GetFullTypeName();
-                                        const string USpanStart = "Unmanaged.USpan<";
-                                        if (fullTypeName.StartsWith(USpanStart))
+                                        const string SpanStart = "System.Span<";
+                                        if (fullTypeName.StartsWith(SpanStart))
                                         {
                                             //trim start and end
-                                            fullTypeName = fullTypeName.Substring(USpanStart.Length, fullTypeName.Length - USpanStart.Length - 1);
+                                            fullTypeName = fullTypeName.Substring(SpanStart.Length, fullTypeName.Length - SpanStart.Length - 1);
                                         }
 
                                         if (collection.TryAdd(DataKind.ArrayElement, fullTypeName))

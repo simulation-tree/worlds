@@ -1,14 +1,13 @@
 using System;
 using System.Diagnostics;
 using Types;
-using Unmanaged;
 
 namespace Worlds
 {
     public readonly struct TagType : IEquatable<TagType>
     {
 #if DEBUG
-        internal static readonly System.Collections.Generic.Dictionary<uint, TypeLayout> debugCachedTypes = new();
+        internal static readonly System.Collections.Generic.Dictionary<int, TypeLayout> debugCachedTypes = new();
 #endif
 
         /// <summary>
@@ -16,7 +15,7 @@ namespace Worlds
         /// </summary>
         public static readonly TagType Disabled = new(BitMask.MaxValue);
 
-        public readonly uint index;
+        public readonly int index;
 
 #if NET
         /// <summary>
@@ -32,14 +31,7 @@ namespace Worlds
         /// <summary>
         /// Initializes an existing tag type with the given index.
         /// </summary>
-        public TagType(byte value)
-        {
-            ThrowIfOutOfRange(value);
-
-            this.index = value;
-        }
-
-        public TagType(uint value)
+        public TagType(int value)
         {
             ThrowIfOutOfRange(value);
 
@@ -49,9 +41,9 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override string ToString()
         {
-            USpan<char> buffer = stackalloc char[256];
-            uint length = ToString(buffer);
-            return buffer.GetSpan(length).ToString();
+            Span<char> buffer = stackalloc char[256];
+            int length = ToString(buffer);
+            return buffer.Slice(0, length).ToString();
         }
 
         /// <summary>
@@ -59,15 +51,15 @@ namespace Worlds
         /// </summary>
         public readonly string ToString(Schema schema)
         {
-            USpan<char> buffer = stackalloc char[256];
-            uint length = ToString(schema, buffer);
-            return buffer.GetSpan(length).ToString();
+            Span<char> buffer = stackalloc char[256];
+            int length = ToString(schema, buffer);
+            return buffer.Slice(0, length).ToString();
         }
 
         /// <summary>
         /// Writes the index of this tag type to the <paramref name="destination"/>.
         /// </summary>
-        public readonly uint ToString(USpan<char> destination)
+        public readonly int ToString(Span<char> destination)
         {
             return index.ToString(destination);
         }
@@ -75,7 +67,7 @@ namespace Worlds
         /// <summary>
         /// Writes the name of this tag type to the <paramref name="destination"/>.
         /// </summary>
-        public readonly uint ToString(Schema schema, USpan<char> destination)
+        public readonly int ToString(Schema schema, Span<char> destination)
         {
             return schema.GetTagLayout(this).ToString(destination);
         }
@@ -95,10 +87,7 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            unchecked
-            {
-                return (int)index;
-            }
+            return index;
         }
 
         public readonly TypeLayout GetLayout(Schema schema)
@@ -118,13 +107,13 @@ namespace Worlds
             return !left.Equals(right);
         }
 
-        public static implicit operator uint(TagType type)
+        public static implicit operator int(TagType type)
         {
             return type.index;
         }
 
         [Conditional("DEBUG")]
-        private static void ThrowIfOutOfRange(uint value)
+        private static void ThrowIfOutOfRange(int value)
         {
             if (value > BitMask.MaxValue)
             {

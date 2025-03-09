@@ -1,7 +1,6 @@
 ﻿#pragma warning disable CS8981 //too bad
 #pragma warning disable IDE1006 //so sad
 using System;
-using Unmanaged;
 
 namespace Worlds
 {
@@ -42,17 +41,17 @@ namespace Worlds
         /// <inheritdoc/>
         public unsafe readonly override string ToString()
         {
-            USpan<char> buffer = stackalloc char[8];
-            uint length = ToString(buffer);
-            return buffer.GetSpan(length).ToString();
+            Span<char> buffer = stackalloc char[8];
+            int length = ToString(buffer);
+            return buffer.Slice(0, length).ToString();
         }
 
         /// <summary>
         /// Builds a string representation of this <see cref="rint"/> value.
         /// </summary>
-        public readonly uint ToString(USpan<char> buffer)
+        public readonly int ToString(Span<char> destination)
         {
-            return value.ToString(buffer);
+            return value.ToString(destination);
         }
 
         /// <inheritdoc/>

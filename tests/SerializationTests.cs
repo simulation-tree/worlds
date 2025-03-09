@@ -1,4 +1,5 @@
 ﻿using Collections.Generic;
+using System;
 using Types;
 using Unmanaged;
 
@@ -21,7 +22,7 @@ namespace Worlds.Tests
             world.AddComponent(c, new Cherry("Goodbye, World!"));
             world.DestroyEntity(temporary);
             uint list = world.CreateEntity();
-            world.CreateArray(list, new USpan<char>("Well hello there list").As<Character>());
+            world.CreateArray(list, "Well hello there list".AsSpan().As<char, Character>());
 
             using List<uint> oldEntities = new(world.Entities);
             using List<(uint, Fruit)> apples = new();
@@ -34,7 +35,7 @@ namespace Worlds.Tests
             writer.WriteObject(world);
             world.Dispose();
 
-            USpan<byte> data = writer.AsSpan();
+            Span<byte> data = writer.AsSpan();
             using ByteReader reader = new(data);
             using World loadedWorld = reader.ReadObject<World>();
             using List<uint> newEntities = new(loadedWorld.Entities);
@@ -61,7 +62,7 @@ namespace Worlds.Tests
 
             Assert.That(loadedWorld.ContainsEntity(list), Is.True);
             Assert.That(loadedWorld.ContainsArray<Character>(list), Is.True);
-            Assert.That(loadedWorld.GetArray<Character>(list).AsSpan().As<char>().ToString(), Is.EqualTo("Well hello there list"));
+            Assert.That(loadedWorld.GetArray<Character>(list).AsSpan<char>().ToString(), Is.EqualTo("Well hello there list"));
         }
 
         [Test]

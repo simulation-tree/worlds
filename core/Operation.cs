@@ -31,7 +31,7 @@ namespace Worlds
         /// <summary>
         /// Counts how many instructions there are.
         /// </summary>
-        public readonly uint Count
+        public readonly int Count
         {
             get
             {
@@ -69,7 +69,7 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(operation);
 
-            uint newLength = operation->bytesLength + 1;
+            int newLength = operation->bytesLength + 1;
             if (operation->bytesCapacity < newLength)
             {
                 operation->bytesCapacity *= 2;
@@ -85,8 +85,7 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(operation);
 
-            const uint Add = 8;
-            uint newLength = operation->bytesLength + Add;
+            int newLength = operation->bytesLength + sizeof(long);
             if (operation->bytesCapacity < newLength)
             {
                 operation->bytesCapacity = newLength.GetNextPowerOf2();
@@ -101,8 +100,7 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(operation);
 
-            uint add = (uint)sizeof(T);
-            uint newLength = operation->bytesLength + add;
+            int newLength = operation->bytesLength + sizeof(T);
             if (operation->bytesCapacity < newLength)
             {
                 operation->bytesCapacity = newLength.GetNextPowerOf2();
@@ -113,12 +111,12 @@ namespace Worlds
             operation->bytesLength = newLength;
         }
 
-        private readonly void WriteSpan<T>(USpan<T> span) where T : unmanaged
+        private readonly void WriteSpan<T>(ReadOnlySpan<T> span) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(operation);
 
-            uint add = (uint)sizeof(T) * span.Length;
-            uint newLength = operation->bytesLength + add;
+            int add = sizeof(T) * span.Length;
+            int newLength = operation->bytesLength + add;
             if (operation->bytesCapacity < newLength)
             {
                 operation->bytesCapacity = newLength.GetNextPowerOf2();
@@ -129,7 +127,23 @@ namespace Worlds
             operation->bytesLength = newLength;
         }
 
-        private readonly InstructionType ReadInstructionType(ref uint bytePosition)
+        private readonly void WriteSpan<T>(Span<T> span) where T : unmanaged
+        {
+            MemoryAddress.ThrowIfDefault(operation);
+
+            int add = sizeof(T) * span.Length;
+            int newLength = operation->bytesLength + add;
+            if (operation->bytesCapacity < newLength)
+            {
+                operation->bytesCapacity = newLength.GetNextPowerOf2();
+                MemoryAddress.Resize(ref operation->buffer, operation->bytesCapacity);
+            }
+
+            operation->buffer.Write(operation->bytesLength, span);
+            operation->bytesLength = newLength;
+        }
+
+        private readonly InstructionType ReadInstructionType(ref int bytePosition)
         {
             MemoryAddress.ThrowIfDefault(operation);
 
@@ -138,7 +152,7 @@ namespace Worlds
             return type;
         }
 
-        private readonly TypeLayout ReadTypeLayout(ref uint bytePosition)
+        private readonly TypeLayout ReadTypeLayout(ref int bytePosition)
         {
             MemoryAddress.ThrowIfDefault(operation);
 
@@ -147,31 +161,31 @@ namespace Worlds
             return TypeRegistry.Get(hash);
         }
 
-        private readonly T Read<T>(ref uint bytePosition) where T : unmanaged
+        private readonly T Read<T>(ref int bytePosition) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(operation);
 
             T value = operation->buffer.Read<T>(bytePosition);
-            bytePosition += (uint)sizeof(T);
+            bytePosition += sizeof(T);
             return value;
         }
 
-        private readonly USpan<byte> ReadBytes(uint byteLength, ref uint bytePosition)
+        private readonly Span<byte> ReadBytes(int byteLength, ref int bytePosition)
         {
             MemoryAddress.ThrowIfDefault(operation);
 
-            USpan<byte> bytes = operation->buffer.AsSpan(bytePosition, byteLength);
+            Span<byte> bytes = operation->buffer.AsSpan(bytePosition, byteLength);
             bytePosition += byteLength;
             return bytes;
         }
 
-        private readonly USpan<T> ReadSpan<T>(uint length, ref uint bytePosition) where T : unmanaged
+        private readonly Span<T> ReadSpan<T>(int length, ref int bytePosition) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(operation);
 
-            uint add = (uint)sizeof(T) * length;
-            USpan<byte> bytes = operation->buffer.AsSpan(bytePosition, add);
-            USpan<T> span = bytes.Reinterpret<T>();
+            int add = sizeof(T) * length;
+            Span<byte> bytes = operation->buffer.AsSpan(bytePosition, add);
+            Span<T> span = bytes.Reinterpret<byte, T>();
             bytePosition += add;
             return span;
         }
@@ -200,7 +214,7 @@ namespace Worlds
         /// <summary>
         /// Creates multiple entities and optionally appends them to the selection.
         /// </summary>
-        public readonly void CreateEntities(uint count, bool select = true)
+        public readonly void CreateEntities(int count, bool select = true)
         {
             if (count > 0)
             {
@@ -288,7 +302,7 @@ namespace Worlds
         /// <summary>
         /// Creates an array of type <typeparamref name="T"/> on the selected entities.
         /// </summary>
-        public readonly void CreateArray<T>(uint length = 0) where T : unmanaged
+        public readonly void CreateArray<T>(int length = 0) where T : unmanaged
         {
             WriteInstructionType(InstructionType.CreateArray);
             WriteTypeLayout(TypeRegistry.Get<T>());
@@ -299,7 +313,7 @@ namespace Worlds
         /// Creates an array of type <typeparamref name="T"/> on the selected entities,
         /// initialized with the given <paramref name="values"/>.
         /// </summary>
-        public readonly void CreateArray<T>(USpan<T> values) where T : unmanaged
+        public readonly void CreateArray<T>(Span<T> values) where T : unmanaged
         {
             WriteInstructionType(InstructionType.CreateAndInitializeArray);
             WriteTypeLayout(TypeRegistry.Get<T>());
@@ -310,7 +324,22 @@ namespace Worlds
             }
         }
 
-        public readonly void ResizeArray<T>(uint newLength) where T : unmanaged
+        /// <summary>
+        /// Creates an array of type <typeparamref name="T"/> on the selected entities,
+        /// initialized with the given <paramref name="values"/>.
+        /// </summary>
+        public readonly void CreateArray<T>(ReadOnlySpan<T> values) where T : unmanaged
+        {
+            WriteInstructionType(InstructionType.CreateAndInitializeArray);
+            WriteTypeLayout(TypeRegistry.Get<T>());
+            WriteValue(values.Length);
+            if (values.Length > 0)
+            {
+                WriteSpan(values);
+            }
+        }
+
+        public readonly void ResizeArray<T>(int newLength) where T : unmanaged
         {
             WriteInstructionType(InstructionType.ResizeArray);
             WriteTypeLayout(TypeRegistry.Get<T>());
@@ -320,24 +349,24 @@ namespace Worlds
         /// <summary>
         /// Modifies the array element at the given <paramref name="index"/> on the selected entities.
         /// </summary>
-        public readonly void SetArrayElement<T>(uint index, T value) where T : unmanaged
+        public readonly void SetArrayElement<T>(int index, T value) where T : unmanaged
         {
             WriteInstructionType(InstructionType.SetArrayElements);
             WriteValue(index);
             WriteTypeLayout(TypeRegistry.Get<T>());
-            WriteValue(1u);
+            WriteValue(1);
             WriteValue(value);
         }
 
         /// <summary>
         /// Updates the elements of an existing array.
         /// </summary>
-        public readonly void SetArrayElements<T>(USpan<T> values) where T : unmanaged
+        public readonly void SetArrayElements<T>(ReadOnlySpan<T> values) where T : unmanaged
         {
             if (values.Length > 0)
             {
                 WriteInstructionType(InstructionType.SetArrayElements);
-                WriteValue(0u);
+                WriteValue(0);
                 WriteTypeLayout(TypeRegistry.Get<T>());
                 WriteValue(values.Length);
                 WriteSpan(values);
@@ -347,7 +376,7 @@ namespace Worlds
         /// <summary>
         /// Updates the elements of an existing array starting at <paramref name="index"/>.
         /// </summary>
-        public readonly void SetArrayElements<T>(uint index, USpan<T> values) where T : unmanaged
+        public readonly void SetArrayElements<T>(int index, ReadOnlySpan<T> values) where T : unmanaged
         {
             if (values.Length > 0)
             {
@@ -362,7 +391,7 @@ namespace Worlds
         /// <summary>
         /// Updates the array to match the given <paramref name="values"/> exactly.
         /// </summary>
-        public readonly void SetArray<T>(USpan<T> values) where T : unmanaged
+        public readonly void SetArray<T>(ReadOnlySpan<T> values) where T : unmanaged
         {
             WriteInstructionType(InstructionType.SetArray);
             WriteTypeLayout(TypeRegistry.Get<T>());
@@ -374,7 +403,19 @@ namespace Worlds
         /// Creates a new array with the given <paramref name="values"/>, or updates an existing one
         /// to match exactly.
         /// </summary>
-        public readonly void CreateOrSetArray<T>(USpan<T> values) where T : unmanaged
+        public readonly void CreateOrSetArray<T>(ReadOnlySpan<T> values) where T : unmanaged
+        {
+            WriteInstructionType(InstructionType.CreateOrSetArray);
+            WriteTypeLayout(TypeRegistry.Get<T>());
+            WriteValue(values.Length);
+            WriteSpan(values);
+        }
+
+        /// <summary>
+        /// Creates a new array with the given <paramref name="values"/>, or updates an existing one
+        /// to match exactly.
+        /// </summary>
+        public readonly void CreateOrSetArray<T>(Span<T> values) where T : unmanaged
         {
             WriteInstructionType(InstructionType.CreateOrSetArray);
             WriteTypeLayout(TypeRegistry.Get<T>());
@@ -388,7 +429,7 @@ namespace Worlds
         public readonly void SelectEntity(uint entity)
         {
             WriteInstructionType(InstructionType.SelectEntities);
-            WriteValue(1u);
+            WriteValue(1);
             WriteValue(entity);
         }
 
@@ -403,7 +444,7 @@ namespace Worlds
         /// <summary>
         /// Adds the given <paramref name="entities"/> to selection.
         /// </summary>
-        public readonly void SelectEntities(USpan<uint> entities)
+        public readonly void SelectEntities(ReadOnlySpan<uint> entities)
         {
             if (entities.Length > 0)
             {
@@ -443,7 +484,7 @@ namespace Worlds
         /// For all entities in the selection, assigns the parent to the entity
         /// that was created <paramref name="createInstructionsAgo"/>.
         /// </summary>
-        public readonly void SetParentToPreviouslyCreatedEntity(uint createInstructionsAgo)
+        public readonly void SetParentToPreviouslyCreatedEntity(int createInstructionsAgo)
         {
             WriteInstructionType(InstructionType.SetParentToPreviouslyCreatedEntity);
             WriteValue(createInstructionsAgo);
@@ -452,7 +493,7 @@ namespace Worlds
         /// <summary>
         /// For all entities in the selection, adds the entity that was created <paramref name="createInstructionsAgo"/>.
         /// </summary>
-        public readonly void AddReferenceTowardsPreviouslyCreatedEntity(uint createInstructionsAgo)
+        public readonly void AddReferenceTowardsPreviouslyCreatedEntity(int createInstructionsAgo)
         {
             WriteInstructionType(InstructionType.AddReferenceToPreviouslyCreatedEntity);
             WriteValue(createInstructionsAgo);
@@ -487,20 +528,20 @@ namespace Worlds
             writer.WriteValue(operation->count);
             writer.WriteValue(operation->bytesLength);
             writer.WriteValue(operation->bytesCapacity);
-            writer.WriteSpan(new USpan<byte>(operation->buffer.Pointer, operation->bytesLength));
+            writer.WriteSpan(new Span<byte>(operation->buffer.Pointer, operation->bytesLength));
         }
 
         void ISerializable.Read(ByteReader reader)
         {
-            uint count = reader.ReadValue<uint>();
-            uint bytesLength = reader.ReadValue<uint>();
-            uint bytesCapacity = reader.ReadValue<uint>();
+            int count = reader.ReadValue<int>();
+            int bytesLength = reader.ReadValue<int>();
+            int bytesCapacity = reader.ReadValue<int>();
             operation = Implementation.Allocate();
             operation->count = count;
             operation->bytesLength = bytesLength;
             operation->bytesCapacity = bytesCapacity;
             MemoryAddress.Resize(ref operation->buffer, bytesCapacity);
-            reader.ReadSpan<byte>(bytesLength).CopyTo(operation->buffer, bytesLength);
+            reader.ReadSpan<byte>(bytesLength).CopyTo(operation->buffer.AsSpan(0, bytesLength));
         }
 
         internal ref struct Performing
@@ -509,7 +550,7 @@ namespace Worlds
             private readonly List<uint> selection;
             private readonly Operation operation;
             private readonly World world;
-            private uint bytePosition;
+            private int bytePosition;
 
             public Performing(Operation operation, World world, List<uint> history, List<uint> selection)
             {
@@ -522,11 +563,11 @@ namespace Worlds
 
             private void CreateEntities()
             {
-                uint count = operation.Read<uint>(ref bytePosition);
+                int count = operation.Read<int>(ref bytePosition);
                 bool select = operation.Read<bool>(ref bytePosition);
                 if (select)
                 {
-                    for (uint i = 0; i < count; i++)
+                    for (int i = 0; i < count; i++)
                     {
                         uint entity = world.CreateEntity();
                         history.Add(entity);
@@ -535,7 +576,7 @@ namespace Worlds
                 }
                 else
                 {
-                    for (uint i = 0; i < count; i++)
+                    for (int i = 0; i < count; i++)
                     {
                         uint entity = world.CreateEntity();
                         history.Add(entity);
@@ -545,7 +586,7 @@ namespace Worlds
 
             private void DestroySelectedEntities()
             {
-                for (uint i = 0; i < selection.Count; i++)
+                for (int i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
                     world.DestroyEntity(entity);
@@ -557,8 +598,8 @@ namespace Worlds
 
             private void SelectEntities()
             {
-                uint count = operation.Read<uint>(ref bytePosition);
-                USpan<uint> entities = operation.ReadSpan<uint>(count, ref bytePosition);
+                int count = operation.Read<int>(ref bytePosition);
+                Span<uint> entities = operation.ReadSpan<uint>(count, ref bytePosition);
                 selection.AddRange(entities);
             }
 
@@ -570,7 +611,7 @@ namespace Worlds
             private void SetParent()
             {
                 uint parent = operation.Read<uint>(ref bytePosition);
-                for (uint i = 0; i < selection.Count; i++)
+                for (int i = 0; i < selection.Count; i++)
                 {
                     world.SetParent(selection[i], parent);
                 }
@@ -580,9 +621,9 @@ namespace Worlds
             {
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetComponentDataType(layout);
-                uint componentType = dataType.index;
-                USpan<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
-                for (uint i = 0; i < selection.Count; i++)
+                int componentType = dataType.index;
+                Span<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
+                for (int i = 0; i < selection.Count; i++)
                 {
                     world.AddComponentBytes(selection[i], componentType, component);
                 }
@@ -592,9 +633,9 @@ namespace Worlds
             {
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetComponentDataType(layout);
-                uint componentType = dataType.index;
-                USpan<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
-                for (uint i = 0; i < selection.Count; i++)
+                int componentType = dataType.index;
+                Span<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
+                for (int i = 0; i < selection.Count; i++)
                 {
                     world.SetComponentBytes(selection[i], componentType, component);
                 }
@@ -604,9 +645,9 @@ namespace Worlds
             {
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetComponentDataType(layout);
-                uint componentType = dataType.index;
-                USpan<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
-                for (uint i = 0; i < selection.Count; i++)
+                int componentType = dataType.index;
+                Span<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
+                for (int i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
                     if (world.ContainsComponent(entity, componentType))
@@ -624,8 +665,8 @@ namespace Worlds
             {
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetComponentDataType(layout);
-                ComponentType componentType = dataType.ComponentType;
-                for (uint i = 0; i < selection.Count; i++)
+                int componentType = dataType.index;
+                for (int i = 0; i < selection.Count; i++)
                 {
                     world.RemoveComponent(selection[i], componentType);
                 }
@@ -634,7 +675,7 @@ namespace Worlds
             private void RemoveReference()
             {
                 rint reference = operation.Read<rint>(ref bytePosition);
-                for (uint i = 0; i < selection.Count; i++)
+                for (int i = 0; i < selection.Count; i++)
                 {
                     world.RemoveReference(selection[i], reference);
                 }
@@ -644,10 +685,11 @@ namespace Worlds
             {
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetArrayDataType(layout);
-                uint arrayLength = operation.Read<uint>(ref bytePosition);
-                for (uint i = 0; i < selection.Count; i++)
+                int arrayType = dataType.index;
+                int arrayLength = operation.Read<int>(ref bytePosition);
+                for (int i = 0; i < selection.Count; i++)
                 {
-                    world.CreateArray(selection[i], dataType, arrayLength);
+                    world.CreateArray(selection[i], arrayType, arrayLength);
                 }
             }
 
@@ -655,20 +697,20 @@ namespace Worlds
             {
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetArrayDataType(layout);
-                uint arrayLength = operation.Read<uint>(ref bytePosition);
+                int arrayType = dataType.index;
+                int arrayLength = operation.Read<int>(ref bytePosition);
                 if (arrayLength > 0)
                 {
-                    USpan<byte> elements = operation.ReadBytes(dataType.size * arrayLength, ref bytePosition);
-                    for (uint i = 0; i < selection.Count; i++)
+                    Span<byte> elements = operation.ReadBytes(dataType.size * arrayLength, ref bytePosition);
+                    for (int i = 0; i < selection.Count; i++)
                     {
-                        Values array = world.CreateArray(selection[i], dataType, arrayLength);
+                        Values array = world.CreateArray(selection[i], arrayType, arrayLength);
                         array.Write(elements);
                     }
                 }
                 else
                 {
-                    ArrayElementType arrayType = dataType.ArrayType;
-                    for (uint i = 0; i < selection.Count; i++)
+                    for (int i = 0; i < selection.Count; i++)
                     {
                         world.CreateArray(selection[i], arrayType);
                     }
@@ -679,9 +721,9 @@ namespace Worlds
             {
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetArrayDataType(layout);
-                ArrayElementType arrayType = dataType.ArrayType;
-                uint newLength = operation.Read<uint>(ref bytePosition);
-                for (uint i = 0; i < selection.Count; i++)
+                int arrayType = dataType.index;
+                int newLength = operation.Read<int>(ref bytePosition);
+                for (int i = 0; i < selection.Count; i++)
                 {
                     Values array = world.GetArray(selection[i], arrayType);
                     array.Length = newLength;
@@ -690,14 +732,14 @@ namespace Worlds
 
             private void SetArrayElements()
             {
-                uint index = operation.Read<uint>(ref bytePosition);
+                int index = operation.Read<int>(ref bytePosition);
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
-                uint length = operation.Read<uint>(ref bytePosition);
+                int length = operation.Read<int>(ref bytePosition);
                 DataType dataType = world.Schema.GetArrayDataType(layout);
-                ArrayElementType arrayType = dataType.ArrayType;
-                uint stride = dataType.size;
-                USpan<byte> elements = operation.ReadBytes(stride * length, ref bytePosition);
-                for (uint i = 0; i < selection.Count; i++)
+                int arrayType = dataType.index;
+                int stride = dataType.size;
+                Span<byte> elements = operation.ReadBytes(stride * length, ref bytePosition);
+                for (int i = 0; i < selection.Count; i++)
                 {
                     Values array = world.GetArray(selection[i], arrayType);
                     array.Write(index * stride, elements);
@@ -708,10 +750,10 @@ namespace Worlds
             {
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetArrayDataType(layout);
-                ArrayElementType arrayType = dataType.ArrayType;
-                uint expectedArrayLength = operation.Read<uint>(ref bytePosition);
-                USpan<byte> elements = operation.ReadBytes(dataType.size * expectedArrayLength, ref bytePosition);
-                for (uint i = 0; i < selection.Count; i++)
+                int arrayType = dataType.index;
+                int expectedArrayLength = operation.Read<int>(ref bytePosition);
+                Span<byte> elements = operation.ReadBytes(dataType.size * expectedArrayLength, ref bytePosition);
+                for (int i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
                     Values array = world.GetArray(entity, arrayType);
@@ -728,10 +770,10 @@ namespace Worlds
             {
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetArrayDataType(layout);
-                ArrayElementType arrayType = dataType.ArrayType;
-                uint expectedArrayLength = operation.Read<uint>(ref bytePosition);
-                USpan<byte> elements = operation.ReadBytes(dataType.size * expectedArrayLength, ref bytePosition);
-                for (uint i = 0; i < selection.Count; i++)
+                int arrayType = dataType.index;
+                int expectedArrayLength = operation.Read<int>(ref bytePosition);
+                Span<byte> elements = operation.ReadBytes(dataType.size * expectedArrayLength, ref bytePosition);
+                for (int i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
                     Values array;
@@ -754,9 +796,9 @@ namespace Worlds
 
             private void SetParentToPreviouslyCreatedEntity()
             {
-                uint entitiesAgo = operation.Read<uint>(ref bytePosition);
+                int entitiesAgo = operation.Read<int>(ref bytePosition);
                 uint parent = history[history.Count - entitiesAgo - 1];
-                for (uint i = 0; i < selection.Count; i++)
+                for (int i = 0; i < selection.Count; i++)
                 {
                     world.SetParent(selection[i], parent);
                 }
@@ -764,15 +806,15 @@ namespace Worlds
 
             private void SelectPreviouslyCreatedEntity()
             {
-                uint entitiesAgo = operation.Read<uint>(ref bytePosition);
+                int entitiesAgo = operation.Read<int>(ref bytePosition);
                 selection.Add(history[history.Count - entitiesAgo - 1]);
             }
 
             private void AddReferenceToPreviouslyCreatedEntity()
             {
-                uint entitiesAgo = operation.Read<uint>(ref bytePosition);
+                int entitiesAgo = operation.Read<int>(ref bytePosition);
                 uint referencedEntity = history[history.Count - entitiesAgo - 1];
-                for (uint i = 0; i < selection.Count; i++)
+                for (int i = 0; i < selection.Count; i++)
                 {
                     world.AddReference(selection[i], referencedEntity);
                 }
@@ -851,12 +893,12 @@ namespace Worlds
 
         public struct Implementation
         {
-            public uint count;
-            public uint bytesLength;
-            public uint bytesCapacity;
+            public int count;
+            public int bytesLength;
+            public int bytesCapacity;
             public MemoryAddress buffer;
 
-            public static Implementation* Allocate(uint minimumCapacity = 4)
+            public static Implementation* Allocate(int minimumCapacity = 4)
             {
                 minimumCapacity = Math.Max(1, minimumCapacity.GetNextPowerOf2());
                 ref Implementation operation = ref MemoryAddress.Allocate<Implementation>();

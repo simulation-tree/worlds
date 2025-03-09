@@ -1,8 +1,6 @@
 ﻿using Collections;
 using Collections.Generic;
 using System;
-using System.Diagnostics;
-using Unmanaged;
 using Unmanaged.Tests;
 
 namespace Worlds.Tests
@@ -499,9 +497,9 @@ namespace Worlds.Tests
             using World world = CreateWorld();
             BitMask componentTypes = world.Schema.GetComponents<Apple, Berry, Cherry>();
             BitMask otherComponentTypes = world.Schema.GetComponents<Apple, Berry>();
-            uint appleType = world.Schema.GetComponentTypeIndex<Apple>();
-            uint berryType = world.Schema.GetComponentTypeIndex<Berry>();
-            uint cherryType = world.Schema.GetComponentTypeIndex<Cherry>();
+            int appleType = world.Schema.GetComponentTypeIndex<Apple>();
+            int berryType = world.Schema.GetComponentTypeIndex<Berry>();
+            int cherryType = world.Schema.GetComponentTypeIndex<Cherry>();
             uint sampleCount = 2000000;
             uint count = 0;
             Benchmark creation = new(() =>
@@ -541,7 +539,7 @@ namespace Worlds.Tests
             });
 
             Console.WriteLine($"ComponentQuery: {componentQueryBench.Run(Iterations)}");
-            uint queryCount = results.Count;
+            int queryCount = results.Count;
 
             //benchmarking manually iterating over map
             Benchmark manualOverMap = new(() =>
@@ -552,11 +550,11 @@ namespace Worlds.Tests
                 {
                     if (chunk.Definition.ComponentTypes.ContainsAll(componentTypes))
                     {
-                        USpan<uint> entities = chunk.Entities;
-                        USpan<Apple> apples = chunk.GetComponents<Apple>(appleType);
-                        USpan<Berry> berries = chunk.GetComponents<Berry>(berryType);
-                        USpan<Cherry> cherries = chunk.GetComponents<Cherry>(cherryType);
-                        for (uint e = 0; e < entities.Length; e++)
+                        ReadOnlySpan<uint> entities = chunk.Entities;
+                        Span<Apple> apples = chunk.GetComponents<Apple>(appleType);
+                        Span<Berry> berries = chunk.GetComponents<Berry>(berryType);
+                        Span<Cherry> cherries = chunk.GetComponents<Cherry>(cherryType);
+                        for (int e = 0; e < entities.Length; e++)
                         {
                             uint entity = entities[e];
                             ref Apple apple = ref apples[e];
@@ -575,16 +573,16 @@ namespace Worlds.Tests
             Benchmark manualOverSpan = new(() =>
             {
                 results.Clear();
-                for (uint c = 0; c < world.Chunks.Length; c++)
+                for (int c = 0; c < world.Chunks.Length; c++)
                 {
                     Chunk chunk = world.Chunks[c];
                     if (chunk.Definition.ComponentTypes.ContainsAll(componentTypes))
                     {
-                        USpan<uint> entities = chunk.Entities;
-                        USpan<Apple> apples = chunk.GetComponents<Apple>(appleType);
-                        USpan<Berry> berries = chunk.GetComponents<Berry>(berryType);
-                        USpan<Cherry> cherries = chunk.GetComponents<Cherry>(cherryType);
-                        for (uint e = 0; e < entities.Length; e++)
+                        ReadOnlySpan<uint> entities = chunk.Entities;
+                        Span<Apple> apples = chunk.GetComponents<Apple>(appleType);
+                        Span<Berry> berries = chunk.GetComponents<Berry>(berryType);
+                        Span<Cherry> cherries = chunk.GetComponents<Cherry>(cherryType);
+                        for (int e = 0; e < entities.Length; e++)
                         {
                             uint entity = entities[e];
                             ref Apple apple = ref apples[e];

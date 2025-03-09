@@ -11,7 +11,7 @@ namespace Worlds
     {
         internal readonly Pointer* pointer;
 
-        public readonly uint Length
+        public readonly int Length
         {
             get => pointer->length;
             set
@@ -19,14 +19,14 @@ namespace Worlds
 
                 if (pointer->length != value)
                 {
-                    uint oldLength = pointer->length;
-                    MemoryAddress.Resize(ref pointer->items, (uint)sizeof(T) * value);
+                    int oldLength = pointer->length;
+                    MemoryAddress.Resize(ref pointer->items, sizeof(T) * value);
                     pointer->length = value;
                 }
             }
         }
 
-        public readonly ref T this[uint index] => ref pointer->items.ReadElement<T>(index);
+        public readonly ref T this[int index] => ref pointer->items.ReadElement<T>(index);
 
         internal Values(Array<T> array)
         {
@@ -53,24 +53,24 @@ namespace Worlds
             return new(pointer);
         }
 
-        public readonly USpan<X> AsSpan<X>() where X : unmanaged
+        public readonly Span<X> AsSpan<X>() where X : unmanaged
         {
             ThrowIfSizeMismatch<X>();
 
             return new(pointer->items.Pointer, pointer->length);
         }
 
-        public readonly USpan<T> AsSpan()
+        public readonly Span<T> AsSpan()
         {
             return new(pointer->items.Pointer, pointer->length);
         }
 
-        public readonly USpan<T> AsSpan(uint start)
+        public readonly Span<T> AsSpan(int start)
         {
             return pointer->items.AsSpan<T>(start, pointer->length - start);
         }
 
-        public readonly USpan<X> AsSpan<X>(uint start) where X : unmanaged
+        public readonly Span<X> AsSpan<X>(int start) where X : unmanaged
         {
             ThrowIfSizeMismatch<X>();
 
@@ -85,7 +85,15 @@ namespace Worlds
         /// <summary>
         /// Copies data from the given <paramref name="span"/> into the array without resizing.
         /// </summary>
-        public readonly void CopyFrom(USpan<T> span)
+        public readonly void CopyFrom(Span<T> span)
+        {
+            pointer->items.Write(span);
+        }
+
+        /// <summary>
+        /// Copies data from the given <paramref name="span"/> into the array without resizing.
+        /// </summary>
+        public readonly void CopyFrom(ReadOnlySpan<T> span)
         {
             pointer->items.Write(span);
         }
@@ -100,22 +108,22 @@ namespace Worlds
     {
         internal readonly Pointer* pointer;
 
-        public readonly uint Length
+        public readonly int Length
         {
             get => pointer->length;
             set
             {
                 if (pointer->length != value)
                 {
-                    uint oldLength = pointer->length;
+                    int oldLength = pointer->length;
                     MemoryAddress.Resize(ref pointer->items, pointer->stride * value);
                     pointer->length = value;
                 }
             }
         }
 
-        public readonly uint Stride => pointer->stride;
-        public readonly MemoryAddress this[uint index] => new(pointer->items.Pointer + pointer->stride * index);
+        public readonly int Stride => pointer->stride;
+        public readonly MemoryAddress this[int index] => new(pointer->items.Pointer + pointer->stride * index);
 
         internal Values(Array array)
         {
@@ -133,42 +141,57 @@ namespace Worlds
             array.Dispose();
         }
 
-        public readonly USpan<byte> AsSpan()
+        public readonly Span<byte> AsSpan()
         {
             return new(pointer->items.Pointer, pointer->length * pointer->stride);
         }
 
-        public readonly void Write<T>(USpan<T> values) where T : unmanaged
+        public readonly Span<byte> Slice(int bytePosition, int byteLength)
+        {
+            return new(pointer->items.Pointer + bytePosition, byteLength);
+        }
+
+        public readonly void Write<T>(Span<T> values) where T : unmanaged
         {
             pointer->items.Write(values);
         }
 
-        public readonly void Write<T>(uint bytePosition, T value) where T : unmanaged
+        public readonly void Write<T>(ReadOnlySpan<T> values) where T : unmanaged
+        {
+            pointer->items.Write(values);
+        }
+
+        public readonly void Write<T>(int bytePosition, T value) where T : unmanaged
         {
             pointer->items.Write(bytePosition, value);
         }
 
-        public readonly void Write<T>(uint bytePosition, USpan<T> values) where T : unmanaged
+        public readonly void Write<T>(int bytePosition, ReadOnlySpan<T> values) where T : unmanaged
         {
             pointer->items.Write(bytePosition, values);
         }
 
-        public readonly MemoryAddress Read(uint bytePosition)
+        public readonly void Write<T>(int bytePosition, Span<T> values) where T : unmanaged
+        {
+            pointer->items.Write(bytePosition, values);
+        }
+
+        public readonly MemoryAddress Read(int bytePosition)
         {
             return pointer->items.Read(bytePosition);
         }
 
-        public readonly ref T Read<T>(uint bytePosition) where T : unmanaged
+        public readonly ref T Read<T>(int bytePosition) where T : unmanaged
         {
             return ref pointer->items.Read<T>(bytePosition);
         }
 
-        public readonly ref T Get<T>(uint index) where T : unmanaged
+        public readonly ref T Get<T>(int index) where T : unmanaged
         {
             return ref pointer->items.ReadElement<T>(index);
         }
 
-        public readonly void Set<T>(uint index, T value) where T : unmanaged
+        public readonly void Set<T>(int index, T value) where T : unmanaged
         {
             pointer->items.WriteElement(index, value);
         }

@@ -481,15 +481,15 @@ namespace Worlds
 
         public unsafe ref struct Enumerator
         {
-            private static readonly uint stride = (uint)sizeof(Chunk);
+            private static readonly int stride = sizeof(Chunk);
 
             private readonly MemoryAddress chunks;
-            private readonly uint chunkCount;
-            private readonly uint c1;
-            private uint entityIndex;
-            private uint chunkIndex;
-            private USpan<uint> entities;
-            private USpan<C1> list1;
+            private readonly int chunkCount;
+            private readonly int c1;
+            private int entityIndex;
+            private int chunkIndex;
+            private ReadOnlySpan<uint> entities;
+            private Span<C1> list1;
 
             /// <summary>
             /// Current result.
@@ -498,17 +498,17 @@ namespace Worlds
             {
                 get
                 {
-                    uint index = entityIndex - 1;
+                    int index = entityIndex - 1;
                     uint entity = entities[index];
                     ref C1 c1 = ref list1[index];
                     return new(entity, ref c1);
                 }
             }
 
-            internal Enumerator(Definition required, Definition exclude, USpan<Chunk> allChunks, Schema schema)
+            internal Enumerator(Definition required, Definition exclude, ReadOnlySpan<Chunk> allChunks, Schema schema)
             {
                 chunkCount = 0;
-                USpan<Chunk> chunksBuffer = stackalloc Chunk[(int)allChunks.Length];
+                Span<Chunk> chunksBuffer = stackalloc Chunk[(int)allChunks.Length];
                 foreach (Chunk chunk in allChunks)
                 {
                     if (chunk.Count > 0)
@@ -556,7 +556,7 @@ namespace Worlds
                 if (chunkCount > 0)
                 {
                     c1 = schema.GetComponentTypeIndex<C1>();
-                    chunks = MemoryAddress.Allocate(chunksBuffer.GetSpan(chunkCount));
+                    chunks = MemoryAddress.Allocate(chunksBuffer.Slice(0, chunkCount));
                     UpdateChunkFields(ref chunksBuffer[0]);
                 }
             }

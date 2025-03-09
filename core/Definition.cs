@@ -1,5 +1,4 @@
 ﻿using System;
-using Unmanaged;
 
 namespace Worlds
 {
@@ -40,43 +39,43 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override string ToString()
         {
-            USpan<char> buffer = stackalloc char[512];
-            uint length = ToString(buffer);
-            return buffer.GetSpan(length).ToString();
+            Span<char> buffer = stackalloc char[512];
+            int length = ToString(buffer);
+            return buffer.Slice(0, length).ToString();
         }
 
         public readonly string ToString(Schema schema)
         {
-            USpan<char> buffer = stackalloc char[512];
-            uint length = ToString(schema, buffer);
-            return buffer.GetSpan(length).ToString();
+            Span<char> buffer = stackalloc char[512];
+            int length = ToString(schema, buffer);
+            return buffer.Slice(0, length).ToString();
         }
 
         /// <summary>
         /// Builds a string representation of this definition.
         /// </summary>
-        public readonly uint ToString(USpan<char> buffer)
+        public readonly int ToString(Span<char> destination)
         {
-            uint length = 0;
-            for (uint i = 0; i < BitMask.Capacity; i++)
+            int length = 0;
+            for (int i = 0; i < BitMask.Capacity; i++)
             {
                 if (componentTypes.Contains(i))
                 {
                     ComponentType componentType = new(i);
-                    length += componentType.ToString(buffer.Slice(length));
-                    buffer[length++] = ',';
-                    buffer[length++] = ' ';
+                    length += componentType.ToString(destination.Slice(length));
+                    destination[length++] = ',';
+                    destination[length++] = ' ';
                 }
             }
 
-            for (uint i = 0; i < BitMask.Capacity; i++)
+            for (int i = 0; i < BitMask.Capacity; i++)
             {
                 if (arrayElementTypes.Contains(i))
                 {
                     ArrayElementType arrayElementType = new(i);
-                    length += arrayElementType.ToString(buffer.Slice(length));
-                    buffer[length++] = ',';
-                    buffer[length++] = ' ';
+                    length += arrayElementType.ToString(destination.Slice(length));
+                    destination[length++] = ',';
+                    destination[length++] = ' ';
                 }
             }
 
@@ -91,28 +90,28 @@ namespace Worlds
         /// <summary>
         /// Builds a string representation of this definition.
         /// </summary>
-        public readonly uint ToString(Schema schema, USpan<char> buffer)
+        public readonly int ToString(Schema schema, Span<char> destination)
         {
-            uint length = 0;
-            for (uint i = 0; i < BitMask.Capacity; i++)
+            int length = 0;
+            for (int i = 0; i < BitMask.Capacity; i++)
             {
                 if (componentTypes.Contains(i))
                 {
                     ComponentType componentType = new(i);
-                    length += componentType.ToString(schema, buffer.Slice(length));
-                    buffer[length++] = ',';
-                    buffer[length++] = ' ';
+                    length += componentType.ToString(schema, destination.Slice(length));
+                    destination[length++] = ',';
+                    destination[length++] = ' ';
                 }
             }
 
-            for (uint i = 0; i < BitMask.Capacity; i++)
+            for (int i = 0; i < BitMask.Capacity; i++)
             {
                 if (arrayElementTypes.Contains(i))
                 {
                     ArrayElementType arrayElementType = new(i);
-                    length += arrayElementType.ToString(schema, buffer.Slice(length));
-                    buffer[length++] = ',';
-                    buffer[length++] = ' ';
+                    length += arrayElementType.ToString(schema, destination.Slice(length));
+                    destination[length++] = ',';
+                    destination[length++] = ' ';
                 }
             }
 
@@ -128,10 +127,10 @@ namespace Worlds
         /// Copies the component types in this definition to the <paramref name="destination"/>.
         /// </summary>
         /// <returns>Amount of component types copied.</returns>
-        public readonly byte CopyComponentTypesTo(USpan<ComponentType> destination)
+        public readonly int CopyComponentTypesTo(Span<ComponentType> destination)
         {
-            byte count = 0;
-            for (uint c = 0; c < BitMask.Capacity; c++)
+            int count = 0;
+            for (int c = 0; c < BitMask.Capacity; c++)
             {
                 if (componentTypes.Contains(c))
                 {
@@ -147,10 +146,10 @@ namespace Worlds
         /// Copies the array types in this definition to the <paramref name="destination"/>.
         /// </summary>
         /// <returns>Amount of array types copied.</returns>
-        public readonly byte CopyArrayTypesTo(USpan<ArrayElementType> destination)
+        public readonly int CopyArrayTypesTo(Span<ArrayElementType> destination)
         {
-            byte count = 0;
-            for (uint a = 0; a < BitMask.Capacity; a++)
+            int count = 0;
+            for (int a = 0; a < BitMask.Capacity; a++)
             {
                 if (arrayElementTypes.Contains(a))
                 {
@@ -166,10 +165,10 @@ namespace Worlds
         /// Copies the tag types in this definition to the <paramref name="destination"/>.
         /// </summary>
         /// <returns>Amount of tag types copied.</returns>
-        public readonly byte CopyTagTypesTo(USpan<TagType> destination)
+        public readonly int CopyTagTypesTo(Span<TagType> destination)
         {
-            byte count = 0;
-            for (uint t = 0; t < BitMask.Capacity; t++)
+            int count = 0;
+            for (int t = 0; t < BitMask.Capacity; t++)
             {
                 if (tagTypes.Contains(t))
                 {
@@ -214,17 +213,17 @@ namespace Worlds
             return tagTypes.Contains(tagType.index);
         }
 
-        public readonly bool ContainsComponent(uint index)
+        public readonly bool ContainsComponent(int index)
         {
             return componentTypes.Contains(index);
         }
 
-        public readonly bool ContainsArray(uint index)
+        public readonly bool ContainsArray(int index)
         {
             return arrayElementTypes.Contains(index);
         }
 
-        public readonly bool ContainsTag(uint index)
+        public readonly bool ContainsTag(int index)
         {
             return tagTypes.Contains(index);
         }
@@ -286,12 +285,12 @@ namespace Worlds
             componentTypes.Clear(componentType.index);
         }
 
-        public void AddComponentType(uint index)
+        public void AddComponentType(int index)
         {
             componentTypes.Set(index);
         }
 
-        public void RemoveComponentType(uint index)
+        public void RemoveComponentType(int index)
         {
             componentTypes.Clear(index);
         }
@@ -378,7 +377,7 @@ namespace Worlds
             arrayElementTypes.Set(arrayType.index);
         }
 
-        public void AddArrayType(uint arrayType)
+        public void AddArrayType(int arrayType)
         {
             arrayElementTypes.Set(arrayType);
         }
@@ -388,7 +387,7 @@ namespace Worlds
             arrayElementTypes.Clear(arrayType.index);
         }
 
-        public void RemoveArrayType(uint arrayType)
+        public void RemoveArrayType(int arrayType)
         {
             arrayElementTypes.Clear(arrayType);
         }
@@ -481,22 +480,12 @@ namespace Worlds
             tagTypes.Clear(tagType.index);
         }
 
-        public void AddTagType(byte tagType)
+        public void AddTagType(int tagType)
         {
             tagTypes.Set(tagType);
         }
 
-        public void RemoveTagType(byte tagType)
-        {
-            tagTypes.Clear(tagType);
-        }
-
-        public void AddTagType(uint tagType)
-        {
-            tagTypes.Set(tagType);
-        }
-
-        public void RemoveTagType(uint tagType)
+        public void RemoveTagType(int tagType)
         {
             tagTypes.Clear(tagType);
         }

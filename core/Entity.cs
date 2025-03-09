@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using Unmanaged;
 
 namespace Worlds
 {
@@ -11,7 +10,7 @@ namespace Worlds
         public readonly uint value;
 
         public readonly bool IsDestroyed => !world.ContainsEntity(value);
-        public readonly USpan<uint> References => world.GetReferences(value);
+        public readonly ReadOnlySpan<uint> References => world.GetReferences(value);
 
         public readonly bool IsEnabled
         {
@@ -28,7 +27,7 @@ namespace Worlds
             }
         }
 
-        public readonly USpan<uint> Children => world.GetChildren(value);
+        public readonly ReadOnlySpan<uint> Children => world.GetChildren(value);
 
 #if NET
         [Obsolete("Default constructor not supported", true)]
@@ -232,7 +231,7 @@ namespace Worlds
             world.RemoveComponent(value, componentType);
         }
 
-        public readonly Values CreateArray(ArrayElementType arrayType, uint length = 0)
+        public readonly Values CreateArray(ArrayElementType arrayType, int length = 0)
         {
             return world.CreateArray(value, arrayType, length);
         }
@@ -292,12 +291,12 @@ namespace Worlds
             return world.ContainsArray<T>(value);
         }
 
-        public readonly uint GetArrayLength<T>() where T : unmanaged
+        public readonly int GetArrayLength<T>() where T : unmanaged
         {
             return world.GetArrayLength<T>(value);
         }
 
-        public readonly ref T GetArrayElement<T>(uint index) where T : unmanaged
+        public readonly ref T GetArrayElement<T>(int index) where T : unmanaged
         {
             return ref world.GetArrayElement<T>(value, index);
         }
@@ -312,12 +311,12 @@ namespace Worlds
             return world.TryGetArray(value, out array);
         }
 
-        public readonly void CreateArray<T>(USpan<T> elements) where T : unmanaged
+        public readonly void CreateArray<T>(ReadOnlySpan<T> elements) where T : unmanaged
         {
             world.CreateArray(value, elements);
         }
 
-        public readonly Values<T> CreateArray<T>(uint length = 0) where T : unmanaged
+        public readonly Values<T> CreateArray<T>(int length = 0) where T : unmanaged
         {
             return world.CreateArray<T>(value, length);
         }
@@ -347,9 +346,9 @@ namespace Worlds
             return value.ToString();
         }
 
-        public readonly uint ToString(USpan<char> buffer)
+        public readonly int ToString(Span<char> destination)
         {
-            return value.ToString(buffer);
+            return value.ToString(destination);
         }
 
         public readonly override bool Equals(object? obj)
@@ -430,48 +429,48 @@ namespace Worlds
                         this.parent = default;
                     }
 
-                    USpan<uint> children = world.GetChildren(value);
+                    ReadOnlySpan<uint> children = world.GetChildren(value);
                     this.children = new Entity[children.Length];
-                    for (uint i = 0; i < children.Length; i++)
+                    for (int i = 0; i < children.Length; i++)
                     {
                         this.children[i] = new Entity(world, children[i]);
                     }
 
-                    USpan<uint> references = world.GetReferences(value);
+                    ReadOnlySpan<uint> references = world.GetReferences(value);
                     this.references = new Entity[references.Length];
-                    for (uint i = 0; i < references.Length; i++)
+                    for (int i = 0; i < references.Length; i++)
                     {
                         this.references[i] = new Entity(world, references[i]);
                     }
 
                     Chunk chunk = world.GetChunk(value);
                     definition = chunk.Definition;
-                    USpan<ComponentType> componentTypes = stackalloc ComponentType[(int)BitMask.Capacity];
-                    byte count = definition.CopyComponentTypesTo(componentTypes);
+                    Span<ComponentType> componentTypes = stackalloc ComponentType[BitMask.Capacity];
+                    int count = definition.CopyComponentTypesTo(componentTypes);
                     components = new object[count];
                     this.componentTypes = new Type[count];
-                    for (uint i = 0; i < count; i++)
+                    for (int i = 0; i < count; i++)
                     {
                         ComponentType componentType = componentTypes[i];
                         components[i] = world.GetComponentObject(value, componentType);
                         this.componentTypes[i] = componentType.GetLayout(schema).SystemType;
                     }
 
-                    USpan<ArrayElementType> arrayTypes = stackalloc ArrayElementType[(int)BitMask.Capacity];
+                    Span<ArrayElementType> arrayTypes = stackalloc ArrayElementType[BitMask.Capacity];
                     count = definition.CopyArrayTypesTo(arrayTypes);
                     arrays = new object[count][];
                     this.arrayTypes = new Type[count];
-                    for (uint i = 0; i < count; i++)
+                    for (int i = 0; i < count; i++)
                     {
                         ArrayElementType arrayType = arrayTypes[i];
                         arrays[i] = world.GetArrayObject(value, arrayType);
                         this.arrayTypes[i] = arrayType.GetLayout(schema).SystemType;
                     }
 
-                    USpan<TagType> tagTypes = stackalloc TagType[(int)BitMask.Capacity];
+                    Span<TagType> tagTypes = stackalloc TagType[BitMask.Capacity];
                     count = definition.CopyTagTypesTo(tagTypes);
                     this.tagTypes = new Type[count];
-                    for (uint i = 0; i < count; i++)
+                    for (int i = 0; i < count; i++)
                     {
                         TagType tagType = tagTypes[i];
                         this.tagTypes[i] = tagType.GetLayout(schema).SystemType;

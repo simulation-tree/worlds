@@ -4,7 +4,7 @@ namespace Worlds.Pointers
 {
     public struct Schema
     {
-        public readonly uint schemaIndex;
+        public readonly int schemaIndex;
 
         internal byte componentCount;
         internal byte arraysCount;
@@ -13,7 +13,7 @@ namespace Worlds.Pointers
         internal readonly MemoryAddress sizes;
         internal readonly MemoryAddress typeHashes;
 
-        internal Schema(uint schemaIndex)
+        internal Schema(int schemaIndex)
         {
             componentCount = 0;
             arraysCount = 0;

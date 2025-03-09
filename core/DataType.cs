@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using Unmanaged;
 
 namespace Worlds
 {
@@ -81,14 +80,7 @@ namespace Worlds
             size = 0;
         }
 
-        public DataType(byte index, Kind kind, ushort size)
-        {
-            this.index = index;
-            this.kind = kind;
-            this.size = size;
-        }
-
-        public DataType(uint index, Kind kind, ushort size)
+        public DataType(int index, Kind kind, ushort size)
         {
             this.index = (byte)index;
             this.kind = kind;
@@ -112,19 +104,19 @@ namespace Worlds
             }
 #endif
 
-            USpan<char> buffer = stackalloc char[256];
-            uint length = index.ToString(buffer);
-            return buffer.GetSpan(length).ToString();
+            Span<char> buffer = stackalloc char[256];
+            int length = index.ToString(buffer);
+            return buffer.Slice(0, length).ToString();
         }
 
         public readonly string ToString(Schema schema)
         {
-            USpan<char> buffer = stackalloc char[256];
-            uint length = ToString(schema, buffer);
-            return buffer.GetSpan(length).ToString();
+            Span<char> buffer = stackalloc char[256];
+            int length = ToString(schema, buffer);
+            return buffer.Slice(0, length).ToString();
         }
 
-        public readonly uint ToString(Schema schema, USpan<char> destination)
+        public readonly int ToString(Schema schema, Span<char> destination)
         {
             if (kind == Kind.Component)
             {

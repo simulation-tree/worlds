@@ -3,6 +3,8 @@ using System.Text;
 public static class SharedFunctions
 {
     private const char GenericTypePrefix = 'C';
+    private const string ComponentType = "int";
+    private const string SpanType = "Span";
 
     public static int GetIndent(string source, string keyword)
     {
@@ -153,7 +155,9 @@ public static class SharedFunctions
         StringBuilder builder = new();
         for (uint i = 1; i <= count + 1; i++)
         {
-            builder.Append("private readonly uint c");
+            builder.Append("private readonly ");
+            builder.Append(ComponentType);
+            builder.Append(" c");
             builder.Append(i);
             builder.Append(';');
 
@@ -232,7 +236,9 @@ public static class SharedFunctions
         StringBuilder builder = new();
         for (uint i = 1; i <= count + 1; i++)
         {
-            builder.Append("private USpan<");
+            builder.Append("private ");
+            builder.Append(SpanType);
+            builder.Append('<');
             builder.Append(GenericTypePrefix);
             builder.Append(i);
             builder.Append("> list");

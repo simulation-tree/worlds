@@ -12,11 +12,11 @@ namespace Worlds
         /// <summary>
         /// Counts how many entities match this query.
         /// </summary>
-        public readonly uint Count
+        public readonly int Count
         {
             get
             {
-                uint count = 0;
+                int count = 0;
                 foreach (Chunk chunk in world.Chunks)
                 {
                     if (chunk.Count > 0)
@@ -207,8 +207,8 @@ namespace Worlds
             private readonly Query query;
 
             private Chunk chunk;
-            private uint chunkIndex;
-            private uint entityIndex;
+            private int chunkIndex;
+            private int entityIndex;
 
             public readonly uint Current => chunk.Entities[entityIndex - 1];
 
@@ -221,7 +221,7 @@ namespace Worlds
                 World world = query.world;
                 Definition required = query.required;
                 Definition exclude = query.exclude;
-                for (uint i = 0; i < world.Chunks.Length; i++)
+                for (int i = 0; i < world.Chunks.Length; i++)
                 {
                     Chunk chunk = world.Chunks[i];
                     Definition key = chunk.Definition;
@@ -277,7 +277,7 @@ namespace Worlds
                     World world = query.world;
                     Definition required = query.required;
                     Definition exclude = query.exclude;
-                    for (uint i = chunkIndex + 1; i < world.Chunks.Length; i++)
+                    for (int i = chunkIndex + 1; i < world.Chunks.Length; i++)
                     {
                         Chunk chunk = world.Chunks[i]; 
                         if (chunk.Count > 0)

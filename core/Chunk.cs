@@ -29,7 +29,7 @@ namespace Worlds
         /// <summary>
         /// Returns the entities in this chunk.
         /// </summary>
-        public readonly USpan<uint> Entities
+        public readonly ReadOnlySpan<uint> Entities
         {
             get
             {
@@ -42,7 +42,7 @@ namespace Worlds
         /// <summary>
         /// Amount of entities stored in this chunk.
         /// </summary>
-        public readonly uint Count
+        public readonly int Count
         {
             get
             {
@@ -66,7 +66,7 @@ namespace Worlds
             }
         }
 
-        public readonly uint this[uint index] => Entities[index];
+        public readonly uint this[int index] => Entities[index];
 
 #if NET
         /// <summary>
@@ -98,9 +98,9 @@ namespace Worlds
         public Chunk(Definition definition, Schema schema)
         {
             Array<List> componentArrays = new(BitMask.Capacity);
-            USpan<byte> typeIndices = stackalloc byte[(int)BitMask.Capacity];
+            Span<byte> typeIndices = stackalloc byte[BitMask.Capacity];
             byte typeCount = 0;
-            for (uint c = 0; c < BitMask.Capacity; c++)
+            for (int c = 0; c < BitMask.Capacity; c++)
             {
                 if (definition.ComponentTypes.Contains(c))
                 {
@@ -111,7 +111,7 @@ namespace Worlds
             }
 
             ref Pointer chunk = ref MemoryAddress.Allocate<Pointer>();
-            chunk = new(definition, componentArrays, new(typeIndices.GetSpan(typeCount)));
+            chunk = new(definition, componentArrays, new(typeIndices.Slice(0, typeCount)));
             fixed (Pointer* pointer = &chunk)
             {
                 this.chunk = pointer;
@@ -124,8 +124,8 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(chunk);
 
             chunk->entities.Dispose();
-            uint typeCount = chunk->typeIndices.Length;
-            for (uint t = 0; t < typeCount; t++)
+            int typeCount = chunk->typeIndices.Length;
+            for (int t = 0; t < typeCount; t++)
             {
                 List components = chunk->componentLists[chunk->typeIndices[t]];
                 components.Dispose();
@@ -146,7 +146,7 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfComponentTypeIsMissing(uint componentType)
+        private readonly void ThrowIfComponentTypeIsMissing(int componentType)
         {
             if (!chunk->definition.ComponentTypes.Contains(componentType))
             {
@@ -166,19 +166,19 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override string ToString()
         {
-            USpan<char> buffer = stackalloc char[512];
-            uint length = ToString(buffer);
-            return buffer.GetSpan(length).ToString();
+            Span<char> buffer = stackalloc char[512];
+            int length = ToString(buffer);
+            return buffer.Slice(0, length).ToString();
         }
 
         /// <summary>
         /// Builds a string representation of this chunk.
         /// </summary>
-        public readonly uint ToString(USpan<char> buffer)
+        public readonly int ToString(Span<char> buffer)
         {
-            uint length = 0;
+            int length = 0;
             BitMask componentTypes = Definition.ComponentTypes;
-            for (uint i = 0; i < BitMask.Capacity; i++)
+            for (int i = 0; i < BitMask.Capacity; i++)
             {
                 if (componentTypes.Contains(i))
                 {
@@ -213,13 +213,13 @@ namespace Worlds
         /// <summary>
         /// Adds the given <paramref name="entity"/> into this chunk and returns its referable index.
         /// </summary>
-        public readonly uint AddEntity(uint entity)
+        public readonly int AddEntity(uint entity)
         {
             MemoryAddress.ThrowIfDefault(chunk);
 
             chunk->entities.Add(entity);
-            uint typeCount = chunk->typeIndices.Length;
-            for (uint t = 0; t < typeCount; t++)
+            int typeCount = chunk->typeIndices.Length;
+            for (int t = 0; t < typeCount; t++)
             {
                 List components = chunk->componentLists[chunk->typeIndices[t]];
                 components.AddDefault();
@@ -235,10 +235,10 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(chunk);
 
-            uint index = chunk->entities.IndexOf(entity);
+            int index = chunk->entities.IndexOf(entity);
             chunk->entities.RemoveAtBySwapping(index);
-            uint typeCount = chunk->typeIndices.Length;
-            for (uint t = 0; t < typeCount; t++)
+            int typeCount = chunk->typeIndices.Length;
+            for (int t = 0; t < typeCount; t++)
             {
                 List components = chunk->componentLists[chunk->typeIndices[t]];
                 components.RemoveAtBySwapping(index);
@@ -248,18 +248,18 @@ namespace Worlds
         /// <summary>
         /// Moves the <paramref name="entity"/> and all of its components to the <paramref name="destination"/> chunk.
         /// </summary>
-        public readonly uint MoveEntity(uint entity, Chunk destination)
+        public readonly int MoveEntity(uint entity, Chunk destination)
         {
             MemoryAddress.ThrowIfDefault(chunk);
             MemoryAddress.ThrowIfDefault(destination.chunk);
 
-            uint oldIndex = chunk->entities.IndexOf(entity);
+            int oldIndex = chunk->entities.IndexOf(entity);
             chunk->entities.RemoveAtBySwapping(oldIndex);
-            uint newIndex = destination.chunk->entities.Count;
+            int newIndex = destination.chunk->entities.Count;
             destination.chunk->entities.Add(entity);
 
             //copy from source to destination
-            for (uint t = 0; t < destination.chunk->typeIndices.Length; t++)
+            for (int t = 0; t < destination.chunk->typeIndices.Length; t++)
             {
                 byte destinationComponentType = destination.chunk->typeIndices[t];
                 List destinationComponents = destination.chunk->componentLists[destinationComponentType];
@@ -276,7 +276,7 @@ namespace Worlds
             }
 
             //remove from source
-            for (uint t = 0; t < chunk->typeIndices.Length; t++)
+            for (int t = 0; t < chunk->typeIndices.Length; t++)
             {
                 List components = chunk->componentLists[chunk->typeIndices[t]];
                 components.RemoveAtBySwapping(oldIndex);
@@ -288,7 +288,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the list of all components of the given <paramref name="componentType"/>.
         /// </summary>
-        public readonly List GetComponents(uint componentType)
+        public readonly List GetComponents(int componentType)
         {
             MemoryAddress.ThrowIfDefault(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
@@ -299,7 +299,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves a span containing all <typeparamref name="T"/> components.
         /// </summary>
-        public readonly USpan<T> GetComponents<T>(uint componentType) where T : unmanaged
+        public readonly System.Span<T> GetComponents<T>(int componentType) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
@@ -310,7 +310,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves a reference to the component of type <paramref name="componentType"/>.
         /// </summary>
-        public readonly ref T GetComponent<T>(uint index, uint componentType) where T : unmanaged
+        public readonly ref T GetComponent<T>(int index, int componentType) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
@@ -321,7 +321,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves a reference to the component of type <paramref name="componentType"/>.
         /// </summary>
-        public readonly ref T GetComponentOfEntity<T>(uint entity, uint componentType) where T : unmanaged
+        public readonly ref T GetComponentOfEntity<T>(uint entity, int componentType) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
@@ -333,7 +333,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> at <paramref name="index"/>.
         /// </summary>
-        public readonly MemoryAddress GetComponent(uint index, uint componentType)
+        public readonly MemoryAddress GetComponent(int index, int componentType)
         {
             MemoryAddress.ThrowIfDefault(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
@@ -344,7 +344,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> of <paramref name="entity"/>.
         /// </summary>
-        public readonly MemoryAddress GetComponentOfEntity(uint entity, uint componentType)
+        public readonly MemoryAddress GetComponentOfEntity(uint entity, int componentType)
         {
             MemoryAddress.ThrowIfDefault(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
@@ -356,7 +356,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> at <paramref name="index"/>.
         /// </summary>
-        public readonly MemoryAddress GetComponent(uint index, uint componentType, out ushort componentSize)
+        public readonly MemoryAddress GetComponent(int index, int componentType, out ushort componentSize)
         {
             MemoryAddress.ThrowIfDefault(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
@@ -369,7 +369,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> of <paramref name="entity"/>.
         /// </summary>
-        public readonly MemoryAddress GetComponentOfEntity(uint entity, uint componentType, out ushort componentSize)
+        public readonly MemoryAddress GetComponentOfEntity(uint entity, int componentType, out ushort componentSize)
         {
             MemoryAddress.ThrowIfDefault(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
@@ -383,7 +383,7 @@ namespace Worlds
         /// <summary>
         /// Assigns the component for entity at <paramref name="index"/> to <paramref name="value"/>.
         /// </summary>
-        public readonly void SetComponent<T>(uint index, uint componentType, T value) where T : unmanaged
+        public readonly void SetComponent<T>(int index, int componentType, T value) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(chunk);
             ThrowIfComponentTypeIsMissing(componentType);
@@ -394,7 +394,7 @@ namespace Worlds
         /// <summary>
         /// Assigns the component for <paramref name="entity"/> to <paramref name="value"/>.
         /// </summary>
-        public readonly void SetComponentOfEntity<T>(uint entity, uint componentType, T value) where T : unmanaged
+        public readonly void SetComponentOfEntity<T>(uint entity, int componentType, T value) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(chunk);
             ThrowIfComponentTypeIsMissing(componentType);

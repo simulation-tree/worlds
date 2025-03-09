@@ -30,15 +30,15 @@ namespace Worlds.Tests
         public void MaxEntityIDIsValid()
         {
             using World world = CreateWorld();
-            USpan<uint> entities = stackalloc uint[4];
+            Span<uint> entities = stackalloc uint[4];
             world.CreateEntities(entities);
             Assert.That(world.MaxEntityValue, Is.EqualTo(entities[3]));
             Assert.That(world.MaxEntityValue, Is.EqualTo(entities.Length));
 
             using Array<bool> buffer = new(world.MaxEntityValue + 1);
-            for (uint i = 0; i < entities.Length; i++)
+            for (int i = 0; i < entities.Length; i++)
             {
-                buffer[entities[i]] = true;
+                buffer[(int)entities[i]] = true;
             }
         }
 
@@ -312,9 +312,9 @@ namespace Worlds.Tests
 
                 if (rng.NextBool())
                 {
-                    uint length = rng.NextUInt(1, 10);
+                    int length = rng.NextInt(1, 10);
                     Values<Character> array = world.CreateArray<Character>(entity, length);
-                    for (uint j = 0; j < length; j++)
+                    for (int j = 0; j < length; j++)
                     {
                         array[j] = (char)rng.NextInt('a', 'z');
                     }

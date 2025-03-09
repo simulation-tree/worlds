@@ -1,4 +1,5 @@
 ﻿using Collections.Generic;
+using System;
 using Unmanaged;
 
 namespace Worlds.Tests
@@ -95,7 +96,7 @@ namespace Worlds.Tests
             Assert.That(world.GetComponent<TestComponent>(firstEntity).value, Is.EqualTo(4));
             Assert.That(world.GetComponent<TestComponent>(secondEntity).value, Is.EqualTo(5));
             Assert.That(world.GetComponent<TestComponent>(thirdEntity).value, Is.EqualTo(6));
-            Assert.That(world.GetArray<Character>(thirdEntity).AsSpan().As<char>().ToString(), Is.EqualTo("abc"));
+            Assert.That(world.GetArray<Character>(thirdEntity).AsSpan<char>().ToString(), Is.EqualTo("abc"));
             Assert.That(world.GetParent(firstEntity), Is.EqualTo(default(uint)));
             Assert.That(world.GetParent(secondEntity), Is.EqualTo(default(uint)));
             Assert.That(world.GetParent(thirdEntity), Is.EqualTo(firstEntity));
@@ -122,15 +123,15 @@ namespace Worlds.Tests
             string testString = "this is not an abacus";
             using Operation operation = new();
             operation.CreateEntity();
-            operation.CreateArray<Character>((uint)testString.Length);
-            operation.SetArrayElements(0, new USpan<char>(testString).As<Character>());
+            operation.CreateArray<Character>(testString.Length);
+            operation.SetArrayElements(0, testString.AsSpan().As<char, Character>());
 
             using World world = CreateWorld();
             operation.Perform(world);
 
             uint entity = world[0];
-            USpan<Character> list = world.GetArray<Character>(entity).AsSpan();
-            Assert.That(list.As<char>().ToString(), Is.EqualTo(testString));
+            Span<Character> list = world.GetArray<Character>(entity).AsSpan();
+            Assert.That(list.As<Character, char>().ToString(), Is.EqualTo(testString));
         }
 
         [Test]
@@ -147,7 +148,7 @@ namespace Worlds.Tests
             uint entity = world[0];
             Assert.That(world.ContainsArray<Character>(entity), Is.True);
 
-            USpan<Character> list = world.GetArray<Character>(entity).AsSpan();
+            Span<Character> list = world.GetArray<Character>(entity).AsSpan();
             Assert.That((char)list[0], Is.EqualTo('a'));
             Assert.That((char)list[1], Is.EqualTo('\0'));
             Assert.That((char)list[2], Is.EqualTo('\0'));
@@ -187,7 +188,7 @@ namespace Worlds.Tests
         {
             using Operation operation = new();
             operation.CreateEntity();
-            operation.CreateArray(new USpan<char>("abcd").As<Character>());
+            operation.CreateArray("abcd".AsSpan().As<char, Character>());
 
             using World world = CreateWorld();
             operation.Perform(world);
@@ -279,7 +280,7 @@ namespace Worlds.Tests
         public void SimplerAddThenRemove()
         {
             using World world = CreateWorld();
-            USpan<uint> entities = stackalloc uint[100];
+            Span<uint> entities = stackalloc uint[100];
             world.CreateEntities(entities);
 
             Assert.That(world.Count, Is.EqualTo(entities.Length));
@@ -290,7 +291,7 @@ namespace Worlds.Tests
             operation.AddComponent<SimpleComponent>(default);
 
             operation.Perform(world);
-            for (uint i = 0; i < entities.Length; i++)
+            for (int i = 0; i < entities.Length; i++)
             {
                 Assert.That(world.ContainsComponent<TestComponent>(entities[i]), Is.True);
                 Assert.That(world.ContainsComponent<SimpleComponent>(entities[i]), Is.True);
@@ -302,7 +303,7 @@ namespace Worlds.Tests
             operation.RemoveComponent<SimpleComponent>();
 
             operation.Perform(world);
-            for (uint i = 0; i < entities.Length; i++)
+            for (int i = 0; i < entities.Length; i++)
             {
                 Assert.That(world.ContainsComponent<TestComponent>(entities[i]), Is.False);
                 Assert.That(world.ContainsComponent<SimpleComponent>(entities[i]), Is.False);

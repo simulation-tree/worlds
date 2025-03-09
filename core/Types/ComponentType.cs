@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using Types;
-using Unmanaged;
 
 namespace Worlds
 {
@@ -11,10 +10,10 @@ namespace Worlds
     public readonly struct ComponentType : IEquatable<ComponentType>
     {
 #if DEBUG
-        internal static readonly System.Collections.Generic.Dictionary<uint, TypeLayout> debugCachedTypes = new();
+        internal static readonly System.Collections.Generic.Dictionary<int, TypeLayout> debugCachedTypes = new();
 #endif
 
-        public readonly uint index;
+        public readonly int index;
 
 #if NET
         /// <summary>
@@ -30,14 +29,7 @@ namespace Worlds
         /// <summary>
         /// Initializes an existing component type with the given index.
         /// </summary>
-        public ComponentType(byte value)
-        {
-            ThrowIfOutOfRange(value);
-
-            this.index = value;
-        }
-
-        public ComponentType(uint value)
+        public ComponentType(int value)
         {
             ThrowIfOutOfRange(value);
 
@@ -47,9 +39,9 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override string ToString()
         {
-            USpan<char> buffer = stackalloc char[256];
-            uint length = ToString(buffer);
-            return buffer.GetSpan(length).ToString();
+            Span<char> buffer = stackalloc char[256];
+            int length = ToString(buffer);
+            return buffer.Slice(0, length).ToString();
         }
 
         /// <summary>
@@ -57,15 +49,15 @@ namespace Worlds
         /// </summary>
         public readonly string ToString(Schema schema)
         {
-            USpan<char> buffer = stackalloc char[256];
-            uint length = ToString(schema, buffer);
-            return buffer.GetSpan(length).ToString();
+            Span<char> buffer = stackalloc char[256];
+            int length = ToString(schema, buffer);
+            return buffer.Slice(0, length).ToString();
         }
 
         /// <summary>
         /// Writes the index of this component type to the <paramref name="destination"/>.
         /// </summary>
-        public readonly uint ToString(USpan<char> destination)
+        public readonly int ToString(Span<char> destination)
         {
             return index.ToString(destination);
         }
@@ -73,7 +65,7 @@ namespace Worlds
         /// <summary>
         /// Writes a string representation of this component type to the <paramref name="destination"/>.
         /// </summary>
-        public readonly uint ToString(Schema schema, USpan<char> destination)
+        public readonly int ToString(Schema schema, Span<char> destination)
         {
             if (schema.ContainsComponentType(this))
             {
@@ -100,10 +92,7 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            unchecked
-            {
-                return (int)index;
-            }
+            return index;
         }
 
         /// <summary>
@@ -124,18 +113,13 @@ namespace Worlds
             return !(left == right);
         }
 
-        public static implicit operator uint(ComponentType type)
+        public static implicit operator int(ComponentType type)
         {
             return type.index;
         }
 
-        public static implicit operator byte(ComponentType type)
-        {
-            return (byte)type.index;
-        }
-
         [Conditional("DEBUG")]
-        private static void ThrowIfOutOfRange(uint value)
+        private static void ThrowIfOutOfRange(int value)
         {
             if (value > BitMask.MaxValue)
             {

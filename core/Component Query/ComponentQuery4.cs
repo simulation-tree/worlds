@@ -481,21 +481,21 @@ namespace Worlds
 
         public unsafe ref struct Enumerator
         {
-            private static readonly uint stride = (uint)sizeof(Chunk);
+            private static readonly int stride = sizeof(Chunk);
 
             private readonly MemoryAddress chunks;
-            private readonly uint chunkCount;
-            private readonly uint c1;
-            private readonly uint c2;
-            private readonly uint c3;
-            private readonly uint c4;
-            private uint entityIndex;
-            private uint chunkIndex;
-            private USpan<uint> entities;
-            private USpan<C1> list1;
-            private USpan<C2> list2;
-            private USpan<C3> list3;
-            private USpan<C4> list4;
+            private readonly int chunkCount;
+            private readonly int c1;
+            private readonly int c2;
+            private readonly int c3;
+            private readonly int c4;
+            private int entityIndex;
+            private int chunkIndex;
+            private ReadOnlySpan<uint> entities;
+            private Span<C1> list1;
+            private Span<C2> list2;
+            private Span<C3> list3;
+            private Span<C4> list4;
 
             /// <summary>
             /// Current result.
@@ -504,7 +504,7 @@ namespace Worlds
             {
                 get
                 {
-                    uint index = entityIndex - 1;
+                    int index = entityIndex - 1;
                     uint entity = entities[index];
                     ref C1 c1 = ref list1[index];
                     ref C2 c2 = ref list2[index];
@@ -514,10 +514,10 @@ namespace Worlds
                 }
             }
 
-            internal Enumerator(Definition required, Definition exclude, USpan<Chunk> allChunks, Schema schema)
+            internal Enumerator(Definition required, Definition exclude, ReadOnlySpan<Chunk> allChunks, Schema schema)
             {
                 chunkCount = 0;
-                USpan<Chunk> chunksBuffer = stackalloc Chunk[(int)allChunks.Length];
+                Span<Chunk> chunksBuffer = stackalloc Chunk[(int)allChunks.Length];
                 foreach (Chunk chunk in allChunks)
                 {
                     if (chunk.Count > 0)
@@ -568,7 +568,7 @@ namespace Worlds
                     c2 = schema.GetComponentTypeIndex<C2>();
                     c3 = schema.GetComponentTypeIndex<C3>();
                     c4 = schema.GetComponentTypeIndex<C4>();
-                    chunks = MemoryAddress.Allocate(chunksBuffer.GetSpan(chunkCount));
+                    chunks = MemoryAddress.Allocate(chunksBuffer.Slice(0, chunkCount));
                     UpdateChunkFields(ref chunksBuffer[0]);
                 }
             }
