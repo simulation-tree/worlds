@@ -541,7 +541,7 @@ namespace Worlds
             operation->bytesLength = bytesLength;
             operation->bytesCapacity = bytesCapacity;
             MemoryAddress.Resize(ref operation->buffer, bytesCapacity);
-            reader.ReadSpan<byte>(bytesLength).CopyTo(operation->buffer.AsSpan(0, bytesLength));
+            reader.ReadSpan<byte>(bytesLength).CopyTo(operation->buffer.GetSpan(bytesLength));
         }
 
         internal ref struct Performing

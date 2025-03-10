@@ -299,7 +299,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves a span containing all <typeparamref name="T"/> components.
         /// </summary>
-        public readonly System.Span<T> GetComponents<T>(int componentType) where T : unmanaged
+        public readonly Span<T> GetComponents<T>(int componentType) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(chunk);
             ThrowIfComponentTypeIsMissing(componentType);

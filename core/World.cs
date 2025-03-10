@@ -2229,7 +2229,7 @@ namespace Worlds
             MemoryAddress component = destinationChunk.GetComponent(index, componentType, out ushort componentSize);
 
             //todo: efficiency: this could be eliminated, but would need awareness given to the user about the size of the component
-            Span<byte> destination = component.AsSpan(0, Math.Min(componentSize, componentBytes.Length));
+            Span<byte> destination = component.GetSpan(Math.Min(componentSize, componentBytes.Length));
             componentBytes.CopyTo(destination);
         }
 
@@ -2405,7 +2405,7 @@ namespace Worlds
         /// <summary>
         /// Fetches the bytes of a component from the given <paramref name="entity"/>.
         /// </summary>
-        public readonly System.Span<byte> GetComponentBytes(uint entity, int componentType)
+        public readonly Span<byte> GetComponentBytes(uint entity, int componentType)
         {
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
@@ -2423,7 +2423,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
 
             TypeLayout layout = world->schema.GetComponentLayout(componentType);
-            System.Span<byte> bytes = GetComponentBytes(entity, componentType);
+            Span<byte> bytes = GetComponentBytes(entity, componentType);
             return layout.CreateInstance(bytes);
         }
 
@@ -2514,7 +2514,7 @@ namespace Worlds
             ThrowIfComponentMissing(entity, componentType);
 
             MemoryAddress component = world->slots[(int)entity].chunk.GetComponentOfEntity(entity, componentType, out ushort componentSize);
-            Span<byte> destination = component.AsSpan(0, Math.Min(componentSize, componentBytes.Length));
+            Span<byte> destination = component.GetSpan(Math.Min(componentSize, componentBytes.Length));
             componentBytes.CopyTo(destination);
         }
 
@@ -2581,7 +2581,7 @@ namespace Worlds
                         destinationArray.Length = sourceArray.Length;
                     }
 
-                    Span<byte> destination = destinationArray.Slice(0, sourceArray.Length * sourceArray.Stride);
+                    Span<byte> destination = destinationArray.GetSpan(sourceArray.Length * sourceArray.Stride);
                     sourceArray.AsSpan().CopyTo(destination);
                 }
             }

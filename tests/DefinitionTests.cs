@@ -66,8 +66,8 @@ namespace Worlds.Tests
 
             Assert.That(a.ComponentTypes.Count, Is.EqualTo(2));
             Assert.That(a.ArrayTypes.Count, Is.EqualTo(2));
-            System.Span<ComponentType> componentTypes = stackalloc ComponentType[(int)BitMask.Capacity];
-            System.Span<ArrayElementType> arrayElementTypes = stackalloc ArrayElementType[(int)BitMask.Capacity];
+            Span<ComponentType> componentTypes = stackalloc ComponentType[BitMask.Capacity];
+            Span<ArrayElementType> arrayElementTypes = stackalloc ArrayElementType[BitMask.Capacity];
             a.CopyComponentTypesTo(componentTypes);
             a.CopyArrayTypesTo(arrayElementTypes);
             Assert.That(componentTypes.Contains(schema.GetComponentType<Integer>()), Is.True);

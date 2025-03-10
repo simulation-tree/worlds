@@ -398,8 +398,8 @@ namespace Worlds
 
             ThrowIfTooManyComponents();
 
-            System.Span<ushort> componentSizes = new(schema->sizes.Pointer, BitMask.Capacity);
-            System.Span<long> componentHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
+            Span<ushort> componentSizes = new(schema->sizes.Pointer, BitMask.Capacity);
+            Span<long> componentHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
             ComponentType componentType = new(schema->componentCount);
             componentSizes[componentType.index] = type.Size;
             componentHashes[componentType.index] = type.Hash;
@@ -427,8 +427,8 @@ namespace Worlds
             ThrowIfTooManyArrays();
 
             ArrayElementType arrayType = new(schema->arraysCount);
-            System.Span<ushort> arrayElementSizes = schema->sizes.AsSpan<ushort>(BitMask.Capacity, BitMask.Capacity);
-            System.Span<long> arrayElementHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
+            Span<ushort> arrayElementSizes = schema->sizes.AsSpan<ushort>(BitMask.Capacity, BitMask.Capacity);
+            Span<long> arrayElementHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
             arrayElementSizes[schema->arraysCount] = type.Size;
             arrayElementHashes[schema->arraysCount] = type.Hash;
             schema->arraysCount++;
@@ -454,7 +454,7 @@ namespace Worlds
             ThrowIfTooManyTags();
 
             TagType tagType = new(schema->tagsCount);
-            System.Span<long> tagHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
+            Span<long> tagHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
             tagHashes[tagType.index] = type.Hash;
             schema->definitionMask.AddTagType(tagType);
             schema->tagsCount++;
@@ -556,13 +556,13 @@ namespace Worlds
 
         public readonly bool ContainsTagType(ASCIIText256 fullTypeName)
         {
-            System.Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
+            Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
             return tagTypeHashes.Contains(fullTypeName.GetLongHashCode());
         }
 
         public readonly bool ContainsTagType(TypeLayout type)
         {
-            System.Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
+            Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
             return tagTypeHashes.Contains(type.Hash);
         }
 
@@ -581,7 +581,7 @@ namespace Worlds
                 return false;
             }
 
-            System.Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
+            Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
             return componentTypeHashes.Contains(TypeLayoutHashCodeCache<T>.value);
         }
 
@@ -653,7 +653,7 @@ namespace Worlds
                 return false;
             }
 
-            System.Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
+            Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
             return arrayTypeHashes.Contains(TypeLayoutHashCodeCache<T>.value);
         }
 

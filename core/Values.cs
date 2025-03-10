@@ -79,7 +79,7 @@ namespace Worlds
 
         public readonly Span<T>.Enumerator GetEnumerator()
         {
-            return new Span<T>(pointer->items.Pointer, (int)pointer->length).GetEnumerator();
+            return new Span<T>(pointer->items.Pointer, pointer->length).GetEnumerator();
         }
 
         /// <summary>
@@ -144,6 +144,11 @@ namespace Worlds
         public readonly Span<byte> AsSpan()
         {
             return new(pointer->items.Pointer, pointer->length * pointer->stride);
+        }
+
+        public readonly Span<byte> GetSpan(int byteLength)
+        {
+            return new(pointer->items.Pointer, byteLength);
         }
 
         public readonly Span<byte> Slice(int bytePosition, int byteLength)
