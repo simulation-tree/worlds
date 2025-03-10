@@ -59,18 +59,18 @@ namespace Worlds
         }
 #endif
 
-        public DataType(ComponentType componentType, ushort size)
+        public DataType(ComponentType componentType, int size)
         {
             index = (byte)componentType.index;
             kind = Kind.Component;
-            this.size = size;
+            this.size = (ushort)size;
         }
 
-        public DataType(ArrayElementType arrayType, ushort size)
+        public DataType(ArrayElementType arrayType, int size)
         {
             index = (byte)arrayType.index;
             kind = Kind.ArrayElement;
-            this.size = size;
+            this.size = (ushort)size;
         }
 
         public DataType(TagType tagType)
@@ -80,11 +80,11 @@ namespace Worlds
             size = 0;
         }
 
-        public DataType(int index, Kind kind, ushort size)
+        public DataType(int index, Kind kind, int size)
         {
             this.index = (byte)index;
             this.kind = kind;
-            this.size = size;
+            this.size = (ushort)size;
         }
 
         public readonly override string ToString()

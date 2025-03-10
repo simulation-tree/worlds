@@ -1,5 +1,4 @@
-﻿using Collections;
-using System;
+﻿using System;
 using System.Diagnostics;
 using Types;
 using Unmanaged;
@@ -10,7 +9,7 @@ namespace Worlds
 {
     public unsafe struct Schema : IDisposable, IEquatable<Schema>, ISerializable
     {
-        internal const int SizesLengthInBytes = sizeof(ushort) * BitMask.Capacity * 2;
+        internal const int SizesLengthInBytes = sizeof(int) * BitMask.Capacity * 2;
         internal const int TypeHashesLengthInBytes = sizeof(long) * BitMask.Capacity * 3;
 
         private static int createdSchemas;
@@ -231,32 +230,32 @@ namespace Worlds
             source.schema->typeHashes.CopyTo(schema->typeHashes, TypeHashesLengthInBytes);
         }
 
-        public readonly ushort GetComponentTypeSize(ComponentType componentType)
+        public readonly int GetComponentTypeSize(ComponentType componentType)
         {
             ThrowIfComponentTypeIsMissing(componentType);
 
-            return schema->sizes.Read<ushort>(componentType.index * 2);
+            return schema->sizes.Read<int>(componentType.index * sizeof(int));
         }
 
-        public readonly ushort GetComponentTypeSize(int index)
+        public readonly int GetComponentTypeSize(int index)
         {
             ThrowIfComponentTypeIsMissing(index);
 
-            return schema->sizes.Read<ushort>(index * 2);
+            return schema->sizes.Read<int>(index * sizeof(int));
         }
 
-        public readonly ushort GetArrayTypeSize(ArrayElementType arrayElementType)
+        public readonly int GetArrayTypeSize(ArrayElementType arrayElementType)
         {
             ThrowIfArrayTypeIsMissing(arrayElementType);
 
-            return schema->sizes.Read<ushort>(BitMask.Capacity * 2 + arrayElementType.index * 2);
+            return schema->sizes.Read<int>(BitMask.Capacity * sizeof(int) + arrayElementType.index * sizeof(int));
         }
 
-        public readonly ushort GetArrayTypeSize(int index)
+        public readonly int GetArrayTypeSize(int index)
         {
             ThrowIfArrayTypeIsMissing(index);
 
-            return schema->sizes.Read<ushort>(BitMask.Capacity * 2 + index * 2);
+            return schema->sizes.Read<int>(BitMask.Capacity * sizeof(int) + index * sizeof(int));
         }
 
         /// <summary>
@@ -398,7 +397,7 @@ namespace Worlds
 
             ThrowIfTooManyComponents();
 
-            Span<ushort> componentSizes = new(schema->sizes.Pointer, BitMask.Capacity);
+            Span<int> componentSizes = new(schema->sizes.Pointer, BitMask.Capacity);
             Span<long> componentHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
             ComponentType componentType = new(schema->componentCount);
             componentSizes[componentType.index] = type.Size;
@@ -427,7 +426,7 @@ namespace Worlds
             ThrowIfTooManyArrays();
 
             ArrayElementType arrayType = new(schema->arraysCount);
-            Span<ushort> arrayElementSizes = schema->sizes.AsSpan<ushort>(BitMask.Capacity, BitMask.Capacity);
+            Span<int> arrayElementSizes = schema->sizes.AsSpan<int>(BitMask.Capacity, BitMask.Capacity);
             Span<long> arrayElementHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
             arrayElementSizes[schema->arraysCount] = type.Size;
             arrayElementHashes[schema->arraysCount] = type.Hash;
@@ -627,7 +626,7 @@ namespace Worlds
                 Trace.WriteLine($"Cached component type for {typeof(T).FullName}");
             }
 
-            return new(index, DataType.Kind.Component, (ushort)sizeof(T));
+            return new(index, DataType.Kind.Component, sizeof(T));
         }
 
         public readonly DataType GetComponentDataType(TypeLayout type)
@@ -699,7 +698,7 @@ namespace Worlds
                 Trace.WriteLine($"Cached array element type for {typeof(T).FullName}");
             }
 
-            return new(index, DataType.Kind.ArrayElement, (ushort)sizeof(T));
+            return new(index, DataType.Kind.ArrayElement, sizeof(T));
         }
 
         public readonly DataType GetArrayDataType(TypeLayout type)
@@ -1550,7 +1549,7 @@ namespace Worlds
             writer.WriteValue(schema->arraysCount);
             writer.WriteValue(schema->tagsCount);
             writer.WriteValue(schema->definitionMask);
-            Span<ushort> sizes = new(schema->sizes.Pointer, BitMask.Capacity * 2);
+            Span<int> sizes = new(schema->sizes.Pointer, BitMask.Capacity * 2);
             Span<long> typeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity * 3);
             writer.WriteSpan(sizes);
             writer.WriteSpan(typeHashes);
@@ -1570,8 +1569,8 @@ namespace Worlds
             schema->arraysCount = reader.ReadValue<byte>();
             schema->tagsCount = reader.ReadValue<byte>();
             schema->definitionMask = reader.ReadValue<Definition>();
-            schema->sizes.CopyFrom<ushort>(reader.ReadSpan<ushort>(BitMask.Capacity * 2));
-            schema->typeHashes.CopyFrom<long>(reader.ReadSpan<long>(BitMask.Capacity * 3));
+            schema->sizes.CopyFrom(reader.ReadSpan<int>(BitMask.Capacity * 2));
+            schema->typeHashes.CopyFrom(reader.ReadSpan<long>(BitMask.Capacity * 3));
         }
 
         /// <summary>

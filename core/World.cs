@@ -898,7 +898,7 @@ namespace Worlds
                 {
                     if (arrayElementTypes.Contains(a))
                     {
-                        ushort arrayElementSize = world->schema.GetArrayTypeSize(a);
+                        int arrayElementSize = world->schema.GetArrayTypeSize(a);
                         arrays[a] = new(new Array(0, arrayElementSize));
                     }
                 }
@@ -946,7 +946,7 @@ namespace Worlds
                 {
                     if (arrayElementTypes.Contains(a))
                     {
-                        ushort arrayElementSize = world->schema.GetArrayTypeSize(a);
+                        int arrayElementSize = world->schema.GetArrayTypeSize(a);
                         arrays[a] = new(new Array(0, arrayElementSize));
                     }
                 }
@@ -1598,7 +1598,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfArrayIsAlreadyPresent(entity, arrayType);
 
-            ushort stride = world->schema.GetArrayTypeSize(arrayType);
+            int stride = world->schema.GetArrayTypeSize(arrayType);
             ref Slot slot = ref world->slots[(int)entity];
             Chunk previousChunk = slot.chunk;
             Definition previousDefinition = previousChunk.Definition;
@@ -2180,7 +2180,7 @@ namespace Worlds
         /// <summary>
         /// Adds a new default component with the given type.
         /// </summary>
-        public readonly MemoryAddress AddComponent(uint entity, int componentType, out ushort componentSize)
+        public readonly MemoryAddress AddComponent(uint entity, int componentType, out int componentSize)
         {
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
@@ -2228,7 +2228,7 @@ namespace Worlds
 
             slot.chunk = destinationChunk;
             int index = previousChunk.MoveEntity(entity, destinationChunk);
-            MemoryAddress component = destinationChunk.GetComponent(index, componentType, out ushort componentSize);
+            MemoryAddress component = destinationChunk.GetComponent(index, componentType, out int componentSize);
 
             //todo: efficiency: this could be eliminated, but would need awareness given to the user about the size of the component
             Span<byte> destination = component.GetSpan(Math.Min(componentSize, componentBytes.Length));
@@ -2395,7 +2395,7 @@ namespace Worlds
         /// Retrieves the component of the given <paramref name="componentType"/> from the given <paramref name="entity"/>
         /// as a pointer.
         /// </summary>
-        public readonly MemoryAddress GetComponent(uint entity, int componentType, out ushort componentSize)
+        public readonly MemoryAddress GetComponent(uint entity, int componentType, out int componentSize)
         {
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
@@ -2413,7 +2413,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentMissing(entity, componentType);
 
-            MemoryAddress component = world->slots[(int)entity].chunk.GetComponentOfEntity(entity, componentType, out ushort componentSize);
+            MemoryAddress component = world->slots[(int)entity].chunk.GetComponentOfEntity(entity, componentType, out int componentSize);
             return new(component.Pointer, componentSize);
         }
 
@@ -2438,7 +2438,7 @@ namespace Worlds
 
             TypeLayout layout = arrayElementType.GetLayout(world->schema);
             Values array = GetArray(entity, arrayElementType);
-            ushort size = layout.Size;
+            int size = layout.Size;
             object[] arrayObject = new object[array.Length];
             for (int i = 0; i < array.Length; i++)
             {
@@ -2556,7 +2556,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentMissing(entity, componentType);
 
-            MemoryAddress component = world->slots[(int)entity].chunk.GetComponentOfEntity(entity, componentType, out ushort componentSize);
+            MemoryAddress component = world->slots[(int)entity].chunk.GetComponentOfEntity(entity, componentType, out int componentSize);
             Span<byte> destination = component.GetSpan(Math.Min(componentSize, componentBytes.Length));
             componentBytes.CopyTo(destination);
         }
@@ -2593,7 +2593,7 @@ namespace Worlds
                         destinationWorld.AddComponent(destinationEntity, c);
                     }
 
-                    MemoryAddress sourceComponent = sourceChunk.GetComponent(sourceIndex, c, out ushort componentSize);
+                    MemoryAddress sourceComponent = sourceChunk.GetComponent(sourceIndex, c, out int componentSize);
                     MemoryAddress destinationComponent = destinationWorld.GetComponent(destinationEntity, c);
                     sourceComponent.CopyTo(destinationComponent, componentSize);
                 }
@@ -2880,9 +2880,9 @@ namespace Worlds
                 for (uint i = 0; i < componentCount; i++)
                 {
                     byte c = reader.ReadValue<byte>();
-                    MemoryAddress component = value.AddComponent(createdEntity, c, out ushort componentSize);
+                    MemoryAddress component = value.AddComponent(createdEntity, c, out int componentSize);
                     Span<byte> componentData = reader.ReadSpan<byte>(componentSize);
-                    component.CopyFrom<byte>(componentData);
+                    component.CopyFrom(componentData);
                 }
 
                 //read arrays
@@ -2891,7 +2891,7 @@ namespace Worlds
                 {
                     byte a = reader.ReadValue<byte>();
                     int length = reader.ReadValue<int>();
-                    ushort arrayElementSize = schema.GetArrayTypeSize(a);
+                    int arrayElementSize = schema.GetArrayTypeSize(a);
                     Values array = value.CreateArray(createdEntity, a, arrayElementSize, length);
                     Span<byte> arrayData = reader.ReadSpan<byte>(length * arrayElementSize);
                     arrayData.CopyTo(array.AsSpan());

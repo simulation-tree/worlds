@@ -142,6 +142,7 @@ namespace Worlds.Tests
             uint b = world.CreateEntity();
             Assert.That(world.ContainsEntity(b), Is.True);
             Assert.That(world.Count, Is.EqualTo(1));
+            Assert.That(world.ContainsComponent<SimpleComponent>(b), Is.False);
         }
 
         [Test]

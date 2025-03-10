@@ -121,6 +121,11 @@ namespace Worlds.Tests
             Assert.That(charType.kind, Is.EqualTo(DataType.Kind.ArrayElement));
             Assert.That(intType.size, Is.EqualTo(0));
             Assert.That(intType.kind, Is.EqualTo(DataType.Kind.Tag));
+
+            Assert.That(schema.GetComponentTypeSize(boolType.index), Is.EqualTo(sizeof(bool)));
+            Assert.That(schema.GetComponentTypeSize(byteType.index), Is.EqualTo(sizeof(byte)));
+            Assert.That(schema.GetComponentTypeSize(shortType.index), Is.EqualTo(sizeof(short)));
+            Assert.That(schema.GetArrayTypeSize(charType.index), Is.EqualTo(sizeof(char)));
         }
 
         [Test]

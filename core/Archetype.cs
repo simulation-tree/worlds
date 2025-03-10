@@ -45,12 +45,12 @@ namespace Worlds
             {
                 if (definition.ComponentTypes.Contains(i))
                 {
-                    componentSizes[i] = schema.GetComponentTypeSize(i);
+                    componentSizes[i] = (ushort)schema.GetComponentTypeSize(i);
                 }
 
                 if (definition.ArrayTypes.Contains(i))
                 {
-                    arrayElementSizes[i] = schema.GetArrayTypeSize(i);
+                    arrayElementSizes[i] = (ushort)schema.GetArrayTypeSize(i);
                 }
             }
         }
@@ -94,12 +94,12 @@ namespace Worlds
             return arrayElementSizes[arrayType.index];
         }
 
-        public readonly ushort GetComponentSize<T>() where T : unmanaged
+        public readonly int GetComponentSize<T>() where T : unmanaged
         {
             return schema.GetComponentTypeSize(schema.GetComponentTypeIndex<T>());
         }
 
-        public readonly ushort GetArrayElementSize<T>() where T : unmanaged
+        public readonly int GetArrayElementSize<T>() where T : unmanaged
         {
             return schema.GetArrayTypeSize(schema.GetArrayTypeIndex<T>());
         }
@@ -179,7 +179,7 @@ namespace Worlds
             ThrowIfComponentTypeIsPresent(componentType);
 
             definition.AddComponentType(componentType);
-            componentSizes[componentType.index] = schema.GetComponentTypeSize(componentType);
+            componentSizes[componentType.index] = (ushort)schema.GetComponentTypeSize(componentType);
         }
 
         /// <summary>
@@ -202,7 +202,7 @@ namespace Worlds
             ThrowIfArrayElementTypeIsPresent(arrayType);
 
             definition.AddArrayType(arrayType);
-            arrayElementSizes[arrayType.index] = schema.GetArrayTypeSize(arrayType);
+            arrayElementSizes[arrayType.index] = (ushort)schema.GetArrayTypeSize(arrayType);
         }
 
         /// <summary>
