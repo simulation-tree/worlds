@@ -63,9 +63,21 @@ namespace Worlds.Tests
             Assert.That(world.GetParent(b), Is.EqualTo(a));
             Assert.That(world.GetParent(c), Is.EqualTo(b));
             Assert.That(world.GetParent(d), Is.EqualTo(c));
-            Assert.That(world.GetChildren(a).ToArray(), Has.Member(b));
-            Assert.That(world.GetChildren(b).ToArray(), Has.Member(c));
-            Assert.That(world.GetChildren(c).ToArray(), Has.Member(d));
+
+            Span<uint> children = stackalloc uint[4];
+            int childCount = world.CopyChildrenTo(a, children);
+            Assert.That(childCount, Is.EqualTo(2));
+            Assert.That(children.ToArray(), Has.Member(b));
+            Assert.That(children.ToArray(), Has.Member(e));
+
+            childCount = world.CopyChildrenTo(b, children);
+            Assert.That(childCount, Is.EqualTo(1));
+            Assert.That(children.ToArray(), Has.Member(c));
+
+            childCount = world.CopyChildrenTo(c, children);
+            Assert.That(childCount, Is.EqualTo(1));
+            Assert.That(children.ToArray(), Has.Member(d));
+
             world.DestroyEntity(a);
             Assert.That(world.ContainsEntity(a), Is.False);
             Assert.That(world.ContainsEntity(b), Is.False);

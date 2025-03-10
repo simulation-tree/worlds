@@ -240,11 +240,6 @@ namespace Worlds
             for (int e = 1; e < world->slots.Count; e++)
             {
                 ref Slot slot = ref world->slots[e];
-                if (slot.ContainsChildren)
-                {
-                    slot.children.Dispose();
-                }
-
                 if (slot.ContainsReferences)
                 {
                     slot.references.Dispose();
@@ -613,41 +608,38 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
 
             ref Slot slot = ref world->slots[(int)entity];
-            slot.flags |= Slot.Flags.Outdated;
-            slot.state = Slot.State.Free;
             if (slot.ContainsChildren)
             {
-                ref List<uint> children = ref slot.children;
-                Span<uint> childrenSpan = children.AsSpan();
+                Span<uint> children = stackalloc uint[slot.childrenCount];
+                CopyChildrenTo(entity, children);
                 if (destroyChildren)
                 {
                     //destroy children
-                    for (int i = 0; i < childrenSpan.Length; i++)
+                    for (int i = 0; i < children.Length; i++)
                     {
-                        uint child = childrenSpan[i];
+                        uint child = children[i];
                         DestroyEntity(child, true);
                     }
                 }
                 else
                 {
                     //unparent children
-                    for (int i = 0; i < childrenSpan.Length; i++)
+                    for (int i = 0; i < children.Length; i++)
                     {
-                        uint child = childrenSpan[i];
+                        uint child = children[i];
                         ref Slot childSlot = ref world->slots[(int)child];
                         childSlot.parent = default;
                     }
                 }
             }
 
-            //remove from parents children list
-            if (slot.parent != default)
-            {
-                ref List<uint> parentChildren = ref world->slots[(int)slot.parent].children;
-                parentChildren.RemoveAtBySwapping(parentChildren.IndexOf(entity));
-                slot.parent = default;
-            }
+            slot.flags |= Slot.Flags.Outdated;
+            slot.state = Slot.State.Free;
 
+            //remove from parents children list
+            ref Slot parentSlot = ref world->slots[(int)slot.parent]; //it can be 0, which is ok
+            parentSlot.childrenCount--;
+            slot.parent = default;
             slot.chunk.RemoveEntity(entity);
             world->freeEntities.Push(entity);
             NotifyDestruction(entity);
@@ -749,17 +741,15 @@ namespace Worlds
             //modify descendants
             if (entitySlot.ContainsChildren)
             {
-                List<uint> children = entitySlot.children;
-
                 //todo: this temporary allocation can be avoided by tracking how large the tree is
                 //and then using stackalloc
-                using Stack<uint> stack = new(children.Count * 2);
-                stack.PushRange(children.AsSpan());
+                using Stack<uint> stack = new(4);
+                PushChildrenToStack(this, stack, entity);
 
                 while (stack.Count > 0)
                 {
-                    uint current = stack.Pop();
-                    ref Slot currentSlot = ref world->slots[(int)current];
+                    uint currentEntity = stack.Pop();
+                    ref Slot currentSlot = ref world->slots[(int)currentEntity];
                     if (enabled && currentSlot.state == Slot.State.DisabledButLocallyEnabled)
                     {
                         currentSlot.state = Slot.State.Enabled;
@@ -794,14 +784,22 @@ namespace Worlds
                         }
 
                         currentSlot.chunk = newChunk;
-                        previousChunk.MoveEntity(current, newChunk);
+                        previousChunk.MoveEntity(currentEntity, newChunk);
                     }
 
                     //check through children
                     if (currentSlot.ContainsChildren && !currentSlot.ChildrenOutdated)
                     {
-                        stack.PushRange(currentSlot.children.AsSpan());
+                        PushChildrenToStack(this, stack, currentEntity);
                     }
+                }
+
+                static void PushChildrenToStack(World world, Stack<uint> stack, uint entity)
+                {
+                    Slot slot = world.world->slots[(int)entity];
+                    Span<uint> children = stackalloc uint[slot.childrenCount];
+                    world.CopyChildrenTo(entity, children);
+                    stack.PushRange(children);
                 }
             }
         }
@@ -1155,23 +1153,23 @@ namespace Worlds
                 if (oldParent != default)
                 {
                     ref Slot oldParentSlot = ref world->slots[(int)oldParent];
-                    oldParentSlot.children.RemoveAtBySwapping(oldParentSlot.children.IndexOf(entity));
+                    oldParentSlot.childrenCount--;
                 }
 
                 ref Slot newParentSlot = ref world->slots[(int)newParent];
                 if (!newParentSlot.ContainsChildren)
                 {
-                    newParentSlot.children = new(4);
+                    newParentSlot.childrenCount = 0;
                     newParentSlot.flags |= Slot.Flags.ContainsChildren;
                     newParentSlot.flags &= ~Slot.Flags.ChildrenOutdated;
                 }
                 else if (newParentSlot.ChildrenOutdated)
                 {
-                    newParentSlot.children.Clear();
+                    newParentSlot.childrenCount = 0;
                     newParentSlot.flags &= ~Slot.Flags.ChildrenOutdated;
                 }
 
-                newParentSlot.children.Add(entity);
+                newParentSlot.childrenCount++;
 
                 //update state if parent is disabled
                 if (entitySlot.state == Slot.State.Enabled)
@@ -1217,22 +1215,26 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Retrieves all children of the <paramref name="entity"/> entity.
+        /// Retrieves all children of the <paramref name="entity"/> entity
+        /// and writes them to the <paramref name="children"/> span.
         /// </summary>
-        public readonly ReadOnlySpan<uint> GetChildren(uint entity)
+        /// <returns>How many children there are.</returns>
+        public readonly int CopyChildrenTo(uint entity, Span<uint> children)
         {
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            ref Slot slot = ref world->slots[(int)entity];
-            if (slot.ContainsChildren && !slot.ChildrenOutdated)
+            int count = 0;
+            for (uint e = 1; e < world->slots.Count; e++)
             {
-                return world->slots[(int)entity].children.AsSpan();
+                ref Slot slot = ref world->slots[(int)e];
+                if (slot.parent == entity)
+                {
+                    children[count++] = e;
+                }
             }
-            else
-            {
-                return default;
-            }
+
+            return count;
         }
 
         /// <summary>
@@ -1265,7 +1267,7 @@ namespace Worlds
             ref Slot slot = ref world->slots[(int)entity];
             if (slot.ContainsChildren && !slot.ChildrenOutdated)
             {
-                return slot.children.Count;
+                return slot.childrenCount;
             }
             else
             {
@@ -2451,6 +2453,26 @@ namespace Worlds
         /// Attempts to retrieve a reference to the component of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
         /// </summary>
         /// <returns><c>true</c> if the component is found.</returns>
+        public readonly ref T TryGetComponent<T>(uint entity, int componentType, out bool contains) where T : unmanaged
+        {
+            MemoryAddress.ThrowIfDefault(world);
+
+            ref Chunk chunk = ref world->slots[(int)entity].chunk;
+            contains = chunk.Definition.ComponentTypes.Contains(componentType);
+            if (contains)
+            {
+                return ref chunk.GetComponentOfEntity<T>(entity, componentType);
+            }
+            else
+            {
+                return ref *(T*)default(nint);
+            }
+        }
+
+        /// <summary>
+        /// Attempts to retrieve a reference to the component of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
+        /// </summary>
+        /// <returns><c>true</c> if the component is found.</returns>
         public readonly ref T TryGetComponent<T>(uint entity, out bool contains) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(world);
@@ -2465,6 +2487,27 @@ namespace Worlds
             else
             {
                 return ref *(T*)default(nint);
+            }
+        }
+
+        /// <summary>
+        /// Attempts to retrieve the component of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
+        /// </summary>
+        /// <returns><c>true</c> if found.</returns>
+        public readonly bool TryGetComponent<T>(uint entity, int componentType, out T component) where T : unmanaged
+        {
+            MemoryAddress.ThrowIfDefault(world);
+
+            ref Chunk chunk = ref world->slots[(int)entity].chunk;
+            if (chunk.Definition.ComponentTypes.Contains(componentType))
+            {
+                component = chunk.GetComponentOfEntity<T>(entity, componentType);
+                return true;
+            }
+            else
+            {
+                component = default;
+                return false;
             }
         }
 
@@ -2893,10 +2936,9 @@ namespace Worlds
                     if (!parentSlot.ContainsChildren)
                     {
                         parentSlot.flags |= Slot.Flags.ContainsChildren;
-                        parentSlot.children = new(4);
                     }
 
-                    parentSlot.children.Add(e);
+                    parentSlot.childrenCount++;
                 }
             }
 

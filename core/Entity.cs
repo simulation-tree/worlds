@@ -27,7 +27,7 @@ namespace Worlds
             }
         }
 
-        public readonly ReadOnlySpan<uint> Children => world.GetChildren(value);
+        public readonly int ChildCount => world.GetChildCount(value);
 
 #if NET
         [Obsolete("Default constructor not supported", true)]
@@ -80,17 +80,21 @@ namespace Worlds
         public readonly bool TryGetParent(out Entity parent)
         {
             uint parentValue = world.GetParent(value);
-            bool hasParent = parentValue != default;
-            if (hasParent)
+            if (parentValue != default)
             {
                 parent = new Entity(world, parentValue);
+                return true;
             }
             else
             {
                 parent = default;
+                return false;
             }
+        }
 
-            return hasParent;
+        public readonly int CopyChildrenTo(Span<uint> destination)
+        {
+            return world.CopyChildrenTo(value, destination);
         }
 
         public readonly bool Is<T>() where T : unmanaged, IEntity
@@ -429,7 +433,8 @@ namespace Worlds
                         this.parent = default;
                     }
 
-                    ReadOnlySpan<uint> children = world.GetChildren(value);
+                    Span<uint> children = stackalloc uint[world.GetChildCount(value)];
+                    world.CopyChildrenTo(value, children);
                     this.children = new Entity[children.Length];
                     for (int i = 0; i < children.Length; i++)
                     {

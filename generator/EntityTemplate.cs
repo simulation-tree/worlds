@@ -27,7 +27,7 @@
         }
     }
         
-    public readonly ReadOnlySpan<uint> Children => world.GetChildren(value);
+    public readonly int ChildCount => world.GetChildCount(value);
     
     public readonly bool IsCompliant
     {
@@ -70,6 +70,11 @@
         }
 
         return hasParent;
+    }
+
+    public readonly int CopyChildrenTo(Span<uint> destination)
+    {
+        return world.CopyChildrenTo(value, destination);
     }
 
     public readonly bool Is<T>() where T : unmanaged, IEntity
@@ -194,52 +199,52 @@
         return new Entity(world, world.CloneEntity(value)).As<{{TypeName}}>();
     }
 
-    public readonly bool ContainsComponent(ComponentType componentType)
+    public readonly bool ContainsComponent(int componentType)
     {
         return world.ContainsComponent(value, componentType);
     }
 
-    public readonly bool ContainsArray(ArrayElementType arrayType)
+    public readonly bool ContainsArray(int arrayType)
     {
         return world.ContainsArray(value, arrayType);
     }
 
-    public readonly void AddComponent(ComponentType componentType)
+    public readonly void AddComponent(int componentType)
     {
         world.AddComponent(value, componentType);
     }
 
-    public readonly void RemoveComponent(ComponentType componentType)
+    public readonly void RemoveComponent(int componentType)
     {
         world.RemoveComponent(value, componentType);
     }
 
-    public readonly Values CreateArray(ArrayElementType arrayElementType, int length = 0)
+    public readonly Values CreateArray(int arrayType, int length = 0)
     {
-        return world.CreateArray(value, arrayElementType, length);
+        return world.CreateArray(value, arrayType, length);
     }
 
-    public readonly Values GetArray(ArrayElementType arrayElementType)
+    public readonly Values GetArray(int arrayType)
     {
-        return world.GetArray(value, arrayElementType);
+        return world.GetArray(value, arrayType);
     }
 
-    public readonly void DestroyArray(ArrayElementType arrayElementType)
+    public readonly void DestroyArray(int arrayType)
     {
-        world.DestroyArray(value, arrayElementType);
+        world.DestroyArray(value, arrayType);
     }
 
-    public readonly void AddTag(TagType tagType)
+    public readonly void AddTag(int tagType)
     {
         world.AddTag(value, tagType);
     }
 
-    public readonly bool ContainsTag(TagType tagType)
+    public readonly bool ContainsTag(int tagType)
     {
         return world.ContainsTag(value, tagType);
     }
 
-    public readonly void RemoveTag(TagType tagType)
+    public readonly void RemoveTag(int tagType)
     {
         world.RemoveTag(value, tagType);
     }
@@ -259,14 +264,24 @@
         return world.GetComponentOrDefault<T>(value, defaultValue);
     }
 
-    public readonly ref T GetComponent<T>(ComponentType componentType) where T : unmanaged
+    public readonly ref T GetComponent<T>(int componentType) where T : unmanaged
     {
         return ref world.GetComponent<T>(value, componentType);
+    }
+
+    public readonly bool TryGetComponent<T>(int componentType, out T component) where T : unmanaged
+    {
+        return world.TryGetComponent(value, componentType, out component);
     }
 
     public readonly bool TryGetComponent<T>(out T component) where T : unmanaged
     {
         return world.TryGetComponent(value, out component);
+    }
+
+    public readonly ref T TryGetComponent<T>(int componentType, out bool contains) where T : unmanaged
+    {
+        return ref world.TryGetComponent<T>(value, componentType, out contains);
     }
 
     public readonly ref T TryGetComponent<T>(out bool contains) where T : unmanaged
@@ -304,7 +319,7 @@
         return world.GetArrayLength<T>(value);
     }
 
-    public readonly int GetArrayLength(ArrayElementType arrayType)
+    public readonly int GetArrayLength(int arrayType)
     {
         return world.GetArrayLength(value, arrayType);
     }
@@ -319,7 +334,7 @@
         return world.GetArray<T>(value);
     }
 
-    public readonly Values<T> GetArray<T>(ArrayElementType arrayType) where T : unmanaged
+    public readonly Values<T> GetArray<T>(int arrayType) where T : unmanaged
     {
         return world.GetArray<T>(value, arrayType);
     }
