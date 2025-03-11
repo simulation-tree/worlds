@@ -174,9 +174,11 @@ namespace Worlds
                 MemoryAddress.ThrowIfDefault(world);
 
                 int i = 0;
-                for (uint e = 1; e < world->slots.Count; e++)
+                int slotCount = world->slots.Count;
+                Span<uint> freeEntities = world->freeEntities.AsSpan();
+                for (uint e = 1; e < slotCount; e++)
                 {
-                    if (!world->freeEntities.Contains(e))
+                    if (!freeEntities.Contains(e))
                     {
                         if (i == index)
                         {
@@ -236,9 +238,10 @@ namespace Worlds
 
             Clear();
 
-            for (int e = 1; e < world->slots.Count; e++)
+            Span<Slot> slots = world->slots.AsSpan();
+            for (int e = 1; e < slots.Length; e++)
             {
-                ref Slot slot = ref world->slots[e];
+                Slot slot = slots[e];
                 if (slot.ContainsReferences)
                 {
                     slot.references.Dispose();
@@ -248,11 +251,10 @@ namespace Worlds
                 {
                     for (int a = 0; a < BitMask.Capacity; a++)
                     {
-                        ref Values array = ref slot.arrays[a];
+                        Values array = slot.arrays[a];
                         if (array.pointer is not null)
                         {
                             array.Dispose();
-                            array = default;
                         }
                     }
 
@@ -278,16 +280,18 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(world);
 
-            for (int i = 0; i < world->uniqueChunks.Count; i++)
+            Span<Chunk> uniqueChunks = world->uniqueChunks.AsSpan();
+            for (int i = 0; i < uniqueChunks.Length; i++)
             {
-                world->uniqueChunks[i].Dispose();
+                uniqueChunks[i].Dispose();
             }
 
             world->uniqueChunks.Clear();
 
-            for (uint e = 1; e < world->slots.Count; e++)
+            Span<Slot> slots = world->slots.AsSpan();
+            for (uint e = 1; e < slots.Length; e++)
             {
-                ref Slot slot = ref world->slots[(int)e];
+                ref Slot slot = ref slots[(int)e];
                 if (slot.state == Slot.State.Free)
                 {
                     continue;
@@ -455,9 +459,11 @@ namespace Worlds
             writer.WriteObject(world->schema);
             writer.WriteValue(Count);
             writer.WriteValue(MaxEntityValue);
-            for (uint e = 1; e < world->slots.Count; e++)
+
+            Span<Slot> slots = world->slots.AsSpan();
+            for (uint e = 1; e < slots.Length; e++)
             {
-                ref Slot slot = ref world->slots[(int)e];
+                ref Slot slot = ref slots[(int)e];
                 if (slot.state == Slot.State.Free)
                 {
                     continue;
@@ -506,9 +512,9 @@ namespace Worlds
             }
 
             //write references
-            for (uint e = 1; e < world->slots.Count; e++)
+            for (uint e = 1; e < slots.Length; e++)
             {
-                if (world->slots[(int)e].state == Slot.State.Free)
+                if (slots[(int)e].state == Slot.State.Free)
                 {
                     continue;
                 }
@@ -534,10 +540,11 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(world);
 
-            List<Slot> sourceSlots = sourceWorld.world->slots;
-            for (uint e = 1; e < sourceSlots.Count; e++)
+            Span<Slot> sourceSlots = sourceWorld.world->slots.AsSpan();
+            Span<uint> freeEntities = sourceWorld.world->freeEntities.AsSpan();
+            for (uint e = 1; e < sourceSlots.Length; e++)
             {
-                if (sourceWorld.world->freeEntities.Contains(e))
+                if (freeEntities.Contains(e))
                 {
                     continue;
                 }
@@ -2895,9 +2902,10 @@ namespace Worlds
             }
 
             //assign references and children
-            for (uint e = 1; e < value.world->slots.Count; e++)
+            Span<Slot> slots = value.world->slots.AsSpan();
+            for (uint e = 1; e < slots.Length; e++)
             {
-                ref Slot slot = ref value.world->slots[(int)e];
+                ref Slot slot = ref slots[(int)e];
                 if (slot.state == Slot.State.Free)
                 {
                     continue;
