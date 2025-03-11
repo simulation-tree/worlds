@@ -109,6 +109,18 @@ namespace Worlds
             return pointer->items.AsSpan<X>(start, length);
         }
 
+        /// <summary>
+        /// Makes the array empty.
+        /// </summary>
+        public readonly void Clear()
+        {
+            pointer->length = 0;
+            MemoryAddress.Resize(ref pointer->items, sizeof(T) * pointer->length);
+        }
+
+        /// <summary>
+        /// Adds the given <paramref name="item"/> to the end.
+        /// </summary>
         public readonly void Add(T item)
         {
             int newLength = pointer->length + 1;
@@ -117,6 +129,10 @@ namespace Worlds
             pointer->length = newLength;
         }
 
+        /// <summary>
+        /// Adds a <see langword="default"/> item to the end, and retrieves
+        /// it by reference.
+        /// </summary>
         public readonly ref T Add()
         {
             int newLength = pointer->length + 1;
@@ -125,6 +141,31 @@ namespace Worlds
             return ref pointer->items.ReadElement<T>(pointer->length - 1);
         }
 
+        /// <summary>
+        /// Adds a <see langword="default"/> item to the end.
+        /// </summary>
+        public readonly void AddDefault()
+        {
+            int newLength = pointer->length + 1;
+            MemoryAddress.Resize(ref pointer->items, sizeof(T) * newLength);
+            pointer->items.Clear(pointer->length * sizeof(T), sizeof(T));
+            pointer->length = newLength;
+        }
+
+        /// <summary>
+        /// Adds a range of <see langword="default"/> items to the end.
+        /// </summary>
+        public readonly void AddDefault(int count)
+        {
+            int newLength = pointer->length + count;
+            MemoryAddress.Resize(ref pointer->items, sizeof(T) * newLength);
+            pointer->items.Clear(pointer->length * sizeof(T), sizeof(T) * count);
+            pointer->length = newLength;
+        }
+
+        /// <summary>
+        /// Adds the given <paramref name="items"/> to the end.
+        /// </summary>
         public readonly void AddRange(ReadOnlySpan<T> items)
         {
             int newLength = pointer->length + items.Length;
@@ -133,6 +174,10 @@ namespace Worlds
             pointer->length = newLength;
         }
 
+        /// <summary>
+        /// Removes the elements at the given <paramref name="index"/> by swapping
+        /// it with the last elements.
+        /// </summary>
         public readonly void RemoveAtBySwapback(int index)
         {
             ThrowIfOutOfRange(index);
@@ -143,6 +188,10 @@ namespace Worlds
             MemoryAddress.Resize(ref pointer->items, sizeof(T) * pointer->length);
         }
 
+        /// <summary>
+        /// Removes the elements at the given <paramref name="index"/> by shifting
+        /// other elements.
+        /// </summary>
         public readonly void RemoveAt(int index)
         {
             ThrowIfOutOfRange(index);
