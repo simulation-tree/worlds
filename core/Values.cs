@@ -9,7 +9,7 @@ namespace Worlds
 {
     public unsafe readonly struct Values<T> where T : unmanaged
     {
-        internal readonly Pointer* pointer;
+        private readonly Pointer* pointer;
 
         public readonly int Length
         {
@@ -26,7 +26,15 @@ namespace Worlds
             }
         }
 
-        public readonly ref T this[int index] => ref pointer->items.ReadElement<T>(index);
+        public readonly ref T this[int index]
+        {
+            get
+            {
+                ThrowIfOutOfRange(index);
+
+                return ref pointer->items.ReadElement<T>(index);
+            }
+        }
 
         internal Values(Array<T> array)
         {
@@ -44,6 +52,15 @@ namespace Worlds
             if (sizeof(T) != sizeof(X))
             {
                 throw new InvalidOperationException($"Size mismatch between {typeof(T).Name} and {typeof(X).Name}");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfOutOfRange(int index)
+        {
+            if (index >= pointer->length)
+            {
+                throw new InvalidOperationException($"Index {index} is out of range for values of length {pointer->length}");
             }
         }
         public readonly Values<X> As<X>() where X : unmanaged
@@ -70,11 +87,23 @@ namespace Worlds
             return pointer->items.AsSpan<T>(start, pointer->length - start);
         }
 
+        public readonly Span<T> AsSpan(int start, int length)
+        {
+            return pointer->items.AsSpan<T>(start, length);
+        }
+
         public readonly Span<X> AsSpan<X>(int start) where X : unmanaged
         {
             ThrowIfSizeMismatch<X>();
 
             return pointer->items.AsSpan<X>(start, pointer->length - start);
+        }
+
+        public readonly Span<X> AsSpan<X>(int start, int length) where X : unmanaged
+        {
+            ThrowIfSizeMismatch<X>();
+
+            return pointer->items.AsSpan<X>(start, length);
         }
 
         public readonly void Add(T item)
@@ -101,24 +130,64 @@ namespace Worlds
             pointer->length = newLength;
         }
 
+        public readonly void RemoveAtBySwapback(int index)
+        {
+            ThrowIfOutOfRange(index);
+
+            int newLength = pointer->length - 1;
+            this[index] = this[newLength];
+            pointer->length = newLength;
+            MemoryAddress.Resize(ref pointer->items, sizeof(T) * pointer->length);
+        }
+
+        public readonly void RemoveAt(int index)
+        {
+            ThrowIfOutOfRange(index);
+
+            int newLength = pointer->length - 1;
+            if (index == 0)
+            {
+                AsSpan(1).CopyTo(AsSpan());
+            }
+            else if (index < newLength)
+            {
+                AsSpan(index + 1).CopyTo(AsSpan(index));
+            }
+
+            pointer->length = newLength;
+            MemoryAddress.Resize(ref pointer->items, sizeof(T) * pointer->length);
+        }
+
         public readonly Span<T>.Enumerator GetEnumerator()
         {
             return new Span<T>(pointer->items.Pointer, pointer->length).GetEnumerator();
         }
 
         /// <summary>
-        /// Copies data from the given <paramref name="span"/> into the array without resizing.
+        /// Copies the state of the <paramref name="span"/>.
         /// </summary>
         public readonly void CopyFrom(Span<T> span)
         {
+            if (span.Length != pointer->length)
+            {
+                pointer->length = span.Length;
+                MemoryAddress.Resize(ref pointer->items, sizeof(T) * pointer->length);
+            }
+
             pointer->items.Write(span);
         }
 
         /// <summary>
-        /// Copies data from the given <paramref name="span"/> into the array without resizing.
+        /// Copies the state of the <paramref name="span"/>.
         /// </summary>
         public readonly void CopyFrom(ReadOnlySpan<T> span)
         {
+            if (span.Length != pointer->length)
+            {
+                pointer->length = span.Length;
+                MemoryAddress.Resize(ref pointer->items, sizeof(T) * pointer->length);
+            }
+
             pointer->items.Write(span);
         }
 
@@ -128,10 +197,13 @@ namespace Worlds
         }
     }
 
-    public unsafe readonly struct Values
+    public unsafe readonly struct Values : IEquatable<Values>
     {
         internal readonly Pointer* pointer;
 
+        /// <summary>
+        /// Length of the array.
+        /// </summary>
         public readonly int Length
         {
             get => pointer->length;
@@ -147,7 +219,15 @@ namespace Worlds
         }
 
         public readonly int Stride => pointer->stride;
-        public readonly MemoryAddress this[int index] => new(pointer->items.Pointer + pointer->stride * index);
+        public readonly MemoryAddress this[int index]
+        {
+            get
+            {
+                ThrowIfOutOfRange(index);
+
+                return new(pointer->items.Pointer + pointer->stride * index);
+            }
+        }
 
         internal Values(Array array)
         {
@@ -165,6 +245,24 @@ namespace Worlds
             array.Dispose();
         }
 
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfOutOfRange(int index)
+        {
+            if (index >= pointer->length)
+            {
+                throw new ArgumentOutOfRangeException($"Index {index} is out of range for {pointer->length} values");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfGreaterThanStride<T>() where T : unmanaged
+        {
+            if (sizeof(T) > pointer->stride)
+            {
+                throw new InvalidOperationException($"Size of {sizeof(T)} is greater than {pointer->stride}");
+            }
+        }
+
         public readonly Span<byte> AsSpan()
         {
             return new(pointer->items.Pointer, pointer->length * pointer->stride);
@@ -180,29 +278,30 @@ namespace Worlds
             return new(pointer->items.Pointer + bytePosition, byteLength);
         }
 
-        public readonly void Write<T>(Span<T> values) where T : unmanaged
+        public readonly void Add<T>(T item) where T : unmanaged
         {
-            pointer->items.Write(values);
+            ThrowIfGreaterThanStride<T>();
+
+            int newLength = pointer->length + 1;
+            MemoryAddress.Resize(ref pointer->items, pointer->stride * newLength);
+            pointer->items.WriteElement(pointer->length, item);
+            pointer->length = newLength;
         }
 
-        public readonly void Write<T>(ReadOnlySpan<T> values) where T : unmanaged
+        public readonly ref T Get<T>(int index) where T : unmanaged
         {
-            pointer->items.Write(values);
+            ThrowIfOutOfRange(index);
+            ThrowIfGreaterThanStride<T>();
+
+            return ref pointer->items.Read<T>(pointer->stride * index);
         }
 
-        public readonly void Write<T>(int bytePosition, T value) where T : unmanaged
+        public readonly void Set<T>(int index, T value) where T : unmanaged
         {
-            pointer->items.Write(bytePosition, value);
-        }
+            ThrowIfOutOfRange(index);
+            ThrowIfGreaterThanStride<T>();
 
-        public readonly void Write<T>(int bytePosition, ReadOnlySpan<T> values) where T : unmanaged
-        {
-            pointer->items.Write(bytePosition, values);
-        }
-
-        public readonly void Write<T>(int bytePosition, Span<T> values) where T : unmanaged
-        {
-            pointer->items.Write(bytePosition, values);
+            pointer->items.Write(pointer->stride * index, value);
         }
 
         public readonly MemoryAddress Read(int bytePosition)
@@ -210,19 +309,64 @@ namespace Worlds
             return pointer->items.Read(bytePosition);
         }
 
-        public readonly ref T Read<T>(int bytePosition) where T : unmanaged
+        /// <summary>
+        /// Copies the state from the given <paramref name="bytes"/>.
+        /// </summary>
+        public readonly void CopyFrom(ReadOnlySpan<byte> bytes)
         {
-            return ref pointer->items.Read<T>(bytePosition);
+            int length = bytes.Length / pointer->stride;
+            if (pointer->length != length)
+            {
+                MemoryAddress.Resize(ref pointer->items, pointer->stride * length);
+                pointer->length = length;
+            }
+
+            pointer->items.Write(bytes);
         }
 
-        public readonly ref T Get<T>(int index) where T : unmanaged
+        /// <summary>
+        /// Copies the state of the given <paramref name="values"/>.
+        /// </summary>
+        public readonly void CopyFrom<T>(ReadOnlySpan<T> values) where T : unmanaged
         {
-            return ref pointer->items.ReadElement<T>(index);
+            ThrowIfGreaterThanStride<T>();
+
+            if (pointer->length != values.Length)
+            {
+                MemoryAddress.Resize(ref pointer->items, pointer->stride * values.Length);
+                pointer->length = values.Length;
+            }
+
+            pointer->items.Clear(pointer->stride * values.Length);
+            for (int i = 0; i < values.Length; i++)
+            {
+                pointer->items.WriteElement(i * pointer->stride, values[i]);
+            }
         }
 
-        public readonly void Set<T>(int index, T value) where T : unmanaged
+        public readonly override bool Equals(object? obj)
         {
-            pointer->items.WriteElement(index, value);
+            return obj is Values values && Equals(values);
+        }
+
+        public readonly bool Equals(Values other)
+        {
+            return pointer == other.pointer;
+        }
+
+        public readonly override int GetHashCode()
+        {
+            return (int)pointer;
+        }
+
+        public static bool operator ==(Values left, Values right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(Values left, Values right)
+        {
+            return !(left == right);
         }
     }
 }

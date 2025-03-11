@@ -252,7 +252,7 @@ namespace Worlds
                     for (int a = 0; a < BitMask.Capacity; a++)
                     {
                         Values array = slot.arrays[a];
-                        if (array.pointer is not null)
+                        if (array != default)
                         {
                             array.Dispose();
                         }
@@ -1613,7 +1613,7 @@ namespace Worlds
                 for (int i = 0; i < slot.arrays.Length; i++)
                 {
                     ref Values array = ref slot.arrays[i];
-                    if (array.pointer is not null)
+                    if (array != default)
                     {
                         array.Dispose();
                         array = default;
@@ -1665,7 +1665,7 @@ namespace Worlds
                 for (int i = 0; i < slot.arrays.Length; i++)
                 {
                     ref Values array = ref slot.arrays[i];
-                    if (array.pointer is not null)
+                    if (array != default)
                     {
                         array.Dispose();
                         array = default;
@@ -1719,7 +1719,7 @@ namespace Worlds
                 for (int i = 0; i < slot.arrays.Length; i++)
                 {
                     ref Values array = ref slot.arrays[i];
-                    if (array.pointer is not null)
+                    if (array != default)
                     {
                         array.Dispose();
                         array = default;
@@ -1773,7 +1773,7 @@ namespace Worlds
                 for (int i = 0; i < slot.arrays.Length; i++)
                 {
                     ref Values array = ref slot.arrays[i];
-                    if (array.pointer is not null)
+                    if (array != default)
                     {
                         array.Dispose();
                         array = default;
@@ -1827,7 +1827,7 @@ namespace Worlds
                 for (int i = 0; i < slot.arrays.Length; i++)
                 {
                     ref Values array = ref slot.arrays[i];
-                    if (array.pointer is not null)
+                    if (array != default)
                     {
                         array.Dispose();
                         array = default;
@@ -1879,7 +1879,7 @@ namespace Worlds
                 for (int i = 0; i < slot.arrays.Length; i++)
                 {
                     ref Values array = ref slot.arrays[i];
-                    if (array.pointer is not null)
+                    if (array != default)
                     {
                         array.Dispose();
                         array = default;

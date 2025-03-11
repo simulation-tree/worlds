@@ -170,16 +170,16 @@ namespace Worlds
             return value;
         }
 
-        private readonly Span<byte> ReadBytes(int byteLength, ref int bytePosition)
+        private readonly ReadOnlySpan<byte> ReadBytes(int byteLength, ref int bytePosition)
         {
             MemoryAddress.ThrowIfDefault(operation);
 
-            Span<byte> bytes = operation->buffer.AsSpan(bytePosition, byteLength);
+            ReadOnlySpan<byte> bytes = operation->buffer.AsSpan(bytePosition, byteLength);
             bytePosition += byteLength;
             return bytes;
         }
 
-        private readonly Span<T> ReadSpan<T>(int length, ref int bytePosition) where T : unmanaged
+        private readonly ReadOnlySpan<T> ReadSpan<T>(int length, ref int bytePosition) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(operation);
 
@@ -599,7 +599,7 @@ namespace Worlds
             private void SelectEntities()
             {
                 int count = operation.Read<int>(ref bytePosition);
-                Span<uint> entities = operation.ReadSpan<uint>(count, ref bytePosition);
+                ReadOnlySpan<uint> entities = operation.ReadSpan<uint>(count, ref bytePosition);
                 selection.AddRange(entities);
             }
 
@@ -622,7 +622,7 @@ namespace Worlds
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetComponentDataType(layout);
                 int componentType = dataType.index;
-                Span<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
+                ReadOnlySpan<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
                 for (int i = 0; i < selection.Count; i++)
                 {
                     world.AddComponentBytes(selection[i], componentType, component);
@@ -634,7 +634,7 @@ namespace Worlds
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetComponentDataType(layout);
                 int componentType = dataType.index;
-                Span<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
+                ReadOnlySpan<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
                 for (int i = 0; i < selection.Count; i++)
                 {
                     world.SetComponentBytes(selection[i], componentType, component);
@@ -646,7 +646,7 @@ namespace Worlds
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetComponentDataType(layout);
                 int componentType = dataType.index;
-                Span<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
+                ReadOnlySpan<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
                 for (int i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
@@ -698,14 +698,14 @@ namespace Worlds
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetArrayDataType(layout);
                 int arrayType = dataType.index;
-                int arrayLength = operation.Read<int>(ref bytePosition);
-                if (arrayLength > 0)
+                int length = operation.Read<int>(ref bytePosition);
+                if (length > 0)
                 {
-                    Span<byte> elements = operation.ReadBytes(dataType.size * arrayLength, ref bytePosition);
+                    ReadOnlySpan<byte> bytes = operation.ReadBytes(dataType.size * length, ref bytePosition);
                     for (int i = 0; i < selection.Count; i++)
                     {
-                        Values array = world.CreateArray(selection[i], arrayType, arrayLength);
-                        array.Write(elements);
+                        Values array = world.CreateArray(selection[i], arrayType, length);
+                        array.CopyFrom(bytes);
                     }
                 }
                 else
@@ -722,11 +722,11 @@ namespace Worlds
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetArrayDataType(layout);
                 int arrayType = dataType.index;
-                int newLength = operation.Read<int>(ref bytePosition);
+                int length = operation.Read<int>(ref bytePosition);
                 for (int i = 0; i < selection.Count; i++)
                 {
                     Values array = world.GetArray(selection[i], arrayType);
-                    array.Length = newLength;
+                    array.Length = length;
                 }
             }
 
@@ -738,11 +738,12 @@ namespace Worlds
                 DataType dataType = world.Schema.GetArrayDataType(layout);
                 int arrayType = dataType.index;
                 int stride = dataType.size;
-                Span<byte> elements = operation.ReadBytes(stride * length, ref bytePosition);
+                ReadOnlySpan<byte> bytes = operation.ReadBytes(stride * length, ref bytePosition);
                 for (int i = 0; i < selection.Count; i++)
                 {
                     Values array = world.GetArray(selection[i], arrayType);
-                    array.Write(index * stride, elements);
+                    MemoryAddress memory = array.Read(index * stride);
+                    memory.CopyFrom(bytes);
                 }
             }
 
@@ -751,18 +752,13 @@ namespace Worlds
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetArrayDataType(layout);
                 int arrayType = dataType.index;
-                int expectedArrayLength = operation.Read<int>(ref bytePosition);
-                Span<byte> elements = operation.ReadBytes(dataType.size * expectedArrayLength, ref bytePosition);
+                int length = operation.Read<int>(ref bytePosition);
+                ReadOnlySpan<byte> bytes = operation.ReadBytes(dataType.size * length, ref bytePosition);
                 for (int i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
                     Values array = world.GetArray(entity, arrayType);
-                    if (array.Length != expectedArrayLength)
-                    {
-                        array.Length = expectedArrayLength;
-                    }
-
-                    array.Write(elements);
+                    array.CopyFrom(bytes);
                 }
             }
 
@@ -771,8 +767,8 @@ namespace Worlds
                 TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetArrayDataType(layout);
                 int arrayType = dataType.index;
-                int expectedArrayLength = operation.Read<int>(ref bytePosition);
-                Span<byte> elements = operation.ReadBytes(dataType.size * expectedArrayLength, ref bytePosition);
+                int length = operation.Read<int>(ref bytePosition);
+                ReadOnlySpan<byte> bytes = operation.ReadBytes(dataType.size * length, ref bytePosition);
                 for (int i = 0; i < selection.Count; i++)
                 {
                     uint entity = selection[i];
@@ -780,17 +776,13 @@ namespace Worlds
                     if (world.ContainsArray(entity, arrayType))
                     {
                         array = world.GetArray(entity, arrayType);
-                        if (array.Length != expectedArrayLength)
-                        {
-                            array.Length = expectedArrayLength;
-                        }
                     }
                     else
                     {
-                        array = world.CreateArray(entity, arrayType, expectedArrayLength);
+                        array = world.CreateArray(entity, arrayType, length);
                     }
 
-                    array.Write(elements);
+                    array.CopyFrom(bytes);
                 }
             }
 

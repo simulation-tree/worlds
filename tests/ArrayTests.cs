@@ -81,5 +81,32 @@ namespace Worlds.Tests
             Assert.That(list[0].data.ToString(), Is.EqualTo("apple"));
             Assert.That(list[1].data.ToString(), Is.EqualTo("banana"));
         }
+
+        [Test]
+        public void RemoveValues()
+        {
+            using World world = CreateWorld();
+            Entity a = new(world);
+            Values<int> values = a.CreateArray<int>();
+            values.Add(1);
+            values.Add(3);
+            values.Add(8);
+            values.Add(7);
+
+            Assert.That(values.Length, Is.EqualTo(4));
+
+            values.RemoveAt(1);
+
+            Assert.That(values.Length, Is.EqualTo(3));
+            Assert.That(values[0], Is.EqualTo(1));
+            Assert.That(values[1], Is.EqualTo(8));
+            Assert.That(values[2], Is.EqualTo(7));
+
+            values.RemoveAt(1);
+
+            Assert.That(values.Length, Is.EqualTo(2));
+            Assert.That(values[0], Is.EqualTo(1));
+            Assert.That(values[1], Is.EqualTo(7));
+        }
     }
 }
