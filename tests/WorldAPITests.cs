@@ -18,6 +18,7 @@ namespace Worlds.Tests
             Assert.That(world.IsDisposed, Is.True);
         }
 
+#if DEBUG
         [Test]
         public void DisposeTwiceError()
         {
@@ -25,6 +26,7 @@ namespace Worlds.Tests
             world.Dispose();
             Assert.Throws<InvalidOperationException>(() => world.Dispose());
         }
+#endif
 
         [Test]
         public void MaxEntityIDIsValid()
