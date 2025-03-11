@@ -378,16 +378,13 @@ namespace Worlds
         /// </summary>
         public readonly bool Contains(int index)
         {
-            unchecked
+            return index switch
             {
-                return index switch
-                {
-                    < 64 => (a & 1UL << index) != 0,
-                    < 128 => (b & 1UL << index - 64) != 0,
-                    < 192 => (c & 1UL << index - 128) != 0,
-                    _ => (d & 1UL << index - 192) != 0,
-                };
-            }
+                < 64 => (a & 1UL << index) != 0,
+                < 128 => (b & 1UL << index - 64) != 0,
+                < 192 => (c & 1UL << index - 128) != 0,
+                _ => (d & 1UL << index - 192) != 0,
+            };
         }
 
         /// <summary>
