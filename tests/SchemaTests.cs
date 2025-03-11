@@ -81,7 +81,7 @@ namespace Worlds.Tests
             schema.RegisterTag<bool>();
             schema.RegisterTag<byte>();
             schema.RegisterComponent<bool>();
-            schema.RegisterArrayElement<byte>();
+            schema.RegisterArray<byte>();
 
             using ByteWriter writer = new();
             writer.WriteObject(schema);
@@ -102,7 +102,7 @@ namespace Worlds.Tests
             schema.RegisterComponent<bool>();
             schema.RegisterComponent<byte>();
             schema.RegisterComponent<short>();
-            schema.RegisterArrayElement<char>();
+            schema.RegisterArray<char>();
             schema.RegisterTag<int>();
 
             DataType boolType = schema.GetComponentDataType<bool>();
@@ -118,7 +118,7 @@ namespace Worlds.Tests
             Assert.That(shortType.size, Is.EqualTo(sizeof(short)));
             Assert.That(shortType.kind, Is.EqualTo(DataType.Kind.Component));
             Assert.That(charType.size, Is.EqualTo(sizeof(char)));
-            Assert.That(charType.kind, Is.EqualTo(DataType.Kind.ArrayElement));
+            Assert.That(charType.kind, Is.EqualTo(DataType.Kind.Array));
             Assert.That(intType.size, Is.EqualTo(0));
             Assert.That(intType.kind, Is.EqualTo(DataType.Kind.Tag));
 

@@ -893,14 +893,14 @@ namespace Worlds
             slot.chunk = chunk;
 
             //create arrays if necessary
-            BitMask arrayElementTypes = definition.ArrayTypes;
-            if (!arrayElementTypes.IsEmpty)
+            BitMask arrayTypes = definition.ArrayTypes;
+            if (!arrayTypes.IsEmpty)
             {
                 ref Array<Values> arrays = ref slot.arrays;
                 arrays = new(BitMask.Capacity);
                 for (int a = 0; a < BitMask.Capacity; a++)
                 {
-                    if (arrayElementTypes.Contains(a))
+                    if (arrayTypes.Contains(a))
                     {
                         int arrayElementSize = world->schema.GetArrayTypeSize(a);
                         arrays[a] = new(new Array(0, arrayElementSize));
@@ -941,14 +941,14 @@ namespace Worlds
             slot.chunk = chunk;
 
             //create arrays if necessary
-            BitMask arrayElementTypes = definition.ArrayTypes;
-            if (!arrayElementTypes.IsEmpty)
+            BitMask arrayTypes = definition.ArrayTypes;
+            if (!arrayTypes.IsEmpty)
             {
                 ref Array<Values> arrays = ref slot.arrays;
                 arrays = new(BitMask.Capacity);
                 for (int a = 0; a < BitMask.Capacity; a++)
                 {
-                    if (arrayElementTypes.Contains(a))
+                    if (arrayTypes.Contains(a))
                     {
                         int arrayElementSize = world->schema.GetArrayTypeSize(a);
                         arrays[a] = new(new Array(0, arrayElementSize));
@@ -1573,7 +1573,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the types of all arrays on this entity.
         /// </summary>
-        public readonly BitMask GetArrayElementTypes(uint entity)
+        public readonly BitMask GetArrayTypes(uint entity)
         {
             ThrowIfEntityIsMissing(entity);
 
@@ -1700,7 +1700,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            ArrayElementType arrayType = dataType.ArrayType;
+            ArrayType arrayType = dataType.ArrayType;
             ThrowIfArrayIsAlreadyPresent(entity, arrayType);
 
             ref Slot slot = ref world->slots[(int)entity];
@@ -2427,12 +2427,12 @@ namespace Worlds
         /// <summary>
         /// Retrieves the array from the given <paramref name="entity"/> as <see cref="object"/>s.
         /// </summary>
-        public readonly object[] GetArrayObject(uint entity, ArrayElementType arrayElementType)
+        public readonly object[] GetArrayObject(uint entity, ArrayType arrayType)
         {
             MemoryAddress.ThrowIfDefault(world);
 
-            TypeLayout layout = arrayElementType.GetLayout(world->schema);
-            Values array = GetArray(entity, arrayElementType);
+            TypeLayout layout = arrayType.GetLayout(world->schema);
+            Values array = GetArray(entity, arrayType);
             int size = layout.Size;
             object[] arrayObject = new object[array.Length];
             for (int i = 0; i < array.Length; i++)
@@ -2602,10 +2602,10 @@ namespace Worlds
         /// </summary>
         public readonly void CopyArraysTo(uint sourceEntity, World destinationWorld, uint destinationEntity)
         {
-            BitMask arrayElementTypes = GetArrayElementTypes(sourceEntity);
+            BitMask arrayTypes = GetArrayTypes(sourceEntity);
             for (int a = 0; a < BitMask.Capacity; a++)
             {
-                if (arrayElementTypes.Contains(a))
+                if (arrayTypes.Contains(a))
                 {
                     Values sourceArray = GetArray(sourceEntity, a);
                     Values destinationArray;
@@ -2766,20 +2766,20 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfArrayIsMissing(uint entity, int arrayType)
         {
-            BitMask arrayElementTypes = world->slots[(int)entity].Definition.ArrayTypes;
-            if (!arrayElementTypes.Contains(arrayType))
+            BitMask arrayTypes = world->slots[(int)entity].Definition.ArrayTypes;
+            if (!arrayTypes.Contains(arrayType))
             {
-                throw new NullReferenceException($"Array of type `{new ArrayElementType(arrayType).ToString(world->schema)}` not found on entity `{entity}`");
+                throw new NullReferenceException($"Array of type `{new ArrayType(arrayType).ToString(world->schema)}` not found on entity `{entity}`");
             }
         }
 
         [Conditional("DEBUG")]
         private readonly void ThrowIfArrayIsAlreadyPresent(uint entity, int arrayType)
         {
-            BitMask arrayElementTypes = world->slots[(int)entity].Definition.ArrayTypes;
-            if (arrayElementTypes.Contains(arrayType))
+            BitMask arrayTypes = world->slots[(int)entity].Definition.ArrayTypes;
+            if (arrayTypes.Contains(arrayType))
             {
-                throw new InvalidOperationException($"Array of type `{new ArrayElementType(arrayType).ToString(world->schema)}` already present on `{entity}`");
+                throw new InvalidOperationException($"Array of type `{new ArrayType(arrayType).ToString(world->schema)}` already present on `{entity}`");
             }
         }
 
@@ -2832,11 +2832,11 @@ namespace Worlds
                     schema.RegisterComponent(typeLayout);
                 }
 
-                foreach (ArrayElementType arrayElementType in loadedSchema.ArrayElementTypes)
+                foreach (ArrayType arrayType in loadedSchema.ArrayTypes)
                 {
-                    TypeLayout typeLayout = loadedSchema.GetArrayLayout(arrayElementType);
-                    typeLayout = process.Invoke(typeLayout, DataType.Kind.ArrayElement);
-                    schema.RegisterArrayElement(typeLayout);
+                    TypeLayout typeLayout = loadedSchema.GetArrayLayout(arrayType);
+                    typeLayout = process.Invoke(typeLayout, DataType.Kind.Array);
+                    schema.RegisterArray(typeLayout);
                 }
 
                 foreach (TagType tagType in loadedSchema.TagTypes)

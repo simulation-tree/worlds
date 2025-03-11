@@ -8,7 +8,7 @@ namespace Worlds
     public struct Definition : IEquatable<Definition>
     {
         private BitMask componentTypes;
-        private BitMask arrayElementTypes;
+        private BitMask arrayTypes;
         private BitMask tagTypes;
 
         /// <summary>
@@ -19,7 +19,7 @@ namespace Worlds
         /// <summary>
         /// Mask of array types in this definition.
         /// </summary>
-        public readonly BitMask ArrayTypes => arrayElementTypes;
+        public readonly BitMask ArrayTypes => arrayTypes;
 
         /// <summary>
         /// Mask of tag types in this definition.
@@ -29,10 +29,10 @@ namespace Worlds
         /// <summary>
         /// Creates a new definition with the exact component and array <see cref="BitMask"/> values.
         /// </summary>
-        public Definition(BitMask componentTypes, BitMask arrayElementTypes, BitMask tagTypes)
+        public Definition(BitMask componentTypes, BitMask arrayTypes, BitMask tagTypes)
         {
             this.componentTypes = componentTypes;
-            this.arrayElementTypes = arrayElementTypes;
+            this.arrayTypes = arrayTypes;
             this.tagTypes = tagTypes;
         }
 
@@ -70,10 +70,10 @@ namespace Worlds
 
             for (int i = 0; i < BitMask.Capacity; i++)
             {
-                if (arrayElementTypes.Contains(i))
+                if (arrayTypes.Contains(i))
                 {
-                    ArrayElementType arrayElementType = new(i);
-                    length += arrayElementType.ToString(destination.Slice(length));
+                    ArrayType arrayType = new(i);
+                    length += arrayType.ToString(destination.Slice(length));
                     destination[length++] = ',';
                     destination[length++] = ' ';
                 }
@@ -106,10 +106,10 @@ namespace Worlds
 
             for (int i = 0; i < BitMask.Capacity; i++)
             {
-                if (arrayElementTypes.Contains(i))
+                if (arrayTypes.Contains(i))
                 {
-                    ArrayElementType arrayElementType = new(i);
-                    length += arrayElementType.ToString(schema, destination.Slice(length));
+                    ArrayType arrayType = new(i);
+                    length += arrayType.ToString(schema, destination.Slice(length));
                     destination[length++] = ',';
                     destination[length++] = ' ';
                 }
@@ -146,12 +146,12 @@ namespace Worlds
         /// Copies the array types in this definition to the <paramref name="destination"/>.
         /// </summary>
         /// <returns>Amount of array types copied.</returns>
-        public readonly int CopyArrayTypesTo(Span<ArrayElementType> destination)
+        public readonly int CopyArrayTypesTo(Span<ArrayType> destination)
         {
             int count = 0;
             for (int a = 0; a < BitMask.Capacity; a++)
             {
-                if (arrayElementTypes.Contains(a))
+                if (arrayTypes.Contains(a))
                 {
                     destination[count] = new(a);
                     count++;
@@ -183,7 +183,7 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return HashCode.Combine(componentTypes, arrayElementTypes, tagTypes);
+            return HashCode.Combine(componentTypes, arrayTypes, tagTypes);
         }
 
         /// <inheritdoc/>
@@ -195,7 +195,7 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly bool Equals(Definition other)
         {
-            return other.arrayElementTypes == arrayElementTypes && other.componentTypes == componentTypes && other.tagTypes == tagTypes;
+            return other.arrayTypes == arrayTypes && other.componentTypes == componentTypes && other.tagTypes == tagTypes;
         }
 
         public readonly bool ContainsComponent(ComponentType componentType)
@@ -203,9 +203,9 @@ namespace Worlds
             return componentTypes.Contains(componentType.index);
         }
 
-        public readonly bool ContainsArray(ArrayElementType arrayType)
+        public readonly bool ContainsArray(ArrayType arrayType)
         {
-            return arrayElementTypes.Contains(arrayType.index);
+            return arrayTypes.Contains(arrayType.index);
         }
 
         public readonly bool ContainsTag(TagType tagType)
@@ -220,7 +220,7 @@ namespace Worlds
 
         public readonly bool ContainsArray(int index)
         {
-            return arrayElementTypes.Contains(index);
+            return arrayTypes.Contains(index);
         }
 
         public readonly bool ContainsTag(int index)
@@ -251,7 +251,7 @@ namespace Worlds
                 return false;
             }
 
-            return arrayElementTypes.Contains(schema.GetArrayType<T>().index);
+            return arrayTypes.Contains(schema.GetArrayType<T>().index);
         }
 
         public readonly bool ContainsTag<T>(Schema schema) where T : unmanaged
@@ -267,9 +267,9 @@ namespace Worlds
         /// <summary>
         /// Adds the given <paramref name="arrayTypes"/> bit mask to this definition.
         /// </summary>
-        public void AddArrayElementTypes(BitMask arrayTypes)
+        public void AddArrayTypes(BitMask arrayTypes)
         {
-            this.arrayElementTypes |= arrayTypes;
+            this.arrayTypes |= arrayTypes;
         }
 
         /// <summary>
@@ -316,158 +316,158 @@ namespace Worlds
         /// </summary>
         public void AddComponentTypes<C1, C2>(Schema schema) where C1 : unmanaged where C2 : unmanaged
         {
-            componentTypes |= schema.GetComponents<C1, C2>();
+            componentTypes |= schema.GetComponentTypes<C1, C2>();
         }
 
         public void AddComponentTypes<C1, C2, C3>(Schema schema) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged
         {
-            componentTypes |= schema.GetComponents<C1, C2, C3>();
+            componentTypes |= schema.GetComponentTypes<C1, C2, C3>();
         }
 
         public void AddComponentTypes<C1, C2, C3, C4>(Schema schema) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged
         {
-            componentTypes |= schema.GetComponents<C1, C2, C3, C4>();
+            componentTypes |= schema.GetComponentTypes<C1, C2, C3, C4>();
         }
 
         public void AddComponentTypes<C1, C2, C3, C4, C5>(Schema schema) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged
         {
-            componentTypes |= schema.GetComponents<C1, C2, C3, C4, C5>();
+            componentTypes |= schema.GetComponentTypes<C1, C2, C3, C4, C5>();
         }
 
         public void AddComponentTypes<C1, C2, C3, C4, C5, C6>(Schema schema) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged
         {
-            componentTypes |= schema.GetComponents<C1, C2, C3, C4, C5, C6>();
+            componentTypes |= schema.GetComponentTypes<C1, C2, C3, C4, C5, C6>();
         }
 
         public void AddComponentTypes<C1, C2, C3, C4, C5, C6, C7>(Schema schema) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged
         {
-            componentTypes |= schema.GetComponents<C1, C2, C3, C4, C5, C6, C7>();
+            componentTypes |= schema.GetComponentTypes<C1, C2, C3, C4, C5, C6, C7>();
         }
 
         public void AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8>(Schema schema) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged
         {
-            componentTypes |= schema.GetComponents<C1, C2, C3, C4, C5, C6, C7, C8>();
+            componentTypes |= schema.GetComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8>();
         }
 
         public void AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9>(Schema schema) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged
         {
-            componentTypes |= schema.GetComponents<C1, C2, C3, C4, C5, C6, C7, C8, C9>();
+            componentTypes |= schema.GetComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9>();
         }
 
         public void AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10>(Schema schema) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged
         {
-            componentTypes |= schema.GetComponents<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10>();
+            componentTypes |= schema.GetComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10>();
         }
 
         public void AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11>(Schema schema) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged
         {
-            componentTypes |= schema.GetComponents<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11>();
+            componentTypes |= schema.GetComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11>();
         }
 
         public void AddComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12>(Schema schema) where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged
         {
-            componentTypes |= schema.GetComponents<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12>();
+            componentTypes |= schema.GetComponentTypes<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12>();
         }
 
         /// <summary>
         /// Adds the specified <paramref name="arrayType"/> to this definition.
         /// </summary>
-        public void AddArrayType(ArrayElementType arrayType)
+        public void AddArrayType(ArrayType arrayType)
         {
-            arrayElementTypes.Set(arrayType.index);
+            arrayTypes.Set(arrayType.index);
         }
 
         public void AddArrayType(int arrayType)
         {
-            arrayElementTypes.Set(arrayType);
+            arrayTypes.Set(arrayType);
         }
 
-        public void RemoveArrayType(ArrayElementType arrayType)
+        public void RemoveArrayType(ArrayType arrayType)
         {
-            arrayElementTypes.Clear(arrayType.index);
+            arrayTypes.Clear(arrayType.index);
         }
 
         public void RemoveArrayType(int arrayType)
         {
-            arrayElementTypes.Clear(arrayType);
+            arrayTypes.Clear(arrayType);
         }
 
         /// <summary>
         /// Adds the specified <typeparamref name="A1"/> array type to this definition.
         /// </summary>
-        public void AddArrayElementType<A1>(Schema schema) where A1 : unmanaged
+        public void AddArrayType<A1>(Schema schema) where A1 : unmanaged
         {
-            arrayElementTypes |= schema.GetArrayElements<A1>();
+            arrayTypes |= schema.GetArrayTypes<A1>();
         }
 
         /// <summary>
         /// Adds the specified <typeparamref name="A1"/> and <typeparamref name="A2"/> array types to this definition.
         /// </summary>
-        public void AddArrayElementTypes<A1, A2>(Schema schema) where A1 : unmanaged where A2 : unmanaged
+        public void AddArrayTypes<A1, A2>(Schema schema) where A1 : unmanaged where A2 : unmanaged
         {
-            arrayElementTypes |= schema.GetArrayElements<A1, A2>();
+            arrayTypes |= schema.GetArrayTypes<A1, A2>();
         }
 
         /// <summary>
         /// Adds the specified <typeparamref name="A1"/>, <typeparamref name="A2"/> and <typeparamref name="A3"/> array types to this definition.
         /// </summary>
-        public void AddArrayElementTypes<A1, A2, A3>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged
+        public void AddArrayTypes<A1, A2, A3>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged
         {
-            arrayElementTypes |= schema.GetArrayElements<A1, A2, A3>();
+            arrayTypes |= schema.GetArrayTypes<A1, A2, A3>();
         }
 
         /// <summary>
         /// Adds the specified <typeparamref name="A1"/>, <typeparamref name="A2"/>, <typeparamref name="A3"/> and <typeparamref name="A4"/> array types to this definition.
         /// </summary>
-        public void AddArrayElementTypes<A1, A2, A3, A4>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged where A4 : unmanaged
+        public void AddArrayTypes<A1, A2, A3, A4>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged where A4 : unmanaged
         {
-            arrayElementTypes |= schema.GetArrayElements<A1, A2, A3, A4>();
+            arrayTypes |= schema.GetArrayTypes<A1, A2, A3, A4>();
         }
 
         /// <summary>
         /// Adds the specified <typeparamref name="A1"/>, <typeparamref name="A2"/>, <typeparamref name="A3"/>, <typeparamref name="A4"/> and <typeparamref name="A5"/> array types to this definition.
         /// </summary>
-        public void AddArrayElementTypes<A1, A2, A3, A4, A5>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged where A4 : unmanaged where A5 : unmanaged
+        public void AddArrayTypes<A1, A2, A3, A4, A5>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged where A4 : unmanaged where A5 : unmanaged
         {
-            arrayElementTypes |= schema.GetArrayElements<A1, A2, A3, A4, A5>();
+            arrayTypes |= schema.GetArrayTypes<A1, A2, A3, A4, A5>();
         }
 
         /// <summary>
         /// Adds the specified <typeparamref name="A1"/>, <typeparamref name="A2"/>, <typeparamref name="A3"/>, <typeparamref name="A4"/>, <typeparamref name="A5"/> and <typeparamref name="A6"/> array types to this definition.
         /// </summary>
-        public void AddArrayElementTypes<A1, A2, A3, A4, A5, A6>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged where A4 : unmanaged where A5 : unmanaged where A6 : unmanaged
+        public void AddArrayTypes<A1, A2, A3, A4, A5, A6>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged where A4 : unmanaged where A5 : unmanaged where A6 : unmanaged
         {
-            arrayElementTypes |= schema.GetArrayElements<A1, A2, A3, A4, A5, A6>();
+            arrayTypes |= schema.GetArrayTypes<A1, A2, A3, A4, A5, A6>();
         }
 
-        public void AddArrayElementTypes<A1, A2, A3, A4, A5, A6, A7>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged where A4 : unmanaged where A5 : unmanaged where A6 : unmanaged where A7 : unmanaged
+        public void AddArrayTypes<A1, A2, A3, A4, A5, A6, A7>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged where A4 : unmanaged where A5 : unmanaged where A6 : unmanaged where A7 : unmanaged
         {
-            arrayElementTypes |= schema.GetArrayElements<A1, A2, A3, A4, A5, A6, A7>();
+            arrayTypes |= schema.GetArrayTypes<A1, A2, A3, A4, A5, A6, A7>();
         }
 
-        public void AddArrayElementTypes<A1, A2, A3, A4, A5, A6, A7, A8>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged where A4 : unmanaged where A5 : unmanaged where A6 : unmanaged where A7 : unmanaged where A8 : unmanaged
+        public void AddArrayTypes<A1, A2, A3, A4, A5, A6, A7, A8>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged where A4 : unmanaged where A5 : unmanaged where A6 : unmanaged where A7 : unmanaged where A8 : unmanaged
         {
-            arrayElementTypes |= schema.GetArrayElements<A1, A2, A3, A4, A5, A6, A7, A8>();
+            arrayTypes |= schema.GetArrayTypes<A1, A2, A3, A4, A5, A6, A7, A8>();
         }
 
-        public void AddArrayElementTypes<A1, A2, A3, A4, A5, A6, A7, A8, A9>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged where A4 : unmanaged where A5 : unmanaged where A6 : unmanaged where A7 : unmanaged where A8 : unmanaged where A9 : unmanaged
+        public void AddArrayTypes<A1, A2, A3, A4, A5, A6, A7, A8, A9>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged where A4 : unmanaged where A5 : unmanaged where A6 : unmanaged where A7 : unmanaged where A8 : unmanaged where A9 : unmanaged
         {
-            arrayElementTypes |= schema.GetArrayElements<A1, A2, A3, A4, A5, A6, A7, A8, A9>();
+            arrayTypes |= schema.GetArrayTypes<A1, A2, A3, A4, A5, A6, A7, A8, A9>();
         }
 
-        public void AddArrayElementTypes<A1, A2, A3, A4, A5, A6, A7, A8, A9, A10>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged where A4 : unmanaged where A5 : unmanaged where A6 : unmanaged where A7 : unmanaged where A8 : unmanaged where A9 : unmanaged where A10 : unmanaged
+        public void AddArrayTypes<A1, A2, A3, A4, A5, A6, A7, A8, A9, A10>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged where A4 : unmanaged where A5 : unmanaged where A6 : unmanaged where A7 : unmanaged where A8 : unmanaged where A9 : unmanaged where A10 : unmanaged
         {
-            arrayElementTypes |= schema.GetArrayElements<A1, A2, A3, A4, A5, A6, A7, A8, A9, A10>();
+            arrayTypes |= schema.GetArrayTypes<A1, A2, A3, A4, A5, A6, A7, A8, A9, A10>();
         }
 
-        public void AddArrayElementTypes<A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged where A4 : unmanaged where A5 : unmanaged where A6 : unmanaged where A7 : unmanaged where A8 : unmanaged where A9 : unmanaged where A10 : unmanaged where A11 : unmanaged
+        public void AddArrayTypes<A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged where A4 : unmanaged where A5 : unmanaged where A6 : unmanaged where A7 : unmanaged where A8 : unmanaged where A9 : unmanaged where A10 : unmanaged where A11 : unmanaged
         {
-            arrayElementTypes |= schema.GetArrayElements<A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11>();
+            arrayTypes |= schema.GetArrayTypes<A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11>();
         }
 
-        public void AddArrayElementTypes<A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged where A4 : unmanaged where A5 : unmanaged where A6 : unmanaged where A7 : unmanaged where A8 : unmanaged where A9 : unmanaged where A10 : unmanaged where A11 : unmanaged where A12 : unmanaged
+        public void AddArrayTypes<A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12>(Schema schema) where A1 : unmanaged where A2 : unmanaged where A3 : unmanaged where A4 : unmanaged where A5 : unmanaged where A6 : unmanaged where A7 : unmanaged where A8 : unmanaged where A9 : unmanaged where A10 : unmanaged where A11 : unmanaged where A12 : unmanaged
         {
-            arrayElementTypes |= schema.GetArrayElements<A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12>();
+            arrayTypes |= schema.GetArrayTypes<A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12>();
         }
 
         public void AddTagType(TagType tagType)
@@ -502,57 +502,57 @@ namespace Worlds
 
         public void AddTagTypes<T1, T2>(Schema schema) where T1 : unmanaged where T2 : unmanaged
         {
-            tagTypes |= schema.GetTags<T1, T2>();
+            tagTypes |= schema.GetTagTypes<T1, T2>();
         }
 
         public void AddTagTypes<T1, T2, T3>(Schema schema) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            tagTypes |= schema.GetTags<T1, T2, T3>();
+            tagTypes |= schema.GetTagTypes<T1, T2, T3>();
         }
 
         public void AddTagTypes<T1, T2, T3, T4>(Schema schema) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            tagTypes |= schema.GetTags<T1, T2, T3, T4>();
+            tagTypes |= schema.GetTagTypes<T1, T2, T3, T4>();
         }
 
         public void AddTagTypes<T1, T2, T3, T4, T5>(Schema schema) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
-            tagTypes |= schema.GetTags<T1, T2, T3, T4, T5>();
+            tagTypes |= schema.GetTagTypes<T1, T2, T3, T4, T5>();
         }
 
         public void AddTagTypes<T1, T2, T3, T4, T5, T6>(Schema schema) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
-            tagTypes |= schema.GetTags<T1, T2, T3, T4, T5, T6>();
+            tagTypes |= schema.GetTagTypes<T1, T2, T3, T4, T5, T6>();
         }
 
         public void AddTagTypes<T1, T2, T3, T4, T5, T6, T7>(Schema schema) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
-            tagTypes |= schema.GetTags<T1, T2, T3, T4, T5, T6, T7>();
+            tagTypes |= schema.GetTagTypes<T1, T2, T3, T4, T5, T6, T7>();
         }
 
         public void AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8>(Schema schema) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
-            tagTypes |= schema.GetTags<T1, T2, T3, T4, T5, T6, T7, T8>();
+            tagTypes |= schema.GetTagTypes<T1, T2, T3, T4, T5, T6, T7, T8>();
         }
 
         public void AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(Schema schema) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
-            tagTypes |= schema.GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9>();
+            tagTypes |= schema.GetTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>();
         }
 
         public void AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(Schema schema) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
-            tagTypes |= schema.GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>();
+            tagTypes |= schema.GetTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>();
         }
 
         public void AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(Schema schema) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
-            tagTypes |= schema.GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>();
+            tagTypes |= schema.GetTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>();
         }
 
         public void AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(Schema schema) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
-            tagTypes |= schema.GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>();
+            tagTypes |= schema.GetTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>();
         }
 
         public static Definition Get<T>(Schema schema) where T : unmanaged, IEntity

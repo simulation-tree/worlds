@@ -114,19 +114,19 @@ namespace Worlds
 
         public Query RequireArrayElement<T>() where T : unmanaged
         {
-            required.AddArrayElementType<T>(world.Schema);
+            required.AddArrayType<T>(world.Schema);
             return this;
         }
 
         public Query RequireArrayElements(BitMask arrayTypes)
         {
-            required.AddArrayElementTypes(arrayTypes);
+            required.AddArrayTypes(arrayTypes);
             return this;
         }
 
-        public Query ExcludeArrayElement<T>() where T : unmanaged
+        public Query ExcludeArray<T>() where T : unmanaged
         {
-            exclude.AddArrayElementType<T>(world.Schema);
+            exclude.AddArrayType<T>(world.Schema);
             return this;
         }
 

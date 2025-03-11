@@ -4,7 +4,7 @@
     {
         Unknown,
         Component,
-        ArrayElement,
+        Array,
         Tag
     }
 }

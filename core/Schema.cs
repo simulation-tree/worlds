@@ -34,7 +34,7 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Counts how many <see cref="ArrayElementType"/>s are registered.
+        /// Counts how many <see cref="ArrayType"/>s are registered.
         /// </summary>
         public readonly byte ArrayCount
         {
@@ -78,10 +78,10 @@ namespace Worlds
         }
 
         /// <summary>
-        /// All array element types loaded.
+        /// All array types loaded.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        public readonly System.Collections.Generic.IEnumerable<ArrayElementType> ArrayElementTypes
+        public readonly System.Collections.Generic.IEnumerable<ArrayType> ArrayTypes
         {
             get
             {
@@ -133,7 +133,7 @@ namespace Worlds
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Collapsed)]
-        private readonly TypeLayout[] ArrayElements
+        private readonly TypeLayout[] Arrays
         {
             get
             {
@@ -244,11 +244,11 @@ namespace Worlds
             return schema->sizes.Read<int>(index * sizeof(int));
         }
 
-        public readonly int GetArrayTypeSize(ArrayElementType arrayElementType)
+        public readonly int GetArrayTypeSize(ArrayType arrayType)
         {
-            ThrowIfArrayTypeIsMissing(arrayElementType);
+            ThrowIfArrayTypeIsMissing(arrayType);
 
-            return schema->sizes.Read<int>(BitMask.Capacity * sizeof(int) + arrayElementType.index * sizeof(int));
+            return schema->sizes.Read<int>(BitMask.Capacity * sizeof(int) + arrayType.index * sizeof(int));
         }
 
         public readonly int GetArrayTypeSize(int index)
@@ -274,9 +274,9 @@ namespace Worlds
             {
                 input.schema.RegisterComponent(input.type);
             }
-            else if (input.kind == DataType.Kind.ArrayElement)
+            else if (input.kind == DataType.Kind.Array)
             {
-                input.schema.RegisterArrayElement(input.type);
+                input.schema.RegisterArray(input.type);
             }
             else if (input.kind == DataType.Kind.Tag)
             {
@@ -292,7 +292,7 @@ namespace Worlds
             return new(componentType, GetComponentTypeSize(componentType));
         }
 
-        public readonly DataType GetArrayDataType(ArrayElementType arrayType)
+        public readonly DataType GetArrayDataType(ArrayType arrayType)
         {
             MemoryAddress.ThrowIfDefault(schema);
             ThrowIfArrayTypeIsMissing(arrayType);
@@ -333,7 +333,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the type layout for the given <paramref name="arrayType"/>.
         /// </summary>
-        public readonly TypeLayout GetArrayLayout(ArrayElementType arrayType)
+        public readonly TypeLayout GetArrayLayout(ArrayType arrayType)
         {
             MemoryAddress.ThrowIfDefault(schema);
             ThrowIfArrayTypeIsMissing(arrayType);
@@ -409,27 +409,27 @@ namespace Worlds
             return componentType;
         }
 
-        public readonly ArrayElementType RegisterArrayElement<T>() where T : unmanaged
+        public readonly ArrayType RegisterArray<T>() where T : unmanaged
         {
-            ArrayElementType arrayType = RegisterArrayElement(TypeRegistry.GetOrRegister<T>());
+            ArrayType arrayType = RegisterArray(TypeRegistry.GetOrRegister<T>());
             SchemaTypeCache<T>.SetArrayType(this, arrayType);
             return arrayType;
         }
 
-        public readonly ArrayElementType RegisterArrayElement(TypeLayout type)
+        public readonly ArrayType RegisterArray(TypeLayout type)
         {
-            if (TryGetArrayType(type, out ArrayElementType existing))
+            if (TryGetArrayType(type, out ArrayType existing))
             {
                 return existing;
             }
 
             ThrowIfTooManyArrays();
 
-            ArrayElementType arrayType = new(schema->arraysCount);
-            Span<int> arrayElementSizes = schema->sizes.AsSpan<int>(BitMask.Capacity, BitMask.Capacity);
-            Span<long> arrayElementHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-            arrayElementSizes[schema->arraysCount] = type.Size;
-            arrayElementHashes[schema->arraysCount] = type.Hash;
+            ArrayType arrayType = new(schema->arraysCount);
+            Span<int> arraySizes = schema->sizes.AsSpan<int>(BitMask.Capacity, BitMask.Capacity);
+            Span<long> arrayHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
+            arraySizes[schema->arraysCount] = type.Size;
+            arrayHashes[schema->arraysCount] = type.Hash;
             schema->arraysCount++;
             schema->definitionMask.AddArrayType(arrayType);
             StoreArrayTypeForDebug(arrayType, type);
@@ -468,7 +468,7 @@ namespace Worlds
             return schema->definitionMask.ComponentTypes.Contains(componentType.index);
         }
 
-        public readonly bool ContainsArrayType(ArrayElementType arrayType)
+        public readonly bool ContainsArrayType(ArrayType arrayType)
         {
             MemoryAddress.ThrowIfDefault(schema);
 
@@ -545,7 +545,7 @@ namespace Worlds
             return arrayTypeHashes.Contains(type.Hash);
         }
 
-        public readonly bool TryGetArrayType(TypeLayout type, out ArrayElementType arrayType)
+        public readonly bool TryGetArrayType(TypeLayout type, out ArrayType arrayType)
         {
             Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
             bool contains = arrayTypeHashes.TryIndexOf(type.Hash, out int index);
@@ -656,7 +656,7 @@ namespace Worlds
             return arrayTypeHashes.Contains(TypeLayoutHashCodeCache<T>.value);
         }
 
-        public readonly ArrayElementType GetArrayType<T>() where T : unmanaged
+        public readonly ArrayType GetArrayType<T>() where T : unmanaged
         {
             ThrowIfArrayTypeIsMissing<T>();
 
@@ -665,7 +665,7 @@ namespace Worlds
                 Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
                 index = arrayTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
                 SchemaTypeCache<T>.SetArrayType(this, index);
-                Trace.WriteLine($"Cached array element type for {typeof(T).FullName}");
+                Trace.WriteLine($"Cached array type for {typeof(T).FullName}");
             }
 
             return new(index);
@@ -680,7 +680,7 @@ namespace Worlds
                 Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
                 index = arrayTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
                 SchemaTypeCache<T>.SetArrayType(this, index);
-                Trace.WriteLine($"Cached array element type for {typeof(T).FullName}");
+                Trace.WriteLine($"Cached array type for {typeof(T).FullName}");
             }
 
             return index;
@@ -695,10 +695,10 @@ namespace Worlds
                 Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
                 index = arrayTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
                 SchemaTypeCache<T>.SetArrayType(this, index);
-                Trace.WriteLine($"Cached array element type for {typeof(T).FullName}");
+                Trace.WriteLine($"Cached array type for {typeof(T).FullName}");
             }
 
-            return new(index, DataType.Kind.ArrayElement, sizeof(T));
+            return new(index, DataType.Kind.Array, sizeof(T));
         }
 
         public readonly DataType GetArrayDataType(TypeLayout type)
@@ -707,14 +707,14 @@ namespace Worlds
 
             Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
             int index = arrayTypeHashes.IndexOf(type.Hash);
-            return new(index, DataType.Kind.ArrayElement, type.Size);
+            return new(index, DataType.Kind.Array, type.Size);
         }
 
         public readonly DataType GetArrayDataType(int index)
         {
             ThrowIfArrayTypeIsMissing(index);
 
-            return new(index, DataType.Kind.ArrayElement, GetArrayTypeSize(index));
+            return new(index, DataType.Kind.Array, GetArrayTypeSize(index));
         }
 
         public readonly TagType GetTagType<T>() where T : unmanaged
@@ -780,14 +780,14 @@ namespace Worlds
             return tagTypeHashes.Contains(TypeLayoutHashCodeCache<T>.value);
         }
 
-        public readonly BitMask GetComponents<T1>() where T1 : unmanaged
+        public readonly BitMask GetComponentTypes<T1>() where T1 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetComponentTypeIndex<T1>());
             return bitMask;
         }
 
-        public readonly BitMask GetComponents<T1, T2>() where T1 : unmanaged where T2 : unmanaged
+        public readonly BitMask GetComponentTypes<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetComponentTypeIndex<T1>());
@@ -795,7 +795,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetComponents<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+        public readonly BitMask GetComponentTypes<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetComponentTypeIndex<T1>());
@@ -804,7 +804,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetComponents<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+        public readonly BitMask GetComponentTypes<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetComponentTypeIndex<T1>());
@@ -814,7 +814,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetComponents<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
+        public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetComponentTypeIndex<T1>());
@@ -825,7 +825,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
+        public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetComponentTypeIndex<T1>());
@@ -837,7 +837,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
+        public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetComponentTypeIndex<T1>());
@@ -850,7 +850,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
+        public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetComponentTypeIndex<T1>());
@@ -864,7 +864,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
+        public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetComponentTypeIndex<T1>());
@@ -879,7 +879,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
+        public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetComponentTypeIndex<T1>());
@@ -895,7 +895,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
+        public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetComponentTypeIndex<T1>());
@@ -912,7 +912,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
+        public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetComponentTypeIndex<T1>());
@@ -930,7 +930,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged
+        public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetComponentTypeIndex<T1>());
@@ -949,7 +949,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged
+        public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetComponentTypeIndex<T1>());
@@ -969,7 +969,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged
+        public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetComponentTypeIndex<T1>());
@@ -990,7 +990,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged
+        public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetComponentTypeIndex<T1>());
@@ -1012,14 +1012,14 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetArrayElements<T1>() where T1 : unmanaged
+        public readonly BitMask GetArrayTypes<T1>() where T1 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetArrayTypeIndex<T1>());
             return bitMask;
         }
 
-        public readonly BitMask GetArrayElements<T1, T2>() where T1 : unmanaged where T2 : unmanaged
+        public readonly BitMask GetArrayTypes<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetArrayTypeIndex<T1>());
@@ -1027,7 +1027,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetArrayElements<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+        public readonly BitMask GetArrayTypes<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetArrayTypeIndex<T1>());
@@ -1036,7 +1036,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetArrayElements<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+        public readonly BitMask GetArrayTypes<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetArrayTypeIndex<T1>());
@@ -1046,7 +1046,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
+        public readonly BitMask GetArrayTypes<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetArrayTypeIndex<T1>());
@@ -1057,7 +1057,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
+        public readonly BitMask GetArrayTypes<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetArrayTypeIndex<T1>());
@@ -1069,7 +1069,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
+        public readonly BitMask GetArrayTypes<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetArrayTypeIndex<T1>());
@@ -1082,7 +1082,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
+        public readonly BitMask GetArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetArrayTypeIndex<T1>());
@@ -1096,7 +1096,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
+        public readonly BitMask GetArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetArrayTypeIndex<T1>());
@@ -1111,7 +1111,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
+        public readonly BitMask GetArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetArrayTypeIndex<T1>());
@@ -1127,7 +1127,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
+        public readonly BitMask GetArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetArrayTypeIndex<T1>());
@@ -1144,7 +1144,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetArrayElements<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
+        public readonly BitMask GetArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetArrayTypeIndex<T1>());
@@ -1162,14 +1162,14 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetTags<T1>() where T1 : unmanaged
+        public readonly BitMask GetTagTypes<T1>() where T1 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetTagTypeIndex<T1>());
             return bitMask;
         }
 
-        public readonly BitMask GetTags<T1, T2>() where T1 : unmanaged where T2 : unmanaged
+        public readonly BitMask GetTagTypes<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetTagTypeIndex<T1>());
@@ -1177,7 +1177,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetTags<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+        public readonly BitMask GetTagTypes<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetTagTypeIndex<T1>());
@@ -1186,7 +1186,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetTags<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+        public readonly BitMask GetTagTypes<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetTagTypeIndex<T1>());
@@ -1196,7 +1196,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetTags<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
+        public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetTagTypeIndex<T1>());
@@ -1207,7 +1207,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetTags<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
+        public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetTagTypeIndex<T1>());
@@ -1219,7 +1219,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetTags<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
+        public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetTagTypeIndex<T1>());
@@ -1232,7 +1232,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetTags<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
+        public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetTagTypeIndex<T1>());
@@ -1246,7 +1246,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
+        public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetTagTypeIndex<T1>());
@@ -1261,7 +1261,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
+        public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetTagTypeIndex<T1>());
@@ -1277,7 +1277,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
+        public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetTagTypeIndex<T1>());
@@ -1294,7 +1294,7 @@ namespace Worlds
             return bitMask;
         }
 
-        public readonly BitMask GetTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
+        public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
             BitMask bitMask = default;
             bitMask.Set(GetTagTypeIndex<T1>());
@@ -1333,10 +1333,10 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private static void StoreArrayTypeForDebug(ArrayElementType arrayType, TypeLayout type)
+        private static void StoreArrayTypeForDebug(ArrayType arrayType, TypeLayout type)
         {
 #if DEBUG
-            ArrayElementType.debugCachedTypes[arrayType.index] = type;
+            ArrayType.debugCachedTypes[arrayType.index] = type;
 #endif
         }
 
@@ -1412,11 +1412,11 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfArrayTypeIsMissing(ArrayElementType arrayType)
+        private readonly void ThrowIfArrayTypeIsMissing(ArrayType arrayType)
         {
             if (!ContainsArrayType(arrayType))
             {
-                throw new Exception($"Array element size for `{arrayType}` is missing from schema");
+                throw new Exception($"Array type size for `{arrayType}` is missing from schema");
             }
         }
 
@@ -1425,16 +1425,16 @@ namespace Worlds
         {
             if (!ContainsArrayType(arrayType))
             {
-                throw new Exception($"Array element size for `{arrayType}` is missing from schema");
+                throw new Exception($"Array type size for `{arrayType}` is missing from schema");
             }
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfArrayTypeIsMissing(TypeLayout arrayElementType)
+        private readonly void ThrowIfArrayTypeIsMissing(TypeLayout arrayType)
         {
-            if (!ContainsArrayType(arrayElementType))
+            if (!ContainsArrayType(arrayType))
             {
-                throw new Exception($"Array element `{arrayElementType}` is missing from schema");
+                throw new Exception($"Array type `{arrayType}` is missing from schema");
             }
         }
 
@@ -1443,7 +1443,7 @@ namespace Worlds
         {
             if (!ContainsArrayType<T>())
             {
-                throw new Exception($"Array element `{typeof(T).FullName}` is missing from schema");
+                throw new Exception($"Array type `{typeof(T).FullName}` is missing from schema");
             }
         }
 
@@ -1493,20 +1493,20 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfArrayElementAlreadyRegistered<T>() where T : unmanaged
+        private readonly void ThrowIfArrayAlreadyRegistered<T>() where T : unmanaged
         {
             if (ContainsArrayType<T>())
             {
-                throw new Exception($"Array element `{typeof(T).FullName}` is already registered in schema");
+                throw new Exception($"Array `{typeof(T).FullName}` is already registered in schema");
             }
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfArrayElementAlreadyRegistered(TypeLayout type)
+        private readonly void ThrowIfArrayAlreadyRegistered(TypeLayout type)
         {
             if (ContainsArrayType(type))
             {
-                throw new Exception($"Array element `{type}` is already registered in schema");
+                throw new Exception($"Array `{type}` is already registered in schema");
             }
         }
 
@@ -1607,19 +1607,19 @@ namespace Worlds
         internal static class SchemaTypeCache<T> where T : unmanaged
         {
             private static int[] components;
-            private static int[] arrayElements;
+            private static int[] arrays;
             private static int[] tags;
             private static int componentCapacity;
-            private static int arrayElementCapacity;
+            private static int arrayCapacity;
             private static int tagCapacity;
 
             static SchemaTypeCache()
             {
                 components = new int[0];
-                arrayElements = new int[0];
+                arrays = new int[0];
                 tags = new int[0];
                 componentCapacity = 0;
-                arrayElementCapacity = 0;
+                arrayCapacity = 0;
                 tagCapacity = 0;
             }
 
@@ -1636,13 +1636,13 @@ namespace Worlds
 
             public static void SetArrayType(Schema schema, int index)
             {
-                if (schema.schema->schemaIndex >= arrayElementCapacity)
+                if (schema.schema->schemaIndex >= arrayCapacity)
                 {
-                    arrayElementCapacity = schema.schema->schemaIndex + 1;
-                    System.Array.Resize(ref arrayElements, arrayElementCapacity);
+                    arrayCapacity = schema.schema->schemaIndex + 1;
+                    System.Array.Resize(ref arrays, arrayCapacity);
                 }
 
-                arrayElements[schema.schema->schemaIndex] = index;
+                arrays[schema.schema->schemaIndex] = index;
             }
 
             public static void SetTagType(Schema schema, int index)
@@ -1670,15 +1670,15 @@ namespace Worlds
                 }
             }
 
-            public static bool TryGetArrayType(Schema schema, out int arrayElementType)
+            public static bool TryGetArrayType(Schema schema, out int arrayType)
             {
-                if (schema.schema->schemaIndex < arrayElementCapacity)
+                if (schema.schema->schemaIndex < arrayCapacity)
                 {
-                    arrayElementType = arrayElements[schema.schema->schemaIndex];
+                    arrayType = arrays[schema.schema->schemaIndex];
                     return true;
                 }
 
-                arrayElementType = default;
+                arrayType = default;
                 return false;
             }
 

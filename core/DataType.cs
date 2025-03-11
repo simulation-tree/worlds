@@ -27,7 +27,7 @@ namespace Worlds
             }
         }
 
-        public readonly ArrayElementType ArrayType
+        public readonly ArrayType ArrayType
         {
             get
             {
@@ -48,7 +48,7 @@ namespace Worlds
         }
 
         public readonly bool IsComponent => kind == Kind.Component;
-        public readonly bool IsArrayElement => kind == Kind.ArrayElement;
+        public readonly bool IsArrayElement => kind == Kind.Array;
         public readonly bool IsTag => kind == Kind.Tag;
 
 #if NET
@@ -66,10 +66,10 @@ namespace Worlds
             this.size = (ushort)size;
         }
 
-        public DataType(ArrayElementType arrayType, int size)
+        public DataType(ArrayType arrayType, int size)
         {
             index = (byte)arrayType.index;
-            kind = Kind.ArrayElement;
+            kind = Kind.Array;
             this.size = (ushort)size;
         }
 
@@ -94,9 +94,9 @@ namespace Worlds
             {
                 return ComponentType.debugCachedTypes[index].ToString();
             }
-            else if (kind == Kind.ArrayElement)
+            else if (kind == Kind.Array)
             {
-                return ArrayElementType.debugCachedTypes[index].ToString();
+                return ArrayType.debugCachedTypes[index].ToString();
             }
             else if (kind == Kind.Tag)
             {
@@ -120,26 +120,23 @@ namespace Worlds
         {
             if (kind == Kind.Component)
             {
-                ComponentType componentType = new(index);
-                if (schema.ContainsComponentType(componentType))
+                if (schema.ContainsComponentType(index))
                 {
-                    return schema.GetComponentLayout(componentType).ToString(destination);
+                    return schema.GetComponentLayout(index).ToString(destination);
                 }
             }
-            else if (kind == Kind.ArrayElement)
+            else if (kind == Kind.Array)
             {
-                ArrayElementType arrayElementType = new(index);
-                if (schema.ContainsArrayType(arrayElementType))
+                if (schema.ContainsArrayType(index))
                 {
-                    return schema.GetArrayLayout(arrayElementType).ToString(destination);
+                    return schema.GetArrayLayout(index).ToString(destination);
                 }
             }
             else if (kind == Kind.Tag)
             {
-                TagType tagType = new(index);
-                if (schema.ContainsTagType(tagType))
+                if (schema.ContainsTagType(index))
                 {
-                    return schema.GetTagLayout(tagType).ToString(destination);
+                    return schema.GetTagLayout(index).ToString(destination);
                 }
             }
 
@@ -158,9 +155,9 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfNotArrayElement()
         {
-            if (kind != Kind.ArrayElement)
+            if (kind != Kind.Array)
             {
-                throw new("Not an array element type");
+                throw new("Not an array type");
             }
         }
 
@@ -213,7 +210,7 @@ namespace Worlds
         {
             Unknown = 0,
             Component = 1,
-            ArrayElement = 2,
+            Array = 2,
             Tag = 3
         }
     }

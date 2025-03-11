@@ -215,9 +215,9 @@ namespace Worlds
             return world.ContainsComponent(value, componentType);
         }
 
-        public readonly bool ContainsArray(ArrayElementType arrayElementType)
+        public readonly bool ContainsArray(ArrayType arrayType)
         {
-            return world.ContainsArray(value, arrayElementType);
+            return world.ContainsArray(value, arrayType);
         }
 
         public readonly bool ContainsTag(TagType tagType)
@@ -235,17 +235,17 @@ namespace Worlds
             world.RemoveComponent(value, componentType);
         }
 
-        public readonly Values CreateArray(ArrayElementType arrayType, int length = 0)
+        public readonly Values CreateArray(ArrayType arrayType, int length = 0)
         {
             return world.CreateArray(value, arrayType, length);
         }
 
-        public readonly Values GetArray(ArrayElementType arrayType)
+        public readonly Values GetArray(ArrayType arrayType)
         {
             return world.GetArray(value, arrayType);
         }
 
-        public readonly void DestroyArray(ArrayElementType arrayType)
+        public readonly void DestroyArray(ArrayType arrayType)
         {
             world.DestroyArray(value, arrayType);
         }
@@ -461,13 +461,13 @@ namespace Worlds
                         this.componentTypes[i] = componentType.GetLayout(schema).SystemType;
                     }
 
-                    Span<ArrayElementType> arrayTypes = stackalloc ArrayElementType[BitMask.Capacity];
+                    Span<ArrayType> arrayTypes = stackalloc ArrayType[BitMask.Capacity];
                     count = definition.CopyArrayTypesTo(arrayTypes);
                     arrays = new object[count][];
                     this.arrayTypes = new Type[count];
                     for (int i = 0; i < count; i++)
                     {
-                        ArrayElementType arrayType = arrayTypes[i];
+                        ArrayType arrayType = arrayTypes[i];
                         arrays[i] = world.GetArrayObject(value, arrayType);
                         this.arrayTypes[i] = arrayType.GetLayout(schema).SystemType;
                     }

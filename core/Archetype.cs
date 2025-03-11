@@ -4,8 +4,7 @@ using System.Diagnostics;
 namespace Worlds
 {
     /// <summary>
-    /// Contains all component, array element and tag types,
-    /// including their sizes.
+    /// Describes component, array and tag types, including their sizes.
     /// <para>
     /// Used by <see cref="IEntity"/> types to describe themselves.
     /// </para>
@@ -20,7 +19,7 @@ namespace Worlds
 
         public readonly Definition Definition => definition;
         public readonly BitMask ComponentTypes => definition.ComponentTypes;
-        public readonly BitMask ArrayElementTypes => definition.ArrayTypes;
+        public readonly BitMask ArrayTypes => definition.ArrayTypes;
         public readonly BitMask TagTypes => definition.TagTypes;
 
 #if NET
@@ -70,7 +69,7 @@ namespace Worlds
             return definition.CopyComponentTypesTo(destination);
         }
 
-        public readonly int CopyArrayElementTypesTo(Span<ArrayElementType> destination)
+        public readonly int CopyArrayTypesTo(Span<ArrayType> destination)
         {
             return definition.CopyArrayTypesTo(destination);
         }
@@ -87,9 +86,9 @@ namespace Worlds
             return componentSizes[componentType.index];
         }
 
-        public unsafe readonly ushort GetSize(ArrayElementType arrayType)
+        public unsafe readonly ushort GetSize(ArrayType arrayType)
         {
-            ThrowIfArrayElementTypeIsMissing(arrayType);
+            ThrowIfArrayTypeIsMissing(arrayType);
 
             return arrayElementSizes[arrayType.index];
         }
@@ -114,7 +113,7 @@ namespace Worlds
             return definition.ComponentTypes.Contains(componentType.index);
         }
 
-        public readonly bool ContainsArray(ArrayElementType arrayType)
+        public readonly bool ContainsArray(ArrayType arrayType)
         {
             return definition.ArrayTypes.Contains(arrayType.index);
         }
@@ -183,12 +182,12 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Adds the array element of type <typeparamref name="T"/> to the definition.
+        /// Adds a an array of <typeparamref name="T"/> to the definition.
         /// </summary>
         public unsafe void AddArrayType<T>() where T : unmanaged
         {
             int arrayType = schema.GetArrayTypeIndex<T>();
-            ThrowIfArrayElementTypeIsPresent(arrayType);
+            ThrowIfArrayTypeIsPresent(arrayType);
 
             definition.AddArrayType(arrayType);
             arrayElementSizes[arrayType] = (ushort)sizeof(T);
@@ -197,9 +196,9 @@ namespace Worlds
         /// <summary>
         /// Adds <paramref name="arrayType"/> to the definition.
         /// </summary>
-        public unsafe void AddArrayType(ArrayElementType arrayType)
+        public unsafe void AddArrayType(ArrayType arrayType)
         {
-            ThrowIfArrayElementTypeIsPresent(arrayType);
+            ThrowIfArrayTypeIsPresent(arrayType);
 
             definition.AddArrayType(arrayType);
             arrayElementSizes[arrayType.index] = (ushort)schema.GetArrayTypeSize(arrayType);
@@ -302,20 +301,20 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfArrayElementTypeIsMissing(int arrayType)
+        private readonly void ThrowIfArrayTypeIsMissing(int arrayType)
         {
             if (!definition.ArrayTypes.Contains(arrayType))
             {
-                throw new InvalidOperationException($"Array type `{new ArrayElementType(arrayType).ToString(schema)}` is missing from the archetype");
+                throw new InvalidOperationException($"Array type `{new ArrayType(arrayType).ToString(schema)}` is missing from the archetype");
             }
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfArrayElementTypeIsPresent(int arrayType)
+        private readonly void ThrowIfArrayTypeIsPresent(int arrayType)
         {
             if (definition.ArrayTypes.Contains(arrayType))
             {
-                throw new InvalidOperationException($"Array type `{new ArrayElementType(arrayType).ToString(schema)}` is already present in the archetype");
+                throw new InvalidOperationException($"Array type `{new ArrayType(arrayType).ToString(schema)}` is already present in the archetype");
             }
         }
 

@@ -11,12 +11,12 @@ namespace Worlds.Tests
 
             Definition a = new();
             a.AddComponentTypes<Float, Byte>(schema);
-            a.AddArrayElementType<Character>(schema);
+            a.AddArrayType<Character>(schema);
             a.AddTagType<IsThing>(schema);
 
             Definition b = new();
             b.AddComponentTypes<Float, Byte>(schema);
-            b.AddArrayElementType<Character>(schema);
+            b.AddArrayType<Character>(schema);
             b.AddTagType<IsThing>(schema);
 
             Assert.That(a, Is.EqualTo(b));
@@ -40,11 +40,11 @@ namespace Worlds.Tests
             using Schema schema = CreateSchema();
             Definition a = new();
             a.AddComponentType<Float>(schema);
-            a.AddArrayElementType<Byte>(schema);
+            a.AddArrayType<Byte>(schema);
 
             Definition b = new();
             b.AddComponentType<Float>(schema);
-            b.AddArrayElementType<Float>(schema);
+            b.AddArrayType<Float>(schema);
 
             Assert.That(a, Is.Not.EqualTo(b));
 
@@ -60,20 +60,20 @@ namespace Worlds.Tests
             using Schema schema = CreateSchema();
             Definition a = new();
             a.AddComponentType<Integer>(schema);
-            a.AddArrayElementType<Double>(schema);
+            a.AddArrayType<Double>(schema);
             a.AddComponentType<Character>(schema);
-            a.AddArrayElementType<Float>(schema);
+            a.AddArrayType<Float>(schema);
 
             Assert.That(a.ComponentTypes.Count, Is.EqualTo(2));
             Assert.That(a.ArrayTypes.Count, Is.EqualTo(2));
             Span<ComponentType> componentTypes = stackalloc ComponentType[BitMask.Capacity];
-            Span<ArrayElementType> arrayElementTypes = stackalloc ArrayElementType[BitMask.Capacity];
+            Span<ArrayType> arrayTypes = stackalloc ArrayType[BitMask.Capacity];
             a.CopyComponentTypesTo(componentTypes);
-            a.CopyArrayTypesTo(arrayElementTypes);
+            a.CopyArrayTypesTo(arrayTypes);
             Assert.That(componentTypes.Contains(schema.GetComponentType<Integer>()), Is.True);
             Assert.That(componentTypes.Contains(schema.GetComponentType<Character>()), Is.True);
-            Assert.That(arrayElementTypes.Contains(schema.GetArrayType<Double>()), Is.True);
-            Assert.That(arrayElementTypes.Contains(schema.GetArrayType<Float>()), Is.True);
+            Assert.That(arrayTypes.Contains(schema.GetArrayType<Double>()), Is.True);
+            Assert.That(arrayTypes.Contains(schema.GetArrayType<Float>()), Is.True);
         }
 
         [Test]
@@ -103,7 +103,7 @@ namespace Worlds.Tests
             Definition definition = new();
             definition.AddComponentType<Byte>(schema);
             definition.AddComponentType<Float>(schema);
-            definition.AddArrayElementType<Character>(schema);
+            definition.AddArrayType<Character>(schema);
 
 
             Assert.That(definition.ContainsComponent<Byte>(schema), Is.True);
@@ -120,7 +120,7 @@ namespace Worlds.Tests
             Definition definition = new();
             definition.AddComponentType<Byte>(world.Schema);
             definition.AddComponentType<Float>(world.Schema);
-            definition.AddArrayElementType<Character>(world.Schema);
+            definition.AddArrayType<Character>(world.Schema);
 
             uint entity = world.CreateEntity(definition);
             Byte defaultByte = world.GetComponent<Byte>(entity);
@@ -140,7 +140,7 @@ namespace Worlds.Tests
             Definition definitionA = new();
             definitionA.AddComponentType<Byte>(world.Schema);
             definitionA.AddComponentType<Float>(world.Schema);
-            definitionA.AddArrayElementType<Character>(world.Schema);
+            definitionA.AddArrayType<Character>(world.Schema);
 
             Entity entity = new(world);
             entity.Become(definitionA);
@@ -155,7 +155,7 @@ namespace Worlds.Tests
             Assert.That(entity.GetArray<Character>().Length, Is.EqualTo(0));
 
             Definition definitionB = new();
-            definitionB.AddArrayElementType<Byte>(world.Schema);
+            definitionB.AddArrayType<Byte>(world.Schema);
 
             Assert.That(entity.ContainsArray<Byte>(), Is.False);
 
@@ -181,7 +181,7 @@ namespace Worlds.Tests
             Definition definition = new();
             definition.AddComponentType<Byte>(world.Schema);
             definition.AddComponentType<Float>(world.Schema);
-            definition.AddArrayElementType<Character>(world.Schema);
+            definition.AddArrayType<Character>(world.Schema);
 
             Assert.That(entityA.Is(definition), Is.False);
             Assert.That(entityB.Is(definition), Is.True);
@@ -197,11 +197,11 @@ namespace Worlds.Tests
             archetype.AddComponentType<Float>();
             Assert.That(archetype.ComponentTypes.Count, Is.EqualTo(2));
             archetype.AddArrayType<Character>();
-            Assert.That(archetype.ArrayElementTypes.Count, Is.EqualTo(1));
+            Assert.That(archetype.ArrayTypes.Count, Is.EqualTo(1));
             archetype.AddArrayType<Float>();
-            Assert.That(archetype.ArrayElementTypes.Count, Is.EqualTo(2));
+            Assert.That(archetype.ArrayTypes.Count, Is.EqualTo(2));
             archetype.AddArrayType<Byte>();
-            Assert.That(archetype.ArrayElementTypes.Count, Is.EqualTo(3));
+            Assert.That(archetype.ArrayTypes.Count, Is.EqualTo(3));
 
             Assert.That(archetype.ContainsComponent<Byte>(), Is.True);
             Assert.That(archetype.ContainsComponent<Float>(), Is.True);

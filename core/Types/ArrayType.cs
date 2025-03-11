@@ -5,9 +5,9 @@ using Types;
 namespace Worlds
 {
     /// <summary>
-    /// Represents an unmanaged array type usable with entities.
+    /// Represents an array type usable with entities for storing many values.
     /// </summary>
-    public readonly struct ArrayElementType : IEquatable<ArrayElementType>
+    public readonly struct ArrayType : IEquatable<ArrayType>
     {
 #if DEBUG
         internal static readonly System.Collections.Generic.Dictionary<int, TypeLayout> debugCachedTypes = new();
@@ -20,7 +20,7 @@ namespace Worlds
         /// Not supported.
         /// </summary>
         [Obsolete("Default constructor not supported", true)]
-        public ArrayElementType()
+        public ArrayType()
         {
             throw new NotSupportedException();
         }
@@ -29,7 +29,7 @@ namespace Worlds
         /// <summary>
         /// Initializes an existing array type.
         /// </summary>
-        public ArrayElementType(int value)
+        public ArrayType(int value)
         {
             ThrowIfOutOfRange(value);
 
@@ -73,11 +73,11 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override bool Equals(object? obj)
         {
-            return obj is ArrayElementType type && Equals(type);
+            return obj is ArrayType type && Equals(type);
         }
 
         /// <inheritdoc/>
-        public readonly bool Equals(ArrayElementType other)
+        public readonly bool Equals(ArrayType other)
         {
             return index == other.index;
         }
@@ -96,17 +96,17 @@ namespace Worlds
             return schema.GetArrayLayout(this);
         }
 
-        public static bool operator ==(ArrayElementType left, ArrayElementType right)
+        public static bool operator ==(ArrayType left, ArrayType right)
         {
             return left.Equals(right);
         }
 
-        public static bool operator !=(ArrayElementType left, ArrayElementType right)
+        public static bool operator !=(ArrayType left, ArrayType right)
         {
             return !(left == right);
         }
 
-        public static implicit operator int(ArrayElementType type)
+        public static implicit operator int(ArrayType type)
         {
             return type.index;
         }

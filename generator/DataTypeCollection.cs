@@ -24,7 +24,7 @@ namespace Worlds
         {
             //todo: the check against data types here is because of methods that accept both a generic, and the data type
             //need a smarter way to fetch the generic type out
-            if (fullTypeName == "?" || fullTypeName == "Worlds.ComponentType" || fullTypeName == "Worlds.ArrayElementType" || fullTypeName == "Worlds.TagType")
+            if (fullTypeName == "?" || fullTypeName == "Worlds.ComponentType" || fullTypeName == "Worlds.ArrayType" || fullTypeName == "Worlds.TagType")
             {
                 return false;
             }

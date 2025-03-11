@@ -16,13 +16,13 @@ namespace Worlds.Generator
         public const string EntityInterfaceName = "Worlds.IEntity";
 
         private static readonly List<InvocationMatch> componentInvocations;
-        private static readonly List<InvocationMatch> arrayElementInvocations;
+        private static readonly List<InvocationMatch> arrayInvocations;
         private static readonly List<InvocationMatch> tagInvocations;
 
         static SchemaBankGenerator()
         {
             componentInvocations = new();
-            arrayElementInvocations = new();
+            arrayInvocations = new();
             tagInvocations = new();
 
             componentInvocations.Add(new("CreateExtensions", "CreateEntity"));
@@ -36,11 +36,11 @@ namespace Worlds.Generator
             componentInvocations.Add(new("World", "SetComponent"));
             componentInvocations.Add(new("World", "TryGetComponent"));
             componentInvocations.Add(new("World", "ContainsAnyComponent"));
-            arrayElementInvocations.Add(new("World", "CreateArray"));
-            arrayElementInvocations.Add(new("World", "DestroyArray"));
-            arrayElementInvocations.Add(new("World", "ContainsArray"));
-            arrayElementInvocations.Add(new("World", "GetArray"));
-            arrayElementInvocations.Add(new("World", "GetArrayLength"));
+            arrayInvocations.Add(new("World", "CreateArray"));
+            arrayInvocations.Add(new("World", "DestroyArray"));
+            arrayInvocations.Add(new("World", "ContainsArray"));
+            arrayInvocations.Add(new("World", "GetArray"));
+            arrayInvocations.Add(new("World", "GetArrayLength"));
             tagInvocations.Add(new("World", "AddTag"));
             tagInvocations.Add(new("World", "ContainsTag"));
             tagInvocations.Add(new("World", "RemoveTag"));
@@ -51,11 +51,12 @@ namespace Worlds.Generator
             componentInvocations.Add(new("Entity", "GetComponent"));
             componentInvocations.Add(new("Entity", "SetComponent"));
             componentInvocations.Add(new("Entity", "TryGetComponent"));
-            arrayElementInvocations.Add(new("Entity", "CreateArray"));
-            arrayElementInvocations.Add(new("Entity", "DestroyArray"));
-            arrayElementInvocations.Add(new("Entity", "ContainsArray"));
-            arrayElementInvocations.Add(new("Entity", "GetArray"));
-            arrayElementInvocations.Add(new("Entity", "GetArrayLength"));
+            arrayInvocations.Add(new("Entity", "CreateArray"));
+            arrayInvocations.Add(new("Entity", "DestroyArray"));
+            arrayInvocations.Add(new("Entity", "ContainsArray"));
+            arrayInvocations.Add(new("Entity", "GetArray"));
+            arrayInvocations.Add(new("Entity", "GetArrayElement"));
+            arrayInvocations.Add(new("Entity", "GetArrayLength"));
             tagInvocations.Add(new("Entity", "AddTag"));
             tagInvocations.Add(new("Entity", "ContainsTag"));
             tagInvocations.Add(new("Entity", "RemoveTag"));
@@ -67,16 +68,19 @@ namespace Worlds.Generator
             componentInvocations.Add(new("Schema", "GetComponentType"));
             componentInvocations.Add(new("Schema", "GetComponents"));
             componentInvocations.Add(new("Schema", "GetComponentDataType"));
-            arrayElementInvocations.Add(new("Schema", "GetArrayType"));
-            arrayElementInvocations.Add(new("Schema", "GetArrayElements"));
-            arrayElementInvocations.Add(new("Schema", "GetArrayDataType"));
+            arrayInvocations.Add(new("Schema", "GetArrayType"));
+            arrayInvocations.Add(new("Schema", "GetArrayDataType"));
             tagInvocations.Add(new("Schema", "GetTagType"));
             tagInvocations.Add(new("Schema", "GetTagDataType"));
 
             componentInvocations.Add(new("ComponentQuery", "RequireComponent"));
+            componentInvocations.Add(new("ComponentQuery", "RequireComponents"));
             componentInvocations.Add(new("ComponentQuery", "ExcludeComponent"));
-            arrayElementInvocations.Add(new("ComponentQuery", "RequireArrayElement"));
-            arrayElementInvocations.Add(new("ComponentQuery", "ExcludeArrayElement"));
+            componentInvocations.Add(new("ComponentQuery", "ExcludeComponents"));
+            arrayInvocations.Add(new("ComponentQuery", "RequireArray"));
+            arrayInvocations.Add(new("ComponentQuery", "RequireArrays"));
+            arrayInvocations.Add(new("ComponentQuery", "ExcludeArray"));
+            arrayInvocations.Add(new("ComponentQuery", "ExcludeArrays"));
             tagInvocations.Add(new("ComponentQuery", "RequireTag"));
             tagInvocations.Add(new("ComponentQuery", "ExcludeTag"));
 
@@ -84,26 +88,26 @@ namespace Worlds.Generator
             componentInvocations.Add(new("Operation", "RemoveComponent"));
             componentInvocations.Add(new("Operation", "SetComponent"));
             componentInvocations.Add(new("Operation", "AddOrSetComponent"));
-            arrayElementInvocations.Add(new("Operation", "CreateArray"));
-            arrayElementInvocations.Add(new("Operation", "SetArrayElements"));
-            arrayElementInvocations.Add(new("Operation", "SetArrayElement"));
-            arrayElementInvocations.Add(new("Operation", "SetArray"));
-            arrayElementInvocations.Add(new("Operation", "CreateOrSetArray"));
-            arrayElementInvocations.Add(new("Operation", "DestroyArray"));
+            arrayInvocations.Add(new("Operation", "CreateArray"));
+            arrayInvocations.Add(new("Operation", "SetArrayElements"));
+            arrayInvocations.Add(new("Operation", "SetArrayElement"));
+            arrayInvocations.Add(new("Operation", "SetArray"));
+            arrayInvocations.Add(new("Operation", "CreateOrSetArray"));
+            arrayInvocations.Add(new("Operation", "DestroyArray"));
             tagInvocations.Add(new("Operation", "AddTag"));
             tagInvocations.Add(new("Operation", "RemoveTag"));
 
             componentInvocations.Add(new("Definition", "AddComponentTypes"));
             componentInvocations.Add(new("Definition", "AddComponentType"));
-            arrayElementInvocations.Add(new("Definition", "AddArrayType"));
-            arrayElementInvocations.Add(new("Definition", "AddArrayTypes"));
+            arrayInvocations.Add(new("Definition", "AddArrayType"));
+            arrayInvocations.Add(new("Definition", "AddArrayTypes"));
             tagInvocations.Add(new("Definition", "AddTagTypes"));
             tagInvocations.Add(new("Definition", "AddTagType"));
 
             componentInvocations.Add(new("Archetype", "AddComponentTypes"));
             componentInvocations.Add(new("Archetype", "AddComponentType"));
-            arrayElementInvocations.Add(new("Archetype", "AddArrayType"));
-            arrayElementInvocations.Add(new("Archetype", "AddArrayTypes"));
+            arrayInvocations.Add(new("Archetype", "AddArrayType"));
+            arrayInvocations.Add(new("Archetype", "AddArrayTypes"));
             tagInvocations.Add(new("Archetype", "AddTagTypes"));
             tagInvocations.Add(new("Archetype", "AddTagType"));
         }
@@ -199,11 +203,11 @@ namespace Worlds.Generator
             return false;
         }
 
-        private static bool IsArrayElementMethod(string methodName)
+        private static bool IsArrayMethod(string methodName)
         {
-            foreach (InvocationMatch arrayElementInvocation in arrayElementInvocations)
+            foreach (InvocationMatch arrayInvocation in arrayInvocations)
             {
-                if (arrayElementInvocation.methodName == methodName)
+                if (arrayInvocation.methodName == methodName)
                 {
                     return true;
                 }
@@ -212,15 +216,15 @@ namespace Worlds.Generator
             return false;
         }
 
-        private static bool IsArrayElementMethod(ITypeSymbol declaringType, string methodName)
+        private static bool IsArrayMethod(ITypeSymbol declaringType, string methodName)
         {
             string declaringTypeName = declaringType.Name;
             bool isEntity = declaringType.HasInterface(EntityInterfaceName);
-            foreach (InvocationMatch arrayElementInvocation in arrayElementInvocations)
+            foreach (InvocationMatch arrayInvocation in arrayInvocations)
             {
-                if (arrayElementInvocation.declaringTypeName == declaringTypeName || (arrayElementInvocation.declaringTypeName == "Entity" && isEntity))
+                if (arrayInvocation.declaringTypeName == declaringTypeName || (arrayInvocation.declaringTypeName == "Entity" && isEntity))
                 {
-                    if (arrayElementInvocation.methodName == methodName)
+                    if (arrayInvocation.methodName == methodName)
                     {
                         return true;
                     }
@@ -469,7 +473,7 @@ namespace Worlds.Generator
                         }
                     }
 
-                    if (IsArrayElementMethod(declaringTypeSymbol, methodSymbol.Name))
+                    if (IsArrayMethod(declaringTypeSymbol, methodSymbol.Name))
                     {
                         foreach (ITypeSymbol genericType in methodSymbol.TypeArguments)
                         {
@@ -478,7 +482,7 @@ namespace Worlds.Generator
                                 continue;
                             }
 
-                            if (collection.TryAdd(DataKind.ArrayElement, genericType.GetFullTypeName()))
+                            if (collection.TryAdd(DataKind.Array, genericType.GetFullTypeName()))
                             {
                                 source.AppendLine($"// array {invocationExpression} = {genericType.GetFullTypeName()}");
                             }
@@ -531,7 +535,7 @@ namespace Worlds.Generator
                                         isGeneric = true;
                                         break;
                                     }
-                                    else if (parameterTypeName != "Worlds.ArrayElementType")
+                                    else if (parameterTypeName != "Worlds.ArrayType")
                                     {
                                         isGeneric = true;
                                         break;
@@ -602,7 +606,7 @@ namespace Worlds.Generator
                                 }
                             }
 
-                            if (IsArrayElementMethod(methodName))
+                            if (IsArrayMethod(methodName))
                             {
                                 if (invocationExpression.Expression is GenericNameSyntax genericName)
                                 {
@@ -615,7 +619,7 @@ namespace Worlds.Generator
                                                 continue;
                                             }
 
-                                            if (collection.TryAdd(DataKind.ArrayElement, genericType.GetFullTypeName()))
+                                            if (collection.TryAdd(DataKind.Array, genericType.GetFullTypeName()))
                                             {
                                                 source.AppendLine($"// array {invocationExpression} = {genericType.GetFullTypeName()}");
                                             }
@@ -641,7 +645,7 @@ namespace Worlds.Generator
                                             fullTypeName = fullTypeName.Substring(SpanStart.Length, fullTypeName.Length - SpanStart.Length - 1);
                                         }
 
-                                        if (collection.TryAdd(DataKind.ArrayElement, fullTypeName))
+                                        if (collection.TryAdd(DataKind.Array, fullTypeName))
                                         {
                                             source.AppendLine($"// array {invocationExpression} = {genericType.GetFullTypeName()}");
                                         }
@@ -760,9 +764,9 @@ namespace Worlds.Generator
                         {
                             source.Append("Component<");
                         }
-                        else if (result.kind == DataKind.ArrayElement)
+                        else if (result.kind == DataKind.Array)
                         {
-                            source.Append("ArrayElement<");
+                            source.Append("Array<");
                         }
                         else if (result.kind == DataKind.Tag)
                         {
