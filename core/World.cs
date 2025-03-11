@@ -636,7 +636,7 @@ namespace Worlds
             ref Slot parentSlot = ref world->slots[(int)slot.parent]; //it can be 0, which is ok
             parentSlot.childrenCount--;
             slot.parent = default;
-            slot.chunk.RemoveEntity(entity);
+            slot.chunk.RemoveEntity(entity); //<- this right here, very expensive
             world->freeEntities.Push(entity);
 
             if (world->entityCreatedOrDestroyed.Count > 0)
@@ -2146,7 +2146,7 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Adds a new default component with the given type.
+        /// Adds a new <see langword="default"/> component of type <paramref name="componentType"/>.
         /// </summary>
         public readonly MemoryAddress AddComponent(uint entity, int componentType)
         {
