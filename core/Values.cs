@@ -77,6 +77,30 @@ namespace Worlds
             return pointer->items.AsSpan<X>(start, pointer->length - start);
         }
 
+        public readonly void Add(T item)
+        {
+            int newLength = pointer->length + 1;
+            MemoryAddress.Resize(ref pointer->items, sizeof(T) * newLength);
+            pointer->items.WriteElement(pointer->length, item);
+            pointer->length = newLength;
+        }
+
+        public readonly ref T Add()
+        {
+            int newLength = pointer->length + 1;
+            MemoryAddress.Resize(ref pointer->items, sizeof(T) * newLength);
+            pointer->length = newLength;
+            return ref pointer->items.ReadElement<T>(pointer->length - 1);
+        }
+
+        public readonly void AddRange(ReadOnlySpan<T> items)
+        {
+            int newLength = pointer->length + items.Length;
+            MemoryAddress.Resize(ref pointer->items, sizeof(T) * newLength);
+            pointer->items.Write(pointer->length * sizeof(T), items);
+            pointer->length = newLength;
+        }
+
         public readonly Span<T>.Enumerator GetEnumerator()
         {
             return new Span<T>(pointer->items.Pointer, pointer->length).GetEnumerator();
