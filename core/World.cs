@@ -354,16 +354,6 @@ namespace Worlds
             }
         }
 
-        private readonly void NotifyDestruction(uint entity)
-        {
-            List<(EntityCreatedOrDestroyed, ulong)> events = world->entityCreatedOrDestroyed;
-            for (int i = 0; i < events.Count; i++)
-            {
-                (EntityCreatedOrDestroyed callback, ulong userData) = events[i];
-                callback.Invoke(this, entity, ChangeType.Removed, userData);
-            }
-        }
-
         private readonly void NotifyParentChange(uint entity, uint oldParent, uint newParent)
         {
             List<(EntityParentChanged, ulong)> events = world->entityParentChanged;
@@ -642,7 +632,15 @@ namespace Worlds
             slot.parent = default;
             slot.chunk.RemoveEntity(entity);
             world->freeEntities.Push(entity);
-            NotifyDestruction(entity);
+
+            if (world->entityCreatedOrDestroyed.Count > 0)
+            {
+                for (int i = 0; i < world->entityCreatedOrDestroyed.Count; i++)
+                {
+                    (EntityCreatedOrDestroyed callback, ulong userData) = world->entityCreatedOrDestroyed[i];
+                    callback.Invoke(this, entity, ChangeType.Removed, userData);
+                }
+            }
         }
 
         /// <summary>
@@ -713,18 +711,18 @@ namespace Worlds
             ref Chunk chunk = ref entitySlot.chunk;
             Chunk previousChunk = chunk;
             Definition previousDefinition = previousChunk.Definition;
-            bool oldEnabled = !previousDefinition.TagTypes.Contains(byte.MaxValue);
+            bool oldEnabled = !previousDefinition.TagTypes.Contains(TagType.Disabled);
             bool newEnabled = entitySlot.state == Slot.State.Enabled;
             if (oldEnabled != newEnabled)
             {
                 Definition newDefinition = previousDefinition;
                 if (newEnabled)
                 {
-                    newDefinition.RemoveTagType(byte.MaxValue);
+                    newDefinition.RemoveTagType(TagType.Disabled);
                 }
                 else
                 {
-                    newDefinition.AddTagType(byte.MaxValue);
+                    newDefinition.AddTagType(TagType.Disabled);
                 }
 
                 if (!world->chunksMap.TryGetValue(newDefinition, out Chunk newChunk))
@@ -762,18 +760,18 @@ namespace Worlds
                     //move descentant to proper chunk
                     previousChunk = currentSlot.chunk;
                     previousDefinition = previousChunk.Definition;
-                    oldEnabled = !previousDefinition.TagTypes.Contains(byte.MaxValue);
+                    oldEnabled = !previousDefinition.TagTypes.Contains(TagType.Disabled);
                     newEnabled = currentSlot.state == Slot.State.Enabled;
                     if (oldEnabled != enabled)
                     {
                         Definition newDefinition = previousDefinition;
                         if (enabled)
                         {
-                            newDefinition.RemoveTagType(byte.MaxValue);
+                            newDefinition.RemoveTagType(TagType.Disabled);
                         }
                         else
                         {
-                            newDefinition.AddTagType(byte.MaxValue);
+                            newDefinition.AddTagType(TagType.Disabled);
                         }
 
                         if (!world->chunksMap.TryGetValue(newDefinition, out Chunk newChunk))
@@ -1183,18 +1181,18 @@ namespace Worlds
                 //move to different chunk if disabled state changed
                 Chunk previousChunk = entitySlot.chunk;
                 Definition previousDefinition = previousChunk.Definition;
-                bool oldEnabled = !previousDefinition.TagTypes.Contains(byte.MaxValue);
+                bool oldEnabled = !previousDefinition.TagTypes.Contains(TagType.Disabled);
                 bool newEnabled = entitySlot.state == Slot.State.Enabled;
                 if (oldEnabled != newEnabled)
                 {
                     Definition newDefinition = previousDefinition;
                     if (newEnabled)
                     {
-                        newDefinition.RemoveTagType(byte.MaxValue);
+                        newDefinition.RemoveTagType(TagType.Disabled);
                     }
                     else
                     {
-                        newDefinition.AddTagType(byte.MaxValue);
+                        newDefinition.AddTagType(TagType.Disabled);
                     }
 
                     if (!world->chunksMap.TryGetValue(newDefinition, out Chunk destinationChunk))
