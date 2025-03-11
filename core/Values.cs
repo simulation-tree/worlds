@@ -7,6 +7,9 @@ using Pointer = Collections.Pointers.Array;
 
 namespace Worlds
 {
+    /// <summary>
+    /// An array of <typeparamref name="T"/> values stored on an <see cref="Entity"/>.
+    /// </summary>
     public unsafe readonly struct Values<T> where T : unmanaged
     {
         private readonly Pointer* pointer;
@@ -164,31 +167,41 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Copies the state of the <paramref name="span"/>.
+        /// Copies the state of the <paramref name="source"/>.
         /// </summary>
-        public readonly void CopyFrom(Span<T> span)
+        public readonly void CopyFrom(Span<T> source)
         {
-            if (span.Length != pointer->length)
+            if (source.Length != pointer->length)
             {
-                pointer->length = span.Length;
+                pointer->length = source.Length;
                 MemoryAddress.Resize(ref pointer->items, sizeof(T) * pointer->length);
             }
 
-            pointer->items.Write(span);
+            pointer->items.Write(source);
         }
 
         /// <summary>
-        /// Copies the state of the <paramref name="span"/>.
+        /// Copies the state of the <paramref name="source"/>.
         /// </summary>
-        public readonly void CopyFrom(ReadOnlySpan<T> span)
+        public readonly void CopyFrom(ReadOnlySpan<T> source)
         {
-            if (span.Length != pointer->length)
+            if (source.Length != pointer->length)
             {
-                pointer->length = span.Length;
+                pointer->length = source.Length;
                 MemoryAddress.Resize(ref pointer->items, sizeof(T) * pointer->length);
             }
 
-            pointer->items.Write(span);
+            pointer->items.Write(source);
+        }
+
+        /// <summary>
+        /// Copies this array into the <paramref name="destination"/>.
+        /// </summary>
+        public readonly void CopyTo(Span<T> destination)
+        {
+            ThrowIfOutOfRange(destination.Length - 1);
+
+            pointer->items.CopyTo(destination);
         }
 
         public static implicit operator Values(Values<T> values)
@@ -197,6 +210,9 @@ namespace Worlds
         }
     }
 
+    /// <summary>
+    /// An array of values stored on an <see cref="Entity"/>.
+    /// </summary>
     public unsafe readonly struct Values : IEquatable<Values>
     {
         internal readonly Pointer* pointer;
