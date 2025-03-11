@@ -98,15 +98,15 @@ namespace Worlds
         public Chunk(Definition definition, Schema schema)
         {
             Array<List> componentArrays = new(BitMask.Capacity);
-            Span<byte> typeIndices = stackalloc byte[BitMask.Capacity];
-            byte typeCount = 0;
+            Span<int> typeIndices = stackalloc int[BitMask.Capacity];
+            int typeCount = 0;
             for (int c = 0; c < BitMask.Capacity; c++)
             {
                 if (definition.ComponentTypes.Contains(c))
                 {
                     int componentSize = schema.GetComponentTypeSize(c);
                     componentArrays[c] = new(4, componentSize);
-                    typeIndices[typeCount++] = (byte)c;
+                    typeIndices[typeCount++] = c;
                 }
             }
 
@@ -218,7 +218,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(chunk);
 
             chunk->entities.Add(entity);
-            Span<byte> typeIndices = chunk->typeIndices.AsSpan();
+            Span<int> typeIndices = chunk->typeIndices.AsSpan();
             Span<List> componentLists = chunk->componentLists.AsSpan();
             for (int t = 0; t < typeIndices.Length; t++)
             {
@@ -235,9 +235,8 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(chunk);
 
-            int index = chunk->entities.IndexOf(entity);
-            chunk->entities.RemoveAtBySwapping(index);
-            Span<byte> typeIndices = chunk->typeIndices.AsSpan();
+            int index = chunk->entities.RemoveBySwapping(entity);
+            Span<int> typeIndices = chunk->typeIndices.AsSpan();
             Span<List> componentLists = chunk->componentLists.AsSpan();
             for (int t = 0; t < typeIndices.Length; t++)
             {
@@ -253,19 +252,18 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(chunk);
             MemoryAddress.ThrowIfDefault(destination.chunk);
 
-            int oldIndex = chunk->entities.IndexOf(entity);
-            chunk->entities.RemoveAtBySwapping(oldIndex);
+            int oldIndex = chunk->entities.RemoveBySwapping(entity);
             int newIndex = destination.chunk->entities.Count;
             destination.chunk->entities.Add(entity);
 
             //copy from source to destination
-            Span<byte> sourceTypeIndices = chunk->typeIndices.AsSpan();
+            Span<int> sourceTypeIndices = chunk->typeIndices.AsSpan();
             Span<List> sourceComponentLists = chunk->componentLists.AsSpan();
-            Span<byte> destinationTypeIndices = destination.chunk->typeIndices.AsSpan();
+            Span<int> destinationTypeIndices = destination.chunk->typeIndices.AsSpan();
             Span<List> destinationComponentLists = destination.chunk->componentLists.AsSpan();
             for (int t = 0; t < destinationTypeIndices.Length; t++)
             {
-                byte destinationComponentType = destinationTypeIndices[t];
+                int destinationComponentType = destinationTypeIndices[t];
                 List destinationComponents = destinationComponentLists[destinationComponentType];
                 if (sourceTypeIndices.Contains(destinationComponentType))
                 {

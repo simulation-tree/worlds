@@ -9,9 +9,9 @@ namespace Worlds.Pointers
 
         internal readonly List<uint> entities;
         internal readonly Array<List> componentLists;
-        internal readonly Array<byte> typeIndices;
+        internal readonly Array<int> typeIndices;
 
-        internal Chunk(Definition definition, Array<List> componentLists, Array<byte> typeIndices)
+        internal Chunk(Definition definition, Array<List> componentLists, Array<int> typeIndices)
         {
             entities = new(4);
             this.typeIndices = typeIndices;
