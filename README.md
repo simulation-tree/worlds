@@ -199,6 +199,20 @@ world.TryGetFirst(out uint oldFirstEntity, out MyReference component);
 uint oldSecondEntity = world.GetReference(oldFirstEntity, component.entityReference);
 ```
 
+### The `Entity` wrapper
+
+In addition to the original API, can also use `Entity` instances. Which wrap the
+`uint` value for the entity and the `World` instance:
+```cs
+Entity entity = new(world);
+entity.AddComponent(new Fruit(1337));
+
+ref Fruit component = ref entity.GetComponent<Fruit>();
+component.value *= 2;
+
+Values<char> many = entity.CreateArray<char>("Hello world".AsSpan());
+```
+
 ### Forming entity types
 
 A commonly reused pattern with components is to formalize them into argued objects, where the
@@ -230,7 +244,7 @@ public readonly partial struct Player : IEntity
 //creating a player using its type's constructor
 Player player = new(world, "unnamed");
 ```
-> Entity types that are partial will have all of the API available
+> Only entity types that are partial will have all of the world API available
 
 These types can then be used to transform or interpret existing entities:
 ```cs
@@ -247,9 +261,17 @@ Player player = supposedPlayer.As<Player>();
 player.Name = "New name";
 ```
 
-### Serialization and appending
+The custom `IEntity` types can be implicitly casted to `Entity`, and back:
+```cs
+Player player = new(world, "unnamed");
+Entity entity = player;
 
-All data within each world is portable, and can be serialized and deserialized
+player = entity.As<Player>();
+```
+
+### Serializing and appending
+
+Each world instance is portable, and can be serialized and deserialized
 in another executable:
 ```cs
 Schema schema = SchemaLoader.Get();
@@ -273,7 +295,7 @@ anotherWorld.Append(loadedWorld);
 When worlds are serialized, they contain the original schema that was used. Storing
 the original `TypeLayout` values for describing each component/array/tag type.
 Allowing for them to be processed when loaded in a different executable, and rerouting types
-to other available ones:
+to other available ones if the original type isn't:
 ```cs
 using World loadedWorld = World.Deserialize(reader, Process);
 
