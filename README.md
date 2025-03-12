@@ -4,16 +4,20 @@
 
 Library for implementing data as _components_, _arrays_, and _tags_, found on _entities_.
 
-Entities themselves are stored within these _worlds_, which can be serialized, deserialized, and appended to other worlds at runtime.
+Entities are stored within these _worlds_, which can then be serialized, deserialized, and
+appended to other worlds at runtime.
 
 ### Creating worlds
 
-All worlds contain a `Schema`, describing which types are possible to use.
-They can be loaded after a world is created, or by passing one to the constructor:
+`World`s contain a `Schema`, describing which types are possible to use with it.
+When using a type that isn't registered while interacting with a world,
+errors will be thrown in debug mode. All types that are used must be registered.
+
+Schemas can be loaded after a world is created, or by passing one to the constructor:
 ```cs
 private static void Main()
 {
-    TypeRegistryLoader.Load();
+    TypeRegistryLoader.Load();              //register type metadata
 
     Schema schema = new();
     schema.RegisterComponent<float>();
@@ -37,14 +41,14 @@ public struct Fruit(uint value)
 
 ### Schema loader
 
-Included is a generator for a `SchemaLoader` type available only to projects with an 
-entry point. It ensures that all mentioned types are registered, saving the need
-to manually register them:
+Included is a generator for a `SchemaLoader` type for projects that have an entry point.
+It ensures that all mentioned types with a world are registered. Saving the effort for
+manually registering them, and making startup easier:
 ```cs
 private static void Main()
 {
-    TypeRegistryLoader.Load();
-    Schema schema = SchemaLoader.Get();
+    TypeRegistryLoader.Load();              //register type metadata
+    Schema schema = SchemaLoader.Get();     //register components/arrays/tags
     using World world = new(schema);
 
     uint entity = world.CreateEntity();
@@ -72,72 +76,14 @@ and can be resized:
 Values<char> many = world.CreateArray(entity, "Hello world".AsSpan());
 many.Length = 5;
 Assert.That(moreMany.AsSpan().ToString(), Is.EqualTo("Hello"));
-```
 
-### Fetching data and querying
-
-Polling of components, and modifying them can be done through a few different ways:
-```cs
-uint sum;
-
-void Do()
-{
-    foreach (uint entity in world.GetAllContaining<Fruit>())
-    {
-        //this approach suffers from having to fetch each component individually
-        ref Fruit component = ref world.GetComponent<Fruit>(entity);
-        component.value *= 2;
-        sum += component.value;
-    }
-}
-```
-
-This approach is the most efficient and quickest:
-```cs
-uint sum = 0;
-
-void Do()
-{
-    //only downside here is having to read a lot of code
-    ComponentType componentType = world.Schema.GetComponent<Fruit>();
-    foreach (Chunk chunk in world.Chunks)
-    {
-        if (chunk.Contains(componentType))
-        {
-            Span<Fruit> components = chunk.GetComponents<Fruit>(componentType);
-            foreach (uint entity in chunk.Entities)
-            {
-                ref Fruit component = ref components[entity];
-                component.value *= 2;
-                sum += component.value;
-            }
-        }
-    }
-}
-```
-
-Last is the `ComponentQuery` approach, relying on a `foreach` statement to iterate over
-found components with `ref` access to each:
-```cs
-uint sum = 0;
-
-void Do()
-{
-    //a little slower than manually iterating, but more readable
-    ComponentQuery<Fruit> query = new(world);
-    foreach (var x in query)
-    {
-        uint entity = x.entity;
-        ref Fruit component = ref x.component1;
-        component.value *= 2;
-        sum += component.value;
-    }
-}
+many.AddRange(" there".AsSpan());
+Assert.That(many.AsSpan().ToString(), Is.EqualTo("Hello there"));
 ```
 
 ### Tagging entities
 
-Entities can be tagged with tag types:
+Entities can be tagged with any type, and then queried for:
 ```cs
 public struct IsThing
 {
@@ -149,14 +95,90 @@ world.AddTag<IsThing>(entity);
 Assert.That(world.Contains<IsThing>(entity), Is.True);
 ```
 
+### Fetching data and querying
+
+Polling of components, and modifying them can be done through a few different ways.
+
+**Manual**
+
+This approach is the quickest:
+```cs
+uint sum = 0;
+
+void Do()
+{
+    int componentType = world.Schema.GetComponentType<Fruit>();
+    int tagType = world.Schema.GetTagType<IsThing>();
+    foreach (Chunk chunk in world.Chunks)
+    {
+        if (chunk.Definition.ContainsComponent(componentType) && !chunk.Definition.ContainsTag(tagType))
+        {
+            Span<Fruit> components = chunk.GetComponents<Fruit>(componentType);
+            ReadOnlySpan<uint> entities = chunk.Entities;
+            for (int i = 0; i < entities.Length; i++)
+            {
+                uint entity = entities[i];
+                ref Fruit component = ref components[i];
+                component.value *= 2;
+                sum += component.value;
+            }
+        }
+    }
+}
+```
+
+**ComponentQuery**
+
+This approach is the next quicker, and requires way less code to write:
+```cs
+uint sum = 0;
+
+void Do()
+{
+    ComponentQuery<Fruit> query = new(world);
+    query.ExcludeTags<IsThing>();
+    foreach (var x in query)
+    {
+        uint entity = x.entity;
+        ref Fruit component = ref x.component1;
+        component.value *= 2;
+        sum += component.value;
+    }
+}
+```
+
+**Get methods**
+
+Other approaches through extension methods like `GetAllContaining` don't lend themselves
+to quicker runtimes, but are quicker to write:
+```cs
+uint sum;
+
+void Do()
+{
+    foreach (uint entity in world.GetAllContaining<Fruit>())
+    {
+        if (world.ContainsTag<IsThing>(entity))
+        {
+            continue;
+        }
+
+        //this approach suffers from having to fetch each component individually
+        ref Fruit component = ref world.GetComponent<Fruit>(entity);
+        component.value *= 2;
+        sum += component.value;
+    }
+}
+```
+
 ### Relationship references to other entities
 
 Components with `uint` values that are _meant_ to reference other entities will be
 susceptible to drift after serialization. This is because the entity value represents
 a position, that may be occupied by another existing entity.
 
-This is solved by storing the references locally and accessing with an `rint` index.
-Then when worlds are appended to another world, the referenced entities can shift together
+This is solved by storing the references locally and accessing them with an `rint` index.
+When worlds are appended to another world, those referenced entities can shift together
 as they're added, preserving the relationship.
 
 ```cs
@@ -184,21 +206,21 @@ type is qualified by the data present on the entity. For example, if an entity
 contains a `PlayerName`, then its a player entity. This design is supported with the
 `IEntity` interface and its required `Describe()` method:
 ```cs
-public struct PlayerName(FixedString name)
+public struct PlayerName(ASCIIText32 name)
 {
-    public FixedString name = name;
+    public ASCIIText32 name = name;
 }
 
 public readonly partial struct Player : IEntity
 {
-    public readonly ref FixedString Name => ref GetComponent<PlayerName>().name;
+    public readonly ref ASCIIText32 Name => ref GetComponent<PlayerName>().name;
 
     readonly void IEntity.Describe(ref Archetype archetype)
     {
         archetype.AddComponentType<PlayerName>();    
     }
 
-    public Player(World world, FixedString name)
+    public Player(World world, ASCIIText32 name)
     {
         this.world = world;
         value = world.CreateEntity(new PlayerName(name));
@@ -227,7 +249,8 @@ player.Name = "New name";
 
 ### Serialization and appending
 
-Serializing a world to bytes and then appending to another world:
+All data within each world is portable, and can be serialized and deserialized
+in another executable:
 ```cs
 Schema schema = SchemaLoader.Get();
 using World prefabWorld = new(schema);
@@ -235,27 +258,28 @@ Entity entity = new(prefabWorld);
 entity.AddComponent(new Fruit(1337));
 entity.CreateArray<char>("Hello world".AsSpan());
 
-using BinaryWriter writer = new();
+using ByteWriter writer = new();
 writer.WriteObject(prefabWorld);
-Span<byte> bytes = writer.AsSpan();
+ReadOnlySpan<byte> bytes = writer.AsSpan();
 
-using BinaryReader reader = new(bytes);
-using World loadedWorld = reader.ReadObject<World>();
+using ByteReader reader = new(bytes);
+using World loadedWorld = World.Deserialize(reader);
 using World anotherWorld = new(schema);
 anotherWorld.Append(loadedWorld);
 ```
 
 ### Processing deserialized schemas
 
-When worlds are serialized they contain the schema that was used. Together
-with the original `TypeLayout` values. Allowing for them to be processed
-in different assemblies, and routing found types into available ones:
+When worlds are serialized, they contain the original schema that was used. Storing
+the original `TypeLayout` values for describing each component/array/tag type.
+Allowing for them to be processed when loaded in a different executable, and rerouting types
+to other available ones:
 ```cs
 using World loadedWorld = World.Deserialize(reader, Process);
 
 static TypeLayout Process(TypeLayout type, DataType.Kind dataType)
 {
-    if (type.Is<Fruit>())
+    if (type.Name.SequenceEquals("Fruit") && type.Size == sizeof(uint))
     {
         //change the type to uint
         return TypeRegistry.Get<uint>();
@@ -270,7 +294,7 @@ static TypeLayout Process(TypeLayout type, DataType.Kind dataType)
 ### Contributing and design
 
 This library implements the "[entity-component-system](https://en.wikipedia.org/wiki/Entity_component_system)" pattern
-of the "archetype" variety. Created for building programs of whatever kind, with an open door to the author
-when targeting runtime efficiency.
+of the "archetype" variety. Created for building programs of whatever kind, with an open door for targeting
+runtime efficiency. It's meant to be fast, though it's not quite there yet.
 
-Contributions to this are welcome.
+Contributions to this goal are welcome.
