@@ -2116,6 +2116,33 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Adds a new <typeparamref name="T"/> component to the given <paramref name="entity"/>.
+        /// </summary>
+        public readonly void AddComponent<T>(uint entity, int componentType, T component) where T : unmanaged
+        {
+            MemoryAddress.ThrowIfDefault(world);
+            ThrowIfEntityIsMissing(entity);
+            ThrowIfComponentAlreadyPresent(entity, componentType);
+
+            ref Slot slot = ref world->slots[(int)entity];
+            Chunk previousChunk = slot.chunk;
+            Definition newDefinition = previousChunk.Definition;
+            newDefinition.AddComponentType(componentType);
+
+            if (!world->chunksMap.TryGetValue(newDefinition, out Chunk destinationChunk))
+            {
+                destinationChunk = new(newDefinition, world->schema);
+                world->chunksMap.Add(newDefinition, destinationChunk);
+                world->uniqueChunks.Add(destinationChunk);
+            }
+
+            slot.chunk = destinationChunk;
+            int index = previousChunk.MoveEntity(entity, destinationChunk);
+            destinationChunk.SetComponent(index, componentType, component);
+            NotifyComponentAdded(entity, componentType);
+        }
+
+        /// <summary>
         /// Adds a <typeparamref name="T"/> component with <see langword="default"/> memory to <paramref name="entity"/>,
         /// and returns it by reference.
         /// </summary>
@@ -2148,7 +2175,7 @@ namespace Worlds
         /// <summary>
         /// Adds a new <see langword="default"/> component of type <paramref name="componentType"/>.
         /// </summary>
-        public readonly MemoryAddress AddComponent(uint entity, int componentType)
+        public readonly void AddComponent(uint entity, int componentType)
         {
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
@@ -2167,9 +2194,8 @@ namespace Worlds
             }
 
             slot.chunk = destinationChunk;
-            int index = previousChunk.MoveEntity(entity, destinationChunk);
+            previousChunk.MoveEntity(entity, destinationChunk);
             NotifyComponentAdded(entity, componentType);
-            return destinationChunk.GetComponent(index, componentType);
         }
 
         /// <summary>

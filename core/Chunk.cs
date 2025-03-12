@@ -310,6 +310,17 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves the index of the given <paramref name="entity"/>.
+        /// </summary>
+        public readonly int IndexOf(uint entity)
+        {
+            MemoryAddress.ThrowIfDefault(chunk);
+            ThrowIfEntityIsMissing(entity);
+
+            return chunk->entities.IndexOf(entity);
+        }
+
+        /// <summary>
         /// Retrieves a reference to the component of type <paramref name="componentType"/>.
         /// </summary>
         public readonly ref T GetComponent<T>(int index, int componentType) where T : unmanaged
