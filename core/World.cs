@@ -1490,8 +1490,7 @@ namespace Worlds
 
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
-            Chunk previousChunk = slot.chunk;
-            Definition newDefinition = previousChunk.Definition;
+            Definition newDefinition = slot.chunk.Definition;
             newDefinition.AddTagType(tagType);
 
             if (!world->chunks.TryGetValue(new(newDefinition), out ChunkKey key))
@@ -1519,8 +1518,7 @@ namespace Worlds
 
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
-            Chunk previousChunk = slot.chunk;
-            Definition newDefinition = previousChunk.Definition;
+            Definition newDefinition = slot.chunk.Definition;
             newDefinition.AddTagType(tagType);
 
             if (!world->chunks.TryGetValue(new(newDefinition), out ChunkKey key))
@@ -1627,8 +1625,7 @@ namespace Worlds
             Span<Slot> slots = world->slots.AsSpan();
             int stride = world->schema.GetArrayTypeSize(arrayType);
             ref Slot slot = ref slots[(int)entity];
-            Chunk previousChunk = slot.chunk;
-            Definition previousDefinition = previousChunk.Definition;
+            Definition previousDefinition = slot.chunk.Definition;
 
             if (!slot.ContainsArrays)
             {
@@ -1684,8 +1681,7 @@ namespace Worlds
 
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
-            Chunk previousChunk = slot.chunk;
-            Definition previousDefinition = previousChunk.Definition;
+            Definition previousDefinition = slot.chunk.Definition;
 
             if (!slot.ContainsArrays)
             {
@@ -1743,8 +1739,7 @@ namespace Worlds
 
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
-            Chunk previousChunk = slot.chunk;
-            Definition previousDefinition = previousChunk.Definition;
+            Definition previousDefinition = slot.chunk.Definition;
 
             if (!slot.ContainsArrays)
             {
@@ -1802,8 +1797,7 @@ namespace Worlds
 
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
-            Chunk previousChunk = slot.chunk;
-            Definition previousDefinition = previousChunk.Definition;
+            Definition previousDefinition = slot.chunk.Definition;
 
             if (!slot.ContainsArrays)
             {
@@ -1861,8 +1855,7 @@ namespace Worlds
 
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
-            Chunk previousChunk = slot.chunk;
-            Definition previousDefinition = previousChunk.Definition;
+            Definition previousDefinition = slot.chunk.Definition;
 
             if (!slot.ContainsArrays)
             {
@@ -1918,8 +1911,7 @@ namespace Worlds
 
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
-            Chunk previousChunk = slot.chunk;
-            Definition previousDefinition = previousChunk.Definition;
+            Definition previousDefinition = slot.chunk.Definition;
 
             if (!slot.ContainsArrays)
             {
@@ -2099,8 +2091,7 @@ namespace Worlds
             array.Dispose();
             array = default;
 
-            Chunk previousChunk = slot.chunk;
-            Definition newDefinition = previousChunk.Definition;
+            Definition newDefinition = slot.chunk.Definition;
             newDefinition.RemoveArrayType(arrayType);
 
             if (!world->chunks.TryGetValue(new(newDefinition), out ChunkKey key))
@@ -2135,8 +2126,7 @@ namespace Worlds
             array.Dispose();
             array = default;
 
-            Chunk previousChunk = slot.chunk;
-            Definition newDefinition = previousChunk.Definition;
+            Definition newDefinition = slot.chunk.Definition;
             newDefinition.RemoveArrayType(arrayType);
 
             if (!world->chunks.TryGetValue(new(newDefinition), out ChunkKey key))
