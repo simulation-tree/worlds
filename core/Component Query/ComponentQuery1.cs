@@ -1,3 +1,4 @@
+using Collections;
 using System;
 using Unmanaged;
 
@@ -479,17 +480,16 @@ namespace Worlds
             return new(required, exclude, world.Chunks, world.Schema);
         }
 
-        public unsafe ref struct Enumerator
+        public ref struct Enumerator
         {
-            private static readonly int stride = sizeof(Chunk);
-
             private readonly MemoryAddress chunks;
             private readonly int chunkCount;
-            private readonly int c1;
+            private readonly int componentType1;
+            private int componentOffset1;
             private int entityIndex;
             private int chunkIndex;
             private ReadOnlySpan<uint> entities;
-            private Span<C1> list1;
+            private List components;
 
             /// <summary>
             /// Current result.
@@ -500,15 +500,16 @@ namespace Worlds
                 {
                     int index = entityIndex - 1;
                     uint entity = entities[index];
-                    ref C1 c1 = ref list1[index];
-                    return new(entity, ref c1);
+                    MemoryAddress componentRow = components[index];
+                    ref C1 component1 = ref componentRow.Read<C1>(componentOffset1);
+                    return new(entity, ref component1);
                 }
             }
 
             internal Enumerator(Definition required, Definition exclude, ReadOnlySpan<Chunk> allChunks, Schema schema)
             {
                 chunkCount = 0;
-                Span<Chunk> chunksBuffer = stackalloc Chunk[(int)allChunks.Length];
+                Span<Chunk> chunksBuffer = stackalloc Chunk[allChunks.Length];
                 foreach (Chunk chunk in allChunks)
                 {
                     if (chunk.Count > 0)
@@ -553,9 +554,9 @@ namespace Worlds
 
                 entityIndex = 0;
                 chunkIndex = 0;
+                componentType1 = schema.GetComponentTypeIndex<C1>();
                 if (chunkCount > 0)
                 {
-                    c1 = schema.GetComponentTypeIndex<C1>();
                     chunks = MemoryAddress.Allocate(chunksBuffer.Slice(0, chunkCount));
                     UpdateChunkFields(ref chunksBuffer[0]);
                 }
@@ -590,7 +591,8 @@ namespace Worlds
             private void UpdateChunkFields(ref Chunk chunk)
             {
                 entities = chunk.Entities;
-                list1 = chunk.GetComponents<C1>(c1);
+                components = chunk.Components;
+                componentOffset1 = chunk.GetComponentOffset(componentType1);
             }
 
             public readonly void Dispose()

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Worlds.Tests
+﻿namespace Worlds.Tests
 {
     public unsafe class ComponentChunkTests : WorldTests
     {
@@ -32,8 +30,8 @@ namespace Worlds.Tests
             floatComponent = 3.14f;
             Assert.That(chunk.Entities.Length, Is.EqualTo(1));
             Assert.That(chunk.Entities[0], Is.EqualTo(entity));
-            Span<Integer> intComponents = chunk.GetComponents<Integer>(integerType);
-            Span<Float> floatComponents = chunk.GetComponents<Float>(floatType);
+            ComponentEnumerator<Integer> intComponents = chunk.GetEnumerator<Integer>(integerType);
+            ComponentEnumerator<Float> floatComponents = chunk.GetEnumerator<Float>(floatType);
             Assert.That(intComponents.Length, Is.EqualTo(1));
             Assert.That(intComponents[0], Is.EqualTo((Integer)42));
             Assert.That(floatComponents.Length, Is.EqualTo(1));
@@ -58,10 +56,10 @@ namespace Worlds.Tests
             ref Float floatComponent = ref chunk.GetComponent<Float>(index, floatType);
             intComponent = 42;
             floatComponent = 3.14f;
-            chunk.RemoveEntity(entity);
+            chunk.RemoveEntityAt(index);
             Assert.That(chunk.Entities.Length, Is.EqualTo(0));
-            Span<Integer> intComponents = chunk.GetComponents<Integer>(integerType);
-            Span<Float> floatComponents = chunk.GetComponents<Float>(floatType);
+            ComponentEnumerator<Integer> intComponents = chunk.GetEnumerator<Integer>(integerType);
+            ComponentEnumerator<Float> floatComponents = chunk.GetEnumerator<Float>(floatType);
             Assert.That(intComponents.Length, Is.EqualTo(0));
             Assert.That(floatComponents.Length, Is.EqualTo(0));
             chunk.Dispose();
@@ -77,34 +75,37 @@ namespace Worlds.Tests
 
             Chunk chunkA = new(default, schema);
             uint entity = 7;
-            int oldIndex = chunkA.AddEntity(entity);
+            int index = chunkA.AddEntity(entity);                               //add to A
 
             Definition definitionB = new();
             definitionB.AddComponentType<Integer>(schema);
             Chunk chunkB = new(definitionB, schema);
-            int newIndex = chunkA.MoveEntity(entity, chunkB);
-            ref Integer intComponent = ref chunkB.GetComponent<Integer>(newIndex, integerType);
+            chunkA.MoveEntityAt(ref index, chunkB);                             //move from A() to B(int)
+            ref Integer intComponent = ref chunkB.GetComponent<Integer>(index, integerType);
             intComponent = 42;
 
             Assert.That(chunkA.Entities.Length, Is.EqualTo(0));
             Assert.That(chunkB.Entities.Length, Is.EqualTo(1));
             Assert.That(chunkB.Entities[0], Is.EqualTo(entity));
-            Span<Integer> intComponents = chunkB.GetComponents<Integer>(integerType);
+            ComponentEnumerator<Integer> intComponents = chunkB.GetEnumerator<Integer>(integerType);
             Assert.That(intComponents.Length, Is.EqualTo(1));
             Assert.That(intComponents[0], Is.EqualTo((Integer)42));
 
             Definition definitionC = new();
             definitionC.AddComponentTypes<Float, Integer>(schema);
             Chunk chunkC = new(definitionC, schema);
-            int newerIndex = chunkB.MoveEntity(entity, chunkC);
-            ref Float floatComponent = ref chunkC.GetComponent<Float>(newerIndex, floatType);
+            chunkB.MoveEntityAt(ref index, chunkC);                             //move from B(int) to C(float, int)
+            ref Float floatComponent = ref chunkC.GetComponent<Float>(index, floatType);
             floatComponent = 3.14f;
 
-            Assert.That(chunkB.GetComponents<Integer>(integerType).Length, Is.EqualTo(0));
+            intComponents = chunkB.GetEnumerator<Integer>(integerType);
+            Assert.That(intComponents.Length, Is.EqualTo(0));
+
             Assert.That(chunkB.Entities.Length, Is.EqualTo(0));
             Assert.That(chunkC.Entities.Length, Is.EqualTo(1));
             Assert.That(chunkC.Entities[0], Is.EqualTo(entity));
-            Span<Float> floatComponents = chunkC.GetComponents<Float>(floatType);
+
+            ComponentEnumerator<Float> floatComponents = chunkC.GetEnumerator<Float>(floatType);
             Assert.That(floatComponents.Length, Is.EqualTo(1));
             Assert.That(floatComponents[0], Is.EqualTo((Float)3.14f));
 

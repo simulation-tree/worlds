@@ -21,6 +21,20 @@
         }
 
         [Test]
+        public void ParentOfRecreatedEntity()
+        {
+            using World world = CreateWorld();
+            uint a = world.CreateEntity();
+            uint b = world.CreateEntity();
+            world.SetParent(b, a);
+            Assert.That(world.GetParent(b), Is.EqualTo(a));
+            world.DestroyEntity(b);
+            uint c = world.CreateEntity();
+            Assert.That(b, Is.EqualTo(c));
+            Assert.That(world.GetParent(c), Is.EqualTo(default(uint)));
+        }
+
+        [Test]
         public void CountChildren()
         {
             using World world = CreateWorld();

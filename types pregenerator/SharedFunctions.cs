@@ -1,3 +1,4 @@
+using System;
 using System.Text;
 
 public static class SharedFunctions
@@ -5,6 +6,9 @@ public static class SharedFunctions
     private const char GenericTypePrefix = 'C';
     private const string ComponentType = "int";
     private const string SpanType = "Span";
+    private const string ComponentTypeFieldName = "componentType";
+    private const string ComponentOffsetFieldName = "componentOffset";
+    private const string ComponentVariableName = "component";
 
     public static int GetIndent(string source, string keyword)
     {
@@ -81,7 +85,8 @@ public static class SharedFunctions
         {
             builder.Append(GenericTypePrefix);
             builder.Append(i);
-            builder.Append(" c");
+            builder.Append(' ');
+            builder.Append(ComponentTypeFieldName);
             builder.Append(i);
             builder.Append(", ");
         }
@@ -95,35 +100,12 @@ public static class SharedFunctions
         StringBuilder builder = new();
         for (uint i = 1; i <= count + 1; i++)
         {
-            builder.Append('c');
+            builder.Append(ComponentTypeFieldName);
             builder.Append(i);
             builder.Append(", ");
         }
 
         builder.Length -= 2;
-        return builder.ToString();
-    }
-
-    public static string DeclareComponentFields(uint count, int indent)
-    {
-        StringBuilder builder = new();
-        for (uint i = 1; i <= count + 1; i++)
-        {
-            builder.Append(new string(' ', indent));
-            builder.Append("public readonly ");
-            builder.Append(GenericTypePrefix);
-            builder.Append(i);
-            builder.Append(" c");
-            builder.Append(i);
-            builder.Append(';');
-
-            if (i < count + 1)
-            {
-                builder.Append('\n');
-                builder.Append(new string(' ', indent));
-            }
-        }
-
         return builder.ToString();
     }
 
@@ -133,7 +115,7 @@ public static class SharedFunctions
         for (uint i = 1; i <= count + 1; i++)
         {
             builder.Append(new string(' ', indent));
-            builder.Append('c');
+            builder.Append(ComponentTypeFieldName);
             builder.Append(i);
             builder.Append(" = entity.AsEntity().GetComponent<");
             builder.Append(GenericTypePrefix);
@@ -150,14 +132,24 @@ public static class SharedFunctions
         return builder.ToString();
     }
 
-    public static string DeclareComponentTypeFields(uint count, int indent)
+    public static string DeclareComponentQueryEnumeratorFields(uint count, int indent)
     {
+        //declare component types and offsets
         StringBuilder builder = new();
         for (uint i = 1; i <= count + 1; i++)
         {
             builder.Append("private readonly ");
             builder.Append(ComponentType);
-            builder.Append(" c");
+            builder.Append(' ');
+            builder.Append(ComponentTypeFieldName);
+            builder.Append(i);
+            builder.Append(';');
+
+            builder.Append('\n');
+            builder.Append(new string(' ', indent));
+
+            builder.Append("private int ");
+            builder.Append(ComponentOffsetFieldName);
             builder.Append(i);
             builder.Append(';');
 
@@ -176,7 +168,7 @@ public static class SharedFunctions
         StringBuilder builder = new();
         for (uint i = 1; i <= count + 1; i++)
         {
-            builder.Append('c');
+            builder.Append(ComponentTypeFieldName);
             builder.Append(i);
             builder.Append(" = schema.GetComponentTypeIndex<");
             builder.Append(GenericTypePrefix);
@@ -201,11 +193,16 @@ public static class SharedFunctions
             builder.Append("ref ");
             builder.Append(GenericTypePrefix);
             builder.Append(i);
-            builder.Append(" c");
+            builder.Append(' ');
+            builder.Append(ComponentVariableName);
             builder.Append(i);
-            builder.Append(" = ref list");
+            builder.Append(" = ref componentRow.Read<");
+            builder.Append(GenericTypePrefix);
             builder.Append(i);
-            builder.Append("[index];");
+            builder.Append(">(");
+            builder.Append(ComponentOffsetFieldName);
+            builder.Append(i);
+            builder.Append(");");
 
             if (i < count + 1)
             {
@@ -222,7 +219,8 @@ public static class SharedFunctions
         StringBuilder builder = new();
         for (uint i = 1; i <= count + 1; i++)
         {
-            builder.Append("ref c");
+            builder.Append("ref ");
+            builder.Append(ComponentVariableName);
             builder.Append(i);
             builder.Append(", ");
         }
@@ -231,41 +229,15 @@ public static class SharedFunctions
         return builder.ToString();
     }
 
-    public static string DeclareComponentLists(uint count, int indent)
+    public static string AssignComponentOffsets(uint count, int indent)
     {
         StringBuilder builder = new();
         for (uint i = 1; i <= count + 1; i++)
         {
-            builder.Append("private ");
-            builder.Append(SpanType);
-            builder.Append('<');
-            builder.Append(GenericTypePrefix);
+            builder.Append(ComponentOffsetFieldName);
             builder.Append(i);
-            builder.Append("> list");
-            builder.Append(i);
-            builder.Append(';');
-
-            if (i < count + 1)
-            {
-                builder.Append('\n');
-                builder.Append(new string(' ', indent));
-            }
-        }
-
-        return builder.ToString();
-    }
-
-    public static string AssignComponentLists(uint count, int indent)
-    {
-        StringBuilder builder = new();
-        for (uint i = 1; i <= count + 1; i++)
-        {
-            builder.Append("list");
-            builder.Append(i);
-            builder.Append(" = chunk.GetComponents<");
-            builder.Append(GenericTypePrefix);
-            builder.Append(i);
-            builder.Append(">(c");
+            builder.Append(" = chunk.GetComponentOffset(");
+            builder.Append(ComponentTypeFieldName);
             builder.Append(i);
             builder.Append(");");
 

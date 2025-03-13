@@ -1,3 +1,4 @@
+using Collections;
 using System;
 using Unmanaged;
 
@@ -21,7 +22,7 @@ namespace Worlds
         {
             required = default;
             exclude = default;
-            required.AddComponentTypes(world.Schema.GetComponents<{{GenericTypeArguments}}>());
+            required.AddComponentTypes(world.Schema.GetComponentTypes<{{GenericTypeArguments}}>());
             this.world = world;
         }
 
@@ -479,17 +480,15 @@ namespace Worlds
             return new(required, exclude, world.Chunks, world.Schema);
         }
 
-        public unsafe ref struct Enumerator
+        public ref struct Enumerator
         {
-            private static readonly int stride = sizeof(Chunk);
-
             private readonly MemoryAddress chunks;
             private readonly int chunkCount;
-            {{DeclareComponentTypeFields}}
+            {{DeclareComponentQueryEnumeratorFields}}
             private int entityIndex;
             private int chunkIndex;
             private ReadOnlySpan<uint> entities;
-            {{DeclareComponentLists}}
+            private List components;
 
             /// <summary>
             /// Current result.
@@ -500,6 +499,7 @@ namespace Worlds
                 {
                     int index = entityIndex - 1;
                     uint entity = entities[index];
+                    MemoryAddress componentRow = components[index];
                     {{AccessComponents}}
                     return new(entity, {{ReferenceComponents}});
                 }
@@ -508,7 +508,7 @@ namespace Worlds
             internal Enumerator(Definition required, Definition exclude, ReadOnlySpan<Chunk> allChunks, Schema schema)
             {
                 chunkCount = 0;
-                Span<Chunk> chunksBuffer = stackalloc Chunk[(int)allChunks.Length];
+                Span<Chunk> chunksBuffer = stackalloc Chunk[allChunks.Length];
                 foreach (Chunk chunk in allChunks)
                 {
                     if (chunk.Count > 0)
@@ -553,9 +553,9 @@ namespace Worlds
 
                 entityIndex = 0;
                 chunkIndex = 0;
+                {{AssignComponentTypeFields}}
                 if (chunkCount > 0)
                 {
-                    {{AssignComponentTypeFields}}
                     chunks = MemoryAddress.Allocate(chunksBuffer.Slice(0, chunkCount));
                     UpdateChunkFields(ref chunksBuffer[0]);
                 }
@@ -590,7 +590,8 @@ namespace Worlds
             private void UpdateChunkFields(ref Chunk chunk)
             {
                 entities = chunk.Entities;
-                {{AssignComponentLists}}
+                components = chunk.Components;
+                {{AssignComponentOffsets}}
             }
 
             public readonly void Dispose()

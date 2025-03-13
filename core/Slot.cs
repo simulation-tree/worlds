@@ -12,6 +12,7 @@ namespace Worlds
         public State state;
         public Flags flags;
         public Chunk chunk;
+        public int index;
         public int childrenCount;
         public List<uint> references;
         public Array<Values> arrays;
