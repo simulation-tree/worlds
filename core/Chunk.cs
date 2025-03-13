@@ -1,5 +1,4 @@
 ﻿using Collections;
-using Collections.Generic;
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -73,19 +72,25 @@ namespace Worlds
         public readonly uint this[int index] => Entities[index];
 
 #if NET
-        /// <summary>
-        /// Creates a new chunk.
-        /// </summary>
+        [Obsolete("Default constructor not supported", true)]
         public Chunk()
         {
+            throw new NotSupportedException();
+        }
+#endif
+
+        /// <summary>
+        /// Creates an empty chunk.
+        /// </summary>
+        public Chunk(Schema schema)
+        {
             ref Pointer chunk = ref MemoryAddress.Allocate<Pointer>();
-            chunk = Pointer.Create();
+            chunk = new(default, schema);
             fixed (Pointer* pointer = &chunk)
             {
                 this.chunk = pointer;
             }
         }
-#endif
 
         /// <summary>
         /// Initializes an existing chunk from the given <paramref name="pointer"/>.
@@ -100,23 +105,8 @@ namespace Worlds
         /// </summary>
         public Chunk(Definition definition, Schema schema)
         {
-            BitMask componentTypes = definition.ComponentTypes;
-            Span<ushort> componentOffsets = stackalloc ushort[BitMask.Capacity];
-            Span<ushort> componentLengths = stackalloc ushort[BitMask.Capacity];
-            ushort offset = 0;
-            for (int c = 0; c < BitMask.Capacity; c++)
-            {
-                if (componentTypes.Contains(c))
-                {
-                    ushort componentSize = (ushort)schema.GetComponentTypeSize(c);
-                    componentOffsets[c] = offset;
-                    componentLengths[c] = componentSize;
-                    offset += componentSize;
-                }
-            }
-
             ref Pointer chunk = ref MemoryAddress.Allocate<Pointer>();
-            chunk = new(definition, offset, componentOffsets, componentLengths);
+            chunk = new(definition, schema);
             fixed (Pointer* pointer = &chunk)
             {
                 this.chunk = pointer;
@@ -130,8 +120,6 @@ namespace Worlds
 
             chunk->entities.Dispose();
             chunk->components.Dispose();
-            chunk->componentOffsets.Dispose();
-            chunk->componentSizes.Dispose();
             MemoryAddress.Free(ref chunk);
         }
 
@@ -200,26 +188,13 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Retrieves the offset and size of the <paramref name="componentType"/>
-        /// for this chunk.
-        /// </summary>
-        public readonly (int offset, int size) GetComponentRange(int componentType)
-        {
-            MemoryAddress.ThrowIfDefault(chunk);
-
-            int offset = chunk->componentOffsets.ReadElement<ushort>(componentType);
-            int size = chunk->componentSizes.ReadElement<ushort>(componentType);
-            return (offset, size);
-        }
-
-        /// <summary>
         /// Retrieves the byte offset of the <paramref name="componentType"/>
         /// </summary>
         public readonly int GetComponentOffset(int componentType)
         {
             MemoryAddress.ThrowIfDefault(chunk);
 
-            return chunk->componentOffsets.ReadElement<ushort>(componentType);
+            return chunk->schema.GetComponentOffset(componentType);
         }
 
         /// <summary>
@@ -269,7 +244,7 @@ namespace Worlds
         /// </summary>
         public readonly ComponentEnumerator<T> GetEnumerator<T>(int componentType) where T : unmanaged
         {
-            ushort componentOffset = chunk->componentOffsets.ReadElement<ushort>(componentType);
+            int componentOffset = chunk->schema.GetComponentOffset(componentType);
             return new(chunk->components, componentOffset);
         }
 
@@ -282,7 +257,7 @@ namespace Worlds
             ThrowIfIndexIsOutOfRange(index);
             ThrowIfComponentTypeIsMissing(componentType);
 
-            ushort componentOffset = chunk->componentOffsets.ReadElement<ushort>(componentType);
+            int componentOffset = chunk->schema.GetComponentOffset(componentType);
             return ref chunk->components[index].Read<T>(componentOffset);
         }
 
@@ -295,7 +270,7 @@ namespace Worlds
             ThrowIfIndexIsOutOfRange(index);
             ThrowIfComponentTypeIsMissing(componentType);
 
-            ushort componentOffset = chunk->componentOffsets.ReadElement<ushort>(componentType);
+            int componentOffset = chunk->schema.GetComponentOffset(componentType);
             return chunk->components[index].Read(componentOffset);
         }
 
@@ -308,8 +283,8 @@ namespace Worlds
             ThrowIfIndexIsOutOfRange(index);
             ThrowIfComponentTypeIsMissing(componentType);
 
-            ushort componentOffset = chunk->componentOffsets.ReadElement<ushort>(componentType);
-            componentSize = chunk->componentSizes.ReadElement<ushort>(componentType);
+            int componentOffset = chunk->schema.GetComponentOffset(componentType);
+            componentSize = chunk->schema.GetComponentTypeSize(componentType);
             return chunk->components[index].Read(componentOffset);
         }
 
@@ -322,8 +297,8 @@ namespace Worlds
             ThrowIfIndexIsOutOfRange(index);
             ThrowIfComponentTypeIsMissing(componentType);
 
-            ushort componentOffset = chunk->componentOffsets.ReadElement<ushort>(componentType);
-            ushort componentSize = chunk->componentSizes.ReadElement<ushort>(componentType);
+            int componentOffset = chunk->schema.GetComponentOffset(componentType);
+            int componentSize = chunk->schema.GetComponentTypeSize(componentType);
             return chunk->components[index].AsSpan(componentOffset, componentSize);
         }
 
@@ -336,7 +311,7 @@ namespace Worlds
             ThrowIfIndexIsOutOfRange(index);
             ThrowIfComponentTypeIsMissing(componentType);
 
-            ushort componentOffset = chunk->componentOffsets.ReadElement<ushort>(componentType);
+            int componentOffset = chunk->schema.GetComponentOffset(componentType);
             chunk->components[index].Write(componentOffset, value);
         }
 
@@ -362,38 +337,15 @@ namespace Worlds
             current.chunk->entities.RemoveAtBySwapping(index, out uint entity);
             current.chunk->lastEntity = current.chunk->entities[--current.chunk->count];
 
-            int newIndex = destination.chunk->count + 1;
+            MemoryAddress sourceComponentRow = current.chunk->components[index];
+            destination.chunk->components.Add(sourceComponentRow);
+            current.chunk->components.RemoveAtBySwapping(index);
+
+            index = destination.chunk->count + 1;
             destination.chunk->entities.Add(entity);
             destination.chunk->lastEntity = entity;
-            destination.chunk->count = newIndex;
-
-            MemoryAddress sourceComponentRow = current.chunk->components[index];
-            destination.chunk->components.AddUninitialized(out MemoryAddress destinationComponentRow);
-            
-            Span<byte> sourceRowBytes = sourceComponentRow.GetSpan(current.chunk->stride);
-            Span<byte> destinationRowBytes = destinationComponentRow.GetSpan(destination.chunk->stride);
-            destinationRowBytes.Clear();
-
-            Span<ushort> sourceOffsets = current.chunk->componentOffsets.GetSpan<ushort>(BitMask.Capacity);
-            Span<ushort> sourceSizes = current.chunk->componentSizes.GetSpan<ushort>(BitMask.Capacity);
-            Span<ushort> destinationOffsets = destination.chunk->componentOffsets.GetSpan<ushort>(BitMask.Capacity);
-            BitMask intersection = current.chunk->definition.ComponentTypes & destination.chunk->definition.ComponentTypes;
-
-            //copy from source to destination
-            for (int t = 0; t < BitMask.Capacity; t++)
-            {
-                if (intersection.Contains(t))
-                {
-                    ushort sourceOffset = sourceOffsets[t];
-                    ushort destinationOffset = destinationOffsets[t];
-                    ushort length = sourceSizes[t];
-                    sourceRowBytes.Slice(sourceOffset, length).CopyTo(destinationRowBytes.Slice(destinationOffset, length));
-                }
-            }
-
-            current.chunk->components.RemoveAtBySwapping(index);
+            destination.chunk->count = index;
             current = destination;
-            index = newIndex;
         }
 
         public static bool operator ==(Chunk left, Chunk right)
@@ -404,19 +356,6 @@ namespace Worlds
         public static bool operator !=(Chunk left, Chunk right)
         {
             return !(left == right);
-        }
-
-        /// <summary>
-        /// Creates a new empty chunk.
-        /// </summary>
-        public static Chunk Create()
-        {
-            ref Pointer chunk = ref MemoryAddress.Allocate<Pointer>();
-            chunk = Pointer.Create();
-            fixed (Pointer* pointer = &chunk)
-            {
-                return new(pointer);
-            }
         }
 
         public readonly ref struct Entity<C1> where C1 : unmanaged

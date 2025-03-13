@@ -1,5 +1,4 @@
-﻿using Collections;
-using Collections.Generic;
+﻿using Collections.Generic;
 using System;
 using Unmanaged;
 
@@ -8,12 +7,17 @@ namespace Worlds.Tests
     public class SchemaTests : WorldTests
     {
         [Test]
-        public void AddToSchema()
+        public unsafe void AddToSchema()
         {
             using Schema schema = new();
             Assert.That(schema.ContainsComponentType<Stress>(), Is.False);
             schema.RegisterComponent<Stress>();
             Assert.That(schema.ContainsComponentType<Stress>(), Is.True);
+            Assert.That(schema.GetComponentOffset<Stress>(), Is.EqualTo(0));
+            schema.RegisterComponent<byte>();
+            Assert.That(schema.ContainsComponentType<byte>(), Is.True);
+            Assert.That(schema.GetComponentOffset<byte>(), Is.EqualTo(sizeof(Stress)));
+            Assert.That(schema.ComponentRowSize, Is.EqualTo(sizeof(Stress) + sizeof(byte)));
         }
 
         [Test]
@@ -22,6 +26,8 @@ namespace Worlds.Tests
             using Schema schema = new();
             Assert.That(schema.ContainsComponentType<Stress>(), Is.False);
             schema.RegisterComponent<Stress>();
+            schema.RegisterComponent<bool>();
+            schema.RegisterComponent<float>();
             TagType thingTag = schema.RegisterTag<IsThing>();
             Assert.That(schema.ContainsComponentType<Stress>(), Is.True);
             Assert.That(schema.ContainsTagType<IsThing>(), Is.True);
@@ -30,8 +36,13 @@ namespace Worlds.Tests
             copy.CopyFrom(schema);
 
             Assert.That(copy.ContainsComponentType<Stress>(), Is.True);
+            Assert.That(copy.ContainsComponentType<bool>(), Is.True);
+            Assert.That(copy.ContainsComponentType<float>(), Is.True);
             Assert.That(copy.ContainsTagType<IsThing>(), Is.True);
             Assert.That(copy.ContainsTagType(thingTag), Is.True);
+            Assert.That(copy.GetComponentOffset<Stress>(), Is.EqualTo(schema.GetComponentOffset<Stress>()));
+            Assert.That(copy.GetComponentOffset<bool>(), Is.EqualTo(schema.GetComponentOffset<bool>()));
+            Assert.That(copy.GetComponentOffset<float>(), Is.EqualTo(schema.GetComponentOffset<float>()));
         }
 
         [Test]
@@ -58,8 +69,8 @@ namespace Worlds.Tests
         public void SerializeSchema()
         {
             using Schema prefabSchema = new();
-            prefabSchema.RegisterComponent<float>();
-            prefabSchema.RegisterComponent<char>();
+            int floatType = prefabSchema.RegisterComponent<float>();
+            int charType = prefabSchema.RegisterComponent<char>();
             TagType thingTag = prefabSchema.RegisterTag<IsThing>();
 
             using ByteWriter writer = new();
@@ -72,6 +83,11 @@ namespace Worlds.Tests
             Assert.That(loadedSchema.ContainsComponentType<char>(), Is.True);
             Assert.That(loadedSchema.ContainsTagType<IsThing>(), Is.True);
             Assert.That(loadedSchema.ContainsTagType(thingTag), Is.True);
+            Assert.That(loadedSchema.ComponentRowSize, Is.EqualTo(prefabSchema.ComponentRowSize));
+            Assert.That(loadedSchema.GetComponentOffset(floatType), Is.EqualTo(prefabSchema.GetComponentOffset(floatType)));
+            Assert.That(loadedSchema.GetComponentOffset(charType), Is.EqualTo(prefabSchema.GetComponentOffset(charType)));
+            Assert.That(loadedSchema.GetComponentTypeSize(floatType), Is.EqualTo(prefabSchema.GetComponentTypeSize(floatType)));
+            Assert.That(loadedSchema.GetComponentTypeSize(charType), Is.EqualTo(prefabSchema.GetComponentTypeSize(charType)));
         }
 
         [Test]

@@ -7,7 +7,8 @@ namespace Worlds.Tests
         [Test]
         public void AddEntityNoComponents()
         {
-            Chunk chunk = new();
+            using Schema schema = CreateSchema();
+            Chunk chunk = new(schema);
             int index = 0;
             chunk.AddEntity(7, ref index);
             Assert.That(chunk.Entities.Length, Is.EqualTo(1));

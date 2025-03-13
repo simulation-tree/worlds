@@ -207,7 +207,14 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return HashCode.Combine(componentTypes, arrayTypes, tagTypes);
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 23 + componentTypes.GetHashCode();
+                hash = hash * 23 + arrayTypes.GetHashCode();
+                hash = hash * 23 + tagTypes.GetHashCode();
+                return hash;
+            }
         }
 
         /// <inheritdoc/>
