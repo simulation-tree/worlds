@@ -154,11 +154,19 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfEntityIsMissing(uint entity)
+        private readonly void ThrowIfIndexIsOutOfRange(int index)
         {
-            if (!chunk->entities.Contains(entity))
+            if (index == 0)
             {
-                throw new ArgumentException($"Entity `{entity}` is missing from the chunk");
+                throw new ArgumentException("Index must be greater than zero to access the first entity in the chunk");
+            }
+            else if (index > chunk->count)
+            {
+                throw new ArgumentOutOfRangeException($"Index `{index}` is out of range for the chunk with count `{chunk->count}`");
+            }
+            else if (index < 0)
+            {
+                throw new ArgumentOutOfRangeException($"Index `{index}` is less than zero");
             }
         }
 
@@ -249,6 +257,7 @@ namespace Worlds
         public readonly void RemoveEntityAt(int index)
         {
             MemoryAddress.ThrowIfDefault(chunk);
+            ThrowIfIndexIsOutOfRange(index);
 
             chunk->entities.RemoveAtBySwapping(index);
             chunk->components.RemoveAtBySwapping(index);
@@ -270,6 +279,7 @@ namespace Worlds
         public readonly ref T GetComponent<T>(int index, int componentType) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(chunk);
+            ThrowIfIndexIsOutOfRange(index);
             ThrowIfComponentTypeIsMissing(componentType);
 
             ushort componentOffset = chunk->componentOffsets.ReadElement<ushort>(componentType);
@@ -282,6 +292,7 @@ namespace Worlds
         public readonly MemoryAddress GetComponent(int index, int componentType)
         {
             MemoryAddress.ThrowIfDefault(chunk);
+            ThrowIfIndexIsOutOfRange(index);
             ThrowIfComponentTypeIsMissing(componentType);
 
             ushort componentOffset = chunk->componentOffsets.ReadElement<ushort>(componentType);
@@ -294,6 +305,7 @@ namespace Worlds
         public readonly MemoryAddress GetComponent(int index, int componentType, out int componentSize)
         {
             MemoryAddress.ThrowIfDefault(chunk);
+            ThrowIfIndexIsOutOfRange(index);
             ThrowIfComponentTypeIsMissing(componentType);
 
             ushort componentOffset = chunk->componentOffsets.ReadElement<ushort>(componentType);
@@ -307,6 +319,7 @@ namespace Worlds
         public readonly Span<byte> GetComponentBytes(int index, int componentType)
         {
             MemoryAddress.ThrowIfDefault(chunk);
+            ThrowIfIndexIsOutOfRange(index);
             ThrowIfComponentTypeIsMissing(componentType);
 
             ushort componentOffset = chunk->componentOffsets.ReadElement<ushort>(componentType);
@@ -320,6 +333,7 @@ namespace Worlds
         public readonly void SetComponent<T>(int index, int componentType, T value) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(chunk);
+            ThrowIfIndexIsOutOfRange(index);
             ThrowIfComponentTypeIsMissing(componentType);
 
             ushort componentOffset = chunk->componentOffsets.ReadElement<ushort>(componentType);

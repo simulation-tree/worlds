@@ -20,7 +20,7 @@ namespace Worlds
                     if (chunk.Count > 0)
                     {
                         contains = true;
-                        return ref chunk.GetComponent<T>(0, componentType);
+                        return ref chunk.GetComponent<T>(1, componentType);
                     }
                 }
             }
@@ -43,7 +43,7 @@ namespace Worlds
                 {
                     if (chunk.Count > 0)
                     {
-                        component = chunk.GetComponent<T>(0, componentType);
+                        component = chunk.GetComponent<T>(1, componentType);
                         return true;
                     }
                 }
@@ -93,7 +93,7 @@ namespace Worlds
                     {
                         entity = chunk.Entities[0];
                         contains = true;
-                        return ref chunk.GetComponent<T>(0, componentType);
+                        return ref chunk.GetComponent<T>(1, componentType);
                     }
                 }
             }
@@ -121,7 +121,7 @@ namespace Worlds
                 {
                     if (chunk.Count > 0)
                     {
-                        return ref chunk.GetComponent<T>(0, componentType);
+                        return ref chunk.GetComponent<T>(1, componentType);
                     }
                 }
             }
@@ -148,7 +148,7 @@ namespace Worlds
                     if (chunk.Count > 0)
                     {
                         entity = chunk.Entities[0];
-                        return ref chunk.GetComponent<T>(0, componentType);
+                        return ref chunk.GetComponent<T>(1, componentType);
                     }
                 }
             }

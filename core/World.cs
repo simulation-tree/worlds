@@ -1684,7 +1684,7 @@ namespace Worlds
             }
 
             Chunk.MoveEntityAt(ref slot.index, ref slot.chunk, destinationChunk);
-            Values newArray = new(new Array(length, stride));
+            Values newArray = new(length, stride);
             slot.arrays[arrayType] = newArray;
             NotifyArrayCreated(entity, arrayType);
             return newArray;
@@ -1741,7 +1741,7 @@ namespace Worlds
             }
 
             Chunk.MoveEntityAt(ref slot.index, ref slot.chunk, destinationChunk);
-            Values newArray = new(new Array(length, stride));
+            Values newArray = new(length, stride);
             slot.arrays[arrayType] = newArray;
             NotifyArrayCreated(entity, arrayType);
             return newArray;
@@ -1800,7 +1800,7 @@ namespace Worlds
             }
 
             Chunk.MoveEntityAt(ref slot.index, ref slot.chunk, destinationChunk);
-            Values newArray = new(new Array(length, dataType.size));
+            Values newArray = new(length, dataType.size);
             slot.arrays[arrayType.index] = newArray;
             NotifyArrayCreated(entity, arrayType);
             return newArray;
@@ -1859,7 +1859,7 @@ namespace Worlds
             }
 
             Chunk.MoveEntityAt(ref slot.index, ref slot.chunk, destinationChunk);
-            Values<T> newArray = new(new Array<T>(length));
+            Values<T> newArray = new(length);
             slot.arrays[arrayType] = newArray;
             NotifyArrayCreated(entity, arrayType);
             return newArray;
@@ -1918,7 +1918,7 @@ namespace Worlds
             }
 
             Chunk.MoveEntityAt(ref slot.index, ref slot.chunk, destinationChunk);
-            slot.arrays[arrayType] = new(new Array<T>(values));
+            slot.arrays[arrayType] = new Values<T>(values);
             NotifyArrayCreated(entity, arrayType);
         }
 
@@ -1975,7 +1975,7 @@ namespace Worlds
             }
 
             Chunk.MoveEntityAt(ref slot.index, ref slot.chunk, destinationChunk);
-            slot.arrays[arrayType] = new(new Array<T>(values));
+            slot.arrays[arrayType] = new Values<T>(values);
             NotifyArrayCreated(entity, arrayType);
         }
 

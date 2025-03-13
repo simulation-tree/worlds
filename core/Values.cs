@@ -44,6 +44,16 @@ namespace Worlds
             this.pointer = array.Pointer;
         }
 
+        internal Values(int length)
+        {
+            this.pointer = new Array<T>(length).Pointer;
+        }
+
+        internal Values(ReadOnlySpan<T> values)
+        {
+            this.pointer = new Array<T>(values).Pointer;
+        }
+
         internal Values(Pointer* array)
         {
             this.pointer = array;
@@ -297,6 +307,11 @@ namespace Worlds
         internal Values(Array array)
         {
             this.pointer = array.Pointer;
+        }
+
+        internal Values(int length, int stride)
+        {
+            this.pointer = new Array(length, stride).Pointer;
         }
 
         internal Values(Pointer* array)
