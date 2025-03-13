@@ -12,25 +12,25 @@ namespace Worlds
         private int index;
 
         public readonly ref T Current => ref components[index].Read<T>(componentOffset);
-        public readonly ref T this[int index] => ref components[index].Read<T>(componentOffset);
+        public readonly ref T this[int index] => ref components[index + 1].Read<T>(componentOffset);
 
         internal ComponentEnumerator(List components, int componentOffset)
         {
             this.components = components;
             this.componentOffset = componentOffset;
-            Length = components.Count;
-            index = -1;
+            Length = components.Count - 1;
+            index = 0;
         }
 
         public bool MoveNext()
         {
             index++;
-            return index < Length;
+            return index <= Length;
         }
 
         public void Reset()
         {
-            index = -1;
+            index = 0;
         }
 
         /// <summary>
@@ -40,7 +40,7 @@ namespace Worlds
         {
             for (int i = 0; i < Length; i++)
             {
-                destination[i] = components[i].Read<T>(componentOffset);
+                destination[i] = components[i + 1].Read<T>(componentOffset);
             }
         }
     }

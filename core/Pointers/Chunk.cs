@@ -5,27 +5,40 @@ using Unmanaged;
 
 namespace Worlds.Pointers
 {
-    internal readonly struct Chunk
+    internal struct Chunk
     {
+        public uint lastEntity;
+        public int count;
         public readonly Definition definition;
         public readonly List<uint> entities;
         public readonly List components;
+        public readonly ushort stride;
         public readonly MemoryAddress componentOffsets;
         public readonly MemoryAddress componentSizes;
 
-        public Chunk(Definition definition, int componentRowSize, ReadOnlySpan<int> componentOffsets, ReadOnlySpan<int> componentSizes)
+        public Chunk(Definition definition, ushort stride, ReadOnlySpan<ushort> componentOffsets, ReadOnlySpan<ushort> componentSizes)
         {
+            lastEntity = 0;
+            count = 0;
             entities = new(4);
-            this.components = new(4, componentRowSize);
+            entities.AddDefault(); //reserved
+            this.stride = stride;
+            this.components = new(4, stride);
+            components.AddDefault(); //reserved
             this.componentOffsets = MemoryAddress.Allocate(componentOffsets);
             this.componentSizes = MemoryAddress.Allocate(componentSizes);
             this.definition = definition;
         }
 
-        private Chunk(Definition definition, int componentRowSize, MemoryAddress componentOffsets, MemoryAddress componentSizes)
+        private Chunk(Definition definition, ushort stride, MemoryAddress componentOffsets, MemoryAddress componentSizes)
         {
+            lastEntity = 0;
+            count = 0;
             entities = new(4);
-            this.components = new(4, componentRowSize);
+            entities.AddDefault(); //reserved
+            this.stride = stride;
+            this.components = new(4, stride);
+            components.AddDefault(); //reserved
             this.componentOffsets = componentOffsets;
             this.componentSizes = componentSizes;
             this.definition = definition;
@@ -33,7 +46,7 @@ namespace Worlds.Pointers
 
         public static Chunk Create()
         {
-            return new(default, 1, MemoryAddress.Allocate(BitMask.Capacity * sizeof(int)), MemoryAddress.Allocate(BitMask.Capacity * sizeof(int)));
+            return new(default, 1, MemoryAddress.Allocate(BitMask.Capacity * sizeof(ushort)), MemoryAddress.Allocate(BitMask.Capacity * sizeof(ushort)));
         }
     }
 }

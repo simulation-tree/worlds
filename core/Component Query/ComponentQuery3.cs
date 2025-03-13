@@ -491,6 +491,7 @@ namespace Worlds
             private readonly int componentType3;
             private int componentOffset3;
             private int entityIndex;
+            private int entityCount;
             private int chunkIndex;
             private ReadOnlySpan<uint> entities;
             private List components;
@@ -502,9 +503,8 @@ namespace Worlds
             {
                 get
                 {
-                    int index = entityIndex - 1;
-                    uint entity = entities[index];
-                    MemoryAddress componentRow = components[index];
+                    uint entity = entities[entityIndex];
+                    MemoryAddress componentRow = components[entityIndex];
                     ref C1 component1 = ref componentRow.Read<C1>(componentOffset1);
                     ref C2 component2 = ref componentRow.Read<C2>(componentOffset2);
                     ref C3 component3 = ref componentRow.Read<C3>(componentOffset3);
@@ -575,7 +575,7 @@ namespace Worlds
             /// </summary>
             public bool MoveNext()
             {
-                if (entityIndex < entities.Length)
+                if (entityIndex < entityCount)
                 {
                     entityIndex++;
                     return true;
@@ -598,7 +598,8 @@ namespace Worlds
 
             private void UpdateChunkFields(ref Chunk chunk)
             {
-                entities = chunk.Entities;
+                entities = chunk.EntitiesList;
+                entityCount = chunk.Count;
                 components = chunk.Components;
                 componentOffset1 = chunk.GetComponentOffset(componentType1);
                 componentOffset2 = chunk.GetComponentOffset(componentType2);

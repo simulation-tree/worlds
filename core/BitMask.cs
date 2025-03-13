@@ -52,7 +52,7 @@ namespace Worlds
                     }
                 }
 
-                return (int)count;
+                return count;
             }
         }
 

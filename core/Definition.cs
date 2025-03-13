@@ -27,6 +27,16 @@ namespace Worlds
         public readonly BitMask TagTypes => tagTypes;
 
         /// <summary>
+        /// Does this definition include disabled entities?
+        /// </summary>
+        public readonly bool IsDisabled => tagTypes.Contains(TagType.Disabled);
+
+        /// <summary>
+        /// Checks if this definition is empty.
+        /// </summary>
+        public readonly bool IsEmpty => componentTypes.IsEmpty && arrayTypes.IsEmpty && tagTypes.IsEmpty;
+
+        /// <summary>
         /// Creates a new definition with the exact component and array <see cref="BitMask"/> values.
         /// </summary>
         public Definition(BitMask componentTypes, BitMask arrayTypes, BitMask tagTypes)
@@ -39,14 +49,14 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override string ToString()
         {
-            Span<char> buffer = stackalloc char[512];
+            Span<char> buffer = stackalloc char[1024];
             int length = ToString(buffer);
             return buffer.Slice(0, length).ToString();
         }
 
         public readonly string ToString(Schema schema)
         {
-            Span<char> buffer = stackalloc char[512];
+            Span<char> buffer = stackalloc char[1024];
             int length = ToString(schema, buffer);
             return buffer.Slice(0, length).ToString();
         }
@@ -82,6 +92,20 @@ namespace Worlds
             if (length > 0)
             {
                 length -= 2;
+            }
+
+            if (IsDisabled)
+            {
+                const string Keyword = "Disabled";
+                if (length > 0)
+                {
+                    destination[length++] = ' ';
+                }
+
+                destination[length++] = '(';
+                Keyword.AsSpan().CopyTo(destination.Slice(length));
+                length += Keyword.Length;
+                destination[length++] = ')';
             }
 
             return length;
@@ -288,6 +312,12 @@ namespace Worlds
         public void AddComponentType(int index)
         {
             componentTypes.Set(index);
+        }
+
+        public void AddComponentTypes(int index1, int index2)
+        {
+            componentTypes.Set(index1);
+            componentTypes.Set(index2);
         }
 
         public void RemoveComponentType(int index)
