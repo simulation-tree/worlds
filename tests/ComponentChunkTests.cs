@@ -130,6 +130,7 @@ namespace Worlds.Tests
             chunkA.Dispose();
             chunkB.Dispose();
             chunkC.Dispose();
+            chunkD.Dispose();
             schema.Dispose();
         }
 
@@ -159,7 +160,7 @@ namespace Worlds.Tests
             int floatType = schema.GetComponentTypeIndex<Float>();
             definition.AddComponentType(intType);
             definition.AddComponentType(floatType);
-            Chunk chunk = new(definition, schema);
+            using Chunk chunk = new(definition, schema);
             uint a = 7;
             uint b = 8;
             uint c = 9;
@@ -188,7 +189,7 @@ namespace Worlds.Tests
             int floatType = schema.GetComponentTypeIndex<Float>();
             definition.AddComponentType(intType);
             definition.AddComponentType(floatType);
-            Chunk chunk = new(definition, schema);
+            using Chunk chunk = new(definition, schema);
             uint a = 7;
             uint b = 8;
             uint c = 9;

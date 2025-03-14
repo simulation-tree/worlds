@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 
 namespace Worlds
 {
     /// <summary>
     /// Represents a 256 bit mask.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct BitMask : IEquatable<BitMask>
     {
         /// <summary>
@@ -24,17 +22,10 @@ namespace Worlds
         /// </summary>
         public const int MaxValue = 255;
 
-        [FieldOffset(0)]
-        private ulong a;
-
-        [FieldOffset(8)]
-        private ulong b;
-
-        [FieldOffset(16)]
-        private ulong c;
-
-        [FieldOffset(24)]
-        private ulong d;
+        public ulong a;
+        public ulong b;
+        public ulong c;
+        public ulong d;
 
         /// <summary>
         /// Amount of bits set to 1.
@@ -442,8 +433,17 @@ namespace Worlds
             }
         }
 
+        public readonly long GetLongHashCode()
+        {
+            unchecked
+            {
+                ulong hash = a ^ b ^ c ^ d;
+                return (long)hash ^ (long)(hash >> 32);
+            }
+        }
+
         /// <summary>
-        /// Retrieves a cheap hashcode prone to collisions.
+        /// Retrieves a cheap, but fast hash code prone to collisions.
         /// </summary>
         public readonly override int GetHashCode()
         {

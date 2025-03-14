@@ -204,6 +204,18 @@ namespace Worlds
             return count;
         }
 
+        public readonly long GetLongHashCode()
+        {
+            unchecked
+            {
+                long hash = 17;
+                hash = hash * 23 + componentTypes.GetLongHashCode();
+                hash = hash * 23 + arrayTypes.GetLongHashCode();
+                hash = hash * 23 + tagTypes.GetLongHashCode();
+                return hash;
+            }
+        }
+
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
