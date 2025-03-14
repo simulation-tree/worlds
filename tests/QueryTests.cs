@@ -19,8 +19,7 @@ namespace Worlds.Tests
             world.AddComponent(c, new Apple());
             world.AddComponent(c, new Berry());
             ComponentQuery<Apple> appleQuery = new(world);
-            ComponentQuery<Berry> berryQuery = new(world);
-            uint foundApples = 0;
+            int foundApples = 0;
             foreach (var r in appleQuery)
             {
                 ref Apple apple = ref r.component1;
@@ -42,7 +41,7 @@ namespace Worlds.Tests
 
             Assert.That(foundApples, Is.EqualTo(1));
             ComponentQuery<Apple, Berry> comboQuery = new(world);
-            uint foundCombos = 0;
+            int foundCombos = 0;
             foreach (var r in comboQuery)
             {
                 Assert.That(r.component1.bites, Is.EqualTo(5).Or.EqualTo(4));

@@ -164,19 +164,47 @@ namespace Worlds.Tests
         }
 
         [Test]
+        public void AddingAndGettingComponentReference()
+        {
+            using World world = CreateWorld();
+            uint a = world.CreateEntity();
+            ref Another another = ref world.AddComponent<Another>(a);
+            Assert.That(world.ContainsComponent<Another>(a), Is.True);
+            Assert.That(another.data, Is.EqualTo(0));
+            another.data = 1337;
+            Assert.That(world.GetComponent<Another>(a).data, Is.EqualTo(1337));
+
+            uint b = world.CreateEntity();
+            ref SimpleComponent simple = ref world.AddComponent<SimpleComponent>(b);
+            Assert.That(world.ContainsComponent<SimpleComponent>(b), Is.True);
+            simple.data = "Hello World";
+            Assert.That(world.GetComponent<SimpleComponent>(b).data.ToString(), Is.EqualTo("Hello World"));
+
+            ref Another anotherAnother = ref world.AddComponent<Another>(b);
+            anotherAnother.data = 333;
+            Assert.That(world.ContainsComponent<Another>(b), Is.True);
+            Assert.That(world.GetComponent<Another>(b).data, Is.EqualTo(333));
+            Assert.That(world.GetComponent<SimpleComponent>(b).data.ToString(), Is.EqualTo("Hello World"));
+        }
+
+        [Test]
         public void TwoInitialComponents()
         {
             using World world = CreateWorld();
-            uint a = world.CreateEntity(new Another(32), new SimpleComponent("what is this?"));
-            Assert.That(world.ContainsComponent<SimpleComponent>(a), Is.True);
-            Assert.That(world.ContainsComponent<Another>(a), Is.True);
-            uint b = world.CreateEntity(new SimpleComponent("what is this?"), new Another(32));
+            uint a = world.CreateEntity(new Another(4));
+            uint b = world.CreateEntity(new Another(32), new SimpleComponent("what is this?"));
             Assert.That(world.ContainsComponent<SimpleComponent>(b), Is.True);
             Assert.That(world.ContainsComponent<Another>(b), Is.True);
-            Assert.That(world.GetComponent<SimpleComponent>(a), Is.EqualTo(world.GetComponent<SimpleComponent>(b)));
-            Assert.That(world.GetComponent<Another>(a), Is.EqualTo(world.GetComponent<Another>(b)));
-            world.RemoveComponent<SimpleComponent>(a);
-            Assert.That(world.ContainsComponent<SimpleComponent>(a), Is.False);
+            uint c = world.CreateEntity(new SimpleComponent("what is this?"), new Another(32));
+            Assert.That(world.ContainsComponent<SimpleComponent>(c), Is.True);
+            Assert.That(world.ContainsComponent<Another>(c), Is.True);
+            Assert.That(world.GetComponent<SimpleComponent>(b), Is.EqualTo(world.GetComponent<SimpleComponent>(c)));
+            Assert.That(world.GetComponent<Another>(b), Is.EqualTo(world.GetComponent<Another>(c)));
+            world.RemoveComponent<SimpleComponent>(b);
+            Assert.That(world.ContainsComponent<SimpleComponent>(b), Is.False);
+            Assert.That(world.GetComponent<Another>(a).data, Is.EqualTo(4));
+            Assert.That(world.GetFirstComponent<Another>(out uint found).data, Is.EqualTo(4));
+            Assert.That(found, Is.EqualTo(a));
         }
 
         [Test]
@@ -237,23 +265,23 @@ namespace Worlds.Tests
             Assert.That(world.IsEnabled(child), Is.False);
             Assert.That(world.IsLocallyEnabled(child), Is.True);
             Chunk chunk = world.GetChunk(child);
-            Assert.That(chunk.Definition.TagTypes.Contains(TagType.Disabled), Is.True);
+            Assert.That(chunk.Definition.tagTypes.Contains(TagType.Disabled), Is.True);
             world.SetEnabled(parent, true);
             Assert.That(world.IsEnabled(parent), Is.True);
             Assert.That(world.IsEnabled(child), Is.True);
             chunk = world.GetChunk(child);
-            Assert.That(chunk.Definition.TagTypes.Contains(TagType.Disabled), Is.False);
+            Assert.That(chunk.Definition.tagTypes.Contains(TagType.Disabled), Is.False);
 
             world.SetEnabled(child, false);
             Assert.That(world.IsEnabled(child), Is.False);
             chunk = world.GetChunk(child);
-            Assert.That(chunk.Definition.TagTypes.Contains(TagType.Disabled), Is.True);
+            Assert.That(chunk.Definition.tagTypes.Contains(TagType.Disabled), Is.True);
 
             world.SetEnabled(parent, false);
             world.SetEnabled(child, true);
             Assert.That(world.IsEnabled(child), Is.False);
             chunk = world.GetChunk(child);
-            Assert.That(chunk.Definition.TagTypes.Contains(TagType.Disabled), Is.True);
+            Assert.That(chunk.Definition.tagTypes.Contains(TagType.Disabled), Is.True);
         }
 
         [Test]

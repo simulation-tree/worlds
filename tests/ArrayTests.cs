@@ -40,6 +40,8 @@ namespace Worlds.Tests
             World world = CreateWorld();
             uint entity = world.CreateEntity();
             world.CreateArray<SimpleComponent>(entity, 2);
+            Assert.That(world.ContainsArray<SimpleComponent>(entity), Is.True);
+            Assert.That(world.GetArrayLength<SimpleComponent>(entity), Is.EqualTo(2));
             world.DestroyArray<SimpleComponent>(entity);
             Assert.That(world.ContainsArray<SimpleComponent>(entity), Is.False);
             world.Dispose();

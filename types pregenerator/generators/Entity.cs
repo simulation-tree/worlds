@@ -18,7 +18,6 @@ public static class Entity
             source = source.Replace("{{DefaultTypes}}", DefaultTypes(i));
             source = source.Replace("{{TypeParametersSignature}}", TypeParametersSignature(i));
             source = source.Replace("{{TypeParameters}}", TypeParameters(i));
-            source = source.Replace("{{DeclareComponentFields}}", DeclareComponentFields(i, GetIndent(source, "{{DeclareComponentFields}}")));
             source = source.Replace("{{AssignComponentFields}}", AssignComponentFields(i, GetIndent(source, "{{AssignComponentFields}}")));
             source = source.Replace("{{DescribeEntity}}", DescribeEntity(i, GetIndent(source, "{{DescribeEntity}}")));
             File.WriteAllText($"{TypeName}{i + 1}.cs", source);

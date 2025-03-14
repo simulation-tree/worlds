@@ -1,3 +1,4 @@
+using Collections;
 using System;
 using Unmanaged;
 
@@ -479,27 +480,27 @@ namespace Worlds
             return new(required, exclude, world.Chunks, world.Schema);
         }
 
-        public unsafe ref struct Enumerator
+        public ref struct Enumerator
         {
-            private static readonly int stride = sizeof(Chunk);
-
             private readonly MemoryAddress chunks;
             private readonly int chunkCount;
-            private readonly int c1;
-            private readonly int c2;
-            private readonly int c3;
-            private readonly int c4;
-            private readonly int c5;
-            private readonly int c6;
+            private readonly int componentType1;
+            private int componentOffset1;
+            private readonly int componentType2;
+            private int componentOffset2;
+            private readonly int componentType3;
+            private int componentOffset3;
+            private readonly int componentType4;
+            private int componentOffset4;
+            private readonly int componentType5;
+            private int componentOffset5;
+            private readonly int componentType6;
+            private int componentOffset6;
             private int entityIndex;
+            private int entityCount;
             private int chunkIndex;
             private ReadOnlySpan<uint> entities;
-            private Span<C1> list1;
-            private Span<C2> list2;
-            private Span<C3> list3;
-            private Span<C4> list4;
-            private Span<C5> list5;
-            private Span<C6> list6;
+            private List components;
 
             /// <summary>
             /// Current result.
@@ -508,22 +509,22 @@ namespace Worlds
             {
                 get
                 {
-                    int index = entityIndex - 1;
-                    uint entity = entities[index];
-                    ref C1 c1 = ref list1[index];
-                    ref C2 c2 = ref list2[index];
-                    ref C3 c3 = ref list3[index];
-                    ref C4 c4 = ref list4[index];
-                    ref C5 c5 = ref list5[index];
-                    ref C6 c6 = ref list6[index];
-                    return new(entity, ref c1, ref c2, ref c3, ref c4, ref c5, ref c6);
+                    uint entity = entities[entityIndex];
+                    MemoryAddress componentRow = components[entityIndex];
+                    ref C1 component1 = ref componentRow.Read<C1>(componentOffset1);
+                    ref C2 component2 = ref componentRow.Read<C2>(componentOffset2);
+                    ref C3 component3 = ref componentRow.Read<C3>(componentOffset3);
+                    ref C4 component4 = ref componentRow.Read<C4>(componentOffset4);
+                    ref C5 component5 = ref componentRow.Read<C5>(componentOffset5);
+                    ref C6 component6 = ref componentRow.Read<C6>(componentOffset6);
+                    return new(entity, ref component1, ref component2, ref component3, ref component4, ref component5, ref component6);
                 }
             }
 
             internal Enumerator(Definition required, Definition exclude, ReadOnlySpan<Chunk> allChunks, Schema schema)
             {
                 chunkCount = 0;
-                Span<Chunk> chunksBuffer = stackalloc Chunk[(int)allChunks.Length];
+                Span<Chunk> chunksBuffer = stackalloc Chunk[allChunks.Length];
                 foreach (Chunk chunk in allChunks)
                 {
                     if (chunk.Count > 0)
@@ -531,33 +532,33 @@ namespace Worlds
                         Definition key = chunk.Definition;
 
                         //check if chunk contains inclusion
-                        if ((key.ComponentTypes & required.ComponentTypes) != required.ComponentTypes)
+                        if ((key.componentTypes & required.componentTypes) != required.componentTypes)
                         {
                             continue;
                         }
 
-                        if ((key.ArrayTypes & required.ArrayTypes) != required.ArrayTypes)
+                        if ((key.arrayTypes & required.arrayTypes) != required.arrayTypes)
                         {
                             continue;
                         }
 
-                        if ((key.TagTypes & required.TagTypes) != required.TagTypes)
+                        if ((key.tagTypes & required.tagTypes) != required.tagTypes)
                         {
                             continue;
                         }
 
                         //check if chunk doesnt contain exclusion
-                        if (key.ComponentTypes.ContainsAny(exclude.ComponentTypes))
+                        if (key.componentTypes.ContainsAny(exclude.componentTypes))
                         {
                             continue;
                         }
 
-                        if (key.ArrayTypes.ContainsAny(exclude.ArrayTypes))
+                        if (key.arrayTypes.ContainsAny(exclude.arrayTypes))
                         {
                             continue;
                         }
 
-                        if (key.TagTypes.ContainsAny(exclude.TagTypes))
+                        if (key.tagTypes.ContainsAny(exclude.tagTypes))
                         {
                             continue;
                         }
@@ -568,14 +569,14 @@ namespace Worlds
 
                 entityIndex = 0;
                 chunkIndex = 0;
+                componentType1 = schema.GetComponentTypeIndex<C1>();
+                componentType2 = schema.GetComponentTypeIndex<C2>();
+                componentType3 = schema.GetComponentTypeIndex<C3>();
+                componentType4 = schema.GetComponentTypeIndex<C4>();
+                componentType5 = schema.GetComponentTypeIndex<C5>();
+                componentType6 = schema.GetComponentTypeIndex<C6>();
                 if (chunkCount > 0)
                 {
-                    c1 = schema.GetComponentTypeIndex<C1>();
-                    c2 = schema.GetComponentTypeIndex<C2>();
-                    c3 = schema.GetComponentTypeIndex<C3>();
-                    c4 = schema.GetComponentTypeIndex<C4>();
-                    c5 = schema.GetComponentTypeIndex<C5>();
-                    c6 = schema.GetComponentTypeIndex<C6>();
                     chunks = MemoryAddress.Allocate(chunksBuffer.Slice(0, chunkCount));
                     UpdateChunkFields(ref chunksBuffer[0]);
                 }
@@ -586,7 +587,7 @@ namespace Worlds
             /// </summary>
             public bool MoveNext()
             {
-                if (entityIndex < entities.Length)
+                if (entityIndex < entityCount)
                 {
                     entityIndex++;
                     return true;
@@ -609,13 +610,15 @@ namespace Worlds
 
             private void UpdateChunkFields(ref Chunk chunk)
             {
-                entities = chunk.Entities;
-                list1 = chunk.GetComponents<C1>(c1);
-                list2 = chunk.GetComponents<C2>(c2);
-                list3 = chunk.GetComponents<C3>(c3);
-                list4 = chunk.GetComponents<C4>(c4);
-                list5 = chunk.GetComponents<C5>(c5);
-                list6 = chunk.GetComponents<C6>(c6);
+                entities = chunk.EntitiesList;
+                entityCount = chunk.Count;
+                components = chunk.Components;
+                componentOffset1 = chunk.GetComponentOffset(componentType1);
+                componentOffset2 = chunk.GetComponentOffset(componentType2);
+                componentOffset3 = chunk.GetComponentOffset(componentType3);
+                componentOffset4 = chunk.GetComponentOffset(componentType4);
+                componentOffset5 = chunk.GetComponentOffset(componentType5);
+                componentOffset6 = chunk.GetComponentOffset(componentType6);
             }
 
             public readonly void Dispose()

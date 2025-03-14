@@ -3,19 +3,26 @@ using Collections.Generic;
 
 namespace Worlds.Pointers
 {
-    public readonly struct Chunk
+    internal struct Chunk
     {
+        public uint lastEntity;
+        public int count;
         public readonly Definition definition;
+        public readonly Worlds.Schema schema;
+        public readonly List<uint> entities;
+        public readonly List components;
+        public readonly int stride;
 
-        internal readonly List<uint> entities;
-        internal readonly Array<List> componentLists;
-        internal readonly Array<int> typeIndices;
-
-        internal Chunk(Definition definition, Array<List> componentLists, Array<int> typeIndices)
+        public Chunk(Definition definition, Worlds.Schema schema)
         {
+            lastEntity = 0;
+            count = 0;
             entities = new(4);
-            this.typeIndices = typeIndices;
-            this.componentLists = componentLists;
+            entities.AddDefault(); //reserved
+            stride = schema.ComponentRowSize;
+            components = new(4, stride);
+            components.AddDefault(); //reserved
+            this.schema = schema;
             this.definition = definition;
         }
     }

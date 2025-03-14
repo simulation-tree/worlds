@@ -1,5 +1,4 @@
 ﻿using Collections;
-using Collections.Generic;
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -35,9 +34,13 @@ namespace Worlds
             {
                 MemoryAddress.ThrowIfDefault(chunk);
 
-                return chunk->entities.AsSpan();
+                return chunk->entities.AsSpan(1);
             }
         }
+
+        internal readonly List Components => chunk->components;
+        internal readonly uint LastEntity => chunk->lastEntity;
+        internal readonly Span<uint> EntitiesList => chunk->entities.AsSpan();
 
         /// <summary>
         /// Amount of entities stored in this chunk.
@@ -48,7 +51,7 @@ namespace Worlds
             {
                 MemoryAddress.ThrowIfDefault(chunk);
 
-                return chunk->entities.Count;
+                return chunk->count;
             }
         }
 
@@ -69,20 +72,25 @@ namespace Worlds
         public readonly uint this[int index] => Entities[index];
 
 #if NET
-        /// <summary>
-        /// Creates a new chunk.
-        /// </summary>
+        [Obsolete("Default constructor not supported", true)]
         public Chunk()
         {
-            Array<List> componentArrays = new(BitMask.Capacity);
+            throw new NotSupportedException();
+        }
+#endif
+
+        /// <summary>
+        /// Creates an empty chunk.
+        /// </summary>
+        public Chunk(Schema schema)
+        {
             ref Pointer chunk = ref MemoryAddress.Allocate<Pointer>();
-            chunk = new(default, componentArrays, new(0));
+            chunk = new(default, schema);
             fixed (Pointer* pointer = &chunk)
             {
                 this.chunk = pointer;
             }
         }
-#endif
 
         /// <summary>
         /// Initializes an existing chunk from the given <paramref name="pointer"/>.
@@ -97,21 +105,8 @@ namespace Worlds
         /// </summary>
         public Chunk(Definition definition, Schema schema)
         {
-            Array<List> componentArrays = new(BitMask.Capacity);
-            Span<int> typeIndices = stackalloc int[BitMask.Capacity];
-            int typeCount = 0;
-            for (int c = 0; c < BitMask.Capacity; c++)
-            {
-                if (definition.ComponentTypes.Contains(c))
-                {
-                    int componentSize = schema.GetComponentTypeSize(c);
-                    componentArrays[c] = new(4, componentSize);
-                    typeIndices[typeCount++] = c;
-                }
-            }
-
             ref Pointer chunk = ref MemoryAddress.Allocate<Pointer>();
-            chunk = new(definition, componentArrays, new(typeIndices.Slice(0, typeCount)));
+            chunk = new(definition, schema);
             fixed (Pointer* pointer = &chunk)
             {
                 this.chunk = pointer;
@@ -124,22 +119,14 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(chunk);
 
             chunk->entities.Dispose();
-            int typeCount = chunk->typeIndices.Length;
-            for (int t = 0; t < typeCount; t++)
-            {
-                List components = chunk->componentLists[chunk->typeIndices[t]];
-                components.Dispose();
-            }
-
-            chunk->componentLists.Dispose();
-            chunk->typeIndices.Dispose();
+            chunk->components.Dispose();
             MemoryAddress.Free(ref chunk);
         }
 
         [Conditional("DEBUG")]
         private readonly void ThrowIfComponentTypeIsMissing(ComponentType componentType)
         {
-            if (!chunk->definition.ComponentTypes.Contains(componentType.index))
+            if (!chunk->definition.componentTypes.Contains(componentType.index))
             {
                 throw new ArgumentException($"Component type `{componentType.ToString()}` is missing from the chunk");
             }
@@ -148,66 +135,80 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfComponentTypeIsMissing(int componentType)
         {
-            if (!chunk->definition.ComponentTypes.Contains(componentType))
+            if (!chunk->definition.componentTypes.Contains(componentType))
             {
                 throw new ArgumentException($"Component type `{new ComponentType(componentType).ToString()}` is missing from the chunk");
             }
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfEntityIsMissing(uint entity)
+        private readonly void ThrowIfIndexIsOutOfRange(int index)
         {
-            if (!chunk->entities.Contains(entity))
+            if (index == 0)
             {
-                throw new ArgumentException($"Entity `{entity}` is missing from the chunk");
+                throw new ArgumentException("Index must be greater than zero to access the first entity in the chunk");
+            }
+            else if (index > chunk->count)
+            {
+                throw new ArgumentOutOfRangeException($"Index `{index}` is out of range for the chunk with count `{chunk->count}`");
+            }
+            else if (index < 0)
+            {
+                throw new ArgumentOutOfRangeException($"Index `{index}` is less than zero");
             }
         }
 
         /// <inheritdoc/>
         public readonly override string ToString()
         {
-            Span<char> buffer = stackalloc char[512];
+            Span<char> buffer = stackalloc char[1024];
             int length = ToString(buffer);
             return buffer.Slice(0, length).ToString();
         }
 
         /// <summary>
-        /// Builds a string representation of this chunk.
+        /// Builds a string representation of this chunk and copies it to the <paramref name="destination"/>.
         /// </summary>
-        public readonly int ToString(Span<char> buffer)
+        public readonly int ToString(Span<char> destination)
         {
             int length = 0;
-            BitMask componentTypes = Definition.ComponentTypes;
-            for (int i = 0; i < BitMask.Capacity; i++)
+            length += Count.ToString(destination);
+            if (!Definition.IsEmpty)
             {
-                if (componentTypes.Contains(i))
-                {
-                    ComponentType componentType = new(i);
-                    length += componentType.ToString(buffer.Slice(length));
-                    buffer[length++] = ',';
-                    buffer[length++] = ' ';
-                }
+                destination[length++] = ' ';
+                length += Definition.ToString(destination.Slice(length));
             }
 
-            if (length > 0)
-            {
-                length -= 2;
-                return length;
-            }
-            else
-            {
-                buffer[0] = 'E';
-                buffer[1] = 'm';
-                buffer[2] = 'p';
-                buffer[3] = 't';
-                buffer[4] = 'y';
-                return 5;
-            }
+            return length;
         }
 
         public readonly override int GetHashCode()
         {
             return Definition.GetHashCode();
+        }
+
+        /// <summary>
+        /// Retrieves the byte offset of the <paramref name="componentType"/>
+        /// </summary>
+        public readonly int GetComponentOffset(int componentType)
+        {
+            MemoryAddress.ThrowIfDefault(chunk);
+
+            return chunk->schema.GetComponentOffset(componentType);
+        }
+
+        /// <summary>
+        /// Adds the given <paramref name="entity"/> into this chunk and returns its referable index.
+        /// </summary>
+        public readonly void AddEntity(uint entity, ref int index)
+        {
+            MemoryAddress.ThrowIfDefault(chunk);
+
+            index = chunk->count + 1;
+            chunk->entities.Add(entity);
+            chunk->lastEntity = entity;
+            chunk->components.AddDefault();
+            chunk->count = index;
         }
 
         /// <summary>
@@ -217,107 +218,34 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(chunk);
 
+            int index = chunk->count + 1;
             chunk->entities.Add(entity);
-            Span<int> typeIndices = chunk->typeIndices.AsSpan();
-            Span<List> componentLists = chunk->componentLists.AsSpan();
-            for (int t = 0; t < typeIndices.Length; t++)
-            {
-                componentLists[typeIndices[t]].AddDefault();
-            }
-
-            return chunk->entities.Count - 1;
+            chunk->lastEntity = entity;
+            chunk->components.AddDefault();
+            chunk->count = index;
+            return index;
         }
 
         /// <summary>
-        /// Removes the given <paramref name="entity"/> from this chunk.
+        /// Removes the entity at the given <paramref name="index"/>.
         /// </summary>
-        public readonly void RemoveEntity(uint entity)
+        public readonly void RemoveEntityAt(int index)
         {
             MemoryAddress.ThrowIfDefault(chunk);
+            ThrowIfIndexIsOutOfRange(index);
 
-            int index = chunk->entities.RemoveBySwapping(entity);
-            Span<int> typeIndices = chunk->typeIndices.AsSpan();
-            Span<List> componentLists = chunk->componentLists.AsSpan();
-            for (int t = 0; t < typeIndices.Length; t++)
-            {
-                componentLists[typeIndices[t]].RemoveAtBySwapping(index);
-            }
+            chunk->entities.RemoveAtBySwapping(index);
+            chunk->components.RemoveAtBySwapping(index);
+            chunk->lastEntity = chunk->entities[--chunk->count];
         }
 
         /// <summary>
-        /// Moves the <paramref name="entity"/> and all of its components to the <paramref name="destination"/> chunk.
+        /// Retrieves an enumerator for iterating through each component of type <typeparamref name="T"/>.
         /// </summary>
-        public readonly int MoveEntity(uint entity, Chunk destination)
+        public readonly ComponentEnumerator<T> GetEnumerator<T>(int componentType) where T : unmanaged
         {
-            MemoryAddress.ThrowIfDefault(chunk);
-            MemoryAddress.ThrowIfDefault(destination.chunk);
-
-            int oldIndex = chunk->entities.RemoveBySwapping(entity);
-            int newIndex = destination.chunk->entities.Count;
-            destination.chunk->entities.Add(entity);
-
-            //copy from source to destination
-            Span<int> sourceTypeIndices = chunk->typeIndices.AsSpan();
-            Span<List> sourceComponentLists = chunk->componentLists.AsSpan();
-            Span<int> destinationTypeIndices = destination.chunk->typeIndices.AsSpan();
-            Span<List> destinationComponentLists = destination.chunk->componentLists.AsSpan();
-            for (int t = 0; t < destinationTypeIndices.Length; t++)
-            {
-                int destinationComponentType = destinationTypeIndices[t];
-                List destinationComponents = destinationComponentLists[destinationComponentType];
-                if (sourceTypeIndices.Contains(destinationComponentType))
-                {
-                    List sourceComponents = sourceComponentLists[destinationComponentType];
-                    MemoryAddress oldComponent = sourceComponents[oldIndex];
-                    destinationComponents.Insert(newIndex, oldComponent);
-                }
-                else
-                {
-                    destinationComponents.AddDefault();
-                }
-            }
-
-            //remove from source
-            for (int t = 0; t < sourceTypeIndices.Length; t++)
-            {
-                List components = sourceComponentLists[chunk->typeIndices[t]];
-                components.RemoveAtBySwapping(oldIndex);
-            }
-
-            return newIndex;
-        }
-
-        /// <summary>
-        /// Retrieves the list of all components of the given <paramref name="componentType"/>.
-        /// </summary>
-        public readonly List GetComponents(int componentType)
-        {
-            MemoryAddress.ThrowIfDefault(chunk);
-            ThrowIfComponentTypeIsMissing(componentType);
-
-            return chunk->componentLists[componentType];
-        }
-
-        /// <summary>
-        /// Retrieves a span containing all <typeparamref name="T"/> components.
-        /// </summary>
-        public readonly Span<T> GetComponents<T>(int componentType) where T : unmanaged
-        {
-            MemoryAddress.ThrowIfDefault(chunk);
-            ThrowIfComponentTypeIsMissing(componentType);
-
-            return chunk->componentLists[componentType].AsSpan<T>();
-        }
-
-        /// <summary>
-        /// Retrieves the index of the given <paramref name="entity"/>.
-        /// </summary>
-        public readonly int IndexOf(uint entity)
-        {
-            MemoryAddress.ThrowIfDefault(chunk);
-            ThrowIfEntityIsMissing(entity);
-
-            return chunk->entities.IndexOf(entity);
+            int componentOffset = chunk->schema.GetComponentOffset(componentType);
+            return new(chunk->components, componentOffset);
         }
 
         /// <summary>
@@ -326,21 +254,11 @@ namespace Worlds
         public readonly ref T GetComponent<T>(int index, int componentType) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(chunk);
+            ThrowIfIndexIsOutOfRange(index);
             ThrowIfComponentTypeIsMissing(componentType);
 
-            return ref chunk->componentLists[componentType].Get<T>(index);
-        }
-
-        /// <summary>
-        /// Retrieves a reference to the component of type <paramref name="componentType"/>.
-        /// </summary>
-        public readonly ref T GetComponentOfEntity<T>(uint entity, int componentType) where T : unmanaged
-        {
-            MemoryAddress.ThrowIfDefault(chunk);
-            ThrowIfComponentTypeIsMissing(componentType);
-            ThrowIfEntityIsMissing(entity);
-
-            return ref chunk->componentLists[componentType].Get<T>(chunk->entities.IndexOf(entity));
+            int componentOffset = chunk->schema.GetComponentOffset(componentType);
+            return ref chunk->components[index].Read<T>(componentOffset);
         }
 
         /// <summary>
@@ -349,21 +267,11 @@ namespace Worlds
         public readonly MemoryAddress GetComponent(int index, int componentType)
         {
             MemoryAddress.ThrowIfDefault(chunk);
+            ThrowIfIndexIsOutOfRange(index);
             ThrowIfComponentTypeIsMissing(componentType);
 
-            return chunk->componentLists[componentType][index];
-        }
-
-        /// <summary>
-        /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> of <paramref name="entity"/>.
-        /// </summary>
-        public readonly MemoryAddress GetComponentOfEntity(uint entity, int componentType)
-        {
-            MemoryAddress.ThrowIfDefault(chunk);
-            ThrowIfComponentTypeIsMissing(componentType);
-            ThrowIfEntityIsMissing(entity);
-
-            return chunk->componentLists[componentType][chunk->entities.IndexOf(entity)];
+            int componentOffset = chunk->schema.GetComponentOffset(componentType);
+            return chunk->components[index].Read(componentOffset);
         }
 
         /// <summary>
@@ -372,25 +280,26 @@ namespace Worlds
         public readonly MemoryAddress GetComponent(int index, int componentType, out int componentSize)
         {
             MemoryAddress.ThrowIfDefault(chunk);
+            ThrowIfIndexIsOutOfRange(index);
             ThrowIfComponentTypeIsMissing(componentType);
 
-            List components = chunk->componentLists[componentType];
-            componentSize = components.Stride;
-            return components[index];
+            int componentOffset = chunk->schema.GetComponentOffset(componentType);
+            componentSize = chunk->schema.GetComponentTypeSize(componentType);
+            return chunk->components[index].Read(componentOffset);
         }
 
         /// <summary>
-        /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> of <paramref name="entity"/>.
+        /// Retrieves the bytes for the specific component of the type <paramref name="componentType"/> at <paramref name="index"/>.
         /// </summary>
-        public readonly MemoryAddress GetComponentOfEntity(uint entity, int componentType, out int componentSize)
+        public readonly Span<byte> GetComponentBytes(int index, int componentType)
         {
             MemoryAddress.ThrowIfDefault(chunk);
+            ThrowIfIndexIsOutOfRange(index);
             ThrowIfComponentTypeIsMissing(componentType);
-            ThrowIfEntityIsMissing(entity);
 
-            List components = chunk->componentLists[componentType];
-            componentSize = components.Stride;
-            return components[chunk->entities.IndexOf(entity)];
+            int componentOffset = chunk->schema.GetComponentOffset(componentType);
+            int componentSize = chunk->schema.GetComponentTypeSize(componentType);
+            return chunk->components[index].AsSpan(componentOffset, componentSize);
         }
 
         /// <summary>
@@ -399,21 +308,11 @@ namespace Worlds
         public readonly void SetComponent<T>(int index, int componentType, T value) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(chunk);
+            ThrowIfIndexIsOutOfRange(index);
             ThrowIfComponentTypeIsMissing(componentType);
 
-            chunk->componentLists[componentType].Set(index, value);
-        }
-
-        /// <summary>
-        /// Assigns the component for <paramref name="entity"/> to <paramref name="value"/>.
-        /// </summary>
-        public readonly void SetComponentOfEntity<T>(uint entity, int componentType, T value) where T : unmanaged
-        {
-            MemoryAddress.ThrowIfDefault(chunk);
-            ThrowIfComponentTypeIsMissing(componentType);
-            ThrowIfEntityIsMissing(entity);
-
-            chunk->componentLists[componentType].Set(chunk->entities.IndexOf(entity), value);
+            int componentOffset = chunk->schema.GetComponentOffset(componentType);
+            chunk->components[index].Write(componentOffset, value);
         }
 
         public readonly override bool Equals(object? obj)
@@ -426,6 +325,29 @@ namespace Worlds
             return (nint)chunk == (nint)other.chunk;
         }
 
+        /// <summary>
+        /// Moves the entity at <paramref name="index"/> and all of its components to the <paramref name="destination"/> chunk,
+        /// and modifies it to match the new index.
+        /// </summary>
+        public static void MoveEntityAt(ref int index, ref Chunk current, Chunk destination)
+        {
+            MemoryAddress.ThrowIfDefault(current.chunk);
+            MemoryAddress.ThrowIfDefault(destination.chunk);
+
+            current.chunk->entities.RemoveAtBySwapping(index, out uint entity);
+            current.chunk->lastEntity = current.chunk->entities[--current.chunk->count];
+
+            MemoryAddress sourceComponentRow = current.chunk->components[index];
+            destination.chunk->components.Add(sourceComponentRow);
+            current.chunk->components.RemoveAtBySwapping(index);
+
+            index = destination.chunk->count + 1;
+            destination.chunk->entities.Add(entity);
+            destination.chunk->lastEntity = entity;
+            destination.chunk->count = index;
+            current = destination;
+        }
+
         public static bool operator ==(Chunk left, Chunk right)
         {
             return left.Equals(right);
@@ -434,20 +356,6 @@ namespace Worlds
         public static bool operator !=(Chunk left, Chunk right)
         {
             return !(left == right);
-        }
-
-        /// <summary>
-        /// Creates a new empty chunk.
-        /// </summary>
-        public static Chunk Create()
-        {
-            Array<List> componentArrays = new(BitMask.Capacity);
-            ref Pointer chunk = ref MemoryAddress.Allocate<Pointer>();
-            chunk = new(default, componentArrays, new(0));
-            fixed (Pointer* pointer = &chunk)
-            {
-                return new(pointer);
-            }
         }
 
         public readonly ref struct Entity<C1> where C1 : unmanaged
