@@ -18,9 +18,9 @@ namespace Worlds
         private unsafe fixed ushort arrayElementSizes[(int)BitMask.Capacity];
 
         public readonly Definition Definition => definition;
-        public readonly BitMask ComponentTypes => definition.ComponentTypes;
-        public readonly BitMask ArrayTypes => definition.ArrayTypes;
-        public readonly BitMask TagTypes => definition.TagTypes;
+        public readonly BitMask ComponentTypes => definition.componentTypes;
+        public readonly BitMask ArrayTypes => definition.arrayTypes;
+        public readonly BitMask TagTypes => definition.tagTypes;
 
 #if NET
         [Obsolete("Default constructor not supported", true)]
@@ -42,12 +42,12 @@ namespace Worlds
             this.schema = schema;
             for (int i = 0; i < BitMask.Capacity; i++)
             {
-                if (definition.ComponentTypes.Contains(i))
+                if (definition.componentTypes.Contains(i))
                 {
                     componentSizes[i] = (ushort)schema.GetComponentTypeSize(i);
                 }
 
-                if (definition.ArrayTypes.Contains(i))
+                if (definition.arrayTypes.Contains(i))
                 {
                     arrayElementSizes[i] = (ushort)schema.GetArrayTypeSize(i);
                 }
@@ -110,32 +110,32 @@ namespace Worlds
 
         public readonly bool ContainsComponent(ComponentType componentType)
         {
-            return definition.ComponentTypes.Contains(componentType.index);
+            return definition.componentTypes.Contains(componentType.index);
         }
 
         public readonly bool ContainsArray(ArrayType arrayType)
         {
-            return definition.ArrayTypes.Contains(arrayType.index);
+            return definition.arrayTypes.Contains(arrayType.index);
         }
 
         public readonly bool ContainsTag(TagType tagType)
         {
-            return definition.TagTypes.Contains(tagType.index);
+            return definition.tagTypes.Contains(tagType.index);
         }
 
         public readonly bool ContainsComponent(int index)
         {
-            return definition.ComponentTypes.Contains(index);
+            return definition.componentTypes.Contains(index);
         }
 
         public readonly bool ContainsArray(int index)
         {
-            return definition.ArrayTypes.Contains(index);
+            return definition.arrayTypes.Contains(index);
         }
 
         public readonly bool ContainsTag(int index)
         {
-            return definition.TagTypes.Contains(index);
+            return definition.tagTypes.Contains(index);
         }
 
         public readonly bool ContainsComponent<T>() where T : unmanaged
@@ -285,7 +285,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfComponentTypeIsPresent(int componentType)
         {
-            if (definition.ComponentTypes.Contains(componentType))
+            if (definition.componentTypes.Contains(componentType))
             {
                 throw new InvalidOperationException($"Component type `{new ComponentType(componentType).ToString(schema)}` is already present in the archetype");
             }
@@ -294,7 +294,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfComponentTypeIsMissing(int componentType)
         {
-            if (!definition.ComponentTypes.Contains(componentType))
+            if (!definition.componentTypes.Contains(componentType))
             {
                 throw new InvalidOperationException($"Component type `{new ComponentType(componentType).ToString(schema)}` is missing from the archetype");
             }
@@ -303,7 +303,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfArrayTypeIsMissing(int arrayType)
         {
-            if (!definition.ArrayTypes.Contains(arrayType))
+            if (!definition.arrayTypes.Contains(arrayType))
             {
                 throw new InvalidOperationException($"Array type `{new ArrayType(arrayType).ToString(schema)}` is missing from the archetype");
             }
@@ -312,7 +312,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfArrayTypeIsPresent(int arrayType)
         {
-            if (definition.ArrayTypes.Contains(arrayType))
+            if (definition.arrayTypes.Contains(arrayType))
             {
                 throw new InvalidOperationException($"Array type `{new ArrayType(arrayType).ToString(schema)}` is already present in the archetype");
             }
@@ -321,7 +321,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfTagTypeIsPresent(int tagType)
         {
-            if (definition.TagTypes.Contains(tagType))
+            if (definition.tagTypes.Contains(tagType))
             {
                 throw new InvalidOperationException($"Tag type `{new TagType(tagType).ToString(schema)}` is already present in the archetype");
             }

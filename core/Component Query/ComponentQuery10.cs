@@ -544,33 +544,33 @@ namespace Worlds
                         Definition key = chunk.Definition;
 
                         //check if chunk contains inclusion
-                        if ((key.ComponentTypes & required.ComponentTypes) != required.ComponentTypes)
+                        if ((key.componentTypes & required.componentTypes) != required.componentTypes)
                         {
                             continue;
                         }
 
-                        if ((key.ArrayTypes & required.ArrayTypes) != required.ArrayTypes)
+                        if ((key.arrayTypes & required.arrayTypes) != required.arrayTypes)
                         {
                             continue;
                         }
 
-                        if ((key.TagTypes & required.TagTypes) != required.TagTypes)
+                        if ((key.tagTypes & required.tagTypes) != required.tagTypes)
                         {
                             continue;
                         }
 
                         //check if chunk doesnt contain exclusion
-                        if (key.ComponentTypes.ContainsAny(exclude.ComponentTypes))
+                        if (key.componentTypes.ContainsAny(exclude.componentTypes))
                         {
                             continue;
                         }
 
-                        if (key.ArrayTypes.ContainsAny(exclude.ArrayTypes))
+                        if (key.arrayTypes.ContainsAny(exclude.arrayTypes))
                         {
                             continue;
                         }
 
-                        if (key.TagTypes.ContainsAny(exclude.TagTypes))
+                        if (key.tagTypes.ContainsAny(exclude.tagTypes))
                         {
                             continue;
                         }

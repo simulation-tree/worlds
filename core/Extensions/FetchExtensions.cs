@@ -165,9 +165,9 @@ namespace Worlds
             {
                 Chunk chunk = world.Chunks[i];
                 Definition definition = chunk.Definition;
-                if (definition.ComponentTypes.ContainsAll(componentTypes))
+                if (definition.componentTypes.ContainsAll(componentTypes))
                 {
-                    if (!onlyEnabled || (onlyEnabled && !definition.TagTypes.Contains(TagType.Disabled)))
+                    if (!onlyEnabled || (onlyEnabled && !definition.tagTypes.Contains(TagType.Disabled)))
                     {
                         int count = chunk.Count;
                         for (int e = 0; e < count; e++)
@@ -208,11 +208,11 @@ namespace Worlds
             {
                 Chunk chunk = world.Chunks[i];
                 Definition chunkDefinition = chunk.Definition;
-                if (chunkDefinition.ComponentTypes.ContainsAll(definition.ComponentTypes) && chunkDefinition.ArrayTypes.ContainsAll(definition.ArrayTypes))
+                if (chunkDefinition.componentTypes.ContainsAll(definition.componentTypes) && chunkDefinition.arrayTypes.ContainsAll(definition.arrayTypes))
                 {
-                    if (!onlyEnabled || (onlyEnabled && !chunkDefinition.TagTypes.Contains(TagType.Disabled)))
+                    if (!onlyEnabled || (onlyEnabled && !chunkDefinition.tagTypes.Contains(TagType.Disabled)))
                     {
-                        if (chunkDefinition.TagTypes.ContainsAll(definition.TagTypes))
+                        if (chunkDefinition.tagTypes.ContainsAll(definition.tagTypes))
                         {
                             int count = chunk.Count;
                             for (int e = 0; e < count; e++)
@@ -239,11 +239,11 @@ namespace Worlds
             for (int i = 0; i < chunks.Length; i++)
             {
                 Chunk chunk = chunks[i];
-                if (!onlyEnabled || (onlyEnabled && !chunk.Definition.TagTypes.Contains(TagType.Disabled)))
+                if (!onlyEnabled || (onlyEnabled && !chunk.Definition.tagTypes.Contains(TagType.Disabled)))
                 {
-                    if (chunk.Definition.ComponentTypes.ContainsAll(definition.ComponentTypes) && chunk.Definition.ArrayTypes.ContainsAll(definition.ArrayTypes))
+                    if (chunk.Definition.componentTypes.ContainsAll(definition.componentTypes) && chunk.Definition.arrayTypes.ContainsAll(definition.arrayTypes))
                     {
-                        if (chunk.Definition.TagTypes.ContainsAll(definition.TagTypes))
+                        if (chunk.Definition.tagTypes.ContainsAll(definition.tagTypes))
                         {
                             if (chunk.Count > 0)
                             {
@@ -284,7 +284,7 @@ namespace Worlds
                 Chunk chunk = chunks[i];
                 if (chunk.Definition.ContainsComponent(componentType))
                 {
-                    if (!onlyEnabled || (onlyEnabled && !chunk.Definition.TagTypes.Contains(TagType.Disabled)))
+                    if (!onlyEnabled || (onlyEnabled && !chunk.Definition.tagTypes.Contains(TagType.Disabled)))
                     {
                         count += chunk.Count;
                     }
@@ -306,7 +306,7 @@ namespace Worlds
                 Chunk chunk = chunks[i];
                 if (chunk.Definition.ContainsComponent(componentType))
                 {
-                    if (!onlyEnabled || (onlyEnabled && !chunk.Definition.TagTypes.Contains(TagType.Disabled)))
+                    if (!onlyEnabled || (onlyEnabled && !chunk.Definition.tagTypes.Contains(TagType.Disabled)))
                     {
                         count += chunk.Count;
                     }
@@ -330,11 +330,11 @@ namespace Worlds
             {
                 Chunk chunk = chunks[i];
                 Definition chunkDefinition = chunk.Definition;
-                if (!onlyEnabled || (onlyEnabled && !chunkDefinition.TagTypes.Contains(TagType.Disabled)))
+                if (!onlyEnabled || (onlyEnabled && !chunkDefinition.tagTypes.Contains(TagType.Disabled)))
                 {
-                    if (chunkDefinition.ComponentTypes.ContainsAll(definition.ComponentTypes) && chunkDefinition.ArrayTypes.ContainsAll(definition.ArrayTypes))
+                    if (chunkDefinition.componentTypes.ContainsAll(definition.componentTypes) && chunkDefinition.arrayTypes.ContainsAll(definition.arrayTypes))
                     {
-                        if (chunkDefinition.TagTypes.ContainsAll(definition.TagTypes))
+                        if (chunkDefinition.tagTypes.ContainsAll(definition.tagTypes))
                         {
                             count += chunk.Count;
                         }

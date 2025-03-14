@@ -7,24 +7,9 @@ namespace Worlds
     /// </summary>
     public struct Definition : IEquatable<Definition>
     {
-        private BitMask componentTypes;
-        private BitMask arrayTypes;
-        private BitMask tagTypes;
-
-        /// <summary>
-        /// Mask of component types in this definition.
-        /// </summary>
-        public readonly BitMask ComponentTypes => componentTypes;
-
-        /// <summary>
-        /// Mask of array types in this definition.
-        /// </summary>
-        public readonly BitMask ArrayTypes => arrayTypes;
-
-        /// <summary>
-        /// Mask of tag types in this definition.
-        /// </summary>
-        public readonly BitMask TagTypes => tagTypes;
+        public BitMask componentTypes;
+        public BitMask arrayTypes;
+        public BitMask tagTypes;
 
         /// <summary>
         /// Does this definition include disabled entities?

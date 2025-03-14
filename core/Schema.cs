@@ -478,42 +478,42 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            return schema->definitionMask.ComponentTypes.Contains(componentType.index);
+            return schema->definitionMask.componentTypes.Contains(componentType.index);
         }
 
         public readonly bool ContainsArrayType(ArrayType arrayType)
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            return schema->definitionMask.ArrayTypes.Contains(arrayType.index);
+            return schema->definitionMask.arrayTypes.Contains(arrayType.index);
         }
 
         public readonly bool ContainsTagType(TagType tagType)
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            return schema->definitionMask.TagTypes.Contains(tagType.index);
+            return schema->definitionMask.tagTypes.Contains(tagType.index);
         }
 
         public readonly bool ContainsComponentType(int index)
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            return schema->definitionMask.ComponentTypes.Contains(index);
+            return schema->definitionMask.componentTypes.Contains(index);
         }
 
         public readonly bool ContainsArrayType(int index)
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            return schema->definitionMask.ArrayTypes.Contains(index);
+            return schema->definitionMask.arrayTypes.Contains(index);
         }
 
         public readonly bool ContainsTagType(int index)
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            return schema->definitionMask.TagTypes.Contains(index);
+            return schema->definitionMask.tagTypes.Contains(index);
         }
 
         public readonly bool ContainsComponentType(ASCIIText256 fullTypeName)

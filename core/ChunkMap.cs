@@ -33,10 +33,9 @@ namespace Worlds
             chunkMap = default;
         }
 
-        private readonly void Resize()
+        private readonly void Resize(int newCapacity, ref Span<bool> occupied, ref Span<ChunkKey> values, ref Span<long> hashCodes)
         {
             int oldCapacity = chunkMap->capacity;
-            int newCapacity = oldCapacity * 4;
             chunkMap->capacity = newCapacity;
 
             MemoryAddress oldValues = chunkMap->keys;
@@ -48,9 +47,9 @@ namespace Worlds
             chunkMap->occupied = MemoryAddress.AllocateZeroed(newCapacity);
             Span<ChunkKey> oldValuesSpan = new(oldValues.Pointer, oldCapacity);
             Span<bool> oldOccupiedSpan = new(oldOccupied.Pointer, oldCapacity);
-            Span<bool> newOccupiedSpan = new(chunkMap->occupied.Pointer, newCapacity);
-            Span<long> newHashCodes = new(chunkMap->hashCodes.Pointer, newCapacity);
-            Span<ChunkKey> newValuesSpan = new(chunkMap->keys.Pointer, newCapacity);
+            occupied = new(chunkMap->occupied.Pointer, newCapacity);
+            hashCodes = new(chunkMap->hashCodes.Pointer, newCapacity);
+            values = new(chunkMap->keys.Pointer, newCapacity);
 
             for (int i = 0; i < oldCapacity; i++)
             {
@@ -59,58 +58,20 @@ namespace Worlds
                     ChunkKey value = oldValuesSpan[i];
                     long hashCode = value.GetLongHashCode();
                     int index = GetIndex(hashCode, newCapacity);
-                    while (newOccupiedSpan[index])
+                    while (occupied[index])
                     {
                         index = (index + 1) % newCapacity;
                     }
 
-                    newOccupiedSpan[index] = true;
-                    newValuesSpan[index] = value;
-                    newHashCodes[index] = hashCode;
+                    occupied[index] = true;
+                    values[index] = value;
+                    hashCodes[index] = hashCode;
                 }
             }
 
             oldValues.Dispose();
             oldOccupied.Dispose();
             oldKeyHashCodes.Dispose();
-        }
-
-        internal readonly void Add(Chunk chunk)
-        {
-            int capacity = chunkMap->capacity;
-            int newCount = chunkMap->count + 1;
-            if (newCount > capacity)
-            {
-                Resize();
-                capacity = chunkMap->capacity;
-            }
-
-            Definition definition = chunk.Definition;
-            long hashCode = definition.GetLongHashCode();
-            int index = GetIndex(hashCode, capacity);
-            int startIndex = index;
-            Span<bool> occupied = new(chunkMap->occupied.Pointer, capacity);
-            Span<ChunkKey> values = new(chunkMap->keys.Pointer, capacity);
-            Span<long> hashCodes = new(chunkMap->hashCodes.Pointer, capacity);
-
-            while (occupied[index])
-            {
-                if (hashCodes[index] == hashCode && values[index].Equals(definition))
-                {
-                    return; //already present
-                }
-
-                index = (index + 1) % capacity;
-                if (index == startIndex)
-                {
-                    throw new InvalidOperationException("Hash set is full");
-                }
-            }
-
-            occupied[index] = true;
-            hashCodes[index] = hashCode;
-            values[index] = new(chunk);
-            chunkMap->count = newCount;
         }
 
         /// <summary>
@@ -127,7 +88,6 @@ namespace Worlds
             Span<bool> occupied = new(chunkMap->occupied.Pointer, capacity);
             Span<ChunkKey> values = new(chunkMap->keys.Pointer, capacity);
             Span<long> hashCodes = new(chunkMap->hashCodes.Pointer, capacity);
-
             while (occupied[index])
             {
                 if (hashCodes[index] == hashCode)
@@ -149,11 +109,8 @@ namespace Worlds
             int newCount = chunkMap->count + 1;
             if (newCount > capacity)
             {
-                Resize();
-                capacity = chunkMap->capacity;
-                occupied = new(chunkMap->occupied.Pointer, capacity);
-                values = new(chunkMap->keys.Pointer, capacity);
-                hashCodes = new(chunkMap->hashCodes.Pointer, capacity);
+                capacity *= 4;
+                Resize(capacity, ref occupied, ref values, ref hashCodes);
             }
 
             chunkMap->count = newCount;
@@ -184,7 +141,10 @@ namespace Worlds
 
         private static int GetIndex(long hashCode, int capacity)
         {
-            return (((int)hashCode) & 0x7FFFFFFF) % capacity;
+            unchecked
+            {
+                return (int)(((uint)hashCode) % (uint)capacity);
+            }
         }
     }
 }

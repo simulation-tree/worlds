@@ -126,7 +126,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfComponentTypeIsMissing(ComponentType componentType)
         {
-            if (!chunk->definition.ComponentTypes.Contains(componentType.index))
+            if (!chunk->definition.componentTypes.Contains(componentType.index))
             {
                 throw new ArgumentException($"Component type `{componentType.ToString()}` is missing from the chunk");
             }
@@ -135,7 +135,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfComponentTypeIsMissing(int componentType)
         {
-            if (!chunk->definition.ComponentTypes.Contains(componentType))
+            if (!chunk->definition.componentTypes.Contains(componentType))
             {
                 throw new ArgumentException($"Component type `{new ComponentType(componentType).ToString()}` is missing from the chunk");
             }
