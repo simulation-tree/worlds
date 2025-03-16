@@ -367,7 +367,13 @@ namespace Worlds
 
         public readonly override int GetHashCode()
         {
-            return HashCode.Combine(world, value);
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 23 + world.GetHashCode();
+                hash = hash * 23 + value.GetHashCode();
+                return hash;
+            }
         }
 
         [Conditional("DEBUG")]
@@ -375,7 +381,7 @@ namespace Worlds
         {
             if (!world.ContainsEntity(entity))
             {
-                throw new NullReferenceException($"Entity `{entity}` is missing");
+                throw new NullReferenceException($"Entity `{entity}` is missing in `{world}`");
             }
         }
 

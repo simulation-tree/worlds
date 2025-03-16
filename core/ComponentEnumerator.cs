@@ -5,7 +5,7 @@ namespace Worlds
 {
     public ref struct ComponentEnumerator<T> where T : unmanaged
     {
-        public readonly int Length;
+        public readonly int length;
 
         private readonly List components;
         private readonly int componentOffset;
@@ -18,14 +18,14 @@ namespace Worlds
         {
             this.components = components;
             this.componentOffset = componentOffset;
-            Length = components.Count - 1;
+            length = components.Count - 1;
             index = 0;
         }
 
         public bool MoveNext()
         {
             index++;
-            return index <= Length;
+            return index <= length;
         }
 
         public void Reset()
@@ -38,7 +38,7 @@ namespace Worlds
         /// </summary>
         public readonly void CopyTo(Span<T> destination)
         {
-            for (int i = 0; i < Length; i++)
+            for (int i = 0; i < length; i++)
             {
                 destination[i] = components[i + 1].Read<T>(componentOffset);
             }

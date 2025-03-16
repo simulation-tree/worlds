@@ -35,11 +35,11 @@ namespace Worlds.Tests
             floatComponent = 3.14f;
             Assert.That(chunk.Entities.Length, Is.EqualTo(1));
             Assert.That(chunk.Entities[0], Is.EqualTo(entity));
-            ComponentEnumerator<Integer> intComponents = chunk.GetEnumerator<Integer>(integerType);
-            ComponentEnumerator<Float> floatComponents = chunk.GetEnumerator<Float>(floatType);
-            Assert.That(intComponents.Length, Is.EqualTo(1));
+            ComponentEnumerator<Integer> intComponents = chunk.GetComponents<Integer>(integerType);
+            ComponentEnumerator<Float> floatComponents = chunk.GetComponents<Float>(floatType);
+            Assert.That(intComponents.length, Is.EqualTo(1));
             Assert.That(intComponents[0], Is.EqualTo((Integer)42));
-            Assert.That(floatComponents.Length, Is.EqualTo(1));
+            Assert.That(floatComponents.length, Is.EqualTo(1));
             Assert.That(floatComponents[0], Is.EqualTo((Float)3.14f));
             chunk.Dispose();
             schema.Dispose();
@@ -64,10 +64,10 @@ namespace Worlds.Tests
             floatComponent = 3.14f;
             chunk.RemoveEntityAt(index);
             Assert.That(chunk.Entities.Length, Is.EqualTo(0));
-            ComponentEnumerator<Integer> intComponents = chunk.GetEnumerator<Integer>(integerType);
-            ComponentEnumerator<Float> floatComponents = chunk.GetEnumerator<Float>(floatType);
-            Assert.That(intComponents.Length, Is.EqualTo(0));
-            Assert.That(floatComponents.Length, Is.EqualTo(0));
+            ComponentEnumerator<Integer> intComponents = chunk.GetComponents<Integer>(integerType);
+            ComponentEnumerator<Float> floatComponents = chunk.GetComponents<Float>(floatType);
+            Assert.That(intComponents.length, Is.EqualTo(0));
+            Assert.That(floatComponents.length, Is.EqualTo(0));
             chunk.Dispose();
             schema.Dispose();
         }
@@ -96,8 +96,8 @@ namespace Worlds.Tests
             Assert.That(chunkA.Entities.Length, Is.EqualTo(0));
             Assert.That(chunkB.Entities.Length, Is.EqualTo(1));
             Assert.That(chunkB.Entities[0], Is.EqualTo(entity));
-            ComponentEnumerator<Integer> intComponents = chunkB.GetEnumerator<Integer>(integerType);
-            Assert.That(intComponents.Length, Is.EqualTo(1));
+            ComponentEnumerator<Integer> intComponents = chunkB.GetComponents<Integer>(integerType);
+            Assert.That(intComponents.length, Is.EqualTo(1));
             Assert.That(intComponents[0], Is.EqualTo((Integer)42));
 
             Definition definitionC = new();
@@ -107,15 +107,15 @@ namespace Worlds.Tests
             ref Float floatComponent = ref chunkC.GetComponent<Float>(index, floatType);
             floatComponent = 3.14f;
 
-            intComponents = chunkB.GetEnumerator<Integer>(integerType);
-            Assert.That(intComponents.Length, Is.EqualTo(0));
+            intComponents = chunkB.GetComponents<Integer>(integerType);
+            Assert.That(intComponents.length, Is.EqualTo(0));
 
             Assert.That(chunkB.Entities.Length, Is.EqualTo(0));
             Assert.That(chunkC.Entities.Length, Is.EqualTo(1));
             Assert.That(chunkC.Entities[0], Is.EqualTo(entity));
 
-            ComponentEnumerator<Float> floatComponents = chunkC.GetEnumerator<Float>(floatType);
-            Assert.That(floatComponents.Length, Is.EqualTo(1));
+            ComponentEnumerator<Float> floatComponents = chunkC.GetComponents<Float>(floatType);
+            Assert.That(floatComponents.length, Is.EqualTo(1));
             Assert.That(floatComponents[0], Is.EqualTo((Float)3.14f));
 
             Definition definitionD = new();
@@ -171,9 +171,9 @@ namespace Worlds.Tests
             chunk.SetComponent(bIndex, intType, new Integer(64));
             chunk.SetComponent(cIndex, intType, new Integer(128));
 
-            ComponentEnumerator<Integer> intComponents = chunk.GetEnumerator<Integer>(intType);
-            Assert.That(intComponents.Length, Is.EqualTo(3));
-            Span<Integer> destination = stackalloc Integer[intComponents.Length];
+            ComponentEnumerator<Integer> intComponents = chunk.GetComponents<Integer>(intType);
+            Assert.That(intComponents.length, Is.EqualTo(3));
+            Span<Integer> destination = stackalloc Integer[intComponents.length];
             intComponents.CopyTo(destination);
             Assert.That(destination[0].value, Is.EqualTo(32));
             Assert.That(destination[1].value, Is.EqualTo(64));
@@ -200,8 +200,8 @@ namespace Worlds.Tests
             chunk.SetComponent(bIndex, intType, new Integer(64));
             chunk.SetComponent(cIndex, intType, new Integer(128));
 
-            ComponentEnumerator<Integer> intComponents = chunk.GetEnumerator<Integer>(intType);
-            Assert.That(intComponents.Length, Is.EqualTo(3));
+            ComponentEnumerator<Integer> intComponents = chunk.GetComponents<Integer>(intType);
+            Assert.That(intComponents.length, Is.EqualTo(3));
             Assert.That(intComponents[0].value, Is.EqualTo(32));
             Assert.That(intComponents[1].value, Is.EqualTo(64));
             Assert.That(intComponents[2].value, Is.EqualTo(128));

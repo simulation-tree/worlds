@@ -242,7 +242,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves an enumerator for iterating through each component of type <typeparamref name="T"/>.
         /// </summary>
-        public readonly ComponentEnumerator<T> GetEnumerator<T>(int componentType) where T : unmanaged
+        public readonly ComponentEnumerator<T> GetComponents<T>(int componentType) where T : unmanaged
         {
             int componentOffset = chunk->schema.GetComponentOffset(componentType);
             return new(chunk->components, componentOffset);

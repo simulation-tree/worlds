@@ -3,7 +3,7 @@ using Worlds.Functions;
 
 namespace Worlds.Pointers
 {
-    public readonly struct World
+    internal readonly struct World
     {
         public readonly Worlds.Schema schema;
         public readonly List<Slot> slots;
@@ -13,7 +13,7 @@ namespace Worlds.Pointers
         public readonly List<(EntityParentChanged, ulong)> entityParentChanged;
         public readonly List<(EntityDataChanged, ulong)> entityDataChanged;
 
-        internal World(Worlds.Schema schema)
+        public World(Worlds.Schema schema)
         {
             this.schema = schema;
 
