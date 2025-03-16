@@ -6,18 +6,41 @@ namespace Worlds
     [DebuggerTypeProxy(typeof(Entity.DebugView))]
     public readonly struct Entity : IEntity, IEquatable<Entity>
     {
+        /// <summary>
+        /// The world this entity belongs to.
+        /// </summary>
         public readonly World world;
+
+        /// <summary>
+        /// The position of this entity in the <see cref="world"/>.
+        /// </summary>
         public readonly uint value;
 
+        /// <summary>
+        /// Checks if this entity is destroyed.
+        /// </summary>
         public readonly bool IsDestroyed => !world.ContainsEntity(value);
+
+        /// <summary>
+        /// Retrieves all entities referenced by this entity.
+        /// </summary>
         public readonly ReadOnlySpan<uint> References => world.GetReferences(value);
 
+        /// <summary>
+        /// Checks if the entity is enabled.
+        /// </summary>
         public readonly bool IsEnabled
         {
             get => world.IsEnabled(value);
             set => world.SetEnabled(this.value, value);
         }
 
+        /// <summary>
+        /// The entity of this parent.
+        /// <para>
+        /// May be <see langword="default"/> if none is set.
+        /// </para>
+        /// </summary>
         public readonly Entity Parent
         {
             get
@@ -27,6 +50,9 @@ namespace Worlds
             }
         }
 
+        /// <summary>
+        /// Retrieves how many children this entity has.
+        /// </summary>
         public readonly int ChildCount => world.GetChildCount(value);
 
 #if NET
@@ -97,6 +123,9 @@ namespace Worlds
             return world.CopyChildrenTo(value, destination);
         }
 
+        /// <summary>
+        /// Checks if this entity complies with another entity of type <typeparamref name="T"/>
+        /// </summary>
         public readonly bool Is<T>() where T : unmanaged, IEntity
         {
             Archetype archetype = Archetype.Get<T>(world.Schema);
@@ -135,6 +164,9 @@ namespace Worlds
             return EntityExtensions.As<T>(this);
         }
 
+        /// <summary>
+        /// Adds the <paramref name="otherEntity"/> as a new reference.
+        /// </summary>
         public readonly rint AddReference(uint otherEntity)
         {
             return world.AddReference(value, otherEntity);
