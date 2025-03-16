@@ -30,11 +30,11 @@ namespace Worlds
         {
             if (should)
             {
-                exclude.AddTagType(TagType.Disabled);
+                exclude.AddTagType(Schema.DisabledTagType);
             }
             else
             {
-                exclude.RemoveTagType(TagType.Disabled);
+                exclude.RemoveTagType(Schema.DisabledTagType);
             }
 
             return this;
@@ -599,22 +599,22 @@ namespace Worlds
 
                 entityIndex = 0;
                 chunkIndex = 0;
-                componentType1 = schema.GetComponentTypeIndex<C1>();
-                componentType2 = schema.GetComponentTypeIndex<C2>();
-                componentType3 = schema.GetComponentTypeIndex<C3>();
-                componentType4 = schema.GetComponentTypeIndex<C4>();
-                componentType5 = schema.GetComponentTypeIndex<C5>();
-                componentType6 = schema.GetComponentTypeIndex<C6>();
-                componentType7 = schema.GetComponentTypeIndex<C7>();
-                componentType8 = schema.GetComponentTypeIndex<C8>();
-                componentType9 = schema.GetComponentTypeIndex<C9>();
-                componentType10 = schema.GetComponentTypeIndex<C10>();
-                componentType11 = schema.GetComponentTypeIndex<C11>();
-                componentType12 = schema.GetComponentTypeIndex<C12>();
-                componentType13 = schema.GetComponentTypeIndex<C13>();
-                componentType14 = schema.GetComponentTypeIndex<C14>();
-                componentType15 = schema.GetComponentTypeIndex<C15>();
-                componentType16 = schema.GetComponentTypeIndex<C16>();
+                componentType1 = schema.GetComponentType<C1>();
+                componentType2 = schema.GetComponentType<C2>();
+                componentType3 = schema.GetComponentType<C3>();
+                componentType4 = schema.GetComponentType<C4>();
+                componentType5 = schema.GetComponentType<C5>();
+                componentType6 = schema.GetComponentType<C6>();
+                componentType7 = schema.GetComponentType<C7>();
+                componentType8 = schema.GetComponentType<C8>();
+                componentType9 = schema.GetComponentType<C9>();
+                componentType10 = schema.GetComponentType<C10>();
+                componentType11 = schema.GetComponentType<C11>();
+                componentType12 = schema.GetComponentType<C12>();
+                componentType13 = schema.GetComponentType<C13>();
+                componentType14 = schema.GetComponentType<C14>();
+                componentType15 = schema.GetComponentType<C15>();
+                componentType16 = schema.GetComponentType<C16>();
                 if (chunkCount > 0)
                 {
                     chunks = MemoryAddress.Allocate(chunksBuffer.Slice(0, chunkCount));

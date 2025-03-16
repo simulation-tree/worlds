@@ -20,8 +20,8 @@ namespace Worlds.Tests
         public void AddEntityWithComponents()
         {
             Schema schema = CreateSchema();
-            ComponentType integerType = schema.GetComponentType<Integer>();
-            ComponentType floatType = schema.GetComponentType<Float>();
+            int integerType = schema.GetComponentType<Integer>();
+            int floatType = schema.GetComponentType<Float>();
 
             Definition definition = new();
             definition.AddComponentTypes<Integer, Float>(schema);
@@ -49,8 +49,8 @@ namespace Worlds.Tests
         public void RemovingEntity()
         {
             Schema schema = CreateSchema();
-            ComponentType integerType = schema.GetComponentType<Integer>();
-            ComponentType floatType = schema.GetComponentType<Float>();
+            int integerType = schema.GetComponentType<Integer>();
+            int floatType = schema.GetComponentType<Float>();
 
             Definition definition = new();
             definition.AddComponentTypes<Integer, Float>(schema);
@@ -76,9 +76,9 @@ namespace Worlds.Tests
         public void MovingEntity()
         {
             Schema schema = CreateSchema();
-            int integerType = schema.GetComponentTypeIndex<Integer>();
-            int floatType = schema.GetComponentTypeIndex<Float>();
-            int fruitType = schema.GetComponentTypeIndex<Fruit>();
+            int integerType = schema.GetComponentType<Integer>();
+            int floatType = schema.GetComponentType<Float>();
+            int fruitType = schema.GetComponentType<Fruit>();
 
             Chunk chunkA = new(default, schema);
             Chunk currentChunk = chunkA;
@@ -156,8 +156,8 @@ namespace Worlds.Tests
         {
             using Schema schema = CreateSchema();
             Definition definition = new();
-            int intType = schema.GetComponentTypeIndex<Integer>();
-            int floatType = schema.GetComponentTypeIndex<Float>();
+            int intType = schema.GetComponentType<Integer>();
+            int floatType = schema.GetComponentType<Float>();
             definition.AddComponentType(intType);
             definition.AddComponentType(floatType);
             using Chunk chunk = new(definition, schema);
@@ -185,8 +185,8 @@ namespace Worlds.Tests
         {
             using Schema schema = CreateSchema();
             Definition definition = new();
-            int intType = schema.GetComponentTypeIndex<Integer>();
-            int floatType = schema.GetComponentTypeIndex<Float>();
+            int intType = schema.GetComponentType<Integer>();
+            int floatType = schema.GetComponentType<Float>();
             definition.AddComponentType(intType);
             definition.AddComponentType(floatType);
             using Chunk chunk = new(definition, schema);

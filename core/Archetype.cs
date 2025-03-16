@@ -44,12 +44,12 @@ namespace Worlds
             {
                 if (definition.componentTypes.Contains(i))
                 {
-                    componentSizes[i] = (ushort)schema.GetComponentTypeSize(i);
+                    componentSizes[i] = (ushort)schema.GetComponentSize(i);
                 }
 
                 if (definition.arrayTypes.Contains(i))
                 {
-                    arrayElementSizes[i] = (ushort)schema.GetArrayTypeSize(i);
+                    arrayElementSizes[i] = (ushort)schema.GetArraySize(i);
                 }
             }
         }
@@ -64,43 +64,43 @@ namespace Worlds
             return definition.Equals(other.definition) && schema.Equals(other.schema);
         }
 
-        public readonly int CopyComponentTypesTo(Span<ComponentType> destination)
+        public readonly int CopyComponentTypesTo(Span<int> destination)
         {
             return definition.CopyComponentTypesTo(destination);
         }
 
-        public readonly int CopyArrayTypesTo(Span<ArrayType> destination)
+        public readonly int CopyArrayTypesTo(Span<int> destination)
         {
             return definition.CopyArrayTypesTo(destination);
         }
 
-        public readonly int CopyTagTypesTo(Span<TagType> destination)
+        public readonly int CopyTagTypesTo(Span<int> destination)
         {
             return definition.CopyTagTypesTo(destination);
         }
 
-        public unsafe readonly ushort GetSize(ComponentType componentType)
+        public unsafe readonly ushort GetComponentSize(int componentType)
         {
             ThrowIfComponentTypeIsMissing(componentType);
 
-            return componentSizes[componentType.index];
+            return componentSizes[componentType];
         }
 
-        public unsafe readonly ushort GetSize(ArrayType arrayType)
+        public unsafe readonly ushort GetArraySize(int arrayType)
         {
             ThrowIfArrayTypeIsMissing(arrayType);
 
-            return arrayElementSizes[arrayType.index];
+            return arrayElementSizes[arrayType];
         }
 
         public readonly int GetComponentSize<T>() where T : unmanaged
         {
-            return schema.GetComponentTypeSize(schema.GetComponentTypeIndex<T>());
+            return schema.GetComponentSize(schema.GetComponentType<T>());
         }
 
         public readonly int GetArrayElementSize<T>() where T : unmanaged
         {
-            return schema.GetArrayTypeSize(schema.GetArrayTypeIndex<T>());
+            return schema.GetArraySize(schema.GetArrayTypeIndex<T>());
         }
 
         public readonly override int GetHashCode()
@@ -108,34 +108,19 @@ namespace Worlds
             return HashCode.Combine(definition, schema);
         }
 
-        public readonly bool ContainsComponent(ComponentType componentType)
+        public readonly bool ContainsComponent(int componentType)
         {
-            return definition.componentTypes.Contains(componentType.index);
+            return definition.componentTypes.Contains(componentType);
         }
 
-        public readonly bool ContainsArray(ArrayType arrayType)
+        public readonly bool ContainsArray(int arrayType)
         {
-            return definition.arrayTypes.Contains(arrayType.index);
+            return definition.arrayTypes.Contains(arrayType);
         }
 
-        public readonly bool ContainsTag(TagType tagType)
+        public readonly bool ContainsTag(int tagType)
         {
-            return definition.tagTypes.Contains(tagType.index);
-        }
-
-        public readonly bool ContainsComponent(int index)
-        {
-            return definition.componentTypes.Contains(index);
-        }
-
-        public readonly bool ContainsArray(int index)
-        {
-            return definition.arrayTypes.Contains(index);
-        }
-
-        public readonly bool ContainsTag(int index)
-        {
-            return definition.tagTypes.Contains(index);
+            return definition.tagTypes.Contains(tagType);
         }
 
         public readonly bool ContainsComponent<T>() where T : unmanaged
@@ -163,7 +148,7 @@ namespace Worlds
         /// </summary>
         public unsafe void AddComponentType<T>() where T : unmanaged
         {
-            int componentType = schema.GetComponentTypeIndex<T>();
+            int componentType = schema.GetComponentType<T>();
             ThrowIfComponentTypeIsPresent(componentType);
 
             definition.AddComponentType(componentType);
@@ -173,12 +158,12 @@ namespace Worlds
         /// <summary>
         /// Adds <paramref name="componentType"/> to the definition.
         /// </summary>
-        public unsafe void AddComponentType(ComponentType componentType)
+        public unsafe void AddComponentType(int componentType)
         {
             ThrowIfComponentTypeIsPresent(componentType);
 
             definition.AddComponentType(componentType);
-            componentSizes[componentType.index] = (ushort)schema.GetComponentTypeSize(componentType);
+            componentSizes[componentType] = (ushort)schema.GetComponentSize(componentType);
         }
 
         /// <summary>
@@ -196,12 +181,12 @@ namespace Worlds
         /// <summary>
         /// Adds <paramref name="arrayType"/> to the definition.
         /// </summary>
-        public unsafe void AddArrayType(ArrayType arrayType)
+        public unsafe void AddArrayType(int arrayType)
         {
             ThrowIfArrayTypeIsPresent(arrayType);
 
             definition.AddArrayType(arrayType);
-            arrayElementSizes[arrayType.index] = (ushort)schema.GetArrayTypeSize(arrayType);
+            arrayElementSizes[arrayType] = (ushort)schema.GetArraySize(arrayType);
         }
 
         /// <summary>
@@ -215,7 +200,7 @@ namespace Worlds
         /// <summary>
         /// Adds <paramref name="tagType"/> to the definition.
         /// </summary>
-        public void AddTagType(TagType tagType)
+        public void AddTagType(int tagType)
         {
             ThrowIfTagTypeIsPresent(tagType);
 
@@ -287,7 +272,7 @@ namespace Worlds
         {
             if (definition.componentTypes.Contains(componentType))
             {
-                throw new InvalidOperationException($"Component type `{new ComponentType(componentType).ToString(schema)}` is already present in the archetype");
+                throw new InvalidOperationException($"Component type `{DataType.GetComponent(componentType, schema).ToString(schema)}` is already present in the archetype");
             }
         }
 
@@ -296,7 +281,7 @@ namespace Worlds
         {
             if (!definition.componentTypes.Contains(componentType))
             {
-                throw new InvalidOperationException($"Component type `{new ComponentType(componentType).ToString(schema)}` is missing from the archetype");
+                throw new InvalidOperationException($"Component type `{DataType.GetComponent(componentType, schema).ToString(schema)}` is missing from the archetype");
             }
         }
 
@@ -305,7 +290,7 @@ namespace Worlds
         {
             if (!definition.arrayTypes.Contains(arrayType))
             {
-                throw new InvalidOperationException($"Array type `{new ArrayType(arrayType).ToString(schema)}` is missing from the archetype");
+                throw new InvalidOperationException($"Array type `{DataType.GetArray(arrayType, schema).ToString(schema)}` is missing from the archetype");
             }
         }
 
@@ -314,7 +299,7 @@ namespace Worlds
         {
             if (definition.arrayTypes.Contains(arrayType))
             {
-                throw new InvalidOperationException($"Array type `{new ArrayType(arrayType).ToString(schema)}` is already present in the archetype");
+                throw new InvalidOperationException($"Array type `{DataType.GetArray(arrayType, schema).ToString(schema)}` is already present in the archetype");
             }
         }
 
@@ -323,7 +308,7 @@ namespace Worlds
         {
             if (definition.tagTypes.Contains(tagType))
             {
-                throw new InvalidOperationException($"Tag type `{new TagType(tagType).ToString(schema)}` is already present in the archetype");
+                throw new InvalidOperationException($"Tag type `{DataType.GetTag(tagType, schema).ToString(schema)}` is already present in the archetype");
             }
         }
 

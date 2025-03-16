@@ -84,11 +84,11 @@ namespace Worlds
         {
             if (should)
             {
-                exclude.AddTagType(TagType.Disabled);
+                exclude.AddTagType(Schema.DisabledTagType);
             }
             else
             {
-                exclude.RemoveTagType(TagType.Disabled);
+                exclude.RemoveTagType(Schema.DisabledTagType);
             }
 
             return this;

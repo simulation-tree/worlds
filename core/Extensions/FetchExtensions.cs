@@ -10,7 +10,7 @@ namespace Worlds
         /// </summary>
         public unsafe static ref T TryGetFirstComponent<T>(this World world, out bool contains) where T : unmanaged
         {
-            int componentType = world.Schema.GetComponentTypeIndex<T>();
+            int componentType = world.Schema.GetComponentType<T>();
             ReadOnlySpan<Chunk> chunks = world.Chunks;
             for (int i = 0; i < chunks.Length; i++)
             {
@@ -34,7 +34,7 @@ namespace Worlds
         /// </summary>
         public static bool TryGetFirstComponent<T>(this World world, out T component) where T : unmanaged
         {
-            int componentType = world.Schema.GetComponentTypeIndex<T>();
+            int componentType = world.Schema.GetComponentType<T>();
             ReadOnlySpan<Chunk> chunks = world.Chunks;
             for (int i = 0; i < chunks.Length; i++)
             {
@@ -58,7 +58,7 @@ namespace Worlds
         /// </summary>
         public static bool TryGetFirstComponent<T>(this World world, out uint entity) where T : unmanaged
         {
-            int componentType = world.Schema.GetComponentTypeIndex<T>();
+            int componentType = world.Schema.GetComponentType<T>();
             ReadOnlySpan<Chunk> chunks = world.Chunks;
             for (int i = 0; i < chunks.Length; i++)
             {
@@ -82,7 +82,7 @@ namespace Worlds
         /// </summary>
         public unsafe static ref T TryGetFirstComponent<T>(this World world, out uint entity, out bool contains) where T : unmanaged
         {
-            int componentType = world.Schema.GetComponentTypeIndex<T>();
+            int componentType = world.Schema.GetComponentType<T>();
             ReadOnlySpan<Chunk> chunks = world.Chunks;
             for (int i = 0; i < chunks.Length; i++)
             {
@@ -112,7 +112,7 @@ namespace Worlds
         /// <exception cref="NullReferenceException"></exception>"
         public static ref T GetFirstComponent<T>(this World world) where T : unmanaged
         {
-            int componentType = world.Schema.GetComponentTypeIndex<T>();
+            int componentType = world.Schema.GetComponentType<T>();
             ReadOnlySpan<Chunk> chunks = world.Chunks;
             for (int i = 0; i < chunks.Length; i++)
             {
@@ -138,7 +138,7 @@ namespace Worlds
         /// <exception cref="NullReferenceException"></exception>
         public static ref T GetFirstComponent<T>(this World world, out uint entity) where T : unmanaged
         {
-            int componentType = world.Schema.GetComponentTypeIndex<T>();
+            int componentType = world.Schema.GetComponentType<T>();
             ReadOnlySpan<Chunk> chunks = world.Chunks;
             for (int i = 0; i < chunks.Length; i++)
             {
@@ -167,7 +167,7 @@ namespace Worlds
                 Definition definition = chunk.Definition;
                 if (definition.componentTypes.ContainsAll(componentTypes))
                 {
-                    if (!onlyEnabled || (onlyEnabled && !definition.tagTypes.Contains(TagType.Disabled)))
+                    if (!onlyEnabled || (onlyEnabled && !definition.tagTypes.Contains(Schema.DisabledTagType)))
                     {
                         int count = chunk.Count;
                         for (int e = 0; e < count; e++)
@@ -182,10 +182,24 @@ namespace Worlds
         /// <summary>
         /// Iterates through all entities that contain the given <paramref name="componentType"/>.
         /// </summary>
-        public static System.Collections.Generic.IEnumerable<uint> GetAllContaining(this World world, ComponentType componentType, bool onlyEnabled = true)
+        public static System.Collections.Generic.IEnumerable<uint> GetAllContaining(this World world, int componentType, bool onlyEnabled = true)
         {
-            BitMask componentTypes = new((byte)componentType.index);
-            return GetAllContaining(world, componentTypes, onlyEnabled);
+            for (int i = 0; i < world.Chunks.Length; i++)
+            {
+                Chunk chunk = world.Chunks[i];
+                Definition definition = chunk.Definition;
+                if (definition.componentTypes.Contains(componentType))
+                {
+                    if (!onlyEnabled || (onlyEnabled && !definition.tagTypes.Contains(Schema.DisabledTagType)))
+                    {
+                        int count = chunk.Count;
+                        for (int e = 0; e < count; e++)
+                        {
+                            yield return chunk.Entities[e];
+                        }
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -193,8 +207,23 @@ namespace Worlds
         /// </summary>
         public static System.Collections.Generic.IEnumerable<uint> GetAllContaining<T>(this World world, bool onlyEnabled = true) where T : unmanaged
         {
-            BitMask componentTypes = new((byte)world.Schema.GetComponentTypeIndex<T>());
-            return GetAllContaining(world, componentTypes, onlyEnabled);
+            int componentType = world.Schema.GetComponentType<T>();
+            for (int i = 0; i < world.Chunks.Length; i++)
+            {
+                Chunk chunk = world.Chunks[i];
+                Definition definition = chunk.Definition;
+                if (definition.componentTypes.Contains(componentType))
+                {
+                    if (!onlyEnabled || (onlyEnabled && !definition.tagTypes.Contains(Schema.DisabledTagType)))
+                    {
+                        int count = chunk.Count;
+                        for (int e = 0; e < count; e++)
+                        {
+                            yield return chunk.Entities[e];
+                        }
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -210,7 +239,7 @@ namespace Worlds
                 Definition chunkDefinition = chunk.Definition;
                 if (chunkDefinition.componentTypes.ContainsAll(definition.componentTypes) && chunkDefinition.arrayTypes.ContainsAll(definition.arrayTypes))
                 {
-                    if (!onlyEnabled || (onlyEnabled && !chunkDefinition.tagTypes.Contains(TagType.Disabled)))
+                    if (!onlyEnabled || (onlyEnabled && !chunkDefinition.tagTypes.Contains(Schema.DisabledTagType)))
                     {
                         if (chunkDefinition.tagTypes.ContainsAll(definition.tagTypes))
                         {
@@ -239,7 +268,7 @@ namespace Worlds
             for (int i = 0; i < chunks.Length; i++)
             {
                 Chunk chunk = chunks[i];
-                if (!onlyEnabled || (onlyEnabled && !chunk.Definition.tagTypes.Contains(TagType.Disabled)))
+                if (!onlyEnabled || (onlyEnabled && !chunk.Definition.tagTypes.Contains(Schema.DisabledTagType)))
                 {
                     if (chunk.Definition.componentTypes.ContainsAll(definition.componentTypes) && chunk.Definition.arrayTypes.ContainsAll(definition.arrayTypes))
                     {
@@ -276,7 +305,7 @@ namespace Worlds
         public static int CountEntitiesWith<T>(this World world, bool onlyEnabled = true) where T : unmanaged
         {
             Schema schema = world.Schema;
-            int componentType = schema.GetComponentTypeIndex<T>();
+            int componentType = schema.GetComponentType<T>();
             ReadOnlySpan<Chunk> chunks = world.Chunks;
             int count = 0;
             for (int i = 0; i < chunks.Length; i++)
@@ -284,7 +313,7 @@ namespace Worlds
                 Chunk chunk = chunks[i];
                 if (chunk.Definition.ContainsComponent(componentType))
                 {
-                    if (!onlyEnabled || (onlyEnabled && !chunk.Definition.tagTypes.Contains(TagType.Disabled)))
+                    if (!onlyEnabled || (onlyEnabled && !chunk.Definition.tagTypes.Contains(Schema.DisabledTagType)))
                     {
                         count += chunk.Count;
                     }
@@ -297,7 +326,7 @@ namespace Worlds
         /// <summary>
         /// Counts how many entities contain the given <paramref name="componentType"/>.
         /// </summary>
-        public static int CountEntitiesWith(this World world, ComponentType componentType, bool onlyEnabled = true)
+        public static int CountEntitiesWith(this World world, int componentType, bool onlyEnabled = true)
         {
             ReadOnlySpan<Chunk> chunks = world.Chunks;
             int count = 0;
@@ -306,7 +335,7 @@ namespace Worlds
                 Chunk chunk = chunks[i];
                 if (chunk.Definition.ContainsComponent(componentType))
                 {
-                    if (!onlyEnabled || (onlyEnabled && !chunk.Definition.tagTypes.Contains(TagType.Disabled)))
+                    if (!onlyEnabled || (onlyEnabled && !chunk.Definition.tagTypes.Contains(Schema.DisabledTagType)))
                     {
                         count += chunk.Count;
                     }
@@ -330,7 +359,7 @@ namespace Worlds
             {
                 Chunk chunk = chunks[i];
                 Definition chunkDefinition = chunk.Definition;
-                if (!onlyEnabled || (onlyEnabled && !chunkDefinition.tagTypes.Contains(TagType.Disabled)))
+                if (!onlyEnabled || (onlyEnabled && !chunkDefinition.tagTypes.Contains(Schema.DisabledTagType)))
                 {
                     if (chunkDefinition.componentTypes.ContainsAll(definition.componentTypes) && chunkDefinition.arrayTypes.ContainsAll(definition.arrayTypes))
                     {

@@ -124,20 +124,11 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfComponentTypeIsMissing(ComponentType componentType)
-        {
-            if (!chunk->definition.componentTypes.Contains(componentType.index))
-            {
-                throw new ArgumentException($"Component type `{componentType.ToString()}` is missing from the chunk");
-            }
-        }
-
-        [Conditional("DEBUG")]
         private readonly void ThrowIfComponentTypeIsMissing(int componentType)
         {
             if (!chunk->definition.componentTypes.Contains(componentType))
             {
-                throw new ArgumentException($"Component type `{new ComponentType(componentType).ToString()}` is missing from the chunk");
+                throw new ArgumentException($"Component type `{DataType.GetComponent(componentType, chunk->schema).ToString(chunk->schema)}` is missing from the chunk");
             }
         }
 
@@ -284,7 +275,7 @@ namespace Worlds
             ThrowIfComponentTypeIsMissing(componentType);
 
             int componentOffset = chunk->schema.GetComponentOffset(componentType);
-            componentSize = chunk->schema.GetComponentTypeSize(componentType);
+            componentSize = chunk->schema.GetComponentSize(componentType);
             return chunk->components[index].Read(componentOffset);
         }
 
@@ -298,7 +289,7 @@ namespace Worlds
             ThrowIfComponentTypeIsMissing(componentType);
 
             int componentOffset = chunk->schema.GetComponentOffset(componentType);
-            int componentSize = chunk->schema.GetComponentTypeSize(componentType);
+            int componentSize = chunk->schema.GetComponentSize(componentType);
             return chunk->components[index].AsSpan(componentOffset, componentSize);
         }
 

@@ -170,7 +170,7 @@ public static class SharedFunctions
         {
             builder.Append(ComponentTypeFieldName);
             builder.Append(i);
-            builder.Append(" = schema.GetComponentTypeIndex<");
+            builder.Append(" = schema.GetComponentType<");
             builder.Append(GenericTypePrefix);
             builder.Append(i);
             builder.Append(">();");

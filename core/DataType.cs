@@ -9,43 +9,12 @@ namespace Worlds
     public readonly struct DataType : IEquatable<DataType>
     {
         public readonly byte index;
+        public readonly Kind kind;
 
         /// <summary>
         /// Size of the data type in bytes.
         /// </summary>
         public readonly ushort size;
-
-        public readonly Kind kind;
-
-        public readonly ComponentType ComponentType
-        {
-            get
-            {
-                ThrowIfNotComponent();
-
-                return new(index);
-            }
-        }
-
-        public readonly ArrayType ArrayType
-        {
-            get
-            {
-                ThrowIfNotArrayElement();
-
-                return new(index);
-            }
-        }
-
-        public readonly TagType Tag
-        {
-            get
-            {
-                ThrowIfNotTag();
-
-                return new(index);
-            }
-        }
 
         public readonly bool IsComponent => kind == Kind.Component;
         public readonly bool IsArrayElement => kind == Kind.Array;
@@ -59,27 +28,6 @@ namespace Worlds
         }
 #endif
 
-        public DataType(ComponentType componentType, int size)
-        {
-            index = (byte)componentType.index;
-            kind = Kind.Component;
-            this.size = (ushort)size;
-        }
-
-        public DataType(ArrayType arrayType, int size)
-        {
-            index = (byte)arrayType.index;
-            kind = Kind.Array;
-            this.size = (ushort)size;
-        }
-
-        public DataType(TagType tagType)
-        {
-            index = (byte)tagType.index;
-            kind = Kind.Tag;
-            size = 0;
-        }
-
         public DataType(int index, Kind kind, int size)
         {
             this.index = (byte)index;
@@ -89,31 +37,34 @@ namespace Worlds
 
         public readonly override string ToString()
         {
-#if DEBUG
-            if (kind == Kind.Component)
-            {
-                return ComponentType.debugCachedTypes[index].ToString();
-            }
-            else if (kind == Kind.Array)
-            {
-                return ArrayType.debugCachedTypes[index].ToString();
-            }
-            else if (kind == Kind.Tag)
-            {
-                return TagType.debugCachedTypes[index].ToString();
-            }
-#endif
-
-            Span<char> buffer = stackalloc char[256];
-            int length = index.ToString(buffer);
-            return buffer.Slice(0, length).ToString();
+            return $"{kind}:{index} {size} bytes";
         }
 
         public readonly string ToString(Schema schema)
         {
-            Span<char> buffer = stackalloc char[256];
-            int length = ToString(schema, buffer);
-            return buffer.Slice(0, length).ToString();
+            if (kind == Kind.Component)
+            {
+                if (schema.ContainsComponentType(index))
+                {
+                    return schema.GetComponentLayout(index).ToString();
+                }
+            }
+            else if (kind == Kind.Array)
+            {
+                if (schema.ContainsArrayType(index))
+                {
+                    return schema.GetArrayLayout(index).ToString();
+                }
+            }
+            else if (kind == Kind.Tag)
+            {
+                if (schema.ContainsTagType(index))
+                {
+                    return schema.GetTagLayout(index).ToString();
+                }
+            }
+
+            return index.ToString();
         }
 
         public readonly int ToString(Schema schema, Span<char> destination)
@@ -198,9 +149,44 @@ namespace Worlds
             return !(left == right);
         }
 
-        public static implicit operator byte(DataType type)
+        public unsafe static DataType GetComponent<T>(int componentType) where T : unmanaged
         {
-            return type.index;
+            return new(componentType, Kind.Component, sizeof(T));
+        }
+
+        public unsafe static DataType GetComponent<T>(Schema schema) where T : unmanaged
+        {
+            return new(schema.GetComponentType<T>(), Kind.Component, sizeof(T));
+        }
+
+        public static DataType GetComponent(int componenentType, Schema schema)
+        {
+            return new(componenentType, Kind.Component, schema.GetComponentSize(componenentType));
+        }
+
+        public unsafe static DataType GetArray<T>(int arrayType) where T : unmanaged
+        {
+            return new(arrayType, Kind.Array, sizeof(T));
+        }
+
+        public unsafe static DataType GetArray<T>(Schema schema) where T : unmanaged
+        {
+            return new(schema.GetArrayType<T>(), Kind.Array, sizeof(T));
+        }
+
+        public static DataType GetArray(int arrayType, Schema schema)
+        {
+            return new(arrayType, Kind.Array, schema.GetArraySize(arrayType));
+        }
+
+        public static DataType GetTag<T>(Schema schema) where T : unmanaged
+        {
+            return new(schema.GetTagType<T>(), Kind.Tag, 1);
+        }
+
+        public static DataType GetTag(int tagType, Schema schema)
+        {
+            return new(tagType, Kind.Tag, 1);
         }
 
         /// <summary>

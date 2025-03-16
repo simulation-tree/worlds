@@ -9,6 +9,8 @@ namespace Worlds
 {
     public unsafe struct Schema : IDisposable, IEquatable<Schema>, ISerializable
     {
+        public const int DisabledTagType = BitMask.MaxValue;
+
         internal const int OffsetsLengthInBytes = sizeof(int) * BitMask.Capacity;
         internal const int SizesLengthInBytes = sizeof(int) * BitMask.Capacity * 2;
         internal const int TypeHashesLengthInBytes = sizeof(long) * BitMask.Capacity * 3;
@@ -22,7 +24,7 @@ namespace Worlds
         public readonly nint Address => (nint)schema;
 
         /// <summary>
-        /// Counts how many <see cref="ComponentType"/>s are registered.
+        /// How many component types have been registered in the schema.
         /// </summary>
         public readonly byte ComponentCount
         {
@@ -35,7 +37,7 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Counts how many <see cref="ArrayType"/>s are registered.
+        /// How many array types have been registered.
         /// </summary>
         public readonly byte ArrayCount
         {
@@ -48,7 +50,7 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Counts how many <see cref="TagType"/>s are registered.
+        /// How many tag types have been registered.
         /// </summary>
         public readonly byte TagCount
         {
@@ -77,7 +79,7 @@ namespace Worlds
         /// All component types loaded.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        public readonly System.Collections.Generic.IEnumerable<ComponentType> ComponentTypes
+        public readonly System.Collections.Generic.IEnumerable<int> ComponentTypes
         {
             get
             {
@@ -85,7 +87,7 @@ namespace Worlds
                 {
                     if (ContainsComponentType(c))
                     {
-                        yield return new(c);
+                        yield return c;
                     }
                 }
             }
@@ -95,7 +97,7 @@ namespace Worlds
         /// All array types loaded.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        public readonly System.Collections.Generic.IEnumerable<ArrayType> ArrayTypes
+        public readonly System.Collections.Generic.IEnumerable<int> ArrayTypes
         {
             get
             {
@@ -103,7 +105,7 @@ namespace Worlds
                 {
                     if (ContainsArrayType(a))
                     {
-                        yield return new(a);
+                        yield return a;
                     }
                 }
             }
@@ -113,7 +115,7 @@ namespace Worlds
         /// All tag types loaded.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        public readonly System.Collections.Generic.IEnumerable<TagType> TagTypes
+        public readonly System.Collections.Generic.IEnumerable<int> TagTypes
         {
             get
             {
@@ -121,7 +123,7 @@ namespace Worlds
                 {
                     if (ContainsTagType(t))
                     {
-                        yield return new(t);
+                        yield return t;
                     }
                 }
             }
@@ -249,26 +251,32 @@ namespace Worlds
             source.schema->typeHashes.CopyTo(schema->typeHashes, TypeHashesLengthInBytes);
         }
 
-        public readonly int GetComponentTypeSize(int index)
+        /// <summary>
+        /// Retrieves the size of <paramref name="componentType"/> in bytes.
+        /// </summary>
+        public readonly int GetComponentSize(int componentType)
         {
-            return schema->sizes.ReadElement<int>(index);
+            return schema->sizes.ReadElement<int>(componentType);
         }
 
-        public readonly int GetArrayTypeSize(int index)
+        /// <summary>
+        /// Retrieves the size of each <paramref name="arrayType"/> element in bytes.
+        /// </summary>
+        public readonly int GetArraySize(int arrayType)
         {
-            return schema->sizes.ReadElement<int>(BitMask.Capacity + index);
+            return schema->sizes.ReadElement<int>(BitMask.Capacity + arrayType);
         }
 
         public readonly int GetComponentOffset<T>() where T : unmanaged
         {
             ThrowIfComponentTypeIsMissing<T>();
 
-            return schema->offsets.ReadElement<int>(GetComponentTypeIndex<T>());
+            return schema->offsets.ReadElement<int>(GetComponentType<T>());
         }
 
-        public readonly int GetComponentOffset(int index)
+        public readonly int GetComponentOffset(int componentType)
         {
-            return schema->offsets.ReadElement<int>(index);
+            return schema->offsets.ReadElement<int>(componentType);
         }
 
         /// <summary>
@@ -297,95 +305,65 @@ namespace Worlds
             }
         }
 
-        public readonly DataType GetComponentDataType(ComponentType componentType)
+        public readonly DataType GetComponentDataType(int componentType)
         {
             MemoryAddress.ThrowIfDefault(schema);
             ThrowIfComponentTypeIsMissing(componentType);
 
-            return new(componentType, GetComponentTypeSize(componentType));
+            return new(componentType, DataType.Kind.Component, GetComponentSize(componentType));
         }
 
-        public readonly DataType GetArrayDataType(ArrayType arrayType)
+        public readonly DataType GetArrayDataType(int arrayType)
         {
             MemoryAddress.ThrowIfDefault(schema);
             ThrowIfArrayTypeIsMissing(arrayType);
 
-            return new(arrayType, GetArrayTypeSize(arrayType));
+            return new(arrayType, DataType.Kind.Array, GetArraySize(arrayType));
         }
 
-        public readonly DataType GetTagDataType(TagType tagType)
+        public readonly DataType GetTagDataType(int tagType)
         {
             ThrowIfTagIsMissing(tagType);
 
-            return new(tagType);
+            return new(tagType, DataType.Kind.Tag, 1);
         }
 
         /// <summary>
         /// Retrieves the type layout for the given <paramref name="componentType"/>.
         /// </summary>
-        public readonly TypeLayout GetComponentLayout(ComponentType componentType)
+        public readonly TypeLayout GetComponentLayout(int componentType)
         {
             MemoryAddress.ThrowIfDefault(schema);
             ThrowIfComponentTypeIsMissing(componentType);
 
             Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
-            long hash = componentTypeHashes[componentType.index];
-            return TypeRegistry.Get(hash);
-        }
-
-        public readonly TypeLayout GetComponentLayout(int index)
-        {
-            MemoryAddress.ThrowIfDefault(schema);
-            ThrowIfComponentTypeIsMissing(index);
-
-            Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
-            long hash = componentTypeHashes[index];
+            long hash = componentTypeHashes[componentType];
             return TypeRegistry.Get(hash);
         }
 
         /// <summary>
         /// Retrieves the type layout for the given <paramref name="arrayType"/>.
         /// </summary>
-        public readonly TypeLayout GetArrayLayout(ArrayType arrayType)
+        public readonly TypeLayout GetArrayLayout(int arrayType)
         {
             MemoryAddress.ThrowIfDefault(schema);
             ThrowIfArrayTypeIsMissing(arrayType);
 
             Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-            long hash = arrayTypeHashes[arrayType.index];
-            return TypeRegistry.Get(hash);
-        }
-
-        public readonly TypeLayout GetArrayLayout(int index)
-        {
-            MemoryAddress.ThrowIfDefault(schema);
-            ThrowIfArrayTypeIsMissing(index);
-
-            Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-            long hash = arrayTypeHashes[index];
+            long hash = arrayTypeHashes[arrayType];
             return TypeRegistry.Get(hash);
         }
 
         /// <summary>
         /// Retrieves the type layout for the given <paramref name="tagType"/>.
         /// </summary>
-        public readonly TypeLayout GetTagLayout(TagType tagType)
+        public readonly TypeLayout GetTagLayout(int tagType)
         {
             MemoryAddress.ThrowIfDefault(schema);
             ThrowIfTagIsMissing(tagType);
 
             Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
-            long hash = tagTypeHashes[tagType.index];
-            return TypeRegistry.Get(hash);
-        }
-
-        public readonly TypeLayout GetTagLayout(int index)
-        {
-            MemoryAddress.ThrowIfDefault(schema);
-            ThrowIfTagIsMissing(index);
-
-            Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
-            long hash = tagTypeHashes[index];
+            long hash = tagTypeHashes[tagType];
             return TypeRegistry.Get(hash);
         }
 
@@ -394,126 +372,101 @@ namespace Worlds
             return GetComponentLayout(GetComponentType<T>());
         }
 
-        public readonly ComponentType RegisterComponent<T>() where T : unmanaged
+        public readonly int RegisterComponent<T>() where T : unmanaged
         {
-            ComponentType newComponentType = RegisterComponent(TypeRegistry.GetOrRegister<T>());
+            int newComponentType = RegisterComponent(TypeRegistry.GetOrRegister<T>());
             SchemaTypeCache<T>.SetComponentType(this, newComponentType);
             return newComponentType;
         }
 
-        public readonly ComponentType RegisterComponent(TypeLayout type)
+        public readonly int RegisterComponent(TypeLayout type)
         {
-            if (TryGetComponentType(type, out ComponentType existing))
+            if (TryGetComponentType(type, out int componentType))
             {
-                return existing;
+                return componentType;
             }
 
             ThrowIfTooManyComponents();
 
-            ComponentType componentType = new(schema->componentCount);
-            schema->offsets.WriteElement(componentType.index, schema->componentRowSize);
-            schema->sizes.WriteElement(componentType.index, type.Size);
-            schema->typeHashes.WriteElement(componentType.index, type.Hash);
+            componentType = schema->componentCount;
+            schema->offsets.WriteElement(componentType, schema->componentRowSize);
+            schema->sizes.WriteElement(componentType, type.Size);
+            schema->typeHashes.WriteElement(componentType, type.Hash);
             schema->componentCount++;
             schema->componentRowSize += type.Size;
             schema->definitionMask.AddComponentType(componentType);
-
-            StoreComponentTypeForDebug(componentType, type);
             return componentType;
         }
 
-        public readonly ArrayType RegisterArray<T>() where T : unmanaged
+        public readonly int RegisterArray<T>() where T : unmanaged
         {
-            ArrayType arrayType = RegisterArray(TypeRegistry.GetOrRegister<T>());
+            int arrayType = RegisterArray(TypeRegistry.GetOrRegister<T>());
             SchemaTypeCache<T>.SetArrayType(this, arrayType);
             return arrayType;
         }
 
-        public readonly ArrayType RegisterArray(TypeLayout type)
+        public readonly int RegisterArray(TypeLayout type)
         {
-            if (TryGetArrayType(type, out ArrayType existing))
+            if (TryGetArrayType(type, out int arrayType))
             {
-                return existing;
+                return arrayType;
             }
 
             ThrowIfTooManyArrays();
 
-            ArrayType arrayType = new(schema->arraysCount);
+            arrayType = schema->arraysCount;
             Span<int> arraySizes = schema->sizes.AsSpan<int>(BitMask.Capacity, BitMask.Capacity);
             Span<long> arrayHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
             arraySizes[schema->arraysCount] = type.Size;
             arrayHashes[schema->arraysCount] = type.Hash;
             schema->arraysCount++;
             schema->definitionMask.AddArrayType(arrayType);
-            StoreArrayTypeForDebug(arrayType, type);
             return arrayType;
         }
 
-        public readonly TagType RegisterTag<T>() where T : unmanaged
+        public readonly int RegisterTag<T>() where T : unmanaged
         {
-            TagType tagType = RegisterTag(TypeRegistry.GetOrRegister<T>());
+            int tagType = RegisterTag(TypeRegistry.GetOrRegister<T>());
             SchemaTypeCache<T>.SetTagType(this, tagType);
             return tagType;
         }
 
-        public readonly TagType RegisterTag(TypeLayout type)
+        public readonly int RegisterTag(TypeLayout type)
         {
-            if (TryGetTagType(type, out TagType existing))
+            if (TryGetTagType(type, out int tagType))
             {
-                return existing;
+                return tagType;
             }
 
             ThrowIfTooManyTags();
 
-            TagType tagType = new(schema->tagsCount);
+            tagType = schema->tagsCount;
             Span<long> tagHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
-            tagHashes[tagType.index] = type.Hash;
+            tagHashes[tagType] = type.Hash;
             schema->definitionMask.AddTagType(tagType);
             schema->tagsCount++;
-            StoreTagTypeForDebug(tagType, type);
             return tagType;
         }
 
-        public readonly bool ContainsComponentType(ComponentType componentType)
+        public readonly bool ContainsComponentType(int componentType)
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            return schema->definitionMask.componentTypes.Contains(componentType.index);
+            return schema->definitionMask.componentTypes.Contains(componentType);
         }
 
-        public readonly bool ContainsArrayType(ArrayType arrayType)
+        public readonly bool ContainsArrayType(int arrayType)
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            return schema->definitionMask.arrayTypes.Contains(arrayType.index);
+            return schema->definitionMask.arrayTypes.Contains(arrayType);
         }
 
-        public readonly bool ContainsTagType(TagType tagType)
+        public readonly bool ContainsTagType(int tagType)
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            return schema->definitionMask.tagTypes.Contains(tagType.index);
-        }
-
-        public readonly bool ContainsComponentType(int index)
-        {
-            MemoryAddress.ThrowIfDefault(schema);
-
-            return schema->definitionMask.componentTypes.Contains(index);
-        }
-
-        public readonly bool ContainsArrayType(int index)
-        {
-            MemoryAddress.ThrowIfDefault(schema);
-
-            return schema->definitionMask.arrayTypes.Contains(index);
-        }
-
-        public readonly bool ContainsTagType(int index)
-        {
-            MemoryAddress.ThrowIfDefault(schema);
-
-            return schema->definitionMask.tagTypes.Contains(index);
+            return schema->definitionMask.tagTypes.Contains(tagType);
         }
 
         public readonly bool ContainsComponentType(ASCIIText256 fullTypeName)
@@ -532,14 +485,12 @@ namespace Worlds
             return componentTypeHashes.Contains(type.Hash);
         }
 
-        public readonly bool TryGetComponentType(TypeLayout type, out ComponentType componentType)
+        public readonly bool TryGetComponentType(TypeLayout type, out int componentType)
         {
             MemoryAddress.ThrowIfDefault(schema);
 
             Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
-            bool contains = componentTypeHashes.TryIndexOf(type.Hash, out int index);
-            componentType = new(index);
-            return contains;
+            return componentTypeHashes.TryIndexOf(type.Hash, out componentType);
         }
 
         public readonly bool ContainsArrayType(ASCIIText256 fullTypeName)
@@ -558,12 +509,10 @@ namespace Worlds
             return arrayTypeHashes.Contains(type.Hash);
         }
 
-        public readonly bool TryGetArrayType(TypeLayout type, out ArrayType arrayType)
+        public readonly bool TryGetArrayType(TypeLayout type, out int arrayType)
         {
             Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-            bool contains = arrayTypeHashes.TryIndexOf(type.Hash, out int index);
-            arrayType = new(index);
-            return contains;
+            return arrayTypeHashes.TryIndexOf(type.Hash, out arrayType);
         }
 
         public readonly bool ContainsTagType(ASCIIText256 fullTypeName)
@@ -578,12 +527,10 @@ namespace Worlds
             return tagTypeHashes.Contains(type.Hash);
         }
 
-        public readonly bool TryGetTagType(TypeLayout type, out TagType tagType)
+        public readonly bool TryGetTagType(TypeLayout type, out int tagType)
         {
             Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
-            bool contains = tagTypeHashes.TryIndexOf(type.Hash, out int index);
-            tagType = new(index);
-            return contains;
+            return tagTypeHashes.TryIndexOf(type.Hash, out tagType);
         }
 
         public readonly bool ContainsComponentType<T>() where T : unmanaged
@@ -597,49 +544,37 @@ namespace Worlds
             return componentTypeHashes.Contains(TypeLayoutHashCodeCache<T>.value);
         }
 
-        public readonly ComponentType GetComponentType<T>() where T : unmanaged
+        /// <summary>
+        /// Retrieves the index of the component type <typeparamref name="T"/>.
+        /// </summary>
+        public readonly int GetComponentType<T>() where T : unmanaged
         {
             ThrowIfComponentTypeIsMissing<T>();
 
-            if (!SchemaTypeCache<T>.TryGetComponentType(this, out int index))
+            if (!SchemaTypeCache<T>.TryGetComponentType(this, out int componentType))
             {
                 Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
-                index = componentTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
-                SchemaTypeCache<T>.SetComponentType(this, index);
+                componentType = componentTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
+                SchemaTypeCache<T>.SetComponentType(this, componentType);
                 Trace.WriteLine($"Cached component type for {typeof(T).FullName}");
             }
 
-            return new(index);
-        }
-
-        public readonly int GetComponentTypeIndex<T>() where T : unmanaged
-        {
-            ThrowIfComponentTypeIsMissing<T>();
-
-            if (!SchemaTypeCache<T>.TryGetComponentType(this, out int index))
-            {
-                Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
-                index = componentTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
-                SchemaTypeCache<T>.SetComponentType(this, index);
-                Trace.WriteLine($"Cached component type for {typeof(T).FullName}");
-            }
-
-            return index;
+            return componentType;
         }
 
         public readonly DataType GetComponentDataType<T>() where T : unmanaged
         {
             ThrowIfComponentTypeIsMissing<T>();
 
-            if (!SchemaTypeCache<T>.TryGetComponentType(this, out int index))
+            if (!SchemaTypeCache<T>.TryGetComponentType(this, out int componentType))
             {
                 Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
-                index = componentTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
-                SchemaTypeCache<T>.SetComponentType(this, index);
+                componentType = componentTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
+                SchemaTypeCache<T>.SetComponentType(this, componentType);
                 Trace.WriteLine($"Cached component type for {typeof(T).FullName}");
             }
 
-            return new(index, DataType.Kind.Component, sizeof(T));
+            return new(componentType, DataType.Kind.Component, sizeof(T));
         }
 
         public readonly DataType GetComponentDataType(TypeLayout type)
@@ -647,15 +582,8 @@ namespace Worlds
             ThrowIfComponentTypeIsMissing(type);
 
             Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
-            int index = componentTypeHashes.IndexOf(type.Hash);
-            return new(index, DataType.Kind.Component, type.Size);
-        }
-
-        public readonly DataType GetComponentDataType(int index)
-        {
-            ThrowIfComponentTypeIsMissing(index);
-
-            return new(index, DataType.Kind.Component, GetComponentTypeSize(index));
+            int componentType = componentTypeHashes.IndexOf(type.Hash);
+            return new(componentType, DataType.Kind.Component, type.Size);
         }
 
         public readonly bool ContainsArrayType<T>() where T : unmanaged
@@ -669,49 +597,49 @@ namespace Worlds
             return arrayTypeHashes.Contains(TypeLayoutHashCodeCache<T>.value);
         }
 
-        public readonly ArrayType GetArrayType<T>() where T : unmanaged
+        public readonly int GetArrayType<T>() where T : unmanaged
         {
             ThrowIfArrayTypeIsMissing<T>();
 
-            if (!SchemaTypeCache<T>.TryGetArrayType(this, out int index))
+            if (!SchemaTypeCache<T>.TryGetArrayType(this, out int arrayType))
             {
                 Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-                index = arrayTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
-                SchemaTypeCache<T>.SetArrayType(this, index);
+                arrayType = arrayTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
+                SchemaTypeCache<T>.SetArrayType(this, arrayType);
                 Trace.WriteLine($"Cached array type for {typeof(T).FullName}");
             }
 
-            return new(index);
+            return arrayType;
         }
 
         public readonly int GetArrayTypeIndex<T>() where T : unmanaged
         {
             ThrowIfArrayTypeIsMissing<T>();
 
-            if (!SchemaTypeCache<T>.TryGetArrayType(this, out int index))
+            if (!SchemaTypeCache<T>.TryGetArrayType(this, out int arrayType))
             {
                 Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-                index = arrayTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
-                SchemaTypeCache<T>.SetArrayType(this, index);
+                arrayType = arrayTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
+                SchemaTypeCache<T>.SetArrayType(this, arrayType);
                 Trace.WriteLine($"Cached array type for {typeof(T).FullName}");
             }
 
-            return index;
+            return arrayType;
         }
 
         public readonly DataType GetArrayDataType<T>() where T : unmanaged
         {
             ThrowIfArrayTypeIsMissing<T>();
 
-            if (!SchemaTypeCache<T>.TryGetArrayType(this, out int index))
+            if (!SchemaTypeCache<T>.TryGetArrayType(this, out int arrayType))
             {
                 Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-                index = arrayTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
-                SchemaTypeCache<T>.SetArrayType(this, index);
+                arrayType = arrayTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
+                SchemaTypeCache<T>.SetArrayType(this, arrayType);
                 Trace.WriteLine($"Cached array type for {typeof(T).FullName}");
             }
 
-            return new(index, DataType.Kind.Array, sizeof(T));
+            return new(arrayType, DataType.Kind.Array, sizeof(T));
         }
 
         public readonly DataType GetArrayDataType(TypeLayout type)
@@ -719,67 +647,38 @@ namespace Worlds
             ThrowIfArrayTypeIsMissing(type);
 
             Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-            int index = arrayTypeHashes.IndexOf(type.Hash);
-            return new(index, DataType.Kind.Array, type.Size);
+            int arrayType = arrayTypeHashes.IndexOf(type.Hash);
+            return new(arrayType, DataType.Kind.Array, type.Size);
         }
 
-        public readonly DataType GetArrayDataType(int index)
-        {
-            ThrowIfArrayTypeIsMissing(index);
-
-            return new(index, DataType.Kind.Array, GetArrayTypeSize(index));
-        }
-
-        public readonly TagType GetTagType<T>() where T : unmanaged
+        public readonly int GetTagType<T>() where T : unmanaged
         {
             ThrowIfTagIsMissing<T>();
 
-            if (!SchemaTypeCache<T>.TryGetTagType(this, out int index))
+            if (!SchemaTypeCache<T>.TryGetTagType(this, out int tagType))
             {
                 Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
-                index = tagTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
-                SchemaTypeCache<T>.SetTagType(this, index);
+                tagType = tagTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
+                SchemaTypeCache<T>.SetTagType(this, tagType);
                 Trace.WriteLine($"Cached tag type for {typeof(T).FullName}");
             }
 
-            return new(index);
-        }
-
-        public readonly int GetTagTypeIndex<T>() where T : unmanaged
-        {
-            ThrowIfTagIsMissing<T>();
-
-            if (!SchemaTypeCache<T>.TryGetTagType(this, out int index))
-            {
-                Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
-                index = tagTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
-                SchemaTypeCache<T>.SetTagType(this, index);
-                Trace.WriteLine($"Cached tag type for {typeof(T).FullName}");
-            }
-
-            return index;
+            return tagType;
         }
 
         public readonly DataType GetTagDataType<T>() where T : unmanaged
         {
             ThrowIfTagIsMissing<T>();
 
-            if (!SchemaTypeCache<T>.TryGetTagType(this, out int index))
+            if (!SchemaTypeCache<T>.TryGetTagType(this, out int tagType))
             {
                 Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
-                index = tagTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
-                SchemaTypeCache<T>.SetTagType(this, index);
+                tagType = tagTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
+                SchemaTypeCache<T>.SetTagType(this, tagType);
                 Trace.WriteLine($"Cached tag type for {typeof(T).FullName}");
             }
 
-            return new(index, DataType.Kind.Tag, default);
-        }
-
-        public readonly DataType GetTagDataType(int index)
-        {
-            ThrowIfTagIsMissing(index);
-
-            return new(index, DataType.Kind.Tag, default);
+            return new(tagType, DataType.Kind.Tag, default);
         }
 
         public readonly bool ContainsTagType<T>() where T : unmanaged
@@ -796,232 +695,232 @@ namespace Worlds
         public readonly BitMask GetComponentTypes<T1>() where T1 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetComponentTypeIndex<T1>());
+            bitMask.Set(GetComponentType<T1>());
             return bitMask;
         }
 
         public readonly BitMask GetComponentTypes<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetComponentTypeIndex<T1>());
-            bitMask.Set(GetComponentTypeIndex<T2>());
+            bitMask.Set(GetComponentType<T1>());
+            bitMask.Set(GetComponentType<T2>());
             return bitMask;
         }
 
         public readonly BitMask GetComponentTypes<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetComponentTypeIndex<T1>());
-            bitMask.Set(GetComponentTypeIndex<T2>());
-            bitMask.Set(GetComponentTypeIndex<T3>());
+            bitMask.Set(GetComponentType<T1>());
+            bitMask.Set(GetComponentType<T2>());
+            bitMask.Set(GetComponentType<T3>());
             return bitMask;
         }
 
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetComponentTypeIndex<T1>());
-            bitMask.Set(GetComponentTypeIndex<T2>());
-            bitMask.Set(GetComponentTypeIndex<T3>());
-            bitMask.Set(GetComponentTypeIndex<T4>());
+            bitMask.Set(GetComponentType<T1>());
+            bitMask.Set(GetComponentType<T2>());
+            bitMask.Set(GetComponentType<T3>());
+            bitMask.Set(GetComponentType<T4>());
             return bitMask;
         }
 
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetComponentTypeIndex<T1>());
-            bitMask.Set(GetComponentTypeIndex<T2>());
-            bitMask.Set(GetComponentTypeIndex<T3>());
-            bitMask.Set(GetComponentTypeIndex<T4>());
-            bitMask.Set(GetComponentTypeIndex<T5>());
+            bitMask.Set(GetComponentType<T1>());
+            bitMask.Set(GetComponentType<T2>());
+            bitMask.Set(GetComponentType<T3>());
+            bitMask.Set(GetComponentType<T4>());
+            bitMask.Set(GetComponentType<T5>());
             return bitMask;
         }
 
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetComponentTypeIndex<T1>());
-            bitMask.Set(GetComponentTypeIndex<T2>());
-            bitMask.Set(GetComponentTypeIndex<T3>());
-            bitMask.Set(GetComponentTypeIndex<T4>());
-            bitMask.Set(GetComponentTypeIndex<T5>());
-            bitMask.Set(GetComponentTypeIndex<T6>());
+            bitMask.Set(GetComponentType<T1>());
+            bitMask.Set(GetComponentType<T2>());
+            bitMask.Set(GetComponentType<T3>());
+            bitMask.Set(GetComponentType<T4>());
+            bitMask.Set(GetComponentType<T5>());
+            bitMask.Set(GetComponentType<T6>());
             return bitMask;
         }
 
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetComponentTypeIndex<T1>());
-            bitMask.Set(GetComponentTypeIndex<T2>());
-            bitMask.Set(GetComponentTypeIndex<T3>());
-            bitMask.Set(GetComponentTypeIndex<T4>());
-            bitMask.Set(GetComponentTypeIndex<T5>());
-            bitMask.Set(GetComponentTypeIndex<T6>());
-            bitMask.Set(GetComponentTypeIndex<T7>());
+            bitMask.Set(GetComponentType<T1>());
+            bitMask.Set(GetComponentType<T2>());
+            bitMask.Set(GetComponentType<T3>());
+            bitMask.Set(GetComponentType<T4>());
+            bitMask.Set(GetComponentType<T5>());
+            bitMask.Set(GetComponentType<T6>());
+            bitMask.Set(GetComponentType<T7>());
             return bitMask;
         }
 
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetComponentTypeIndex<T1>());
-            bitMask.Set(GetComponentTypeIndex<T2>());
-            bitMask.Set(GetComponentTypeIndex<T3>());
-            bitMask.Set(GetComponentTypeIndex<T4>());
-            bitMask.Set(GetComponentTypeIndex<T5>());
-            bitMask.Set(GetComponentTypeIndex<T6>());
-            bitMask.Set(GetComponentTypeIndex<T7>());
-            bitMask.Set(GetComponentTypeIndex<T8>());
+            bitMask.Set(GetComponentType<T1>());
+            bitMask.Set(GetComponentType<T2>());
+            bitMask.Set(GetComponentType<T3>());
+            bitMask.Set(GetComponentType<T4>());
+            bitMask.Set(GetComponentType<T5>());
+            bitMask.Set(GetComponentType<T6>());
+            bitMask.Set(GetComponentType<T7>());
+            bitMask.Set(GetComponentType<T8>());
             return bitMask;
         }
 
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetComponentTypeIndex<T1>());
-            bitMask.Set(GetComponentTypeIndex<T2>());
-            bitMask.Set(GetComponentTypeIndex<T3>());
-            bitMask.Set(GetComponentTypeIndex<T4>());
-            bitMask.Set(GetComponentTypeIndex<T5>());
-            bitMask.Set(GetComponentTypeIndex<T6>());
-            bitMask.Set(GetComponentTypeIndex<T7>());
-            bitMask.Set(GetComponentTypeIndex<T8>());
-            bitMask.Set(GetComponentTypeIndex<T9>());
+            bitMask.Set(GetComponentType<T1>());
+            bitMask.Set(GetComponentType<T2>());
+            bitMask.Set(GetComponentType<T3>());
+            bitMask.Set(GetComponentType<T4>());
+            bitMask.Set(GetComponentType<T5>());
+            bitMask.Set(GetComponentType<T6>());
+            bitMask.Set(GetComponentType<T7>());
+            bitMask.Set(GetComponentType<T8>());
+            bitMask.Set(GetComponentType<T9>());
             return bitMask;
         }
 
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetComponentTypeIndex<T1>());
-            bitMask.Set(GetComponentTypeIndex<T2>());
-            bitMask.Set(GetComponentTypeIndex<T3>());
-            bitMask.Set(GetComponentTypeIndex<T4>());
-            bitMask.Set(GetComponentTypeIndex<T5>());
-            bitMask.Set(GetComponentTypeIndex<T6>());
-            bitMask.Set(GetComponentTypeIndex<T7>());
-            bitMask.Set(GetComponentTypeIndex<T8>());
-            bitMask.Set(GetComponentTypeIndex<T9>());
-            bitMask.Set(GetComponentTypeIndex<T10>());
+            bitMask.Set(GetComponentType<T1>());
+            bitMask.Set(GetComponentType<T2>());
+            bitMask.Set(GetComponentType<T3>());
+            bitMask.Set(GetComponentType<T4>());
+            bitMask.Set(GetComponentType<T5>());
+            bitMask.Set(GetComponentType<T6>());
+            bitMask.Set(GetComponentType<T7>());
+            bitMask.Set(GetComponentType<T8>());
+            bitMask.Set(GetComponentType<T9>());
+            bitMask.Set(GetComponentType<T10>());
             return bitMask;
         }
 
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetComponentTypeIndex<T1>());
-            bitMask.Set(GetComponentTypeIndex<T2>());
-            bitMask.Set(GetComponentTypeIndex<T3>());
-            bitMask.Set(GetComponentTypeIndex<T4>());
-            bitMask.Set(GetComponentTypeIndex<T5>());
-            bitMask.Set(GetComponentTypeIndex<T6>());
-            bitMask.Set(GetComponentTypeIndex<T7>());
-            bitMask.Set(GetComponentTypeIndex<T8>());
-            bitMask.Set(GetComponentTypeIndex<T9>());
-            bitMask.Set(GetComponentTypeIndex<T10>());
-            bitMask.Set(GetComponentTypeIndex<T11>());
+            bitMask.Set(GetComponentType<T1>());
+            bitMask.Set(GetComponentType<T2>());
+            bitMask.Set(GetComponentType<T3>());
+            bitMask.Set(GetComponentType<T4>());
+            bitMask.Set(GetComponentType<T5>());
+            bitMask.Set(GetComponentType<T6>());
+            bitMask.Set(GetComponentType<T7>());
+            bitMask.Set(GetComponentType<T8>());
+            bitMask.Set(GetComponentType<T9>());
+            bitMask.Set(GetComponentType<T10>());
+            bitMask.Set(GetComponentType<T11>());
             return bitMask;
         }
 
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetComponentTypeIndex<T1>());
-            bitMask.Set(GetComponentTypeIndex<T2>());
-            bitMask.Set(GetComponentTypeIndex<T3>());
-            bitMask.Set(GetComponentTypeIndex<T4>());
-            bitMask.Set(GetComponentTypeIndex<T5>());
-            bitMask.Set(GetComponentTypeIndex<T6>());
-            bitMask.Set(GetComponentTypeIndex<T7>());
-            bitMask.Set(GetComponentTypeIndex<T8>());
-            bitMask.Set(GetComponentTypeIndex<T9>());
-            bitMask.Set(GetComponentTypeIndex<T10>());
-            bitMask.Set(GetComponentTypeIndex<T11>());
-            bitMask.Set(GetComponentTypeIndex<T12>());
+            bitMask.Set(GetComponentType<T1>());
+            bitMask.Set(GetComponentType<T2>());
+            bitMask.Set(GetComponentType<T3>());
+            bitMask.Set(GetComponentType<T4>());
+            bitMask.Set(GetComponentType<T5>());
+            bitMask.Set(GetComponentType<T6>());
+            bitMask.Set(GetComponentType<T7>());
+            bitMask.Set(GetComponentType<T8>());
+            bitMask.Set(GetComponentType<T9>());
+            bitMask.Set(GetComponentType<T10>());
+            bitMask.Set(GetComponentType<T11>());
+            bitMask.Set(GetComponentType<T12>());
             return bitMask;
         }
 
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetComponentTypeIndex<T1>());
-            bitMask.Set(GetComponentTypeIndex<T2>());
-            bitMask.Set(GetComponentTypeIndex<T3>());
-            bitMask.Set(GetComponentTypeIndex<T4>());
-            bitMask.Set(GetComponentTypeIndex<T5>());
-            bitMask.Set(GetComponentTypeIndex<T6>());
-            bitMask.Set(GetComponentTypeIndex<T7>());
-            bitMask.Set(GetComponentTypeIndex<T8>());
-            bitMask.Set(GetComponentTypeIndex<T9>());
-            bitMask.Set(GetComponentTypeIndex<T10>());
-            bitMask.Set(GetComponentTypeIndex<T11>());
-            bitMask.Set(GetComponentTypeIndex<T12>());
-            bitMask.Set(GetComponentTypeIndex<T13>());
+            bitMask.Set(GetComponentType<T1>());
+            bitMask.Set(GetComponentType<T2>());
+            bitMask.Set(GetComponentType<T3>());
+            bitMask.Set(GetComponentType<T4>());
+            bitMask.Set(GetComponentType<T5>());
+            bitMask.Set(GetComponentType<T6>());
+            bitMask.Set(GetComponentType<T7>());
+            bitMask.Set(GetComponentType<T8>());
+            bitMask.Set(GetComponentType<T9>());
+            bitMask.Set(GetComponentType<T10>());
+            bitMask.Set(GetComponentType<T11>());
+            bitMask.Set(GetComponentType<T12>());
+            bitMask.Set(GetComponentType<T13>());
             return bitMask;
         }
 
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetComponentTypeIndex<T1>());
-            bitMask.Set(GetComponentTypeIndex<T2>());
-            bitMask.Set(GetComponentTypeIndex<T3>());
-            bitMask.Set(GetComponentTypeIndex<T4>());
-            bitMask.Set(GetComponentTypeIndex<T5>());
-            bitMask.Set(GetComponentTypeIndex<T6>());
-            bitMask.Set(GetComponentTypeIndex<T7>());
-            bitMask.Set(GetComponentTypeIndex<T8>());
-            bitMask.Set(GetComponentTypeIndex<T9>());
-            bitMask.Set(GetComponentTypeIndex<T10>());
-            bitMask.Set(GetComponentTypeIndex<T11>());
-            bitMask.Set(GetComponentTypeIndex<T12>());
-            bitMask.Set(GetComponentTypeIndex<T13>());
-            bitMask.Set(GetComponentTypeIndex<T14>());
+            bitMask.Set(GetComponentType<T1>());
+            bitMask.Set(GetComponentType<T2>());
+            bitMask.Set(GetComponentType<T3>());
+            bitMask.Set(GetComponentType<T4>());
+            bitMask.Set(GetComponentType<T5>());
+            bitMask.Set(GetComponentType<T6>());
+            bitMask.Set(GetComponentType<T7>());
+            bitMask.Set(GetComponentType<T8>());
+            bitMask.Set(GetComponentType<T9>());
+            bitMask.Set(GetComponentType<T10>());
+            bitMask.Set(GetComponentType<T11>());
+            bitMask.Set(GetComponentType<T12>());
+            bitMask.Set(GetComponentType<T13>());
+            bitMask.Set(GetComponentType<T14>());
             return bitMask;
         }
 
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetComponentTypeIndex<T1>());
-            bitMask.Set(GetComponentTypeIndex<T2>());
-            bitMask.Set(GetComponentTypeIndex<T3>());
-            bitMask.Set(GetComponentTypeIndex<T4>());
-            bitMask.Set(GetComponentTypeIndex<T5>());
-            bitMask.Set(GetComponentTypeIndex<T6>());
-            bitMask.Set(GetComponentTypeIndex<T7>());
-            bitMask.Set(GetComponentTypeIndex<T8>());
-            bitMask.Set(GetComponentTypeIndex<T9>());
-            bitMask.Set(GetComponentTypeIndex<T10>());
-            bitMask.Set(GetComponentTypeIndex<T11>());
-            bitMask.Set(GetComponentTypeIndex<T12>());
-            bitMask.Set(GetComponentTypeIndex<T13>());
-            bitMask.Set(GetComponentTypeIndex<T14>());
-            bitMask.Set(GetComponentTypeIndex<T15>());
+            bitMask.Set(GetComponentType<T1>());
+            bitMask.Set(GetComponentType<T2>());
+            bitMask.Set(GetComponentType<T3>());
+            bitMask.Set(GetComponentType<T4>());
+            bitMask.Set(GetComponentType<T5>());
+            bitMask.Set(GetComponentType<T6>());
+            bitMask.Set(GetComponentType<T7>());
+            bitMask.Set(GetComponentType<T8>());
+            bitMask.Set(GetComponentType<T9>());
+            bitMask.Set(GetComponentType<T10>());
+            bitMask.Set(GetComponentType<T11>());
+            bitMask.Set(GetComponentType<T12>());
+            bitMask.Set(GetComponentType<T13>());
+            bitMask.Set(GetComponentType<T14>());
+            bitMask.Set(GetComponentType<T15>());
             return bitMask;
         }
 
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetComponentTypeIndex<T1>());
-            bitMask.Set(GetComponentTypeIndex<T2>());
-            bitMask.Set(GetComponentTypeIndex<T3>());
-            bitMask.Set(GetComponentTypeIndex<T4>());
-            bitMask.Set(GetComponentTypeIndex<T5>());
-            bitMask.Set(GetComponentTypeIndex<T6>());
-            bitMask.Set(GetComponentTypeIndex<T7>());
-            bitMask.Set(GetComponentTypeIndex<T8>());
-            bitMask.Set(GetComponentTypeIndex<T9>());
-            bitMask.Set(GetComponentTypeIndex<T10>());
-            bitMask.Set(GetComponentTypeIndex<T11>());
-            bitMask.Set(GetComponentTypeIndex<T12>());
-            bitMask.Set(GetComponentTypeIndex<T13>());
-            bitMask.Set(GetComponentTypeIndex<T14>());
-            bitMask.Set(GetComponentTypeIndex<T15>());
-            bitMask.Set(GetComponentTypeIndex<T16>());
+            bitMask.Set(GetComponentType<T1>());
+            bitMask.Set(GetComponentType<T2>());
+            bitMask.Set(GetComponentType<T3>());
+            bitMask.Set(GetComponentType<T4>());
+            bitMask.Set(GetComponentType<T5>());
+            bitMask.Set(GetComponentType<T6>());
+            bitMask.Set(GetComponentType<T7>());
+            bitMask.Set(GetComponentType<T8>());
+            bitMask.Set(GetComponentType<T9>());
+            bitMask.Set(GetComponentType<T10>());
+            bitMask.Set(GetComponentType<T11>());
+            bitMask.Set(GetComponentType<T12>());
+            bitMask.Set(GetComponentType<T13>());
+            bitMask.Set(GetComponentType<T14>());
+            bitMask.Set(GetComponentType<T15>());
+            bitMask.Set(GetComponentType<T16>());
             return bitMask;
         }
 
@@ -1178,150 +1077,150 @@ namespace Worlds
         public readonly BitMask GetTagTypes<T1>() where T1 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetTagTypeIndex<T1>());
+            bitMask.Set(GetTagType<T1>());
             return bitMask;
         }
 
         public readonly BitMask GetTagTypes<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetTagTypeIndex<T1>());
-            bitMask.Set(GetTagTypeIndex<T2>());
+            bitMask.Set(GetTagType<T1>());
+            bitMask.Set(GetTagType<T2>());
             return bitMask;
         }
 
         public readonly BitMask GetTagTypes<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetTagTypeIndex<T1>());
-            bitMask.Set(GetTagTypeIndex<T2>());
-            bitMask.Set(GetTagTypeIndex<T3>());
+            bitMask.Set(GetTagType<T1>());
+            bitMask.Set(GetTagType<T2>());
+            bitMask.Set(GetTagType<T3>());
             return bitMask;
         }
 
         public readonly BitMask GetTagTypes<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetTagTypeIndex<T1>());
-            bitMask.Set(GetTagTypeIndex<T2>());
-            bitMask.Set(GetTagTypeIndex<T3>());
-            bitMask.Set(GetTagTypeIndex<T4>());
+            bitMask.Set(GetTagType<T1>());
+            bitMask.Set(GetTagType<T2>());
+            bitMask.Set(GetTagType<T3>());
+            bitMask.Set(GetTagType<T4>());
             return bitMask;
         }
 
         public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetTagTypeIndex<T1>());
-            bitMask.Set(GetTagTypeIndex<T2>());
-            bitMask.Set(GetTagTypeIndex<T3>());
-            bitMask.Set(GetTagTypeIndex<T4>());
-            bitMask.Set(GetTagTypeIndex<T5>());
+            bitMask.Set(GetTagType<T1>());
+            bitMask.Set(GetTagType<T2>());
+            bitMask.Set(GetTagType<T3>());
+            bitMask.Set(GetTagType<T4>());
+            bitMask.Set(GetTagType<T5>());
             return bitMask;
         }
 
         public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetTagTypeIndex<T1>());
-            bitMask.Set(GetTagTypeIndex<T2>());
-            bitMask.Set(GetTagTypeIndex<T3>());
-            bitMask.Set(GetTagTypeIndex<T4>());
-            bitMask.Set(GetTagTypeIndex<T5>());
-            bitMask.Set(GetTagTypeIndex<T6>());
+            bitMask.Set(GetTagType<T1>());
+            bitMask.Set(GetTagType<T2>());
+            bitMask.Set(GetTagType<T3>());
+            bitMask.Set(GetTagType<T4>());
+            bitMask.Set(GetTagType<T5>());
+            bitMask.Set(GetTagType<T6>());
             return bitMask;
         }
 
         public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetTagTypeIndex<T1>());
-            bitMask.Set(GetTagTypeIndex<T2>());
-            bitMask.Set(GetTagTypeIndex<T3>());
-            bitMask.Set(GetTagTypeIndex<T4>());
-            bitMask.Set(GetTagTypeIndex<T5>());
-            bitMask.Set(GetTagTypeIndex<T6>());
-            bitMask.Set(GetTagTypeIndex<T7>());
+            bitMask.Set(GetTagType<T1>());
+            bitMask.Set(GetTagType<T2>());
+            bitMask.Set(GetTagType<T3>());
+            bitMask.Set(GetTagType<T4>());
+            bitMask.Set(GetTagType<T5>());
+            bitMask.Set(GetTagType<T6>());
+            bitMask.Set(GetTagType<T7>());
             return bitMask;
         }
 
         public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetTagTypeIndex<T1>());
-            bitMask.Set(GetTagTypeIndex<T2>());
-            bitMask.Set(GetTagTypeIndex<T3>());
-            bitMask.Set(GetTagTypeIndex<T4>());
-            bitMask.Set(GetTagTypeIndex<T5>());
-            bitMask.Set(GetTagTypeIndex<T6>());
-            bitMask.Set(GetTagTypeIndex<T7>());
-            bitMask.Set(GetTagTypeIndex<T8>());
+            bitMask.Set(GetTagType<T1>());
+            bitMask.Set(GetTagType<T2>());
+            bitMask.Set(GetTagType<T3>());
+            bitMask.Set(GetTagType<T4>());
+            bitMask.Set(GetTagType<T5>());
+            bitMask.Set(GetTagType<T6>());
+            bitMask.Set(GetTagType<T7>());
+            bitMask.Set(GetTagType<T8>());
             return bitMask;
         }
 
         public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetTagTypeIndex<T1>());
-            bitMask.Set(GetTagTypeIndex<T2>());
-            bitMask.Set(GetTagTypeIndex<T3>());
-            bitMask.Set(GetTagTypeIndex<T4>());
-            bitMask.Set(GetTagTypeIndex<T5>());
-            bitMask.Set(GetTagTypeIndex<T6>());
-            bitMask.Set(GetTagTypeIndex<T7>());
-            bitMask.Set(GetTagTypeIndex<T8>());
-            bitMask.Set(GetTagTypeIndex<T9>());
+            bitMask.Set(GetTagType<T1>());
+            bitMask.Set(GetTagType<T2>());
+            bitMask.Set(GetTagType<T3>());
+            bitMask.Set(GetTagType<T4>());
+            bitMask.Set(GetTagType<T5>());
+            bitMask.Set(GetTagType<T6>());
+            bitMask.Set(GetTagType<T7>());
+            bitMask.Set(GetTagType<T8>());
+            bitMask.Set(GetTagType<T9>());
             return bitMask;
         }
 
         public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetTagTypeIndex<T1>());
-            bitMask.Set(GetTagTypeIndex<T2>());
-            bitMask.Set(GetTagTypeIndex<T3>());
-            bitMask.Set(GetTagTypeIndex<T4>());
-            bitMask.Set(GetTagTypeIndex<T5>());
-            bitMask.Set(GetTagTypeIndex<T6>());
-            bitMask.Set(GetTagTypeIndex<T7>());
-            bitMask.Set(GetTagTypeIndex<T8>());
-            bitMask.Set(GetTagTypeIndex<T9>());
-            bitMask.Set(GetTagTypeIndex<T10>());
+            bitMask.Set(GetTagType<T1>());
+            bitMask.Set(GetTagType<T2>());
+            bitMask.Set(GetTagType<T3>());
+            bitMask.Set(GetTagType<T4>());
+            bitMask.Set(GetTagType<T5>());
+            bitMask.Set(GetTagType<T6>());
+            bitMask.Set(GetTagType<T7>());
+            bitMask.Set(GetTagType<T8>());
+            bitMask.Set(GetTagType<T9>());
+            bitMask.Set(GetTagType<T10>());
             return bitMask;
         }
 
         public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetTagTypeIndex<T1>());
-            bitMask.Set(GetTagTypeIndex<T2>());
-            bitMask.Set(GetTagTypeIndex<T3>());
-            bitMask.Set(GetTagTypeIndex<T4>());
-            bitMask.Set(GetTagTypeIndex<T5>());
-            bitMask.Set(GetTagTypeIndex<T6>());
-            bitMask.Set(GetTagTypeIndex<T7>());
-            bitMask.Set(GetTagTypeIndex<T8>());
-            bitMask.Set(GetTagTypeIndex<T9>());
-            bitMask.Set(GetTagTypeIndex<T10>());
-            bitMask.Set(GetTagTypeIndex<T11>());
+            bitMask.Set(GetTagType<T1>());
+            bitMask.Set(GetTagType<T2>());
+            bitMask.Set(GetTagType<T3>());
+            bitMask.Set(GetTagType<T4>());
+            bitMask.Set(GetTagType<T5>());
+            bitMask.Set(GetTagType<T6>());
+            bitMask.Set(GetTagType<T7>());
+            bitMask.Set(GetTagType<T8>());
+            bitMask.Set(GetTagType<T9>());
+            bitMask.Set(GetTagType<T10>());
+            bitMask.Set(GetTagType<T11>());
             return bitMask;
         }
 
         public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
             BitMask bitMask = default;
-            bitMask.Set(GetTagTypeIndex<T1>());
-            bitMask.Set(GetTagTypeIndex<T2>());
-            bitMask.Set(GetTagTypeIndex<T3>());
-            bitMask.Set(GetTagTypeIndex<T4>());
-            bitMask.Set(GetTagTypeIndex<T5>());
-            bitMask.Set(GetTagTypeIndex<T6>());
-            bitMask.Set(GetTagTypeIndex<T7>());
-            bitMask.Set(GetTagTypeIndex<T8>());
-            bitMask.Set(GetTagTypeIndex<T9>());
-            bitMask.Set(GetTagTypeIndex<T10>());
-            bitMask.Set(GetTagTypeIndex<T11>());
-            bitMask.Set(GetTagTypeIndex<T12>());
+            bitMask.Set(GetTagType<T1>());
+            bitMask.Set(GetTagType<T2>());
+            bitMask.Set(GetTagType<T3>());
+            bitMask.Set(GetTagType<T4>());
+            bitMask.Set(GetTagType<T5>());
+            bitMask.Set(GetTagType<T6>());
+            bitMask.Set(GetTagType<T7>());
+            bitMask.Set(GetTagType<T8>());
+            bitMask.Set(GetTagType<T9>());
+            bitMask.Set(GetTagType<T10>());
+            bitMask.Set(GetTagType<T11>());
+            bitMask.Set(GetTagType<T12>());
             return bitMask;
         }
 
@@ -1335,30 +1234,6 @@ namespace Worlds
             {
                 return new(pointer);
             }
-        }
-
-        [Conditional("DEBUG")]
-        private static void StoreComponentTypeForDebug(ComponentType componentType, TypeLayout type)
-        {
-#if DEBUG
-            ComponentType.debugCachedTypes[componentType.index] = type;
-#endif
-        }
-
-        [Conditional("DEBUG")]
-        private static void StoreArrayTypeForDebug(ArrayType arrayType, TypeLayout type)
-        {
-#if DEBUG
-            ArrayType.debugCachedTypes[arrayType.index] = type;
-#endif
-        }
-
-        [Conditional("DEBUG")]
-        private static void StoreTagTypeForDebug(TagType tagType, TypeLayout type)
-        {
-#if DEBUG
-            TagType.debugCachedTypes[tagType.index] = type;
-#endif
         }
 
         [Conditional("DEBUG")]
@@ -1385,15 +1260,6 @@ namespace Worlds
             if (schema->tagsCount == BitMask.MaxValue)
             {
                 throw new Exception("Too many tag types registered");
-            }
-        }
-
-        [Conditional("DEBUG")]
-        private readonly void ThrowIfComponentTypeIsMissing(ComponentType componentType)
-        {
-            if (!ContainsComponentType(componentType))
-            {
-                throw new Exception($"Component size for `{componentType}` is missing from schema");
             }
         }
 
@@ -1425,15 +1291,6 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfArrayTypeIsMissing(ArrayType arrayType)
-        {
-            if (!ContainsArrayType(arrayType))
-            {
-                throw new Exception($"Array type size for `{arrayType}` is missing from schema");
-            }
-        }
-
-        [Conditional("DEBUG")]
         private readonly void ThrowIfArrayTypeIsMissing(int arrayType)
         {
             if (!ContainsArrayType(arrayType))
@@ -1457,15 +1314,6 @@ namespace Worlds
             if (!ContainsArrayType<T>())
             {
                 throw new Exception($"Array type `{typeof(T).FullName}` is missing from schema");
-            }
-        }
-
-        [Conditional("DEBUG")]
-        private readonly void ThrowIfTagIsMissing(TagType tagType)
-        {
-            if (!ContainsTagType(tagType))
-            {
-                throw new Exception($"Tag `{tagType}` is missing from schema");
             }
         }
 
@@ -1644,37 +1492,37 @@ namespace Worlds
                 tagCapacity = 0;
             }
 
-            public static void SetComponentType(Schema schema, int index)
+            public static void SetComponentType(Schema schema, int componentType)
             {
                 if (schema.schema->schemaIndex >= componentCapacity)
                 {
                     componentCapacity = schema.schema->schemaIndex + 1;
-                    System.Array.Resize(ref components, componentCapacity);
+                    Array.Resize(ref components, componentCapacity);
                 }
 
-                components[schema.schema->schemaIndex] = index;
+                components[schema.schema->schemaIndex] = componentType;
             }
 
-            public static void SetArrayType(Schema schema, int index)
+            public static void SetArrayType(Schema schema, int arrayType)
             {
                 if (schema.schema->schemaIndex >= arrayCapacity)
                 {
                     arrayCapacity = schema.schema->schemaIndex + 1;
-                    System.Array.Resize(ref arrays, arrayCapacity);
+                    Array.Resize(ref arrays, arrayCapacity);
                 }
 
-                arrays[schema.schema->schemaIndex] = index;
+                arrays[schema.schema->schemaIndex] = arrayType;
             }
 
-            public static void SetTagType(Schema schema, int index)
+            public static void SetTagType(Schema schema, int tagType)
             {
                 if (schema.schema->schemaIndex >= tagCapacity)
                 {
                     tagCapacity = schema.schema->schemaIndex + 1;
-                    System.Array.Resize(ref tags, tagCapacity);
+                    Array.Resize(ref tags, tagCapacity);
                 }
 
-                tags[schema.schema->schemaIndex] = index;
+                tags[schema.schema->schemaIndex] = tagType;
             }
 
             public static bool TryGetComponentType(Schema schema, out int componentType)

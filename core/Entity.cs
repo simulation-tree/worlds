@@ -210,42 +210,47 @@ namespace Worlds
             return new Entity(world, world.CloneEntity(value));
         }
 
-        public readonly bool ContainsComponent(ComponentType componentType)
+        public readonly bool ContainsComponent(int componentType)
         {
             return world.ContainsComponent(value, componentType);
         }
 
-        public readonly bool ContainsArray(ArrayType arrayType)
+        public readonly bool ContainsArray(int arrayType)
         {
             return world.ContainsArray(value, arrayType);
         }
 
-        public readonly bool ContainsTag(TagType tagType)
+        public readonly bool ContainsTag(int tagType)
         {
             return world.ContainsTag(value, tagType);
         }
 
-        public readonly void AddComponent(ComponentType componentType)
+        public readonly void AddComponentType(int componentType)
         {
-            world.AddComponent(value, componentType);
+            world.AddComponentType(value, componentType);
         }
 
-        public readonly void RemoveComponent(ComponentType componentType)
+        public readonly void RemoveComponent(int componentType)
         {
             world.RemoveComponent(value, componentType);
         }
 
-        public readonly Values CreateArray(ArrayType arrayType, int length = 0)
+        public readonly Values CreateArray(int arrayType, int length = 0)
         {
             return world.CreateArray(value, arrayType, length);
         }
 
-        public readonly Values GetArray(ArrayType arrayType)
+        public readonly Values CreateArray(DataType arrayType, int length = 0)
+        {
+            return world.CreateArray(value, arrayType, length);
+        }
+
+        public readonly Values GetArray(int arrayType)
         {
             return world.GetArray(value, arrayType);
         }
 
-        public readonly void DestroyArray(ArrayType arrayType)
+        public readonly void DestroyArray(int arrayType)
         {
             world.DestroyArray(value, arrayType);
         }
@@ -456,35 +461,35 @@ namespace Worlds
 
                     Chunk chunk = world.GetChunk(value);
                     definition = chunk.Definition;
-                    Span<ComponentType> componentTypes = stackalloc ComponentType[BitMask.Capacity];
-                    int count = definition.CopyComponentTypesTo(componentTypes);
+
+                    //collect all component, array, tag types, and their objects
+                    Span<int> typesBuffer = stackalloc int[BitMask.Capacity];
+                    int count = definition.CopyComponentTypesTo(typesBuffer);
                     components = new object[count];
-                    this.componentTypes = new Type[count];
+                    componentTypes = new Type[count];
                     for (int i = 0; i < count; i++)
                     {
-                        ComponentType componentType = componentTypes[i];
+                        int componentType = typesBuffer[i];
                         components[i] = world.GetComponentObject(value, componentType);
-                        this.componentTypes[i] = componentType.GetLayout(schema).SystemType;
+                        componentTypes[i] = schema.GetComponentLayout(componentType).SystemType;
                     }
 
-                    Span<ArrayType> arrayTypes = stackalloc ArrayType[BitMask.Capacity];
-                    count = definition.CopyArrayTypesTo(arrayTypes);
+                    count = definition.CopyArrayTypesTo(typesBuffer);
                     arrays = new object[count][];
-                    this.arrayTypes = new Type[count];
+                    arrayTypes = new Type[count];
                     for (int i = 0; i < count; i++)
                     {
-                        ArrayType arrayType = arrayTypes[i];
+                        int arrayType = typesBuffer[i];
                         arrays[i] = world.GetArrayObject(value, arrayType);
-                        this.arrayTypes[i] = arrayType.GetLayout(schema).SystemType;
+                        arrayTypes[i] = schema.GetArrayLayout(arrayType).SystemType;
                     }
 
-                    Span<TagType> tagTypes = stackalloc TagType[BitMask.Capacity];
-                    count = definition.CopyTagTypesTo(tagTypes);
-                    this.tagTypes = new Type[count];
+                    count = definition.CopyTagTypesTo(typesBuffer);
+                    tagTypes = new Type[count];
                     for (int i = 0; i < count; i++)
                     {
-                        TagType tagType = tagTypes[i];
-                        this.tagTypes[i] = tagType.GetLayout(schema).SystemType;
+                        int tagType = typesBuffer[i];
+                        tagTypes[i] = schema.GetTagLayout(tagType).SystemType;
                     }
                 }
                 else

@@ -209,9 +209,9 @@
         return world.ContainsArray(value, arrayType);
     }
 
-    public readonly void AddComponent(int componentType)
+    public readonly void AddComponentType(int componentType)
     {
-        world.AddComponent(value, componentType);
+        world.AddComponentType(value, componentType);
     }
 
     public readonly void RemoveComponent(int componentType)

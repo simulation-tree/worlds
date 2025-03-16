@@ -30,11 +30,11 @@ namespace Worlds
         {
             if (should)
             {
-                exclude.AddTagType(TagType.Disabled);
+                exclude.AddTagType(Schema.DisabledTagType);
             }
             else
             {
-                exclude.RemoveTagType(TagType.Disabled);
+                exclude.RemoveTagType(Schema.DisabledTagType);
             }
 
             return this;
@@ -557,8 +557,8 @@ namespace Worlds
 
                 entityIndex = 0;
                 chunkIndex = 0;
-                componentType1 = schema.GetComponentTypeIndex<C1>();
-                componentType2 = schema.GetComponentTypeIndex<C2>();
+                componentType1 = schema.GetComponentType<C1>();
+                componentType2 = schema.GetComponentType<C2>();
                 if (chunkCount > 0)
                 {
                     chunks = MemoryAddress.Allocate(chunksBuffer.Slice(0, chunkCount));
