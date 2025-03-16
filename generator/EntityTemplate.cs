@@ -1,4 +1,4 @@
-﻿namespace Worlds.Generator
+﻿namespace Worlds
 {
     public static class EntityTemplate
     {

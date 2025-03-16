@@ -1,8 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using System.Collections.Generic;
-using Unmanaged;
 
-namespace Worlds.Generator
+namespace Worlds.Generators
 {
     [Generator(LanguageNames.CSharp)]
     public class SchemaLoaderGenerator : IIncrementalGenerator

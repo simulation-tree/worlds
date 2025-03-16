@@ -1,10 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using Worlds.Generator;
 
 namespace Worlds
 {
-    public class DataTypeCollection : IEnumerable<DataType>
+    internal class DataTypeCollection : IEnumerable<DataType>
     {
         private readonly List<DataType> all;
 

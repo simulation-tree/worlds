@@ -4,9 +4,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
-using Unmanaged;
 
-namespace Worlds.Generator
+namespace Worlds.Generators
 {
     [Generator(LanguageNames.CSharp)]
     public class SchemaBankGenerator : IIncrementalGenerator
@@ -265,7 +264,7 @@ namespace Worlds.Generator
             return false;
         }
 
-        public static IReadOnlyList<DataType> GetMentionedDataTypes(SourceBuilder source, IReadOnlyList<Input> inputs)
+        internal static IReadOnlyList<DataType> GetMentionedDataTypes(SourceBuilder source, IReadOnlyList<Input> inputs)
         {
             DataTypeCollection collection = new();
             HashSet<(TypeDeclarationSyntax typeDeclaration, SemanticModel semanticModel)> types = new();

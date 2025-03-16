@@ -1,6 +1,6 @@
 ﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Worlds.Generator
+namespace Worlds
 {
     public static class SyntaxNodeExtensions
     {
