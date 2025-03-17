@@ -135,6 +135,7 @@ namespace Worlds
             }
         }
 #else
+        /// <inheritdoc/>
         [Conditional("DEBUG")]
         public static void ThrowIfNotEntity<T>() where T : unmanaged, IEntity
         {
