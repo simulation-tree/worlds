@@ -14,6 +14,9 @@ namespace Worlds
     {
         private readonly Pointer* pointer;
 
+        /// <summary>
+        /// Length of the array.
+        /// </summary>
         public readonly int Length
         {
             get => pointer->length;
@@ -29,6 +32,9 @@ namespace Worlds
             }
         }
 
+        /// <summary>
+        /// Access the reference to the element at <paramref name="index"/>.
+        /// </summary>
         public readonly ref T this[int index]
         {
             get
@@ -76,6 +82,10 @@ namespace Worlds
                 throw new InvalidOperationException($"Index {index} is out of range for values of length {pointer->length}");
             }
         }
+
+        /// <summary>
+        /// Casts this array to another array of type <typeparamref name="X"/>.
+        /// </summary>
         public readonly Values<X> As<X>() where X : unmanaged
         {
             ThrowIfSizeMismatch<X>();
@@ -83,6 +93,9 @@ namespace Worlds
             return new(pointer);
         }
 
+        /// <summary>
+        /// Retrieves the span of all elements.
+        /// </summary>
         public readonly Span<X> AsSpan<X>() where X : unmanaged
         {
             ThrowIfSizeMismatch<X>();
@@ -90,21 +103,33 @@ namespace Worlds
             return new(pointer->items.Pointer, pointer->length);
         }
 
+        /// <summary>
+        /// Retrieves the span of all elements.
+        /// </summary>
         public readonly Span<T> AsSpan()
         {
             return new(pointer->items.Pointer, pointer->length);
         }
 
+        /// <summary>
+        /// Retrieves the span of all elements starting at <paramref name="start"/>.
+        /// </summary>
         public readonly Span<T> AsSpan(int start)
         {
             return pointer->items.AsSpan<T>(start, pointer->length - start);
         }
 
+        /// <summary>
+        /// Retrieves a span of <paramref name="length"/> of elements starting at <paramref name="start"/>.
+        /// </summary>
         public readonly Span<T> AsSpan(int start, int length)
         {
             return pointer->items.AsSpan<T>(start, length);
         }
 
+        /// <summary>
+        /// Retrieves the span of all elements starting at <paramref name="start"/>.
+        /// </summary>
         public readonly Span<X> AsSpan<X>(int start) where X : unmanaged
         {
             ThrowIfSizeMismatch<X>();
@@ -112,6 +137,9 @@ namespace Worlds
             return pointer->items.AsSpan<X>(start, pointer->length - start);
         }
 
+        /// <summary>
+        /// Retrieves a span of <paramref name="length"/> of elements starting at <paramref name="start"/>.
+        /// </summary>
         public readonly Span<X> AsSpan<X>(int start, int length) where X : unmanaged
         {
             ThrowIfSizeMismatch<X>();
@@ -220,6 +248,7 @@ namespace Worlds
             MemoryAddress.Resize(ref pointer->items, sizeof(T) * pointer->length);
         }
 
+        /// <inheritdoc/>
         public readonly Span<T>.Enumerator GetEnumerator()
         {
             return new Span<T>(pointer->items.Pointer, pointer->length).GetEnumerator();
@@ -263,6 +292,7 @@ namespace Worlds
             pointer->items.CopyTo(destination);
         }
 
+        /// <inheritdoc/>
         public static implicit operator Values(Values<T> values)
         {
             return new Values(values.pointer);
@@ -293,7 +323,14 @@ namespace Worlds
             }
         }
 
+        /// <summary>
+        /// The size of each element in the array.
+        /// </summary>
         public readonly int Stride => pointer->stride;
+
+        /// <summary>
+        /// Access the memory address to the element at <paramref name="index"/>.
+        /// </summary>
         public readonly MemoryAddress this[int index]
         {
             get
@@ -343,21 +380,34 @@ namespace Worlds
             }
         }
 
+        /// <summary>
+        /// Retrieves this entire array as a span of bytes.
+        /// </summary>
         public readonly Span<byte> AsSpan()
         {
             return new(pointer->items.Pointer, pointer->length * pointer->stride);
         }
 
+        /// <summary>
+        /// Retrieves this array as a span of bytes with the custom <paramref name="byteLength"/>.
+        /// </summary>
         public readonly Span<byte> GetSpan(int byteLength)
         {
             return new(pointer->items.Pointer, byteLength);
         }
 
+        /// <summary>
+        /// Retrieves this array as a span of bytes with <paramref name="byteLength"/>, starting at
+        /// <paramref name="bytePosition"/>.
+        /// </summary>
         public readonly Span<byte> Slice(int bytePosition, int byteLength)
         {
             return new(pointer->items.Pointer + bytePosition, byteLength);
         }
 
+        /// <summary>
+        /// Adds the given <paramref name="item"/> to the end.
+        /// </summary>
         public readonly void Add<T>(T item) where T : unmanaged
         {
             ThrowIfGreaterThanStride<T>();
@@ -368,6 +418,10 @@ namespace Worlds
             pointer->length = newLength;
         }
 
+        /// <summary>
+        /// Retrieves the reference to the element at <paramref name="index"/> as
+        /// type <typeparamref name="T"/>.
+        /// </summary>
         public readonly ref T Get<T>(int index) where T : unmanaged
         {
             ThrowIfOutOfRange(index);
@@ -376,6 +430,10 @@ namespace Worlds
             return ref pointer->items.Read<T>(pointer->stride * index);
         }
 
+        /// <summary>
+        /// Assigns <paramref name="value"/> to the element at <paramref name="index"/> as
+        /// type <typeparamref name="T"/>.
+        /// </summary>
         public readonly void Set<T>(int index, T value) where T : unmanaged
         {
             ThrowIfOutOfRange(index);
@@ -384,6 +442,9 @@ namespace Worlds
             pointer->items.Write(pointer->stride * index, value);
         }
 
+        /// <summary>
+        /// Retrieves the memory address to the <paramref name="bytePosition"/>.
+        /// </summary>
         public readonly MemoryAddress Read(int bytePosition)
         {
             return pointer->items.Read(bytePosition);
@@ -424,26 +485,31 @@ namespace Worlds
             }
         }
 
+        /// <inheritdoc/>
         public readonly override bool Equals(object? obj)
         {
             return obj is Values values && Equals(values);
         }
 
+        /// <inheritdoc/>
         public readonly bool Equals(Values other)
         {
             return pointer == other.pointer;
         }
 
+        /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
             return (int)pointer;
         }
 
+        /// <inheritdoc/>
         public static bool operator ==(Values left, Values right)
         {
             return left.Equals(right);
         }
 
+        /// <inheritdoc/>
         public static bool operator !=(Values left, Values right)
         {
             return !(left == right);

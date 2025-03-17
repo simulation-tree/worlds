@@ -3,6 +3,9 @@ using System.Diagnostics;
 
 namespace Worlds
 {
+    /// <summary>
+    /// Fetch extensions for <see cref="World"/>s.
+    /// </summary>
     public static class FetchExtensions
     {
         /// <summary>

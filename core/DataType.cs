@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 
 namespace Worlds
 {
@@ -8,7 +7,14 @@ namespace Worlds
     /// </summary>
     public readonly struct DataType : IEquatable<DataType>
     {
+        /// <summary>
+        /// The index of the data type.
+        /// </summary>
         public readonly byte index;
+
+        /// <summary>
+        /// The type of the data.
+        /// </summary>
         public readonly Kind kind;
 
         /// <summary>
@@ -16,11 +22,23 @@ namespace Worlds
         /// </summary>
         public readonly ushort size;
 
+        /// <summary>
+        /// Checks if this data type refers to a component.
+        /// </summary>
         public readonly bool IsComponent => kind == Kind.Component;
+
+        /// <summary>
+        /// Checks if this data type refers to an array.
+        /// </summary>
         public readonly bool IsArrayElement => kind == Kind.Array;
+
+        /// <summary>
+        /// Checks if this data type refers to a tag.
+        /// </summary>
         public readonly bool IsTag => kind == Kind.Tag;
 
 #if NET
+        /// <inheritdoc/>
         [Obsolete("Default constructor not supported", true)]
         public DataType()
         {
@@ -28,6 +46,9 @@ namespace Worlds
         }
 #endif
 
+        /// <summary>
+        /// Creates a new instance.
+        /// </summary>
         public DataType(int index, Kind kind, int size)
         {
             this.index = (byte)index;
@@ -35,11 +56,13 @@ namespace Worlds
             this.size = (ushort)size;
         }
 
+        /// <inheritdoc/>
         public readonly override string ToString()
         {
             return $"{kind}:{index} {size} bytes";
         }
 
+        /// <inheritdoc/>
         public readonly string ToString(Schema schema)
         {
             if (kind == Kind.Component)
@@ -67,6 +90,7 @@ namespace Worlds
             return index.ToString();
         }
 
+        /// <inheritdoc/>
         public readonly int ToString(Schema schema, Span<char> destination)
         {
             if (kind == Kind.Component)
@@ -94,43 +118,19 @@ namespace Worlds
             return index.ToString(destination);
         }
 
-        [Conditional("DEBUG")]
-        private readonly void ThrowIfNotComponent()
-        {
-            if (kind != Kind.Component)
-            {
-                throw new("Not a component type");
-            }
-        }
-
-        [Conditional("DEBUG")]
-        private readonly void ThrowIfNotArrayElement()
-        {
-            if (kind != Kind.Array)
-            {
-                throw new("Not an array type");
-            }
-        }
-
-        [Conditional("DEBUG")]
-        private readonly void ThrowIfNotTag()
-        {
-            if (kind != Kind.Tag)
-            {
-                throw new("Not a tag type");
-            }
-        }
-
+        /// <inheritdoc/>
         public readonly override bool Equals(object? obj)
         {
             return obj is DataType type && Equals(type);
         }
 
+        /// <inheritdoc/>
         public readonly bool Equals(DataType other)
         {
             return index == other.index && kind == other.kind;
         }
 
+        /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
             unchecked
@@ -139,51 +139,77 @@ namespace Worlds
             }
         }
 
+        /// <inheritdoc/>
         public static bool operator ==(DataType left, DataType right)
         {
             return left.Equals(right);
         }
 
+        /// <inheritdoc/>
         public static bool operator !=(DataType left, DataType right)
         {
             return !(left == right);
         }
 
+        /// <summary>
+        /// Creates a new instance that references to <paramref name="componentType"/>.
+        /// </summary>
         public unsafe static DataType GetComponent<T>(int componentType) where T : unmanaged
         {
             return new(componentType, Kind.Component, sizeof(T));
         }
 
+        /// <summary>
+        /// Creates a new instance that references to component of type <typeparamref name="T"/>.
+        /// </summary>
         public unsafe static DataType GetComponent<T>(Schema schema) where T : unmanaged
         {
             return new(schema.GetComponentType<T>(), Kind.Component, sizeof(T));
         }
 
-        public static DataType GetComponent(int componenentType, Schema schema)
+        /// <summary>
+        /// Creates a new instance that references to <paramref name="componentType"/>.
+        /// </summary>
+        public static DataType GetComponent(int componentType, Schema schema)
         {
-            return new(componenentType, Kind.Component, schema.GetComponentSize(componenentType));
+            return new(componentType, Kind.Component, schema.GetComponentSize(componentType));
         }
 
+        /// <summary>
+        /// Creates a new instance that references to <paramref name="arrayType"/>.
+        /// </summary>
         public unsafe static DataType GetArray<T>(int arrayType) where T : unmanaged
         {
             return new(arrayType, Kind.Array, sizeof(T));
         }
 
+        /// <summary>
+        /// Creates a new instance that references to an array of type <typeparamref name="T"/>.
+        /// </summary>
         public unsafe static DataType GetArray<T>(Schema schema) where T : unmanaged
         {
             return new(schema.GetArrayType<T>(), Kind.Array, sizeof(T));
         }
 
+        /// <summary>
+        /// Creates a new instance that references to <paramref name="arrayType"/>.
+        /// </summary>
         public static DataType GetArray(int arrayType, Schema schema)
         {
             return new(arrayType, Kind.Array, schema.GetArraySize(arrayType));
         }
 
+        /// <summary>
+        /// Creates a new instance that references to tag of type <typeparamref name="T"/>.
+        /// </summary>
         public static DataType GetTag<T>(Schema schema) where T : unmanaged
         {
             return new(schema.GetTagType<T>(), Kind.Tag, 1);
         }
 
+        /// <summary>
+        /// Creates a new instance that references to <paramref name="tagType"/>.
+        /// </summary>
         public static DataType GetTag(int tagType, Schema schema)
         {
             return new(tagType, Kind.Tag, 1);
@@ -194,9 +220,24 @@ namespace Worlds
         /// </summary>
         public enum Kind : byte
         {
+            /// <summary>
+            /// Unknown and uninitialized.
+            /// </summary>
             Unknown = 0,
+
+            /// <summary>
+            /// A component type.
+            /// </summary>
             Component = 1,
+
+            /// <summary>
+            /// An array type.
+            /// </summary>
             Array = 2,
+
+            /// <summary>
+            /// A tag type.
+            /// </summary>
             Tag = 3
         }
     }

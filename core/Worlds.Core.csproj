@@ -16,10 +16,10 @@
         <RepositoryUrl>https://github.com/simulation-tree/worlds</RepositoryUrl>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageTags>ecs;native</PackageTags>
-        <NoWarn>1701;1702;CS1591</NoWarn>
+        <NoWarn>1701;1702;</NoWarn>
         <NoStandardLib>true</NoStandardLib>
         <RootNamespace>Worlds</RootNamespace>
-        <PackageId/>
+        <PackageId />
     </PropertyGroup>
 
     <ItemGroup>
@@ -30,9 +30,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\collections\source\Collections.csproj"/>
-        <ProjectReference Include="..\..\types\core\Types.Core.csproj"/>
-        <ProjectReference Include="..\..\unmanaged\core\Unmanaged.Core.csproj"/>
+        <ProjectReference Include="..\..\collections\source\Collections.csproj" />
+        <ProjectReference Include="..\..\types\core\Types.Core.csproj" />
+        <ProjectReference Include="..\..\unmanaged\core\Unmanaged.Core.csproj" />
         <ProjectReference Include="..\..\unmanaged\generator\Unmanaged.Generator.csproj">
             <OutputItemType>Analyzer</OutputItemType>
             <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

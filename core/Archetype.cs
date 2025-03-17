@@ -11,31 +11,55 @@ namespace Worlds
     /// </summary>
     public struct Archetype : IEquatable<Archetype>
     {
+        /// <summary>
+        /// The schema that this archetype is associated with.
+        /// </summary>
         public readonly Schema schema;
 
         private Definition definition;
         private unsafe fixed ushort componentSizes[(int)BitMask.Capacity];
         private unsafe fixed ushort arrayElementSizes[(int)BitMask.Capacity];
 
+        /// <summary>
+        /// The definition containg all components, array and tag types.
+        /// </summary>
         public readonly Definition Definition => definition;
+
+        /// <summary>
+        /// Component types stored.
+        /// </summary>
         public readonly BitMask ComponentTypes => definition.componentTypes;
+
+        /// <summary>
+        /// Array types stored.
+        /// </summary>
         public readonly BitMask ArrayTypes => definition.arrayTypes;
+
+        /// <summary>
+        /// Tag types stored.
+        /// </summary>
         public readonly BitMask TagTypes => definition.tagTypes;
 
 #if NET
+        /// <inheritdoc/>
         [Obsolete("Default constructor not supported", true)]
         public Archetype()
         {
             throw new NotSupportedException();
         }
 #endif
-
+        /// <summary>
+        /// Creates a new archetype for building a <see cref="Definition"/>.
+        /// </summary>
         public Archetype(Schema schema)
         {
             this.definition = default;
             this.schema = schema;
         }
 
+        /// <summary>
+        /// Initializes a new archetype from an existing <paramref name="definition"/>.
+        /// </summary>
         public unsafe Archetype(Definition definition, Schema schema)
         {
             this.definition = definition;
@@ -54,90 +78,117 @@ namespace Worlds
             }
         }
 
+        /// <inheritdoc/>
         public readonly override bool Equals(object? obj)
         {
             return obj is Archetype archetype && Equals(archetype);
         }
 
+        /// <inheritdoc/>
         public readonly bool Equals(Archetype other)
         {
             return definition.Equals(other.definition) && schema.Equals(other.schema);
         }
 
-        public readonly int CopyComponentTypesTo(Span<int> destination)
-        {
-            return definition.CopyComponentTypesTo(destination);
-        }
-
-        public readonly int CopyArrayTypesTo(Span<int> destination)
-        {
-            return definition.CopyArrayTypesTo(destination);
-        }
-
-        public readonly int CopyTagTypesTo(Span<int> destination)
-        {
-            return definition.CopyTagTypesTo(destination);
-        }
-
-        public unsafe readonly ushort GetComponentSize(int componentType)
+        /// <summary>
+        /// Retrieves the size of <paramref name="componentType"/> in bytes.
+        /// </summary>
+        public unsafe readonly int GetComponentSize(int componentType)
         {
             ThrowIfComponentTypeIsMissing(componentType);
 
             return componentSizes[componentType];
         }
 
-        public unsafe readonly ushort GetArraySize(int arrayType)
+        /// <summary>
+        /// Retrieves the size of <paramref name="arrayType"/> elements in bytes.
+        /// </summary>
+        public unsafe readonly int GetArraySize(int arrayType)
         {
             ThrowIfArrayTypeIsMissing(arrayType);
 
             return arrayElementSizes[arrayType];
         }
 
-        public readonly int GetComponentSize<T>() where T : unmanaged
+        /// <summary>
+        /// Retrieves the size of the component of type <typeparamref name="T"/> in bytes.
+        /// </summary>
+        public unsafe readonly int GetComponentSize<T>() where T : unmanaged
         {
-            return schema.GetComponentSize(schema.GetComponentType<T>());
+            int componentType = schema.GetComponentType<T>();
+            ThrowIfComponentTypeIsMissing(componentType);
+
+            return componentSizes[componentType];
         }
 
-        public readonly int GetArrayElementSize<T>() where T : unmanaged
+        /// <summary>
+        /// Retrieves the size of each element in an array of type <typeparamref name="T"/>.
+        /// </summary>
+        public unsafe readonly int GetArrayElementSize<T>() where T : unmanaged
         {
-            return schema.GetArraySize(schema.GetArrayTypeIndex<T>());
+            int arrayType = schema.GetArrayType<T>();
+            ThrowIfArrayTypeIsMissing(arrayType);
+
+            return arrayElementSizes[arrayType];
         }
 
+        /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
             return HashCode.Combine(definition, schema);
         }
 
+        /// <summary>
+        /// Checks if the definition contains the specified <paramref name="componentType"/>.
+        /// </summary>
         public readonly bool ContainsComponent(int componentType)
         {
             return definition.componentTypes.Contains(componentType);
         }
 
+        /// <summary>
+        /// Checks if the definition contains the specified <paramref name="arrayType"/>.
+        /// </summary>
         public readonly bool ContainsArray(int arrayType)
         {
             return definition.arrayTypes.Contains(arrayType);
         }
 
+        /// <summary>
+        /// Checks if the definition contains the specified <paramref name="tagType"/>.
+        /// </summary>
         public readonly bool ContainsTag(int tagType)
         {
             return definition.tagTypes.Contains(tagType);
         }
 
+        /// <summary>
+        /// Checks if the definition contains a component of type <typeparamref name="T"/>.
+        /// </summary>
         public readonly bool ContainsComponent<T>() where T : unmanaged
         {
             return definition.ContainsComponent<T>(schema);
         }
 
+        /// <summary>
+        /// Checks if the definition contains an array of type <typeparamref name="T"/>.
+        /// </summary>
         public readonly bool ContainsArray<T>() where T : unmanaged
         {
             return definition.ContainsArray<T>(schema);
         }
 
+        /// <summary>
+        /// Checks if the definition contains a tag of type <typeparamref name="T"/>.
+        /// </summary>
         public readonly bool ContainsTag<T>() where T : unmanaged
         {
             return definition.ContainsTag<T>(schema);
         }
 
+        /// <summary>
+        /// Adds the definition of another entity of type <typeparamref name="T"/>.
+        /// </summary>
         public void Add<T>() where T : unmanaged, IEntity
         {
             default(T).Describe(ref this);
@@ -171,7 +222,7 @@ namespace Worlds
         /// </summary>
         public unsafe void AddArrayType<T>() where T : unmanaged
         {
-            int arrayType = schema.GetArrayTypeIndex<T>();
+            int arrayType = schema.GetArrayType<T>();
             ThrowIfArrayTypeIsPresent(arrayType);
 
             definition.AddArrayType(arrayType);
@@ -217,6 +268,9 @@ namespace Worlds
             return archetype;
         }
 
+        /// <summary>
+        /// Retrieves an archetype that combines the given entity types.
+        /// </summary>
         public static Archetype Get<T1, T2>(Schema schema) where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity
         {
             Archetype archetype = new(schema);
@@ -225,6 +279,9 @@ namespace Worlds
             return archetype;
         }
 
+        /// <summary>
+        /// Retrieves an archetype that combines the given entity types.
+        /// </summary>
         public static Archetype Get<T1, T2, T3>(Schema schema) where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity where T3 : unmanaged, IEntity
         {
             Archetype archetype = new(schema);
@@ -234,6 +291,9 @@ namespace Worlds
             return archetype;
         }
 
+        /// <summary>
+        /// Retrieves an archetype that combines the given entity types.
+        /// </summary>
         public static Archetype Get<T1, T2, T3, T4>(Schema schema) where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity where T3 : unmanaged, IEntity where T4 : unmanaged, IEntity
         {
             Archetype archetype = new(schema);
@@ -244,6 +304,9 @@ namespace Worlds
             return archetype;
         }
 
+        /// <summary>
+        /// Retrieves an archetype that combines the given entity types.
+        /// </summary>
         public static Archetype Get<T1, T2, T3, T4, T5>(Schema schema) where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity where T3 : unmanaged, IEntity where T4 : unmanaged, IEntity where T5 : unmanaged, IEntity
         {
             Archetype archetype = new(schema);
@@ -255,6 +318,9 @@ namespace Worlds
             return archetype;
         }
 
+        /// <summary>
+        /// Retrieves an archetype that combines the given entity types.
+        /// </summary>
         public static Archetype Get<T1, T2, T3, T4, T5, T6>(Schema schema) where T1 : unmanaged, IEntity where T2 : unmanaged, IEntity where T3 : unmanaged, IEntity where T4 : unmanaged, IEntity where T5 : unmanaged, IEntity where T6 : unmanaged, IEntity
         {
             Archetype archetype = new(schema);
@@ -312,11 +378,13 @@ namespace Worlds
             }
         }
 
+        /// <inheritdoc/>
         public static bool operator ==(Archetype left, Archetype right)
         {
             return left.Equals(right);
         }
 
+        /// <inheritdoc/>
         public static bool operator !=(Archetype left, Archetype right)
         {
             return !(left == right);

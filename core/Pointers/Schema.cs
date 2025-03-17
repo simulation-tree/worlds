@@ -2,20 +2,20 @@
 
 namespace Worlds.Pointers
 {
-    public struct Schema
+    internal struct Schema
     {
         public readonly int schemaIndex;
 
-        internal byte componentCount;
-        internal byte arraysCount;
-        internal byte tagsCount;
-        internal int componentRowSize;
-        internal Definition definitionMask;
-        internal readonly MemoryAddress offsets;
-        internal readonly MemoryAddress sizes;
-        internal readonly MemoryAddress typeHashes;
+        public byte componentCount;
+        public byte arraysCount;
+        public byte tagsCount;
+        public int componentRowSize;
+        public Definition definitionMask;
+        public readonly MemoryAddress offsets;
+        public readonly MemoryAddress sizes;
+        public readonly MemoryAddress typeHashes;
 
-        internal Schema(int schemaIndex)
+        public Schema(int schemaIndex)
         {
             componentCount = 0;
             arraysCount = 0;

@@ -69,9 +69,13 @@ namespace Worlds
             }
         }
 
+        /// <summary>
+        /// Access the entity at the given <paramref name="index"/>.
+        /// </summary>
         public readonly uint this[int index] => Entities[index];
 
 #if NET
+        /// <inheritdoc/>
         [Obsolete("Default constructor not supported", true)]
         public Chunk()
         {
@@ -173,6 +177,7 @@ namespace Worlds
             return length;
         }
 
+        /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
             return Definition.GetHashCode();
@@ -306,11 +311,13 @@ namespace Worlds
             chunk->components[index].Write(componentOffset, value);
         }
 
+        /// <inheritdoc/>
         public readonly override bool Equals(object? obj)
         {
             return obj is Chunk chunk && Equals(chunk);
         }
 
+        /// <inheritdoc/>
         public readonly bool Equals(Chunk other)
         {
             return (nint)chunk == (nint)other.chunk;
@@ -339,26 +346,35 @@ namespace Worlds
             current = destination;
         }
 
+        /// <inheritdoc/>
         public static bool operator ==(Chunk left, Chunk right)
         {
             return left.Equals(right);
         }
 
+        /// <inheritdoc/>
         public static bool operator !=(Chunk left, Chunk right)
         {
             return !(left == right);
         }
 
+        /// <inheritdoc/>
         public readonly ref struct Entity<C1> where C1 : unmanaged
         {
+            /// <summary>
+            /// The entity the components belong to.
+            /// </summary>
             public readonly uint entity;
 #if NET
+            /// <inheritdoc/>
             public readonly ref C1 component1;
 #else
             private readonly void* c1;
+            /// <inheritdoc/>
             public readonly ref C1 component1 => ref *(C1*)c1;
 #endif
 
+            /// <inheritdoc/>
             public Entity(uint entity, ref C1 component1)
             {
                 this.entity = entity;
@@ -373,11 +389,19 @@ namespace Worlds
             }
         }
 
+
+        /// <inheritdoc/>
         public readonly ref struct Entity<C1, C2> where C1 : unmanaged where C2 : unmanaged
         {
+            /// <summary>
+            /// The entity the components belong to.
+            /// </summary>
             public readonly uint entity;
 #if NET
+            /// <inheritdoc/>
             public readonly ref C1 component1;
+
+            /// <inheritdoc/>
             public readonly ref C2 component2;
 #else
             private readonly void* c1;
@@ -386,6 +410,7 @@ namespace Worlds
             public readonly ref C2 component2 => ref *(C2*)c2;
 #endif
 
+            /// <inheritdoc/>
             public Entity(uint entity, ref C1 component1, ref C2 component2)
             {
                 this.entity = entity;
@@ -406,12 +431,19 @@ namespace Worlds
             }
         }
 
+        /// <inheritdoc/>
         public readonly ref struct Entity<C1, C2, C3> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged
         {
+            /// <summary>
+            /// The entity the components belong to.
+            /// </summary>
             public readonly uint entity;
 #if NET
+            /// <inheritdoc/>
             public readonly ref C1 component1;
+            /// <inheritdoc/>
             public readonly ref C2 component2;
+            /// <inheritdoc/>
             public readonly ref C3 component3;
 #else
             private readonly void* c1;
@@ -421,6 +453,7 @@ namespace Worlds
             public readonly ref C2 component2 => ref *(C2*)c2;
             public readonly ref C3 component3 => ref *(C3*)c3;
 #endif
+            /// <inheritdoc/>
             public Entity(uint entity, ref C1 component1, ref C2 component2, ref C3 component3)
             {
                 this.entity = entity;
@@ -445,13 +478,21 @@ namespace Worlds
             }
         }
 
+        /// <inheritdoc/>
         public readonly ref struct Entity<C1, C2, C3, C4> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged
         {
+            /// <summary>
+            /// The entity the components belong to.
+            /// </summary>
             public readonly uint entity;
 #if NET
+            /// <inheritdoc/>
             public readonly ref C1 component1;
+            /// <inheritdoc/>
             public readonly ref C2 component2;
+            /// <inheritdoc/>
             public readonly ref C3 component3;
+            /// <inheritdoc/>
             public readonly ref C4 component4;
 #else
             private readonly void* c1;
@@ -463,6 +504,7 @@ namespace Worlds
             public readonly ref C3 component3 => ref *(C3*)c3;
             public readonly ref C4 component4 => ref *(C4*)c4;
 #endif
+            /// <inheritdoc/>
             public Entity(uint entity, ref C1 component1, ref C2 component2, ref C3 component3, ref C4 component4)
             {
                 this.entity = entity;
@@ -492,14 +534,23 @@ namespace Worlds
             }
         }
 
+        /// <inheritdoc/>
         public readonly ref struct Entity<C1, C2, C3, C4, C5> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged
         {
+            /// <summary>
+            /// The entity the components belong to.
+            /// </summary>
             public readonly uint entity;
 #if NET
+            /// <inheritdoc/>
             public readonly ref C1 component1;
+            /// <inheritdoc/>
             public readonly ref C2 component2;
+            /// <inheritdoc/>
             public readonly ref C3 component3;
+            /// <inheritdoc/>
             public readonly ref C4 component4;
+            /// <inheritdoc/>
             public readonly ref C5 component5;
 #else
             private readonly void* c1;
@@ -514,6 +565,7 @@ namespace Worlds
             public readonly ref C5 component5 => ref *(C5*)c5;
 #endif
 
+            /// <inheritdoc/>
             public Entity(uint entity, ref C1 component1, ref C2 component2, ref C3 component3, ref C4 component4, ref C5 component5)
             {
                 this.entity = entity;
@@ -548,15 +600,25 @@ namespace Worlds
             }
         }
 
+        /// <inheritdoc/>
         public readonly ref struct Entity<C1, C2, C3, C4, C5, C6> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged
         {
+            /// <summary>
+            /// The entity the components belong to.
+            /// </summary>
             public readonly uint entity;
 #if NET
+            /// <inheritdoc/>
             public readonly ref C1 component1;
+            /// <inheritdoc/>
             public readonly ref C2 component2;
+            /// <inheritdoc/>
             public readonly ref C3 component3;
+            /// <inheritdoc/>
             public readonly ref C4 component4;
+            /// <inheritdoc/>
             public readonly ref C5 component5;
+            /// <inheritdoc/>
             public readonly ref C6 component6;
 #else
             private readonly void* c1;
@@ -573,6 +635,7 @@ namespace Worlds
             public readonly ref C6 component6 => ref *(C6*)c6;
 #endif
 
+            /// <inheritdoc/>
             public Entity(uint entity, ref C1 component1, ref C2 component2, ref C3 component3, ref C4 component4, ref C5 component5, ref C6 component6)
             {
                 this.entity = entity;
@@ -612,16 +675,27 @@ namespace Worlds
             }
         }
 
+        /// <inheritdoc/>
         public readonly ref struct Entity<C1, C2, C3, C4, C5, C6, C7> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged
         {
+            /// <summary>
+            /// The entity the components belong to.
+            /// </summary>
             public readonly uint entity;
 #if NET
+            /// <inheritdoc/>
             public readonly ref C1 component1;
+            /// <inheritdoc/>
             public readonly ref C2 component2;
+            /// <inheritdoc/>
             public readonly ref C3 component3;
+            /// <inheritdoc/>
             public readonly ref C4 component4;
+            /// <inheritdoc/>
             public readonly ref C5 component5;
+            /// <inheritdoc/>
             public readonly ref C6 component6;
+            /// <inheritdoc/>
             public readonly ref C7 component7;
 #else
             private readonly void* c1;
@@ -640,6 +714,7 @@ namespace Worlds
             public readonly ref C7 component7 => ref *(C7*)c7;
 #endif
 
+            /// <inheritdoc/>
             public Entity(uint entity, ref C1 component1, ref C2 component2, ref C3 component3, ref C4 component4, ref C5 component5, ref C6 component6, ref C7 component7)
             {
                 this.entity = entity;
@@ -684,17 +759,29 @@ namespace Worlds
             }
         }
 
+        /// <inheritdoc/>
         public readonly ref struct Entity<C1, C2, C3, C4, C5, C6, C7, C8> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged
         {
+            /// <summary>
+            /// The entity the components belong to.
+            /// </summary>
             public readonly uint entity;
 #if NET
+            /// <inheritdoc/>
             public readonly ref C1 component1;
+            /// <inheritdoc/>
             public readonly ref C2 component2;
+            /// <inheritdoc/>
             public readonly ref C3 component3;
+            /// <inheritdoc/>
             public readonly ref C4 component4;
+            /// <inheritdoc/>
             public readonly ref C5 component5;
+            /// <inheritdoc/>
             public readonly ref C6 component6;
+            /// <inheritdoc/>
             public readonly ref C7 component7;
+            /// <inheritdoc/>
             public readonly ref C8 component8;
 #else
             private readonly void* c1;
@@ -715,6 +802,7 @@ namespace Worlds
             public readonly ref C8 component8 => ref *(C8*)c8;
 #endif
 
+            /// <inheritdoc/>
             public Entity(uint entity, ref C1 component1, ref C2 component2, ref C3 component3, ref C4 component4, ref C5 component5, ref C6 component6, ref C7 component7, ref C8 component8)
             {
                 this.entity = entity;
@@ -764,18 +852,31 @@ namespace Worlds
             }
         }
 
+        /// <inheritdoc/>
         public readonly ref struct Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged
         {
+            /// <summary>
+            /// The entity the components belong to.
+            /// </summary>
             public readonly uint entity;
 #if NET
+            /// <inheritdoc/>
             public readonly ref C1 component1;
+            /// <inheritdoc/>
             public readonly ref C2 component2;
+            /// <inheritdoc/>
             public readonly ref C3 component3;
+            /// <inheritdoc/>
             public readonly ref C4 component4;
+            /// <inheritdoc/>
             public readonly ref C5 component5;
+            /// <inheritdoc/>
             public readonly ref C6 component6;
+            /// <inheritdoc/>
             public readonly ref C7 component7;
+            /// <inheritdoc/>
             public readonly ref C8 component8;
+            /// <inheritdoc/>
             public readonly ref C9 component9;
 #else
             private readonly void* c1;
@@ -798,6 +899,7 @@ namespace Worlds
             public readonly ref C9 component9 => ref *(C9*)c9;
 #endif
 
+            /// <inheritdoc/>
             public Entity(uint entity, ref C1 component1, ref C2 component2, ref C3 component3, ref C4 component4, ref C5 component5, ref C6 component6, ref C7 component7, ref C8 component8, ref C9 component9)
             {
                 this.entity = entity;
@@ -852,19 +954,33 @@ namespace Worlds
             }
         }
 
+        /// <inheritdoc/>
         public readonly ref struct Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged
         {
+            /// <summary>
+            /// The entity the components belong to.
+            /// </summary>
             public readonly uint entity;
 #if NET
+            /// <inheritdoc/>
             public readonly ref C1 component1;
+            /// <inheritdoc/>
             public readonly ref C2 component2;
+            /// <inheritdoc/>
             public readonly ref C3 component3;
+            /// <inheritdoc/>
             public readonly ref C4 component4;
+            /// <inheritdoc/>
             public readonly ref C5 component5;
+            /// <inheritdoc/>
             public readonly ref C6 component6;
+            /// <inheritdoc/>
             public readonly ref C7 component7;
+            /// <inheritdoc/>
             public readonly ref C8 component8;
+            /// <inheritdoc/>
             public readonly ref C9 component9;
+            /// <inheritdoc/>
             public readonly ref C10 component10;
 #else
             private readonly void* c1;
@@ -889,6 +1005,7 @@ namespace Worlds
             public readonly ref C10 component10 => ref *(C10*)c10;
 #endif
 
+            /// <inheritdoc/>
             public Entity(uint entity, ref C1 component1, ref C2 component2, ref C3 component3, ref C4 component4, ref C5 component5, ref C6 component6, ref C7 component7, ref C8 component8, ref C9 component9, ref C10 component10)
             {
                 this.entity = entity;
@@ -948,20 +1065,35 @@ namespace Worlds
             }
         }
 
+        /// <inheritdoc/>
         public readonly ref struct Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged
         {
+            /// <summary>
+            /// The entity the components belong to.
+            /// </summary>
             public readonly uint entity;
 #if NET
+            /// <inheritdoc/>
             public readonly ref C1 component1;
+            /// <inheritdoc/>
             public readonly ref C2 component2;
+            /// <inheritdoc/>
             public readonly ref C3 component3;
+            /// <inheritdoc/>
             public readonly ref C4 component4;
+            /// <inheritdoc/>
             public readonly ref C5 component5;
+            /// <inheritdoc/>
             public readonly ref C6 component6;
+            /// <inheritdoc/>
             public readonly ref C7 component7;
+            /// <inheritdoc/>
             public readonly ref C8 component8;
+            /// <inheritdoc/>
             public readonly ref C9 component9;
+            /// <inheritdoc/>
             public readonly ref C10 component10;
+            /// <inheritdoc/>
             public readonly ref C11 component11;
 #else
             private readonly void* c1;
@@ -988,6 +1120,7 @@ namespace Worlds
             public readonly ref C11 component11 => ref *(C11*)c11;
 #endif
 
+            /// <inheritdoc/>
             public Entity(uint entity, ref C1 component1, ref C2 component2, ref C3 component3, ref C4 component4, ref C5 component5, ref C6 component6, ref C7 component7, ref C8 component8, ref C9 component9, ref C10 component10, ref C11 component11)
             {
                 this.entity = entity;
@@ -1052,21 +1185,37 @@ namespace Worlds
             }
         }
 
+        /// <inheritdoc/>
         public readonly ref struct Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged
         {
+            /// <summary>
+            /// The entity the components belong to.
+            /// </summary>
             public readonly uint entity;
 #if NET
+            /// <inheritdoc/>
             public readonly ref C1 component1;
+            /// <inheritdoc/>
             public readonly ref C2 component2;
+            /// <inheritdoc/>
             public readonly ref C3 component3;
+            /// <inheritdoc/>
             public readonly ref C4 component4;
+            /// <inheritdoc/>
             public readonly ref C5 component5;
+            /// <inheritdoc/>
             public readonly ref C6 component6;
+            /// <inheritdoc/>
             public readonly ref C7 component7;
+            /// <inheritdoc/>
             public readonly ref C8 component8;
+            /// <inheritdoc/>
             public readonly ref C9 component9;
+            /// <inheritdoc/>
             public readonly ref C10 component10;
+            /// <inheritdoc/>
             public readonly ref C11 component11;
+            /// <inheritdoc/>
             public readonly ref C12 component12;
 #else
             private readonly void* c1;
@@ -1095,6 +1244,7 @@ namespace Worlds
             public readonly ref C12 component12 => ref *(C12*)c12;
 #endif
 
+            /// <inheritdoc/>
             public Entity(uint entity, ref C1 component1, ref C2 component2, ref C3 component3, ref C4 component4, ref C5 component5, ref C6 component6, ref C7 component7, ref C8 component8, ref C9 component9, ref C10 component10, ref C11 component11, ref C12 component12)
             {
                 this.entity = entity;
@@ -1164,22 +1314,39 @@ namespace Worlds
             }
         }
 
+        /// <inheritdoc/>
         public readonly ref struct Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged
         {
+            /// <summary>
+            /// The entity the components belong to.
+            /// </summary>
             public readonly uint entity;
 #if NET
+            /// <inheritdoc/>
             public readonly ref C1 component1;
+            /// <inheritdoc/>
             public readonly ref C2 component2;
+            /// <inheritdoc/>
             public readonly ref C3 component3;
+            /// <inheritdoc/>
             public readonly ref C4 component4;
+            /// <inheritdoc/>
             public readonly ref C5 component5;
+            /// <inheritdoc/>
             public readonly ref C6 component6;
+            /// <inheritdoc/>
             public readonly ref C7 component7;
+            /// <inheritdoc/>
             public readonly ref C8 component8;
+            /// <inheritdoc/>
             public readonly ref C9 component9;
+            /// <inheritdoc/>
             public readonly ref C10 component10;
+            /// <inheritdoc/>
             public readonly ref C11 component11;
+            /// <inheritdoc/>
             public readonly ref C12 component12;
+            /// <inheritdoc/>
             public readonly ref C13 component13;
 #else
             private readonly void* c1;
@@ -1210,6 +1377,7 @@ namespace Worlds
             public readonly ref C13 component13 => ref *(C13*)c13;
 #endif
 
+            /// <inheritdoc/>
             public Entity(uint entity, ref C1 component1, ref C2 component2, ref C3 component3, ref C4 component4, ref C5 component5, ref C6 component6, ref C7 component7, ref C8 component8, ref C9 component9, ref C10 component10, ref C11 component11, ref C12 component12, ref C13 component13)
             {
                 this.entity = entity;
@@ -1284,23 +1452,41 @@ namespace Worlds
             }
         }
 
+        /// <inheritdoc/>
         public readonly ref struct Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged
         {
+            /// <summary>
+            /// The entity the components belong to.
+            /// </summary>
             public readonly uint entity;
 #if NET
+            /// <inheritdoc/>
             public readonly ref C1 component1;
+            /// <inheritdoc/>
             public readonly ref C2 component2;
+            /// <inheritdoc/>
             public readonly ref C3 component3;
+            /// <inheritdoc/>
             public readonly ref C4 component4;
+            /// <inheritdoc/>
             public readonly ref C5 component5;
+            /// <inheritdoc/>
             public readonly ref C6 component6;
+            /// <inheritdoc/>
             public readonly ref C7 component7;
+            /// <inheritdoc/>
             public readonly ref C8 component8;
+            /// <inheritdoc/>
             public readonly ref C9 component9;
+            /// <inheritdoc/>
             public readonly ref C10 component10;
+            /// <inheritdoc/>
             public readonly ref C11 component11;
+            /// <inheritdoc/>
             public readonly ref C12 component12;
+            /// <inheritdoc/>
             public readonly ref C13 component13;
+            /// <inheritdoc/>
             public readonly ref C14 component14;
 #else
             private readonly void* c1;
@@ -1333,6 +1519,7 @@ namespace Worlds
             public readonly ref C14 component14 => ref *(C14*)c14;
 #endif
 
+            /// <inheritdoc/>
             public Entity(uint entity, ref C1 component1, ref C2 component2, ref C3 component3, ref C4 component4, ref C5 component5, ref C6 component6, ref C7 component7, ref C8 component8, ref C9 component9, ref C10 component10, ref C11 component11, ref C12 component12, ref C13 component13, ref C14 component14)
             {
                 this.entity = entity;
@@ -1412,24 +1599,43 @@ namespace Worlds
             }
         }
 
+        /// <inheritdoc/>
         public readonly ref struct Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged where C15 : unmanaged
         {
+            /// <summary>
+            /// The entity the components belong to.
+            /// </summary>
             public readonly uint entity;
 #if NET
+            /// <inheritdoc/>
             public readonly ref C1 component1;
+            /// <inheritdoc/>
             public readonly ref C2 component2;
+            /// <inheritdoc/>
             public readonly ref C3 component3;
+            /// <inheritdoc/>
             public readonly ref C4 component4;
+            /// <inheritdoc/>
             public readonly ref C5 component5;
+            /// <inheritdoc/>
             public readonly ref C6 component6;
+            /// <inheritdoc/>
             public readonly ref C7 component7;
+            /// <inheritdoc/>
             public readonly ref C8 component8;
+            /// <inheritdoc/>
             public readonly ref C9 component9;
+            /// <inheritdoc/>
             public readonly ref C10 component10;
+            /// <inheritdoc/>
             public readonly ref C11 component11;
+            /// <inheritdoc/>
             public readonly ref C12 component12;
+            /// <inheritdoc/>
             public readonly ref C13 component13;
+            /// <inheritdoc/>
             public readonly ref C14 component14;
+            /// <inheritdoc/>
             public readonly ref C15 component15;
 #else
             private readonly void* c1;
@@ -1464,6 +1670,7 @@ namespace Worlds
             public readonly ref C15 component15 => ref *(C15*)c15;
 #endif
 
+            /// <inheritdoc/>
             public Entity(uint entity, ref C1 component1, ref C2 component2, ref C3 component3, ref C4 component4, ref C5 component5, ref C6 component6, ref C7 component7, ref C8 component8, ref C9 component9, ref C10 component10, ref C11 component11, ref C12 component12, ref C13 component13, ref C14 component14, ref C15 component15)
             {
                 this.entity = entity;
@@ -1548,25 +1755,45 @@ namespace Worlds
             }
         }
 
+        /// <inheritdoc/>
         public readonly ref struct Entity<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged where C6 : unmanaged where C7 : unmanaged where C8 : unmanaged where C9 : unmanaged where C10 : unmanaged where C11 : unmanaged where C12 : unmanaged where C13 : unmanaged where C14 : unmanaged where C15 : unmanaged where C16 : unmanaged
         {
+            /// <summary>
+            /// The entity the components belong to.
+            /// </summary>
             public readonly uint entity;
 #if NET
+            /// <inheritdoc/>
             public readonly ref C1 component1;
+            /// <inheritdoc/>
             public readonly ref C2 component2;
+            /// <inheritdoc/>
             public readonly ref C3 component3;
+            /// <inheritdoc/>
             public readonly ref C4 component4;
+            /// <inheritdoc/>
             public readonly ref C5 component5;
+            /// <inheritdoc/>
             public readonly ref C6 component6;
+            /// <inheritdoc/>
             public readonly ref C7 component7;
+            /// <inheritdoc/>
             public readonly ref C8 component8;
+            /// <inheritdoc/>
             public readonly ref C9 component9;
+            /// <inheritdoc/>
             public readonly ref C10 component10;
+            /// <inheritdoc/>
             public readonly ref C11 component11;
+            /// <inheritdoc/>
             public readonly ref C12 component12;
+            /// <inheritdoc/>
             public readonly ref C13 component13;
+            /// <inheritdoc/>
             public readonly ref C14 component14;
+            /// <inheritdoc/>
             public readonly ref C15 component15;
+            /// <inheritdoc/>
             public readonly ref C16 component16;
 #else
             private readonly void* c1;
@@ -1603,6 +1830,7 @@ namespace Worlds
             public readonly ref C16 component16 => ref *(C16*)c16;
 #endif
 
+            /// <inheritdoc/>
             public Entity(uint entity, ref C1 component1, ref C2 component2, ref C3 component3, ref C4 component4, ref C5 component5, ref C6 component6, ref C7 component7, ref C8 component8, ref C9 component9, ref C10 component10, ref C11 component11, ref C12 component12, ref C13 component13, ref C14 component14, ref C15 component15, ref C16 component16)
             {
                 this.entity = entity;

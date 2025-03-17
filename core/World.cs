@@ -17,7 +17,9 @@ namespace Worlds
 #if DEBUG
         internal static readonly System.Collections.Generic.Dictionary<Entity, StackTrace> createStackTraces = new();
 #endif
-
+        /// <summary>
+        /// The version of the binary format used to serialize the world.
+        /// </summary>
         public const uint Version = 1;
 
         private Pointer* world;
@@ -334,7 +336,7 @@ namespace Worlds
             for (int i = 0; i < events.Count; i++)
             {
                 (EntityCreatedOrDestroyed callback, ulong userData) = events[i];
-                callback.Invoke(this, entity, ChangeType.Added, userData);
+                callback.Invoke(this, entity, ChangeType.Positive, userData);
             }
         }
 
@@ -357,7 +359,7 @@ namespace Worlds
                 for (int i = 0; i < events.Count; i++)
                 {
                     (EntityDataChanged callback, ulong userData) = events[i];
-                    callback.Invoke(this, entity, type, ChangeType.Added, userData);
+                    callback.Invoke(this, entity, type, ChangeType.Positive, userData);
                 }
             }
         }
@@ -371,7 +373,7 @@ namespace Worlds
                 for (int i = 0; i < events.Count; i++)
                 {
                     (EntityDataChanged callback, ulong userData) = events[i];
-                    callback.Invoke(this, entity, type, ChangeType.Removed, userData);
+                    callback.Invoke(this, entity, type, ChangeType.Negative, userData);
                 }
             }
         }
@@ -385,7 +387,7 @@ namespace Worlds
                 for (int i = 0; i < events.Count; i++)
                 {
                     (EntityDataChanged callback, ulong userData) = events[i];
-                    callback.Invoke(this, entity, type, ChangeType.Added, userData);
+                    callback.Invoke(this, entity, type, ChangeType.Positive, userData);
                 }
             }
         }
@@ -399,7 +401,7 @@ namespace Worlds
                 for (int i = 0; i < events.Count; i++)
                 {
                     (EntityDataChanged callback, ulong userData) = events[i];
-                    callback.Invoke(this, entity, type, ChangeType.Removed, userData);
+                    callback.Invoke(this, entity, type, ChangeType.Negative, userData);
                 }
             }
         }
@@ -413,7 +415,7 @@ namespace Worlds
                 for (int i = 0; i < events.Count; i++)
                 {
                     (EntityDataChanged callback, ulong userData) = events[i];
-                    callback.Invoke(this, entity, type, ChangeType.Added, userData);
+                    callback.Invoke(this, entity, type, ChangeType.Positive, userData);
                 }
             }
         }
@@ -427,7 +429,7 @@ namespace Worlds
                 for (int i = 0; i < events.Count; i++)
                 {
                     (EntityDataChanged callback, ulong userData) = events[i];
-                    callback.Invoke(this, entity, type, ChangeType.Removed, userData);
+                    callback.Invoke(this, entity, type, ChangeType.Negative, userData);
                 }
             }
         }
@@ -541,8 +543,8 @@ namespace Worlds
         /// <summary>
         /// Adds a function that listens to whenever an entity is either created, or destroyed.
         /// <para>
-        /// Creation events are indicated by <see cref="ChangeType.Added"/>,
-        /// while destruction events are indicated by <see cref="ChangeType.Removed"/>.
+        /// Creation events are indicated by <see cref="ChangeType.Positive"/>,
+        /// while destruction events are indicated by <see cref="ChangeType.Negative"/>.
         /// </para>
         /// </summary>
         public readonly void ListenToEntityCreationOrDestruction(EntityCreatedOrDestroyed function, ulong userData = default)
@@ -628,7 +630,7 @@ namespace Worlds
                 for (int i = 0; i < world->entityCreatedOrDestroyed.Count; i++)
                 {
                     (EntityCreatedOrDestroyed callback, ulong userData) = world->entityCreatedOrDestroyed[i];
-                    callback.Invoke(this, entity, ChangeType.Removed, userData);
+                    callback.Invoke(this, entity, ChangeType.Negative, userData);
                 }
             }
         }
@@ -1399,6 +1401,9 @@ namespace Worlds
             return (rint)count;
         }
 
+        /// <summary>
+        /// Checks if the given <paramref name="entity"/> contains a tag of type <typeparamref name="T"/>.
+        /// </summary>
         public readonly bool ContainsTag<T>(uint entity) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(world);
@@ -1408,6 +1413,9 @@ namespace Worlds
             return world->slots[(int)entity].Definition.tagTypes.Contains(tagType);
         }
 
+        /// <summary>
+        /// Checks if the given <paramref name="entity"/> contains the given <paramref name="tagType"/>.
+        /// </summary>
         public readonly bool ContainsTag(uint entity, int tagType)
         {
             MemoryAddress.ThrowIfDefault(world);
@@ -1416,6 +1424,9 @@ namespace Worlds
             return world->slots[(int)entity].Definition.tagTypes.Contains(tagType);
         }
 
+        /// <summary>
+        /// Adds a tag of type <typeparamref name="T"/> to the given <paramref name="entity"/>.
+        /// </summary>
         public readonly void AddTag<T>(uint entity) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(world);
@@ -1439,6 +1450,9 @@ namespace Worlds
             NotifyTagAdded(entity, tagType);
         }
 
+        /// <summary>
+        /// Adds the <paramref name="tagType"/> to the given <paramref name="entity"/>.
+        /// </summary>
         public readonly void AddTag(uint entity, int tagType)
         {
             MemoryAddress.ThrowIfDefault(world);
@@ -1460,6 +1474,9 @@ namespace Worlds
             NotifyTagAdded(entity, tagType);
         }
 
+        /// <summary>
+        /// Removes the <typeparamref name="T"/> tag from the <paramref name="entity"/>.
+        /// </summary>
         public readonly void RemoveTag<T>(uint entity) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(world);
@@ -1483,6 +1500,9 @@ namespace Worlds
             NotifyTagRemoved(entity, tagType);
         }
 
+        /// <summary>
+        /// Removes the <paramref name="tagType"/> from the given <paramref name="entity"/>.
+        /// </summary>
         public readonly void RemoveTag(uint entity, int tagType)
         {
             MemoryAddress.ThrowIfDefault(world);
@@ -1514,6 +1534,9 @@ namespace Worlds
             return world->slots[(int)entity].Definition.arrayTypes;
         }
 
+        /// <summary>
+        /// Retrieves the types of all tags on this entity.
+        /// </summary>
         public readonly BitMask GetTagTypes(uint entity)
         {
             ThrowIfEntityIsMissing(entity);
@@ -1674,7 +1697,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            int arrayType = world->schema.GetArrayTypeIndex<T>();
+            int arrayType = world->schema.GetArrayType<T>();
             ThrowIfArrayIsAlreadyPresent(entity, arrayType);
 
             Span<Slot> slots = world->slots.AsSpan();
@@ -1724,7 +1747,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            int arrayType = world->schema.GetArrayTypeIndex<T>();
+            int arrayType = world->schema.GetArrayType<T>();
             ThrowIfArrayIsAlreadyPresent(entity, arrayType);
 
             Span<Slot> slots = world->slots.AsSpan();
@@ -1772,7 +1795,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            int arrayType = world->schema.GetArrayTypeIndex<T>();
+            int arrayType = world->schema.GetArrayType<T>();
             ThrowIfArrayIsAlreadyPresent(entity, arrayType);
 
             Span<Slot> slots = world->slots.AsSpan();
@@ -1820,7 +1843,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            int arrayType = world->schema.GetArrayTypeIndex<T>();
+            int arrayType = world->schema.GetArrayType<T>();
             return world->slots[(int)entity].Definition.arrayTypes.Contains(arrayType);
         }
 
@@ -1843,7 +1866,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            int arrayType = world->schema.GetArrayTypeIndex<T>();
+            int arrayType = world->schema.GetArrayType<T>();
             ThrowIfArrayIsMissing(entity, arrayType);
 
             return new(world->slots[(int)entity].arrays[arrayType].pointer);
@@ -1881,7 +1904,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            int arrayType = world->schema.GetArrayTypeIndex<T>();
+            int arrayType = world->schema.GetArrayType<T>();
             ref Slot slot = ref world->slots[(int)entity];
             if (slot.Definition.arrayTypes.Contains(arrayType))
             {
@@ -1902,7 +1925,7 @@ namespace Worlds
         {
             ThrowIfEntityIsMissing(entity);
 
-            int arrayType = world->schema.GetArrayTypeIndex<T>();
+            int arrayType = world->schema.GetArrayType<T>();
             ThrowIfArrayIsMissing(entity, arrayType);
 
             return ref world->slots[(int)entity].arrays[arrayType].Get<T>(index);
@@ -1915,7 +1938,7 @@ namespace Worlds
         {
             ThrowIfEntityIsMissing(entity);
 
-            int arrayType = world->schema.GetArrayTypeIndex<T>();
+            int arrayType = world->schema.GetArrayType<T>();
             ThrowIfArrayIsMissing(entity, arrayType);
 
             return world->slots[(int)entity].arrays[arrayType].Length;
@@ -1940,7 +1963,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            int arrayType = world->schema.GetArrayTypeIndex<T>();
+            int arrayType = world->schema.GetArrayType<T>();
             ThrowIfArrayIsMissing(entity, arrayType);
 
             Span<Slot> slots = world->slots.AsSpan();
@@ -2341,6 +2364,10 @@ namespace Worlds
             return ref slot.chunk.GetComponent<T>(slot.index, componentType);
         }
 
+        /// <summary>
+        /// Retrieves the memory address containing the <paramref name="componentType"/> on
+        /// the given <paramref name="entity"/>.
+        /// </summary>
         public readonly MemoryAddress GetComponent(uint entity, int componentType)
         {
             MemoryAddress.ThrowIfDefault(world);
@@ -2583,9 +2610,11 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Copies all arrays from the source entity onto the destination.
-        /// <para>Arrays will be created if the destination doesn't already
-        /// contain them. Data will be overwritten, and lengths will be changed.</para>
+        /// Copies all arrays from the <paramref name="sourceEntity"/> to the <paramref name="destinationEntity"/>.
+        /// <para>
+        /// Arrays will be created if the destination doesn't already
+        /// contain them. Data will be overwritten, and lengths will be changed.
+        /// </para>
         /// </summary>
         public readonly void CopyArraysTo(uint sourceEntity, World destinationWorld, uint destinationEntity)
         {
@@ -2612,6 +2641,9 @@ namespace Worlds
             }
         }
 
+        /// <summary>
+        /// Copies all tags from the <paramref name="sourceEntity"/> to the <paramref name="destinationEntity"/>.
+        /// </summary>
         public readonly void CopyTagsTo(uint sourceEntity, World destinationWorld, uint destinationEntity)
         {
             BitMask tagTypes = GetTagTypes(sourceEntity);
@@ -2627,6 +2659,9 @@ namespace Worlds
             }
         }
 
+        /// <summary>
+        /// Copies all references from the <paramref name="sourceEntity"/> to the <paramref name="destinationEntity"/>.
+        /// </summary>
         public readonly void CopyReferencesTo(uint sourceEntity, World destinationWorld, uint destinationEntity)
         {
             int referenceCount = GetReferenceCount(sourceEntity);

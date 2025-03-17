@@ -7,8 +7,14 @@ using System.Reflection;
 
 namespace Worlds
 {
+    /// <summary>
+    /// Extensions for <see cref="IEntity"/> instances.
+    /// </summary>
     public static class EntityExtensions
     {
+        /// <summary>
+        /// Casts the entity to an <see cref="Entity"/> instance.
+        /// </summary>
         public unsafe static Entity AsEntity<T>(this T entity) where T : unmanaged, IEntity
         {
             ThrowIfNotEntity<T>();
@@ -16,6 +22,9 @@ namespace Worlds
             return *(Entity*)&entity;
         }
 
+        /// <summary>
+        /// Casts the entity to an instance of <typeparamref name="T"/>.
+        /// </summary>
         public unsafe static T As<T>(Entity entity) where T : unmanaged, IEntity
         {
             ThrowIfNotEntity<T>();
@@ -23,6 +32,9 @@ namespace Worlds
             return *(T*)&entity;
         }
 
+        /// <summary>
+        /// Retrieves the world of the entity.
+        /// </summary>
         public unsafe static World GetWorld<T>(this T entity) where T : unmanaged, IEntity
         {
             ThrowIfNotEntity<T>();
@@ -30,6 +42,9 @@ namespace Worlds
             return *(World*)&entity;
         }
 
+        /// <summary>
+        /// Retrieves the entity position.
+        /// </summary>
         public unsafe static uint GetEntityValue<T>(this T entity) where T : unmanaged, IEntity
         {
             ThrowIfNotEntity<T>();
@@ -39,7 +54,7 @@ namespace Worlds
 
 #if DEBUG
         [Conditional("DEBUG")]
-        public unsafe static void ThrowIfNotEntity<T>() where T : unmanaged, IEntity
+        internal unsafe static void ThrowIfNotEntity<T>() where T : unmanaged, IEntity
         {
             if (!EntityTypeCache<T>.compatible)
             {

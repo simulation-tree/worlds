@@ -19,11 +19,6 @@ namespace Worlds
         public readonly nint Address => (nint)operation;
 
         /// <summary>
-        /// Pointer of the operation.
-        /// </summary>
-        public readonly Implementation* Pointer => operation;
-
-        /// <summary>
         /// Checks if this operation has been disposed.
         /// </summary>
         public readonly bool IsDisposed => operation is null;
@@ -339,6 +334,10 @@ namespace Worlds
             }
         }
 
+        /// <summary>
+        /// Resizes an existing array of type <typeparamref name="T"/> to have
+        /// the <paramref name="newLength"/>.
+        /// </summary>
         public readonly void ResizeArray<T>(int newLength) where T : unmanaged
         {
             WriteInstructionType(InstructionType.ResizeArray);
@@ -883,7 +882,7 @@ namespace Worlds
             }
         }
 
-        public struct Implementation
+        internal struct Implementation
         {
             public int count;
             public int bytesLength;

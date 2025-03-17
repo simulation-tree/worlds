@@ -32,7 +32,7 @@ namespace Worlds.Tests
             static void OnCreatedOrDestroyed(World world, uint entity, ChangeType type, ulong userData)
             {
                 List<(uint, bool)> events = new((void*)userData);
-                if (type == ChangeType.Added)
+                if (type == ChangeType.Positive)
                 {
                     events.Add((entity, true));
                 }
@@ -75,7 +75,7 @@ namespace Worlds.Tests
                 if (type.IsComponent)
                 {
                     List<(uint, int, bool)> events = new((void*)userData);
-                    if (changeType == ChangeType.Added)
+                    if (changeType == ChangeType.Positive)
                     {
                         events.Add((entity, type.index, true));
                     }

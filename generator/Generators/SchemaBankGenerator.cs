@@ -749,6 +749,10 @@ namespace Worlds.Generators
 
             source.BeginGroup();
             {
+                source.AppendLine("/// <summary>");
+                source.AppendLine("/// Registers all types mentioned by this project.");
+                source.AppendLine("/// </summary>");
+
                 source.Append("readonly void ");
                 source.Append(SchemaBankInterfaceName);
                 source.Append(".Load(Schema schema)");

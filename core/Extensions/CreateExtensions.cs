@@ -1,7 +1,14 @@
 ﻿namespace Worlds
 {
+    /// <summary>
+    /// Extension methods for <see cref="World"/> to create entities with components
+    /// already present.
+    /// </summary>
     public static class CreateExtensions
     {
+        /// <summary>
+        /// Creates an entity with 1 component already present.
+        /// </summary>
         public static uint CreateEntity<T1>(this World world, T1 component1) where T1 : unmanaged
         {
             Schema schema = world.Schema;
@@ -13,6 +20,9 @@
             return entity;
         }
 
+        /// <summary>
+        /// Creates an entity with 2 components already present.
+        /// </summary>
         public static uint CreateEntity<T1, T2>(this World world, T1 component1, T2 component2) where T1 : unmanaged where T2 : unmanaged
         {
             Schema schema = world.Schema;
@@ -27,6 +37,9 @@
             return entity;
         }
 
+        /// <summary>
+        /// Creates an entity with 3 components already present.
+        /// </summary>
         public static uint CreateEntity<T1, T2, T3>(this World world, T1 component1, T2 component2, T3 component3) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
             Schema schema = world.Schema;
@@ -44,6 +57,9 @@
             return entity;
         }
 
+        /// <summary>
+        /// Creates an entity with 4 components already present.
+        /// </summary>
         public static uint CreateEntity<T1, T2, T3, T4>(this World world, T1 component1, T2 component2, T3 component3, T4 component4) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
             Schema schema = world.Schema;
@@ -64,6 +80,9 @@
             return entity;
         }
 
+        /// <summary>
+        /// Creates an entity with 5 components already present.
+        /// </summary>
         public static uint CreateEntity<T1, T2, T3, T4, T5>(this World world, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
             Schema schema = world.Schema;
@@ -87,6 +106,9 @@
             return entity;
         }
 
+        /// <summary>
+        /// Creates an entity with 6 components already present.
+        /// </summary>
         public static uint CreateEntity<T1, T2, T3, T4, T5, T6>(this World world, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
             Schema schema = world.Schema;
@@ -113,6 +135,9 @@
             return entity;
         }
 
+        /// <summary>
+        /// Creates an entity with 7 components already present.
+        /// </summary>
         public static uint CreateEntity<T1, T2, T3, T4, T5, T6, T7>(this World world, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
             Schema schema = world.Schema;
@@ -142,6 +167,9 @@
             return entity;
         }
 
+        /// <summary>
+        /// Creates an entity with 8 components already present.
+        /// </summary>
         public static uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8>(this World world, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
             Schema schema = world.Schema;
@@ -174,6 +202,9 @@
             return entity;
         }
 
+        /// <summary>
+        /// Creates an entity with 9 components already present.
+        /// </summary>
         public static uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9>(this World world, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
             Schema schema = world.Schema;
@@ -209,6 +240,9 @@
             return entity;
         }
 
+        /// <summary>
+        /// Creates an entity with 10 components already present.
+        /// </summary>
         public static uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(this World world, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
             Schema schema = world.Schema;
@@ -247,6 +281,9 @@
             return entity;
         }
 
+        /// <summary>
+        /// Creates an entity with 11 components already present.
+        /// </summary>
         public static uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(this World world, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
             Schema schema = world.Schema;
@@ -288,6 +325,9 @@
             return entity;
         }
 
+        /// <summary>
+        /// Creates an entity with 12 components already present.
+        /// </summary>
         public static uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(this World world, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
             Schema schema = world.Schema;
@@ -332,6 +372,9 @@
             return entity;
         }
 
+        /// <summary>
+        /// Creates an entity with 13 components already present.
+        /// </summary>
         public static uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(this World world, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged
         {
             Schema schema = world.Schema;
@@ -379,6 +422,9 @@
             return entity;
         }
 
+        /// <summary>
+        /// Creates an entity with 14 components already present.
+        /// </summary>
         public static uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(this World world, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13, T14 component14) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged
         {
             Schema schema = world.Schema;
@@ -429,6 +475,9 @@
             return entity;
         }
 
+        /// <summary>
+        /// Creates an entity with 15 components already present.
+        /// </summary>
         public static uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(this World world, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13, T14 component14, T15 component15) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged
         {
             Schema schema = world.Schema;
@@ -482,6 +531,9 @@
             return entity;
         }
 
+        /// <summary>
+        /// Creates an entity with 16 components already present.
+        /// </summary>
         public static uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(this World world, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13, T14 component14, T15 component15, T16 component16) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged
         {
             Schema schema = world.Schema;

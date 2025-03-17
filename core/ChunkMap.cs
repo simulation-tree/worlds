@@ -4,11 +4,11 @@ using Pointer = Worlds.Pointers.ChunkMap;
 
 namespace Worlds
 {
-    public unsafe struct ChunkMap
+    internal unsafe struct ChunkMap
     {
-        internal Pointer* chunkMap;
+        public Pointer* chunkMap;
 
-        internal ChunkMap(Schema schema)
+        public ChunkMap(Schema schema)
         {
             ref Pointer chunkMap = ref MemoryAddress.Allocate<Pointer>();
             chunkMap = new(schema);
@@ -18,7 +18,7 @@ namespace Worlds
             }
         }
 
-        internal void Dispose()
+        public void Dispose()
         {
             for (int i = 0; i < chunkMap->chunks.Count; i++)
             {
@@ -79,7 +79,7 @@ namespace Worlds
         /// or creates a new instance.
         /// </summary>
         /// <returns><see langword="true"/> if created.</returns>
-        internal readonly Chunk GetOrCreate(Definition definition)
+        public readonly Chunk GetOrCreate(Definition definition)
         {
             int capacity = chunkMap->capacity;
             long hashCode = definition.GetLongHashCode();
@@ -127,7 +127,7 @@ namespace Worlds
             return newChunk;
         }
 
-        internal readonly void Clear()
+        public readonly void Clear()
         {
             for (int i = 0; i < chunkMap->chunks.Count; i++)
             {

@@ -14,6 +14,7 @@ namespace Worlds
         internal readonly ushort value;
 
 #if NET
+        /// <inheritdoc/>
         [Obsolete("Default constructor not supported", true)]
         public rint()
         {

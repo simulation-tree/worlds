@@ -45,6 +45,11 @@ namespace Worlds.Generators
                 builder.BeginGroup();
             }
 
+            builder.AppendLine("/// <summary>");
+            builder.AppendLine("/// Contains a method for building a schema containing all components,");
+            builder.AppendLine("/// arrays and tag types that are mentioned in the codebase.");
+            builder.AppendLine("/// </summary>");
+
             builder.Append("public static class ");
             builder.Append(TypeName);
             builder.AppendLine();
