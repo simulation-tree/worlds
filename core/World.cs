@@ -543,7 +543,8 @@ namespace Worlds
         /// while destruction events are indicated by <see cref="ChangeType.Negative"/>.
         /// </para>
         /// </summary>
-        public readonly void ListenToEntityCreationOrDestruction(EntityCreatedOrDestroyed function, ulong userData = default)
+        public readonly void ListenToEntityCreationOrDestruction(EntityCreatedOrDestroyed function,
+            ulong userData = default)
         {
             MemoryAddress.ThrowIfDefault(world);
 
@@ -769,7 +770,8 @@ namespace Worlds
                         }
 
                         Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
-                        Chunk.MoveEntityAt(currentEntity, ref currentSlot.index, ref currentSlot.chunk, destinationChunk);
+                        Chunk.MoveEntityAt(currentEntity, ref currentSlot.index, ref currentSlot.chunk,
+                            destinationChunk);
                     }
 
                     //check through children
@@ -804,7 +806,7 @@ namespace Worlds
 
             ref Slot slot = ref world->slots[(int)entity];
             slot.state = Slot.State.Enabled;
-            slot.chunk = world->chunks.GetOrCreate(default);
+            slot.chunk = world->chunks.chunkMap->defaultChunk;
             slot.chunk.AddEntity(entity, ref slot.index);
             TraceCreation(entity);
             NotifyCreation(entity);
@@ -921,7 +923,8 @@ namespace Worlds
         /// <summary>
         /// Creates a new entity.
         /// </summary>
-        public readonly uint CreateEntity(BitMask componentTypes, out Chunk chunk, out int index, BitMask tagTypes = default)
+        public readonly uint CreateEntity(BitMask componentTypes, out Chunk chunk, out int index,
+            BitMask tagTypes = default)
         {
             MemoryAddress.ThrowIfDefault(world);
 
@@ -1038,10 +1041,41 @@ namespace Worlds
         /// </summary>
         public readonly void CreateEntities(Span<uint> destination)
         {
-            //todo: this could be more efficient
-            for (int i = 0; i < destination.Length; i++)
+            MemoryAddress.ThrowIfDefault(world);
+
+            int freeEntities = world->freeEntities.Count;
+            int newEntities = destination.Length - freeEntities;
+            int startIndex = world->slots.Count;
+            if (newEntities > 0)
             {
-                destination[i] = CreateEntity();
+                world->slots.AddDefault(newEntities);
+            }
+
+            Chunk defaultChunk = world->chunks.chunkMap->defaultChunk;
+            int created = 0;
+            Span<Slot> slots = world->slots.AsSpan();
+            for (int i = 0; i < freeEntities; i++)
+            {
+                uint entity = world->freeEntities.Pop();
+                ref Slot slot = ref slots[(int)entity];
+                slot.state = Slot.State.Enabled;
+                slot.chunk = defaultChunk;
+                slot.chunk.AddEntity(entity, ref slot.index);
+                TraceCreation(entity);
+                NotifyCreation(entity);
+                destination[created++] = entity;
+            }
+
+            for (int i = 0; i < newEntities; i++)
+            {
+                uint entity = (uint)(i + startIndex);
+                ref Slot slot = ref slots[(int)entity];
+                slot.state = Slot.State.Enabled;
+                slot.chunk = defaultChunk;
+                slot.chunk.AddEntity(entity, ref slot.index);
+                TraceCreation(entity);
+                NotifyCreation(entity);
+                destination[created++] = entity;
             }
         }
 
@@ -1123,7 +1157,8 @@ namespace Worlds
                 //update state if parent is disabled
                 if (entitySlot.state == Slot.State.Enabled)
                 {
-                    if (newParentSlot.state == Slot.State.Disabled || newParentSlot.state == Slot.State.DisabledButLocallyEnabled)
+                    if (newParentSlot.state == Slot.State.Disabled ||
+                        newParentSlot.state == Slot.State.DisabledButLocallyEnabled)
                     {
                         entitySlot.state = Slot.State.DisabledButLocallyEnabled;
                     }
@@ -2748,7 +2783,8 @@ namespace Worlds
             BitMask componentTypes = world->slots[(int)entity].Definition.componentTypes;
             if (!componentTypes.Contains(componentType))
             {
-                throw new NullReferenceException($"Component `{DataType.GetComponent(componentType, world->schema).ToString(world->schema)}` not found on `{entity}`");
+                throw new NullReferenceException(
+                    $"Component `{DataType.GetComponent(componentType, world->schema).ToString(world->schema)}` not found on `{entity}`");
             }
         }
 
@@ -2758,7 +2794,8 @@ namespace Worlds
             BitMask componentTypes = world->slots[(int)entity].Definition.componentTypes;
             if (componentTypes.Contains(componentType))
             {
-                throw new InvalidOperationException($"Component `{DataType.GetComponent(componentType, world->schema).ToString(world->schema)}` already present on `{entity}`");
+                throw new InvalidOperationException(
+                    $"Component `{DataType.GetComponent(componentType, world->schema).ToString(world->schema)}` already present on `{entity}`");
             }
         }
 
@@ -2768,7 +2805,8 @@ namespace Worlds
             BitMask tagTypes = world->slots[(int)entity].Definition.tagTypes;
             if (tagTypes.Contains(tagType))
             {
-                throw new InvalidOperationException($"Tag `{DataType.GetTag(tagType, world->schema).ToString(world->schema)}` already present on `{entity}`");
+                throw new InvalidOperationException(
+                    $"Tag `{DataType.GetTag(tagType, world->schema).ToString(world->schema)}` already present on `{entity}`");
             }
         }
 
@@ -2778,7 +2816,8 @@ namespace Worlds
             BitMask tagTypes = world->slots[(int)entity].Definition.tagTypes;
             if (!tagTypes.Contains(tagType))
             {
-                throw new NullReferenceException($"Tag `{DataType.GetTag(tagType, world->schema).ToString(world->schema)}` not found on `{entity}`");
+                throw new NullReferenceException(
+                    $"Tag `{DataType.GetTag(tagType, world->schema).ToString(world->schema)}` not found on `{entity}`");
             }
         }
 
@@ -2788,7 +2827,8 @@ namespace Worlds
             BitMask arrayTypes = world->slots[(int)entity].Definition.arrayTypes;
             if (!arrayTypes.Contains(arrayType))
             {
-                throw new NullReferenceException($"Array of type `{DataType.GetArray(arrayType, world->schema).ToString(world->schema)}` not found on entity `{entity}`");
+                throw new NullReferenceException(
+                    $"Array of type `{DataType.GetArray(arrayType, world->schema).ToString(world->schema)}` not found on entity `{entity}`");
             }
         }
 
@@ -2798,7 +2838,8 @@ namespace Worlds
             BitMask arrayTypes = world->slots[(int)entity].Definition.arrayTypes;
             if (arrayTypes.Contains(arrayType))
             {
-                throw new InvalidOperationException($"Array of type `{DataType.GetArray(arrayType, world->schema).ToString(world->schema)}` already present on `{entity}`");
+                throw new InvalidOperationException(
+                    $"Array of type `{DataType.GetArray(arrayType, world->schema).ToString(world->schema)}` already present on `{entity}`");
             }
         }
 

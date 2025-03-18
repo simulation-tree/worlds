@@ -31,10 +31,11 @@ namespace Worlds.Tests
         [Test]
         public void MaxEntityIDIsValid()
         {
+            const int EntitiesToCreate = 9;
             using World world = CreateWorld();
-            Span<uint> entities = stackalloc uint[4];
+            Span<uint> entities = stackalloc uint[EntitiesToCreate];
             world.CreateEntities(entities);
-            Assert.That(world.MaxEntityValue, Is.EqualTo(entities[3]));
+            Assert.That(world.MaxEntityValue, Is.EqualTo(entities[EntitiesToCreate - 1]));
             Assert.That(world.MaxEntityValue, Is.EqualTo(entities.Length));
 
             using Array<bool> buffer = new(world.MaxEntityValue + 1);
@@ -42,6 +43,39 @@ namespace Worlds.Tests
             {
                 buffer[(int)entities[i]] = true;
             }
+        }
+
+        [Test]
+        public void CreateBulkEntities()
+        {
+            using World world = CreateWorld();
+            Span<uint> entities = stackalloc uint[7];
+            world.CreateEntities(entities);
+            Assert.That(world.Count, Is.EqualTo(7));
+            Assert.That(entities[0], Is.EqualTo(1));
+            Assert.That(entities[1], Is.EqualTo(2));
+            Assert.That(entities[2], Is.EqualTo(3));
+            Assert.That(entities[3], Is.EqualTo(4));
+            Assert.That(entities[4], Is.EqualTo(5));
+            Assert.That(entities[5], Is.EqualTo(6));
+            Assert.That(entities[6], Is.EqualTo(7));
+            
+            world.DestroyEntity(entities[0]);
+            world.DestroyEntity(entities[1]);
+            world.DestroyEntity(entities[2]);
+            
+            Assert.That(world.Count, Is.EqualTo(7 - 3));
+            
+            world.CreateEntities(entities);
+            
+            Assert.That(world.Count, Is.EqualTo(7 - 3 + 7));
+            Assert.That(entities[0], Is.EqualTo(3));
+            Assert.That(entities[1], Is.EqualTo(2));
+            Assert.That(entities[2], Is.EqualTo(1));
+            Assert.That(entities[3], Is.EqualTo(8));
+            Assert.That(entities[4], Is.EqualTo(9));
+            Assert.That(entities[5], Is.EqualTo(10));
+            Assert.That(entities[6], Is.EqualTo(11));
         }
 
         [Test]

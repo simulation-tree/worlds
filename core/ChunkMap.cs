@@ -15,6 +15,7 @@ namespace Worlds
             fixed (Pointer* pointer = &chunkMap)
             {
                 this.chunkMap = pointer;
+                this.chunkMap->defaultChunk = CreateDefault();
             }
         }
 
@@ -81,6 +82,11 @@ namespace Worlds
         /// <returns><see langword="true"/> if created.</returns>
         public readonly Chunk GetOrCreate(Definition definition)
         {
+            if (definition == default)
+            {
+                return chunkMap->defaultChunk;
+            }
+            
             int capacity = chunkMap->capacity;
             long hashCode = definition.GetLongHashCode();
             int index = GetIndex(hashCode, capacity);
@@ -125,6 +131,23 @@ namespace Worlds
             values[index] = new(newChunk);
             chunkMap->chunks.Add(newChunk);
             return newChunk;
+        }
+        
+        private readonly Chunk CreateDefault()
+        {
+            int capacity = chunkMap->capacity;
+            long hashCode = default(Definition).GetLongHashCode();
+            int index = GetIndex(hashCode, capacity);
+            Span<bool> occupied = new(chunkMap->occupied.Pointer, capacity);
+            Span<ChunkKey> values = new(chunkMap->keys.Pointer, capacity);
+            Span<long> hashCodes = new(chunkMap->hashCodes.Pointer, capacity);
+            Chunk newDefaultChunk = new(default, chunkMap->schema);
+            occupied[index] = true;
+            hashCodes[index] = hashCode;
+            values[index] = new(newDefaultChunk);
+            chunkMap->chunks.Add(newDefaultChunk);
+            chunkMap->count = 1;
+            return newDefaultChunk;
         }
 
         public readonly void Clear()

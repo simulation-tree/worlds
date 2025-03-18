@@ -5,15 +5,16 @@ namespace Worlds.Pointers
 {
     internal struct ChunkMap
     {
-        internal readonly Worlds.Schema schema;
-        internal int count;
-        internal int capacity;
-        internal List<Worlds.Chunk> chunks;
-        internal MemoryAddress keys;
-        internal MemoryAddress hashCodes;
-        internal MemoryAddress occupied;
+        public readonly Worlds.Schema schema;
+        public int count;
+        public int capacity;
+        public List<Worlds.Chunk> chunks;
+        public MemoryAddress keys;
+        public MemoryAddress hashCodes;
+        public MemoryAddress occupied;
+        public Worlds.Chunk defaultChunk;
 
-        internal unsafe ChunkMap(Worlds.Schema schema)
+        public unsafe ChunkMap(Worlds.Schema schema)
         {
             this.schema = schema;
             count = 0;

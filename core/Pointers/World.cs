@@ -19,14 +19,10 @@ namespace Worlds.Pointers
         public World(Worlds.Schema schema)
         {
             this.schema = schema;
-
             slots = new(4);
             slots.AddDefault(); //reserved
-
             freeEntities = new(4);
             chunks = new(schema);
-            chunks.GetOrCreate(default);
-
             entityCreatedOrDestroyed = new(4);
             entityParentChanged = new(4);
             entityDataChanged = new(4);
