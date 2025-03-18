@@ -1,6 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 
-namespace Worlds.Generator
+namespace Worlds
 {
     public class EntityType
     {

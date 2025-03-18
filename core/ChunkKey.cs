@@ -2,7 +2,7 @@
 
 namespace Worlds
 {
-    public readonly struct ChunkKey : IEquatable<ChunkKey>
+    internal readonly struct ChunkKey : IEquatable<ChunkKey>
     {
         public readonly Definition definition;
         public readonly Chunk chunk;

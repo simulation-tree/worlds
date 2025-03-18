@@ -23,8 +23,4 @@
         <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
     </ItemGroup>
 
-    <ItemGroup>
-        <ProjectReference Include="..\..\unmanaged\generator\Unmanaged.Generator.csproj"/>
-    </ItemGroup>
-
 </Project>

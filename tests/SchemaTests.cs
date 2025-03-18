@@ -28,7 +28,7 @@ namespace Worlds.Tests
             schema.RegisterComponent<Stress>();
             schema.RegisterComponent<bool>();
             schema.RegisterComponent<float>();
-            TagType thingTag = schema.RegisterTag<IsThing>();
+            int thingTag = schema.RegisterTag<IsThing>();
             Assert.That(schema.ContainsComponentType<Stress>(), Is.True);
             Assert.That(schema.ContainsTagType<IsThing>(), Is.True);
 
@@ -49,12 +49,12 @@ namespace Worlds.Tests
         public void IterateAndFetchLayouts()
         {
             using Schema schema = new();
-            ComponentType c1 = schema.RegisterComponent<Stress>();
-            ComponentType c2 = schema.RegisterComponent<float>();
-            ComponentType c3 = schema.RegisterComponent<char>();
+            int c1 = schema.RegisterComponent<Stress>();
+            int c2 = schema.RegisterComponent<float>();
+            int c3 = schema.RegisterComponent<char>();
 
-            using List<ComponentType> componentTypes = new();
-            foreach (ComponentType componentType in schema.ComponentTypes)
+            using List<int> componentTypes = new();
+            foreach (int componentType in schema.ComponentTypes)
             {
                 componentTypes.Add(componentType);
             }
@@ -71,7 +71,7 @@ namespace Worlds.Tests
             using Schema prefabSchema = new();
             int floatType = prefabSchema.RegisterComponent<float>();
             int charType = prefabSchema.RegisterComponent<char>();
-            TagType thingTag = prefabSchema.RegisterTag<IsThing>();
+            int thingTag = prefabSchema.RegisterTag<IsThing>();
 
             using ByteWriter writer = new();
             writer.WriteObject(prefabSchema);
@@ -86,8 +86,8 @@ namespace Worlds.Tests
             Assert.That(loadedSchema.ComponentRowSize, Is.EqualTo(prefabSchema.ComponentRowSize));
             Assert.That(loadedSchema.GetComponentOffset(floatType), Is.EqualTo(prefabSchema.GetComponentOffset(floatType)));
             Assert.That(loadedSchema.GetComponentOffset(charType), Is.EqualTo(prefabSchema.GetComponentOffset(charType)));
-            Assert.That(loadedSchema.GetComponentTypeSize(floatType), Is.EqualTo(prefabSchema.GetComponentTypeSize(floatType)));
-            Assert.That(loadedSchema.GetComponentTypeSize(charType), Is.EqualTo(prefabSchema.GetComponentTypeSize(charType)));
+            Assert.That(loadedSchema.GetComponentSize(floatType), Is.EqualTo(prefabSchema.GetComponentSize(floatType)));
+            Assert.That(loadedSchema.GetComponentSize(charType), Is.EqualTo(prefabSchema.GetComponentSize(charType)));
         }
 
         [Test]
@@ -138,10 +138,10 @@ namespace Worlds.Tests
             Assert.That(intType.size, Is.EqualTo(0));
             Assert.That(intType.kind, Is.EqualTo(DataType.Kind.Tag));
 
-            Assert.That(schema.GetComponentTypeSize(boolType.index), Is.EqualTo(sizeof(bool)));
-            Assert.That(schema.GetComponentTypeSize(byteType.index), Is.EqualTo(sizeof(byte)));
-            Assert.That(schema.GetComponentTypeSize(shortType.index), Is.EqualTo(sizeof(short)));
-            Assert.That(schema.GetArrayTypeSize(charType.index), Is.EqualTo(sizeof(char)));
+            Assert.That(schema.GetComponentSize(boolType.index), Is.EqualTo(sizeof(bool)));
+            Assert.That(schema.GetComponentSize(byteType.index), Is.EqualTo(sizeof(byte)));
+            Assert.That(schema.GetComponentSize(shortType.index), Is.EqualTo(sizeof(short)));
+            Assert.That(schema.GetArraySize(charType.index), Is.EqualTo(sizeof(char)));
         }
 
         [Test]

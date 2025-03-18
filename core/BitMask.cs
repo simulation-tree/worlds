@@ -22,10 +22,10 @@ namespace Worlds
         /// </summary>
         public const int MaxValue = 255;
 
-        public ulong a;
-        public ulong b;
-        public ulong c;
-        public ulong d;
+        private ulong a;
+        private ulong b;
+        private ulong c;
+        private ulong d;
 
         /// <summary>
         /// Amount of bits set to 1.
@@ -52,6 +52,9 @@ namespace Worlds
         /// </summary>
         public readonly bool IsEmpty => a == 0 && b == 0 && c == 0 && d == 0;
 
+        /// <summary>
+        /// Creates a bit mask with the given positions set.
+        /// </summary>
         public BitMask(int b1)
         {
             a = default;
@@ -61,6 +64,9 @@ namespace Worlds
             Set(b1);
         }
 
+        /// <summary>
+        /// Creates a bit mask with the given positions set.
+        /// </summary>
         public BitMask(int b1, int b2)
         {
             a = default;
@@ -71,6 +77,9 @@ namespace Worlds
             Set(b2);
         }
 
+        /// <summary>
+        /// Creates a bit mask with the given positions set.
+        /// </summary>
         public BitMask(int b1, int b2, int b3)
         {
             a = default;
@@ -82,6 +91,9 @@ namespace Worlds
             Set(b3);
         }
 
+        /// <summary>
+        /// Creates a bit mask with the given positions set.
+        /// </summary>
         public BitMask(int b1, int b2, int b3, int b4)
         {
             a = default;
@@ -94,6 +106,9 @@ namespace Worlds
             Set(b4);
         }
 
+        /// <summary>
+        /// Creates a bit mask with the given positions set.
+        /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5)
         {
             a = default;
@@ -107,6 +122,9 @@ namespace Worlds
             Set(b5);
         }
 
+        /// <summary>
+        /// Creates a bit mask with the given positions set.
+        /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6)
         {
             a = default;
@@ -121,6 +139,9 @@ namespace Worlds
             Set(b6);
         }
 
+        /// <summary>
+        /// Creates a bit mask with the given positions set.
+        /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6, int b7)
         {
             a = default;
@@ -136,6 +157,9 @@ namespace Worlds
             Set(b7);
         }
 
+        /// <summary>
+        /// Creates a bit mask with the given positions set.
+        /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6, int b7, int b8)
         {
             a = default;
@@ -152,6 +176,9 @@ namespace Worlds
             Set(b8);
         }
 
+        /// <summary>
+        /// Creates a bit mask with the given positions set.
+        /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6, int b7, int b8, int b9)
         {
             a = default;
@@ -169,6 +196,9 @@ namespace Worlds
             Set(b9);
         }
 
+        /// <summary>
+        /// Creates a bit mask with the given positions set.
+        /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6, int b7, int b8, int b9, int b10)
         {
             a = default;
@@ -187,6 +217,9 @@ namespace Worlds
             Set(b10);
         }
 
+        /// <summary>
+        /// Creates a bit mask with the given positions set.
+        /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6, int b7, int b8, int b9, int b10, int b11)
         {
             a = default;
@@ -206,6 +239,9 @@ namespace Worlds
             Set(b11);
         }
 
+        /// <summary>
+        /// Creates a bit mask with the given positions set.
+        /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6, int b7, int b8, int b9, int b10, int b11, int b12)
         {
             a = default;
@@ -226,6 +262,9 @@ namespace Worlds
             Set(b12);
         }
 
+        /// <summary>
+        /// Creates a bit mask with the given positions set.
+        /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6, int b7, int b8, int b9, int b10, int b11, int b12, int b13)
         {
             a = default;
@@ -247,6 +286,9 @@ namespace Worlds
             Set(b13);
         }
 
+        /// <summary>
+        /// Creates a bit mask with the given positions set.
+        /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6, int b7, int b8, int b9, int b10, int b11, int b12, int b13, int b14)
         {
             a = default;
@@ -269,6 +311,9 @@ namespace Worlds
             Set(b14);
         }
 
+        /// <summary>
+        /// Creates a bit mask with the given positions set.
+        /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6, int b7, int b8, int b9, int b10, int b11, int b12, int b13, int b14, int b15)
         {
             a = default;
@@ -292,6 +337,9 @@ namespace Worlds
             Set(b15);
         }
 
+        /// <summary>
+        /// Creates a bit mask with the given positions set.
+        /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6, int b7, int b8, int b9, int b10, int b11, int b12, int b13, int b14, int b15, int b16)
         {
             a = default;
@@ -433,6 +481,9 @@ namespace Worlds
             }
         }
 
+        /// <summary>
+        /// Retrieves a <see cref="long"/> precision hash code.
+        /// </summary>
         public readonly long GetLongHashCode()
         {
             unchecked
@@ -466,11 +517,13 @@ namespace Worlds
             return a == other.a && b == other.b && c == other.c && d == other.d;
         }
 
+        /// <inheritdoc/>
         public static bool operator ==(BitMask left, BitMask right)
         {
             return left.Equals(right);
         }
 
+        /// <inheritdoc/>
         public static bool operator !=(BitMask left, BitMask right)
         {
             return !(left == right);

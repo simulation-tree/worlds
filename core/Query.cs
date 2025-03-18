@@ -3,6 +3,9 @@ using Unmanaged;
 
 namespace Worlds
 {
+    /// <summary>
+    /// A native query of entities.
+    /// </summary>
     public ref struct Query
     {
         private readonly World world;
@@ -64,6 +67,7 @@ namespace Worlds
         }
 
 #if NET
+        /// <inheritdoc/>
         [Obsolete("Default constructor not supported", true)]
         public Query()
         {
@@ -71,6 +75,9 @@ namespace Worlds
         }
 #endif
 
+        /// <summary>
+        /// Creates a new query.
+        /// </summary>
         public unsafe Query(World world, Definition required = default, Definition exclude = default)
         {
             MemoryAddress.ThrowIfDefault((void*)world.Address);
@@ -80,79 +87,115 @@ namespace Worlds
             this.exclude = exclude;
         }
 
+        /// <summary>
+        /// Specifies whether disabled entities should be excluded or not.
+        /// </summary>
         public Query ExcludeDisabled(bool should)
         {
             if (should)
             {
-                exclude.AddTagType(TagType.Disabled);
+                exclude.AddTagType(Schema.DisabledTagType);
             }
             else
             {
-                exclude.RemoveTagType(TagType.Disabled);
+                exclude.RemoveTagType(Schema.DisabledTagType);
             }
 
             return this;
         }
 
+        /// <summary>
+        /// Makes this query require the given component types.
+        /// </summary>
         public Query RequireComponent<T>() where T : unmanaged
         {
             required.AddComponentType<T>(world.Schema);
             return this;
         }
 
+        /// <summary>
+        /// Makes this query require the given component types.
+        /// </summary>
         public Query RequireComponents(BitMask componentTypes)
         {
             required.AddComponentTypes(componentTypes);
             return this;
         }
 
+        /// <summary>
+        /// Makes this query exclude the given component types.
+        /// </summary>
         public Query ExcludeComponent<T>() where T : unmanaged
         {
             exclude.AddComponentType<T>(world.Schema);
             return this;
         }
 
+        /// <summary>
+        /// Makes this query require the given array types.
+        /// </summary>
         public Query RequireArrayElement<T>() where T : unmanaged
         {
             required.AddArrayType<T>(world.Schema);
             return this;
         }
 
+        /// <summary>
+        /// Makes this query require the given array types.
+        /// </summary>
         public Query RequireArrayElements(BitMask arrayTypes)
         {
             required.AddArrayTypes(arrayTypes);
             return this;
         }
 
+        /// <summary>
+        /// Makes this query exclude the given array types.
+        /// </summary>
         public Query ExcludeArray<T>() where T : unmanaged
         {
             exclude.AddArrayType<T>(world.Schema);
             return this;
         }
 
+        /// <summary>
+        /// Makes this query require the given tag types.
+        /// </summary>
         public Query RequireTag<T>() where T : unmanaged
         {
             required.AddTagType<T>(world.Schema);
             return this;
         }
 
+        /// <summary>
+        /// Makes this query require the given tag types.
+        /// </summary>
         public Query RequireTags(BitMask tagTypes)
         {
             required.AddTagTypes(tagTypes);
             return this;
         }
 
+        /// <summary>
+        /// Makes this query exclude the given tag types.
+        /// </summary>
         public Query ExcludeTag<T>() where T : unmanaged
         {
             exclude.AddTagType<T>(world.Schema);
             return this;
         }
 
+        /// <summary>
+        /// The enumerator.
+        /// </summary>
         public readonly Enumerator GetEnumerator()
         {
             return new(this);
         }
 
+        /// <summary>
+        /// Tries to retrieve the first found entity that matches the query.
+        /// </summary>
         public readonly bool TryGetFirst(out uint entity)
         {
             foreach (Chunk chunk in world.Chunks)
@@ -202,6 +245,9 @@ namespace Worlds
             return false;
         }
 
+        /// <summary>
+        /// The enumerator of the query.
+        /// </summary>
         public ref struct Enumerator
         {
             private readonly Query query;
@@ -210,9 +256,12 @@ namespace Worlds
             private int chunkIndex;
             private int entityIndex;
 
+            /// <summary>
+            /// The found entity.
+            /// </summary>
             public readonly uint Current => chunk.Entities[entityIndex - 1];
 
-            public Enumerator(Query query)
+            internal Enumerator(Query query)
             {
                 entityIndex = 0;
                 chunk = default;
@@ -264,6 +313,9 @@ namespace Worlds
                 }
             }
 
+            /// <summary>
+            /// Advances the enumerator to the next entity in the query.
+            /// </summary>
             public bool MoveNext()
             {
                 if (entityIndex < chunk.Count)
@@ -279,7 +331,7 @@ namespace Worlds
                     Definition exclude = query.exclude;
                     for (int i = chunkIndex + 1; i < world.Chunks.Length; i++)
                     {
-                        Chunk chunk = world.Chunks[i]; 
+                        Chunk chunk = world.Chunks[i];
                         if (chunk.Count > 0)
                         {
                             Definition key = chunk.Definition;

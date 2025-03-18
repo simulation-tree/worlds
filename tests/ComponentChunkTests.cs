@@ -20,8 +20,8 @@ namespace Worlds.Tests
         public void AddEntityWithComponents()
         {
             Schema schema = CreateSchema();
-            ComponentType integerType = schema.GetComponentType<Integer>();
-            ComponentType floatType = schema.GetComponentType<Float>();
+            int integerType = schema.GetComponentType<Integer>();
+            int floatType = schema.GetComponentType<Float>();
 
             Definition definition = new();
             definition.AddComponentTypes<Integer, Float>(schema);
@@ -35,11 +35,11 @@ namespace Worlds.Tests
             floatComponent = 3.14f;
             Assert.That(chunk.Entities.Length, Is.EqualTo(1));
             Assert.That(chunk.Entities[0], Is.EqualTo(entity));
-            ComponentEnumerator<Integer> intComponents = chunk.GetEnumerator<Integer>(integerType);
-            ComponentEnumerator<Float> floatComponents = chunk.GetEnumerator<Float>(floatType);
-            Assert.That(intComponents.Length, Is.EqualTo(1));
+            ComponentEnumerator<Integer> intComponents = chunk.GetComponents<Integer>(integerType);
+            ComponentEnumerator<Float> floatComponents = chunk.GetComponents<Float>(floatType);
+            Assert.That(intComponents.length, Is.EqualTo(1));
             Assert.That(intComponents[0], Is.EqualTo((Integer)42));
-            Assert.That(floatComponents.Length, Is.EqualTo(1));
+            Assert.That(floatComponents.length, Is.EqualTo(1));
             Assert.That(floatComponents[0], Is.EqualTo((Float)3.14f));
             chunk.Dispose();
             schema.Dispose();
@@ -49,8 +49,8 @@ namespace Worlds.Tests
         public void RemovingEntity()
         {
             Schema schema = CreateSchema();
-            ComponentType integerType = schema.GetComponentType<Integer>();
-            ComponentType floatType = schema.GetComponentType<Float>();
+            int integerType = schema.GetComponentType<Integer>();
+            int floatType = schema.GetComponentType<Float>();
 
             Definition definition = new();
             definition.AddComponentTypes<Integer, Float>(schema);
@@ -64,10 +64,10 @@ namespace Worlds.Tests
             floatComponent = 3.14f;
             chunk.RemoveEntityAt(index);
             Assert.That(chunk.Entities.Length, Is.EqualTo(0));
-            ComponentEnumerator<Integer> intComponents = chunk.GetEnumerator<Integer>(integerType);
-            ComponentEnumerator<Float> floatComponents = chunk.GetEnumerator<Float>(floatType);
-            Assert.That(intComponents.Length, Is.EqualTo(0));
-            Assert.That(floatComponents.Length, Is.EqualTo(0));
+            ComponentEnumerator<Integer> intComponents = chunk.GetComponents<Integer>(integerType);
+            ComponentEnumerator<Float> floatComponents = chunk.GetComponents<Float>(floatType);
+            Assert.That(intComponents.length, Is.EqualTo(0));
+            Assert.That(floatComponents.length, Is.EqualTo(0));
             chunk.Dispose();
             schema.Dispose();
         }
@@ -76,9 +76,9 @@ namespace Worlds.Tests
         public void MovingEntity()
         {
             Schema schema = CreateSchema();
-            int integerType = schema.GetComponentTypeIndex<Integer>();
-            int floatType = schema.GetComponentTypeIndex<Float>();
-            int fruitType = schema.GetComponentTypeIndex<Fruit>();
+            int integerType = schema.GetComponentType<Integer>();
+            int floatType = schema.GetComponentType<Float>();
+            int fruitType = schema.GetComponentType<Fruit>();
 
             Chunk chunkA = new(default, schema);
             Chunk currentChunk = chunkA;
@@ -89,39 +89,39 @@ namespace Worlds.Tests
             Definition definitionB = new();
             definitionB.AddComponentType(integerType);
             Chunk chunkB = new(definitionB, schema);
-            Chunk.MoveEntityAt(ref index, ref currentChunk, chunkB);
+            Chunk.MoveEntityAt(entity, ref index, ref currentChunk, chunkB);
             ref Integer intComponent = ref chunkB.GetComponent<Integer>(index, integerType);
             intComponent = 42;
 
             Assert.That(chunkA.Entities.Length, Is.EqualTo(0));
             Assert.That(chunkB.Entities.Length, Is.EqualTo(1));
             Assert.That(chunkB.Entities[0], Is.EqualTo(entity));
-            ComponentEnumerator<Integer> intComponents = chunkB.GetEnumerator<Integer>(integerType);
-            Assert.That(intComponents.Length, Is.EqualTo(1));
+            ComponentEnumerator<Integer> intComponents = chunkB.GetComponents<Integer>(integerType);
+            Assert.That(intComponents.length, Is.EqualTo(1));
             Assert.That(intComponents[0], Is.EqualTo((Integer)42));
 
             Definition definitionC = new();
             definitionC.AddComponentTypes(floatType, integerType);
             Chunk chunkC = new(definitionC, schema);
-            Chunk.MoveEntityAt(ref index, ref currentChunk, chunkC);
+            Chunk.MoveEntityAt(entity, ref index, ref currentChunk, chunkC);
             ref Float floatComponent = ref chunkC.GetComponent<Float>(index, floatType);
             floatComponent = 3.14f;
 
-            intComponents = chunkB.GetEnumerator<Integer>(integerType);
-            Assert.That(intComponents.Length, Is.EqualTo(0));
+            intComponents = chunkB.GetComponents<Integer>(integerType);
+            Assert.That(intComponents.length, Is.EqualTo(0));
 
             Assert.That(chunkB.Entities.Length, Is.EqualTo(0));
             Assert.That(chunkC.Entities.Length, Is.EqualTo(1));
             Assert.That(chunkC.Entities[0], Is.EqualTo(entity));
 
-            ComponentEnumerator<Float> floatComponents = chunkC.GetEnumerator<Float>(floatType);
-            Assert.That(floatComponents.Length, Is.EqualTo(1));
+            ComponentEnumerator<Float> floatComponents = chunkC.GetComponents<Float>(floatType);
+            Assert.That(floatComponents.length, Is.EqualTo(1));
             Assert.That(floatComponents[0], Is.EqualTo((Float)3.14f));
 
             Definition definitionD = new();
             definitionD.AddComponentType(fruitType);
             Chunk chunkD = new(definitionD, schema);
-            Chunk.MoveEntityAt(ref index, ref currentChunk, chunkD);
+            Chunk.MoveEntityAt(entity, ref index, ref currentChunk, chunkD);
 
             Assert.That(chunkC.Entities.Length, Is.EqualTo(0));
             Assert.That(chunkD.Entities.Length, Is.EqualTo(1));
@@ -156,8 +156,8 @@ namespace Worlds.Tests
         {
             using Schema schema = CreateSchema();
             Definition definition = new();
-            int intType = schema.GetComponentTypeIndex<Integer>();
-            int floatType = schema.GetComponentTypeIndex<Float>();
+            int intType = schema.GetComponentType<Integer>();
+            int floatType = schema.GetComponentType<Float>();
             definition.AddComponentType(intType);
             definition.AddComponentType(floatType);
             using Chunk chunk = new(definition, schema);
@@ -171,9 +171,9 @@ namespace Worlds.Tests
             chunk.SetComponent(bIndex, intType, new Integer(64));
             chunk.SetComponent(cIndex, intType, new Integer(128));
 
-            ComponentEnumerator<Integer> intComponents = chunk.GetEnumerator<Integer>(intType);
-            Assert.That(intComponents.Length, Is.EqualTo(3));
-            Span<Integer> destination = stackalloc Integer[intComponents.Length];
+            ComponentEnumerator<Integer> intComponents = chunk.GetComponents<Integer>(intType);
+            Assert.That(intComponents.length, Is.EqualTo(3));
+            Span<Integer> destination = stackalloc Integer[intComponents.length];
             intComponents.CopyTo(destination);
             Assert.That(destination[0].value, Is.EqualTo(32));
             Assert.That(destination[1].value, Is.EqualTo(64));
@@ -185,8 +185,8 @@ namespace Worlds.Tests
         {
             using Schema schema = CreateSchema();
             Definition definition = new();
-            int intType = schema.GetComponentTypeIndex<Integer>();
-            int floatType = schema.GetComponentTypeIndex<Float>();
+            int intType = schema.GetComponentType<Integer>();
+            int floatType = schema.GetComponentType<Float>();
             definition.AddComponentType(intType);
             definition.AddComponentType(floatType);
             using Chunk chunk = new(definition, schema);
@@ -200,8 +200,8 @@ namespace Worlds.Tests
             chunk.SetComponent(bIndex, intType, new Integer(64));
             chunk.SetComponent(cIndex, intType, new Integer(128));
 
-            ComponentEnumerator<Integer> intComponents = chunk.GetEnumerator<Integer>(intType);
-            Assert.That(intComponents.Length, Is.EqualTo(3));
+            ComponentEnumerator<Integer> intComponents = chunk.GetComponents<Integer>(intType);
+            Assert.That(intComponents.length, Is.EqualTo(3));
             Assert.That(intComponents[0].value, Is.EqualTo(32));
             Assert.That(intComponents[1].value, Is.EqualTo(64));
             Assert.That(intComponents[2].value, Is.EqualTo(128));

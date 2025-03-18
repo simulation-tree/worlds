@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace Worlds.Generator
+namespace Worlds
 {
-    public readonly struct DataType : IEquatable<DataType>
+    internal readonly struct DataType : IEquatable<DataType>
     {
         public readonly DataKind kind;
         public readonly string fullTypeName;

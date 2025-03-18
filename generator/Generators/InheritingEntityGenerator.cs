@@ -3,9 +3,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Threading;
-using Unmanaged;
 
-namespace Worlds.Generator
+namespace Worlds.Generators
 {
     [Generator(LanguageNames.CSharp)]
     public class InheritingEntityGenerator : IIncrementalGenerator
@@ -90,11 +89,11 @@ namespace Worlds.Generator
             int complianceIndent = GetIndentation(source, "{{ComplianceChecks}}");
             int bodyIndent = GetIndentation(source, "{{DisposeMethod}}");
 
-            string interfaces = GetInterfaces(type, compilation);
+            string interfaces = GetInterfaces(type);
             string typeName = type.typeSymbol.Name;
             string complianceChecks = GetComplianceChecks(type, complianceIndent, compilation);
-            string disposeMethod = GetDisposeMethod(type, bodyIndent, compilation);
-            string equalityMethods = GetEqualityMethods(type, bodyIndent, compilation);
+            string disposeMethod = GetDisposeMethod(type, bodyIndent);
+            string equalityMethods = GetEqualityMethods(type, bodyIndent);
             source = source.Replace("{{EntityInterfaces}}", interfaces);
             source = source.Replace("{{DisposeMethod}}", disposeMethod);
             source = source.Replace("{{EqualityMethods}}", equalityMethods);
@@ -296,7 +295,7 @@ namespace Worlds.Generator
             return string.Empty;
         }
 
-        private static string GetDisposeMethod(EntityType type, int indent, Compilation compilation)
+        private static string GetDisposeMethod(EntityType type, int indent)
         {
             bool hasDisposeMethod = false;
             foreach (IMethodSymbol method in type.typeSymbol.GetMethods())
@@ -316,6 +315,10 @@ namespace Worlds.Generator
             {
                 SourceBuilder builder = new();
                 builder.Indent(indent);
+
+                builder.AppendLine();
+                builder.Append("/// <inheritdoc/>");
+
                 builder.AppendLine();
                 builder.Append("public readonly void Dispose()");
                 builder.AppendLine();
@@ -328,7 +331,7 @@ namespace Worlds.Generator
             }
         }
 
-        private static string GetInterfaces(EntityType type, Compilation compilation)
+        private static string GetInterfaces(EntityType type)
         {
             //check if type already implements IEquatable
             if (type.typeSymbol.HasInterface($"System.IEquatable<{type.fullTypeName}>"))
@@ -339,7 +342,7 @@ namespace Worlds.Generator
             return ", IEquatable<{{TypeName}}>";
         }
 
-        private static string GetEqualityMethods(EntityType type, int indent, Compilation compilation)
+        private static string GetEqualityMethods(EntityType type, int indent)
         {
             if (type.typeSymbol.HasInterface($"System.IEquatable<{type.fullTypeName}>"))
             {
@@ -348,6 +351,10 @@ namespace Worlds.Generator
 
             SourceBuilder builder = new();
             builder.Indent(indent);
+
+            builder.AppendLine();
+            builder.Append("/// <inheritdoc/>");
+
             builder.AppendLine();
             builder.AppendLine("public readonly override bool Equals(object? obj)");
             builder.BeginGroup();
@@ -358,6 +365,10 @@ namespace Worlds.Generator
                 builder.AppendLine();
             }
             builder.EndGroup();
+
+            builder.AppendLine();
+            builder.Append("/// <inheritdoc/>");
+
             builder.AppendLine();
             builder.AppendLine($"public readonly bool Equals({type.fullTypeName} other)");
             builder.BeginGroup();
@@ -365,6 +376,10 @@ namespace Worlds.Generator
                 builder.AppendLine("return world == other.world && value == other.value;");
             }
             builder.EndGroup();
+
+            builder.AppendLine();
+            builder.Append("/// <inheritdoc/>");
+
             builder.AppendLine();
             builder.AppendLine("public readonly override int GetHashCode()");
             builder.BeginGroup();
@@ -372,6 +387,10 @@ namespace Worlds.Generator
                 builder.AppendLine("return HashCode.Combine(world, value);");
             }
             builder.EndGroup();
+
+            builder.AppendLine();
+            builder.Append("/// <inheritdoc/>");
+
             builder.AppendLine();
             builder.Append("public static bool operator ==(");
             builder.Append(type.fullTypeName);
@@ -384,6 +403,10 @@ namespace Worlds.Generator
                 builder.AppendLine("return left.Equals(right);");
             }
             builder.EndGroup();
+
+            builder.AppendLine();
+            builder.Append("/// <inheritdoc/>");
+
             builder.AppendLine();
             builder.Append("public static bool operator !=(");
             builder.Append(type.fullTypeName);

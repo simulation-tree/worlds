@@ -1,8 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using System.Collections.Generic;
-using Unmanaged;
 
-namespace Worlds.Generator
+namespace Worlds.Generators
 {
     [Generator(LanguageNames.CSharp)]
     public class SchemaLoaderGenerator : IIncrementalGenerator
@@ -45,6 +44,11 @@ namespace Worlds.Generator
                 builder.AppendLine();
                 builder.BeginGroup();
             }
+
+            builder.AppendLine("/// <summary>");
+            builder.AppendLine("/// Contains a method for building a schema containing all components,");
+            builder.AppendLine("/// arrays and tag types that are mentioned in the codebase.");
+            builder.AppendLine("/// </summary>");
 
             builder.Append("public static class ");
             builder.Append(TypeName);

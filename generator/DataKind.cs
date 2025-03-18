@@ -1,6 +1,6 @@
-﻿namespace Worlds.Generator
+﻿namespace Worlds
 {
-    public enum DataKind
+    internal enum DataKind
     {
         Unknown,
         Component,

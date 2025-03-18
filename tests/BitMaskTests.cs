@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-
-namespace Worlds.Tests
+﻿namespace Worlds.Tests
 {
     public class BitMaskTests
     {
@@ -70,59 +66,6 @@ namespace Worlds.Tests
             b.Set(9);
 
             Assert.That(a & b, Is.Not.EqualTo(b));
-        }
-
-        [Test]
-        public void CollectTimes()
-        {
-            Stopwatch stopwatch = new();
-            List<int> times = new();
-            for (int r = 0; r < 100; r++)
-            {
-                stopwatch.Start();
-                for (int i = 0; i < 100000; i++)
-                {
-                    BitMask x = new();
-                    x.Set(3);
-                    x.Set(4);
-                    x.Set(5);
-                    x.Set(9);
-                    x.Contains(200);
-
-                    BitMask y = new();
-                    y.Set(4);
-                    y.Set(9);
-
-                    x.Contains(4);
-                    x.Contains(9);
-                }
-
-                stopwatch.Stop();
-                times.Add((int)stopwatch.ElapsedTicks);
-            }
-
-            float min = int.MaxValue;
-            float max = int.MinValue;
-            float total = 0;
-            foreach (int time in times)
-            {
-                if (time < min)
-                {
-                    min = time;
-                }
-                
-                if (time > max)
-                {
-                    max = time;
-                }
-
-                total += time;
-            }
-
-            float avg = total / times.Count;
-            Console.WriteLine($"Min: {min / Stopwatch.Frequency}");
-            Console.WriteLine($"Max: {max / Stopwatch.Frequency}");
-            Console.WriteLine($"Avg: {avg / Stopwatch.Frequency}");
         }
 
         [Test]
