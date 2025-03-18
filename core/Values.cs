@@ -297,6 +297,18 @@ namespace Worlds
         {
             return new Values(values.pointer);
         }
+        
+        /// <inheritdoc/>
+        public static implicit operator Span<T>(Values<T> values)
+        {
+            return new Span<T>(values.pointer->items.Pointer, values.pointer->length);
+        }
+        
+        /// <inheritdoc/>
+        public static implicit operator ReadOnlySpan<T>(Values<T> values)
+        {
+            return new Span<T>(values.pointer->items.Pointer, values.pointer->length);
+        }
     }
 
     /// <summary>

@@ -130,7 +130,7 @@ namespace Worlds.Tests
             operation.Perform(world);
 
             uint entity = world[0];
-            Span<Character> list = world.GetArray<Character>(entity).AsSpan();
+            Span<Character> list = world.GetArray<Character>(entity);
             Assert.That(list.As<Character, char>().ToString(), Is.EqualTo(testString));
         }
 
@@ -148,7 +148,7 @@ namespace Worlds.Tests
             uint entity = world[0];
             Assert.That(world.ContainsArray<Character>(entity), Is.True);
 
-            Span<Character> list = world.GetArray<Character>(entity).AsSpan();
+            Span<Character> list = world.GetArray<Character>(entity);
             Assert.That((char)list[0], Is.EqualTo('a'));
             Assert.That((char)list[1], Is.EqualTo('\0'));
             Assert.That((char)list[2], Is.EqualTo('\0'));
@@ -160,7 +160,7 @@ namespace Worlds.Tests
             operation.SetArrayElements<Character>(1, ['b', 'c']);
 
             operation.Perform(world);
-            list = world.GetArray<Character>(entity).AsSpan();
+            list = world.GetArray<Character>(entity);
             Assert.That((char)list[0], Is.EqualTo('a'));
             Assert.That((char)list[1], Is.EqualTo('b'));
             Assert.That((char)list[2], Is.EqualTo('c'));
