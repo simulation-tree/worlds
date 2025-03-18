@@ -327,12 +327,12 @@ namespace Worlds
         /// Moves the entity at <paramref name="index"/> and all of its components to the <paramref name="destination"/> chunk,
         /// and modifies it to match the new index.
         /// </summary>
-        public static void MoveEntityAt(ref int index, ref Chunk current, Chunk destination)
+        public static void MoveEntityAt(uint entity, ref int index, ref Chunk current, Chunk destination)
         {
             MemoryAddress.ThrowIfDefault(current.chunk);
             MemoryAddress.ThrowIfDefault(destination.chunk);
 
-            current.chunk->entities.RemoveAtBySwapping(index, out uint entity);
+            current.chunk->entities.RemoveAtBySwapping(index);
             current.chunk->lastEntity = current.chunk->entities[--current.chunk->count];
 
             MemoryAddress sourceComponentRow = current.chunk->components[index];

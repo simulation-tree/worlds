@@ -89,7 +89,7 @@ namespace Worlds.Tests
             Definition definitionB = new();
             definitionB.AddComponentType(integerType);
             Chunk chunkB = new(definitionB, schema);
-            Chunk.MoveEntityAt(ref index, ref currentChunk, chunkB);
+            Chunk.MoveEntityAt(entity, ref index, ref currentChunk, chunkB);
             ref Integer intComponent = ref chunkB.GetComponent<Integer>(index, integerType);
             intComponent = 42;
 
@@ -103,7 +103,7 @@ namespace Worlds.Tests
             Definition definitionC = new();
             definitionC.AddComponentTypes(floatType, integerType);
             Chunk chunkC = new(definitionC, schema);
-            Chunk.MoveEntityAt(ref index, ref currentChunk, chunkC);
+            Chunk.MoveEntityAt(entity, ref index, ref currentChunk, chunkC);
             ref Float floatComponent = ref chunkC.GetComponent<Float>(index, floatType);
             floatComponent = 3.14f;
 
@@ -121,7 +121,7 @@ namespace Worlds.Tests
             Definition definitionD = new();
             definitionD.AddComponentType(fruitType);
             Chunk chunkD = new(definitionD, schema);
-            Chunk.MoveEntityAt(ref index, ref currentChunk, chunkD);
+            Chunk.MoveEntityAt(entity, ref index, ref currentChunk, chunkD);
 
             Assert.That(chunkC.Entities.Length, Is.EqualTo(0));
             Assert.That(chunkD.Entities.Length, Is.EqualTo(1));
