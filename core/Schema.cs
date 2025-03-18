@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using Types;
 using Unmanaged;
-using Worlds.Functions;
 using Pointer = Worlds.Pointers.Schema;
 
 namespace Worlds
@@ -316,22 +315,6 @@ namespace Worlds
             bank.Load(this);
         }
 
-        private static void Register(RegisterDataType.Input input)
-        {
-            if (input.kind == DataType.Kind.Component)
-            {
-                input.schema.RegisterComponent(input.type);
-            }
-            else if (input.kind == DataType.Kind.Array)
-            {
-                input.schema.RegisterArray(input.type);
-            }
-            else if (input.kind == DataType.Kind.Tag)
-            {
-                input.schema.RegisterTag(input.type);
-            }
-        }
-
         /// <summary>
         /// Retrieves the type information for <paramref name="componentType"/>.
         /// </summary>
@@ -437,10 +420,10 @@ namespace Worlds
 
             componentType = schema->componentCount;
             schema->offsets.WriteElement(componentType, schema->componentRowSize);
-            schema->sizes.WriteElement(componentType, type.Size);
+            schema->sizes.WriteElement(componentType, (int)type.size);
             schema->typeHashes.WriteElement(componentType, type.Hash);
             schema->componentCount++;
-            schema->componentRowSize += type.Size;
+            schema->componentRowSize += type.size;
             schema->definitionMask.AddComponentType(componentType);
             return componentType;
         }
@@ -472,7 +455,7 @@ namespace Worlds
             arrayType = schema->arraysCount;
             Span<int> arraySizes = schema->sizes.AsSpan<int>(BitMask.Capacity, BitMask.Capacity);
             Span<long> arrayHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-            arraySizes[schema->arraysCount] = type.Size;
+            arraySizes[schema->arraysCount] = type.size;
             arrayHashes[schema->arraysCount] = type.Hash;
             schema->arraysCount++;
             schema->definitionMask.AddArrayType(arrayType);
@@ -692,7 +675,7 @@ namespace Worlds
 
             Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
             int componentType = componentTypeHashes.IndexOf(type.Hash);
-            return new(componentType, DataType.Kind.Component, type.Size);
+            return new(componentType, DataType.Kind.Component, type.size);
         }
 
         /// <summary>
@@ -754,7 +737,7 @@ namespace Worlds
 
             Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
             int arrayType = arrayTypeHashes.IndexOf(type.Hash);
-            return new(arrayType, DataType.Kind.Array, type.Size);
+            return new(arrayType, DataType.Kind.Array, type.size);
         }
 
         /// <summary>
@@ -1574,60 +1557,6 @@ namespace Worlds
             }
         }
 
-        [Conditional("DEBUG")]
-        private readonly void ThrowIfComponentAlreadyRegistered<T>() where T : unmanaged
-        {
-            if (ContainsComponentType<T>())
-            {
-                throw new Exception($"Component `{typeof(T).FullName}` is already registered in schema");
-            }
-        }
-
-        [Conditional("DEBUG")]
-        private readonly void ThrowIfComponentAlreadyRegistered(TypeLayout type)
-        {
-            if (ContainsComponentType(type))
-            {
-                throw new Exception($"Component `{type}` is already registered in schema");
-            }
-        }
-
-        [Conditional("DEBUG")]
-        private readonly void ThrowIfArrayAlreadyRegistered<T>() where T : unmanaged
-        {
-            if (ContainsArrayType<T>())
-            {
-                throw new Exception($"Array `{typeof(T).FullName}` is already registered in schema");
-            }
-        }
-
-        [Conditional("DEBUG")]
-        private readonly void ThrowIfArrayAlreadyRegistered(TypeLayout type)
-        {
-            if (ContainsArrayType(type))
-            {
-                throw new Exception($"Array `{type}` is already registered in schema");
-            }
-        }
-
-        [Conditional("DEBUG")]
-        private readonly void ThrowIfTagAlreadyRegistered<T>() where T : unmanaged
-        {
-            if (ContainsTagType<T>())
-            {
-                throw new Exception($"Tag `{typeof(T).FullName}` is already registered in schema");
-            }
-        }
-
-        [Conditional("DEBUG")]
-        private readonly void ThrowIfTagAlreadyRegistered(TypeLayout type)
-        {
-            if (ContainsTagType(type))
-            {
-                throw new Exception($"Tag `{type}` is already registered in schema");
-            }
-        }
-
         /// <inheritdoc/>
         public readonly override bool Equals(object? obj)
         {
@@ -1708,7 +1637,7 @@ namespace Worlds
             return !(left == right);
         }
 
-        internal static class TypeLayoutHashCodeCache<T> where T : unmanaged
+        private static class TypeLayoutHashCodeCache<T> where T : unmanaged
         {
             public static readonly long value = TypeRegistry.Get<T>().Hash;
         }
@@ -1717,7 +1646,7 @@ namespace Worlds
         /// Cache of types per <see cref="Schema"/>.
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        internal static class SchemaTypeCache<T> where T : unmanaged
+        private static class SchemaTypeCache<T> where T : unmanaged
         {
             private static int[] components;
             private static int[] arrays;
@@ -1778,7 +1707,7 @@ namespace Worlds
                 }
                 else
                 {
-                    componentType = default;
+                    componentType = -1;
                     return false;
                 }
             }
@@ -1791,7 +1720,7 @@ namespace Worlds
                     return true;
                 }
 
-                arrayType = default;
+                arrayType = -1;
                 return false;
             }
 
@@ -1803,7 +1732,7 @@ namespace Worlds
                     return true;
                 }
 
-                tagType = default;
+                tagType = -1;
                 return false;
             }
         }

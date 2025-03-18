@@ -64,19 +64,6 @@ namespace Worlds
         public readonly bool IsDisposed => world is null;
 
         /// <summary>
-        /// All available slots.
-        /// </summary>
-        private readonly ReadOnlySpan<Slot> Slots
-        {
-            get
-            {
-                MemoryAddress.ThrowIfDefault(world);
-
-                return world->slots.AsSpan();
-            }
-        }
-
-        /// <summary>
         /// All previously used entities that are now free.
         /// </summary>
         public readonly ReadOnlySpan<uint> Free
@@ -609,7 +596,7 @@ namespace Worlds
                     for (int i = 0; i < children.Length; i++)
                     {
                         uint child = children[i];
-                        DestroyEntity(child, true);
+                        DestroyEntity(child, destroyChildren); //recusive
                     }
                 }
                 else
@@ -764,7 +751,6 @@ namespace Worlds
                     previousChunk = currentSlot.chunk;
                     previousDefinition = previousChunk.Definition;
                     oldEnabled = !previousDefinition.tagTypes.Contains(Schema.DisabledTagType);
-                    newEnabled = currentSlot.state == Slot.State.Enabled;
                     if (oldEnabled != enabled)
                     {
                         Definition newDefinition = previousDefinition;
@@ -2440,12 +2426,11 @@ namespace Worlds
 
             TypeLayout layout = world->schema.GetArrayLayout(arrayType);
             Values array = GetArray(entity, arrayType);
-            int size = layout.Size;
             object[] arrayObject = new object[array.Length];
             for (int i = 0; i < array.Length; i++)
             {
                 MemoryAddress allocation = array[i];
-                arrayObject[i] = layout.CreateInstance(new(allocation.Pointer, size));
+                arrayObject[i] = layout.CreateInstance(new(allocation.Pointer, layout.size));
             }
 
             return arrayObject;
@@ -2763,7 +2748,6 @@ namespace Worlds
             BitMask componentTypes = world->slots[(int)entity].Definition.componentTypes;
             if (!componentTypes.Contains(componentType))
             {
-                Entity thisEntity = new(new(world), entity);
                 throw new NullReferenceException($"Component `{DataType.GetComponent(componentType, world->schema).ToString(world->schema)}` not found on `{entity}`");
             }
         }
@@ -2899,7 +2883,7 @@ namespace Worlds
                 Slot.State state = reader.ReadValue<Slot.State>();
                 uint parent = reader.ReadValue<uint>();
 
-                uint createdEntity = value.CreateEntity(default, out _, out _);
+                uint createdEntity = value.CreateEntity();
                 entityMap[(int)entity] = createdEntity;
                 ref Slot slot = ref value.world->slots[(int)createdEntity];
                 slot.state = state;
