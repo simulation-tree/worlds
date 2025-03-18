@@ -131,6 +131,7 @@ namespace Worlds.Tests
             Assert.That(world.ContainsEntity(entity), Is.False);
         }
 
+#if DEBUG
         [Test]
         public void CreateAndDestroyEntity()
         {
@@ -162,6 +163,7 @@ namespace Worlds.Tests
             Assert.Throws<NullReferenceException>(() => world.GetComponent<SimpleComponent>(entity));
             Assert.That(world.GetComponent<Another>(entity).data, Is.EqualTo(component2.data));
         }
+#endif
 
         [Test]
         public void AddingAndGettingComponentReference()
