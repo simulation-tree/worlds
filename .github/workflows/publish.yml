@@ -1,6 +1,7 @@
 name: Publish
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v*'
@@ -41,8 +42,12 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
+      - name: Get latest tag
+        id: latestTag
+        uses: WyriHaximus/github-action-get-previous-tag@v1
+
       - name: Set VERSION variable from tag
-        run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
+        run: echo "VERSION=${{ steps.latestTag.outputs.tag }}" >> $GITHUB_ENV
             
       - name: Build `Worlds.Core`
         run: dotnet build "${{ github.event.repository.name }}/core" -c Release /p:Version=${VERSION}
