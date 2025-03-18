@@ -1435,13 +1435,14 @@ namespace Worlds
             int tagType = world->schema.GetTagType<T>();
             ThrowIfTagAlreadyPresent(entity, tagType);
 
-            ref Slot slot = ref world->slots[(int)entity];
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
             Definition newDefinition = slot.chunk.Definition;
             newDefinition.AddTagType(tagType);
 
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1458,13 +1459,14 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfTagAlreadyPresent(entity, tagType);
 
-            ref Slot slot = ref world->slots[(int)entity];
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
             Definition newDefinition = slot.chunk.Definition;
             newDefinition.AddTagType(tagType);
 
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1483,13 +1485,14 @@ namespace Worlds
             int tagType = world->schema.GetTagType<T>();
             ThrowIfTagIsMissing(entity, tagType);
 
-            ref Slot slot = ref world->slots[(int)entity];
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
             Definition newDefinition = slot.chunk.Definition;
             newDefinition.RemoveTagType(tagType);
 
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1506,13 +1509,14 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfTagIsMissing(entity, tagType);
 
-            ref Slot slot = ref world->slots[(int)entity];
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
             Definition newDefinition = slot.chunk.Definition;
             newDefinition.RemoveTagType(tagType);
 
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1549,8 +1553,9 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfArrayIsAlreadyPresent(entity, arrayType);
 
+            Span<Slot> slots = world->slots.AsSpan();
             int stride = world->schema.GetArraySize(arrayType);
-            ref Slot slot = ref world->slots[(int)entity];
+            ref Slot slot = ref slots[(int)entity];
 
             if (!slot.ContainsArrays)
             {
@@ -1577,7 +1582,7 @@ namespace Worlds
 
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1597,7 +1602,8 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfArrayIsAlreadyPresent(entity, arrayType);
 
-            ref Slot slot = ref world->slots[(int)entity];
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
 
             if (!slot.ContainsArrays)
             {
@@ -1624,7 +1630,7 @@ namespace Worlds
 
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1644,7 +1650,8 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfArrayIsAlreadyPresent(entity, dataType.index);
 
-            ref Slot slot = ref world->slots[(int)entity];
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
 
             if (!slot.ContainsArrays)
             {
@@ -1671,7 +1678,7 @@ namespace Worlds
 
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1693,7 +1700,8 @@ namespace Worlds
             int arrayType = world->schema.GetArrayType<T>();
             ThrowIfArrayIsAlreadyPresent(entity, arrayType);
 
-            ref Slot slot = ref world->slots[(int)entity];
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
 
             if (!slot.ContainsArrays)
             {
@@ -1720,7 +1728,7 @@ namespace Worlds
 
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1742,7 +1750,8 @@ namespace Worlds
             int arrayType = world->schema.GetArrayType<T>();
             ThrowIfArrayIsAlreadyPresent(entity, arrayType);
 
-            ref Slot slot = ref world->slots[(int)entity];
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
 
             if (!slot.ContainsArrays)
             {
@@ -1769,7 +1778,7 @@ namespace Worlds
 
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1789,7 +1798,8 @@ namespace Worlds
             int arrayType = world->schema.GetArrayType<T>();
             ThrowIfArrayIsAlreadyPresent(entity, arrayType);
 
-            ref Slot slot = ref world->slots[(int)entity];
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
 
             if (!slot.ContainsArrays)
             {
@@ -1816,7 +1826,7 @@ namespace Worlds
 
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1956,7 +1966,8 @@ namespace Worlds
             int arrayType = world->schema.GetArrayType<T>();
             ThrowIfArrayIsMissing(entity, arrayType);
 
-            ref Slot slot = ref world->slots[(int)entity];
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
             ref Values array = ref slot.arrays[arrayType];
             array.Dispose();
             array = default;
@@ -1966,7 +1977,7 @@ namespace Worlds
 
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1983,7 +1994,8 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfArrayIsMissing(entity, arrayType);
 
-            ref Slot slot = ref world->slots[(int)entity];
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
             ref Values array = ref slot.arrays[arrayType];
             array.Dispose();
             array = default;
@@ -1993,7 +2005,7 @@ namespace Worlds
 
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -2012,10 +2024,12 @@ namespace Worlds
             int componentType = world->schema.GetComponentType<T>();
             ThrowIfComponentAlreadyPresent(entity, componentType);
 
-            ref Slot slot = ref world->slots[(int)entity];
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
+
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Definition definition = slot.chunk.Definition;
@@ -2035,10 +2049,12 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentAlreadyPresent(entity, componentType);
 
-            ref Slot slot = ref world->slots[(int)entity];
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
+
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Definition definition = slot.chunk.Definition;
@@ -2061,10 +2077,12 @@ namespace Worlds
             int componentType = world->schema.GetComponentType<T>();
             ThrowIfComponentAlreadyPresent(entity, componentType);
 
-            ref Slot slot = ref world->slots[(int)entity];
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
+
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Definition definition = slot.chunk.Definition;
@@ -2084,10 +2102,12 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentAlreadyPresent(entity, componentType);
 
-            ref Slot slot = ref world->slots[(int)entity];
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
+
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Definition definition = slot.chunk.Definition;
@@ -2106,10 +2126,12 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentAlreadyPresent(entity, componentType);
 
-            ref Slot slot = ref world->slots[(int)entity];
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
+
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Definition definition = slot.chunk.Definition;
@@ -2129,10 +2151,12 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentAlreadyPresent(entity, componentType);
 
-            ref Slot slot = ref world->slots[(int)entity];
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
+
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Definition definition = slot.chunk.Definition;
@@ -2153,10 +2177,12 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentAlreadyPresent(entity, componentType);
 
-            ref Slot slot = ref world->slots[(int)entity];
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
+
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Definition definition = slot.chunk.Definition;
@@ -2180,10 +2206,12 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentAlreadyPresent(entity, componentType);
 
-            ref Slot slot = ref world->slots[(int)entity];
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
+
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Definition definition = slot.chunk.Definition;
@@ -2204,10 +2232,12 @@ namespace Worlds
             int componentType = world->schema.GetComponentType<T>();
             ThrowIfComponentMissing(entity, componentType);
 
-            ref Slot slot = ref world->slots[(int)entity];
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
+
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Definition definition = slot.chunk.Definition;
@@ -2226,10 +2256,12 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentMissing(entity, componentType);
 
-            ref Slot slot = ref world->slots[(int)entity];
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
+
             if (entity != slot.chunk.LastEntity)
             {
-                world->slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
             }
 
             Definition definition = slot.chunk.Definition;
