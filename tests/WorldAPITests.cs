@@ -46,6 +46,42 @@ namespace Worlds.Tests
         }
 
         [Test]
+        public void Clearing()
+        {
+            using World world = CreateWorld();
+            uint a = world.CreateEntity();
+            world.AddComponent(a, new SimpleComponent("Hello World"));
+            uint b = world.CreateEntity();
+            world.AddComponent(b, new Another(42));
+            uint c = world.CreateEntity();
+            world.AddComponent(c, new SimpleComponent("Goodbye World"));
+            world.AddComponent(c, new Another(84));
+
+            Assert.That(world.Count, Is.EqualTo(3));
+            Assert.That(world.ContainsEntity(a), Is.True);
+            Assert.That(world.ContainsEntity(b), Is.True);
+            Assert.That(world.ContainsEntity(c), Is.True);
+            world.Clear();
+            Assert.That(world.Count, Is.EqualTo(0));
+            a = world.CreateEntity();
+            Assert.That(world.ContainsEntity(a), Is.True);
+            Assert.That(world.Count, Is.EqualTo(1));
+            Assert.That(world.ContainsComponent<SimpleComponent>(a), Is.False);
+            b = world.CreateEntity();
+            Assert.That(world.ContainsEntity(b), Is.True);
+            Assert.That(world.Count, Is.EqualTo(2));
+            Assert.That(world.ContainsComponent<Another>(b), Is.False);
+            c = world.CreateEntity();
+            Assert.That(world.ContainsEntity(c), Is.True);
+            Assert.That(world.Count, Is.EqualTo(3));
+            Assert.That(world.ContainsComponent<SimpleComponent>(c), Is.False);
+            Assert.That(world.ContainsComponent<Another>(c), Is.False);
+
+            world.AddComponent(c, new SimpleComponent("Hello Again"));
+            Assert.That(world.ContainsComponent<SimpleComponent>(c), Is.True);
+        }
+
+        [Test]
         public void CreateBulkEntities()
         {
             using World world = CreateWorld();

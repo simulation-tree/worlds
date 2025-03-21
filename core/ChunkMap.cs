@@ -152,14 +152,15 @@ namespace Worlds
 
         public readonly void Clear()
         {
-            for (int i = 0; i < chunkMap->chunks.Count; i++)
+            for (int i = chunkMap->chunks.Count - 1; i > 0; i--) //start at 1 to skip the default chunk
             {
                 chunkMap->chunks[i].Dispose();
+                chunkMap->chunks.RemoveAt(i);
             }
 
-            chunkMap->chunks.Clear();
             chunkMap->occupied.Clear(chunkMap->capacity);
-            chunkMap->count = 0;
+            chunkMap->occupied.WriteElement(0, true);
+            chunkMap->count = 1;
         }
 
         private static int GetIndex(long hashCode, int capacity)
