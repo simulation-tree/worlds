@@ -10,10 +10,10 @@ namespace Worlds.Functions
     public unsafe readonly struct ProcessSchema : IEquatable<ProcessSchema>
     {
 #if NET
-        private readonly delegate* unmanaged<Input, TypeLayout> function;
+        private readonly delegate* unmanaged<Input, Types.Type> function;
 
         /// <inheritdoc/>
-        public ProcessSchema(delegate* unmanaged<Input, TypeLayout> function)
+        public ProcessSchema(delegate* unmanaged<Input, Types.Type> function)
         {
             this.function = function;
         }
@@ -46,14 +46,14 @@ namespace Worlds.Functions
         }
 
         /// <inheritdoc/>
-        public readonly void Invoke(ref TypeLayout type, DataType.Kind dataType)
+        public readonly void Invoke(ref Types.Type type, DataType.Kind dataType)
         {
-            TypeLayout newType = function(new Input(type, dataType));
+            Types.Type newType = function(new Input(type, dataType));
             type = newType;
         }
 
         /// <inheritdoc/>
-        public readonly TypeLayout Invoke(TypeLayout type, DataType.Kind dataType)
+        public readonly Types.Type Invoke(Types.Type type, DataType.Kind dataType)
         {
             return function(new Input(type, dataType));
         }
@@ -78,7 +78,7 @@ namespace Worlds.Functions
             /// <summary>
             /// The type being deserialized.
             /// </summary>
-            public readonly TypeLayout type;
+            public readonly Types.Type type;
 
             /// <summary>
             /// The kind of data type that <see cref="type"/> is describing.
@@ -86,7 +86,7 @@ namespace Worlds.Functions
             public readonly DataType.Kind dataType;
 
             /// <inheritdoc/>
-            public Input(TypeLayout type, DataType.Kind dataType)
+            public Input(Types.Type type, DataType.Kind dataType)
             {
                 this.type = type;
                 this.dataType = dataType;

@@ -274,8 +274,6 @@ namespace Worlds
                 slot.state = Slot.State.Free;
                 world->freeEntities.Push(e);
             }
-
-            world->chunks.Clear();
         }
 
         /// <inheritdoc/>
@@ -2447,7 +2445,7 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(world);
 
-            TypeLayout layout = world->schema.GetComponentLayout(componentType);
+            Types.Type layout = world->schema.GetComponentLayout(componentType);
             Span<byte> bytes = GetComponentBytes(entity, componentType);
             return layout.CreateInstance(bytes);
         }
@@ -2459,7 +2457,7 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(world);
 
-            TypeLayout layout = world->schema.GetArrayLayout(arrayType);
+            Types.Type layout = world->schema.GetArrayLayout(arrayType);
             Values array = GetArray(entity, arrayType);
             object[] arrayObject = new object[array.Length];
             for (int i = 0; i < array.Length; i++)
@@ -2872,7 +2870,7 @@ namespace Worlds
         /// Deserializes a world from the given <paramref name="reader"/>
         /// with a custom schema processor.
         /// </summary>
-        public static World Deserialize(ByteReader reader, Func<TypeLayout, DataType.Kind, TypeLayout>? process)
+        public static World Deserialize(ByteReader reader, Func<Types.Type, DataType.Kind, Types.Type>? process)
         {
             Signature signature = reader.ReadValue<Signature>();
             if (signature.Version != Version)
@@ -2887,21 +2885,21 @@ namespace Worlds
             {
                 foreach (int componentType in loadedSchema.ComponentTypes)
                 {
-                    TypeLayout typeLayout = loadedSchema.GetComponentLayout(componentType);
+                    Types.Type typeLayout = loadedSchema.GetComponentLayout(componentType);
                     typeLayout = process.Invoke(typeLayout, DataType.Kind.Component);
                     schema.RegisterComponent(typeLayout);
                 }
 
                 foreach (int arrayType in loadedSchema.ArrayTypes)
                 {
-                    TypeLayout typeLayout = loadedSchema.GetArrayLayout(arrayType);
+                    Types.Type typeLayout = loadedSchema.GetArrayLayout(arrayType);
                     typeLayout = process.Invoke(typeLayout, DataType.Kind.Array);
                     schema.RegisterArray(typeLayout);
                 }
 
                 foreach (int tagType in loadedSchema.TagTypes)
                 {
-                    TypeLayout typeLayout = loadedSchema.GetTagLayout(tagType);
+                    Types.Type typeLayout = loadedSchema.GetTagLayout(tagType);
                     typeLayout = process.Invoke(typeLayout, DataType.Kind.Tag);
                     schema.RegisterTag(typeLayout);
                 }

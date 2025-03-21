@@ -76,7 +76,7 @@ namespace Worlds
             operation->count++;
         }
 
-        private readonly void WriteTypeLayout(TypeLayout type)
+        private readonly void WriteTypeLayout(Types.Type type)
         {
             MemoryAddress.ThrowIfDefault(operation);
 
@@ -147,13 +147,13 @@ namespace Worlds
             return type;
         }
 
-        private readonly TypeLayout ReadTypeLayout(ref int bytePosition)
+        private readonly Types.Type ReadTypeLayout(ref int bytePosition)
         {
             MemoryAddress.ThrowIfDefault(operation);
 
             long hash = operation->buffer.Read<long>(bytePosition);
             bytePosition += sizeof(long);
-            return TypeRegistry.Get(hash);
+            return TypeRegistry.GetType(hash);
         }
 
         private readonly T Read<T>(ref int bytePosition) where T : unmanaged
@@ -251,7 +251,7 @@ namespace Worlds
         public readonly void AddComponent<T>(T component) where T : unmanaged
         {
             WriteInstructionType(InstructionType.AddComponent);
-            WriteTypeLayout(TypeRegistry.Get<T>());
+            WriteTypeLayout(TypeRegistry.GetType<T>());
             WriteValue(component);
         }
 
@@ -261,7 +261,7 @@ namespace Worlds
         public readonly void AddComponent<T>() where T : unmanaged
         {
             WriteInstructionType(InstructionType.AddComponent);
-            WriteTypeLayout(TypeRegistry.Get<T>());
+            WriteTypeLayout(TypeRegistry.GetType<T>());
             WriteValue(default(T));
         }
 
@@ -271,7 +271,7 @@ namespace Worlds
         public readonly void SetComponent<T>(T component) where T : unmanaged
         {
             WriteInstructionType(InstructionType.SetComponent);
-            WriteTypeLayout(TypeRegistry.Get<T>());
+            WriteTypeLayout(TypeRegistry.GetType<T>());
             WriteValue(component);
         }
 
@@ -281,7 +281,7 @@ namespace Worlds
         public readonly void AddOrSetComponent<T>(T component) where T : unmanaged
         {
             WriteInstructionType(InstructionType.AddOrSetComponent);
-            WriteTypeLayout(TypeRegistry.Get<T>());
+            WriteTypeLayout(TypeRegistry.GetType<T>());
             WriteValue(component);
         }
 
@@ -291,7 +291,7 @@ namespace Worlds
         public readonly void RemoveComponent<T>() where T : unmanaged
         {
             WriteInstructionType(InstructionType.RemoveComponent);
-            WriteTypeLayout(TypeRegistry.Get<T>());
+            WriteTypeLayout(TypeRegistry.GetType<T>());
         }
 
         /// <summary>
@@ -300,7 +300,7 @@ namespace Worlds
         public readonly void CreateArray<T>(int length = 0) where T : unmanaged
         {
             WriteInstructionType(InstructionType.CreateArray);
-            WriteTypeLayout(TypeRegistry.Get<T>());
+            WriteTypeLayout(TypeRegistry.GetType<T>());
             WriteValue(length);
         }
 
@@ -311,7 +311,7 @@ namespace Worlds
         public readonly void CreateArray<T>(Span<T> values) where T : unmanaged
         {
             WriteInstructionType(InstructionType.CreateAndInitializeArray);
-            WriteTypeLayout(TypeRegistry.Get<T>());
+            WriteTypeLayout(TypeRegistry.GetType<T>());
             WriteValue(values.Length);
             if (values.Length > 0)
             {
@@ -326,7 +326,7 @@ namespace Worlds
         public readonly void CreateArray<T>(ReadOnlySpan<T> values) where T : unmanaged
         {
             WriteInstructionType(InstructionType.CreateAndInitializeArray);
-            WriteTypeLayout(TypeRegistry.Get<T>());
+            WriteTypeLayout(TypeRegistry.GetType<T>());
             WriteValue(values.Length);
             if (values.Length > 0)
             {
@@ -341,7 +341,7 @@ namespace Worlds
         public readonly void ResizeArray<T>(int newLength) where T : unmanaged
         {
             WriteInstructionType(InstructionType.ResizeArray);
-            WriteTypeLayout(TypeRegistry.Get<T>());
+            WriteTypeLayout(TypeRegistry.GetType<T>());
             WriteValue(newLength);
         }
 
@@ -352,7 +352,7 @@ namespace Worlds
         {
             WriteInstructionType(InstructionType.SetArrayElements);
             WriteValue(index);
-            WriteTypeLayout(TypeRegistry.Get<T>());
+            WriteTypeLayout(TypeRegistry.GetType<T>());
             WriteValue(1);
             WriteValue(value);
         }
@@ -366,7 +366,7 @@ namespace Worlds
             {
                 WriteInstructionType(InstructionType.SetArrayElements);
                 WriteValue(0);
-                WriteTypeLayout(TypeRegistry.Get<T>());
+                WriteTypeLayout(TypeRegistry.GetType<T>());
                 WriteValue(values.Length);
                 WriteSpan(values);
             }
@@ -381,7 +381,7 @@ namespace Worlds
             {
                 WriteInstructionType(InstructionType.SetArrayElements);
                 WriteValue(index);
-                WriteTypeLayout(TypeRegistry.Get<T>());
+                WriteTypeLayout(TypeRegistry.GetType<T>());
                 WriteValue(values.Length);
                 WriteSpan(values);
             }
@@ -393,7 +393,7 @@ namespace Worlds
         public readonly void SetArray<T>(ReadOnlySpan<T> values) where T : unmanaged
         {
             WriteInstructionType(InstructionType.SetArray);
-            WriteTypeLayout(TypeRegistry.Get<T>());
+            WriteTypeLayout(TypeRegistry.GetType<T>());
             WriteValue(values.Length);
             WriteSpan(values);
         }
@@ -405,7 +405,7 @@ namespace Worlds
         public readonly void CreateOrSetArray<T>(ReadOnlySpan<T> values) where T : unmanaged
         {
             WriteInstructionType(InstructionType.CreateOrSetArray);
-            WriteTypeLayout(TypeRegistry.Get<T>());
+            WriteTypeLayout(TypeRegistry.GetType<T>());
             WriteValue(values.Length);
             WriteSpan(values);
         }
@@ -417,7 +417,7 @@ namespace Worlds
         public readonly void CreateOrSetArray<T>(Span<T> values) where T : unmanaged
         {
             WriteInstructionType(InstructionType.CreateOrSetArray);
-            WriteTypeLayout(TypeRegistry.Get<T>());
+            WriteTypeLayout(TypeRegistry.GetType<T>());
             WriteValue(values.Length);
             WriteSpan(values);
         }
@@ -618,7 +618,7 @@ namespace Worlds
 
             private void AddComponent()
             {
-                TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
+                Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetComponentDataType(layout);
                 int componentType = dataType.index;
                 ReadOnlySpan<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
@@ -630,7 +630,7 @@ namespace Worlds
 
             private void SetComponent()
             {
-                TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
+                Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetComponentDataType(layout);
                 int componentType = dataType.index;
                 ReadOnlySpan<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
@@ -642,7 +642,7 @@ namespace Worlds
 
             private void AddOrSetComponent()
             {
-                TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
+                Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetComponentDataType(layout);
                 int componentType = dataType.index;
                 ReadOnlySpan<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
@@ -662,7 +662,7 @@ namespace Worlds
 
             private void RemoveComponent()
             {
-                TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
+                Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetComponentDataType(layout);
                 int componentType = dataType.index;
                 for (int i = 0; i < selection.Count; i++)
@@ -682,7 +682,7 @@ namespace Worlds
 
             private void CreateArray()
             {
-                TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
+                Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetArrayDataType(layout);
                 int arrayType = dataType.index;
                 int arrayLength = operation.Read<int>(ref bytePosition);
@@ -694,7 +694,7 @@ namespace Worlds
 
             private void CreateAndInitializeArray()
             {
-                TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
+                Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetArrayDataType(layout);
                 int arrayType = dataType.index;
                 int length = operation.Read<int>(ref bytePosition);
@@ -718,7 +718,7 @@ namespace Worlds
 
             private void ResizeArray()
             {
-                TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
+                Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetArrayDataType(layout);
                 int arrayType = dataType.index;
                 int length = operation.Read<int>(ref bytePosition);
@@ -732,7 +732,7 @@ namespace Worlds
             private void SetArrayElements()
             {
                 int index = operation.Read<int>(ref bytePosition);
-                TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
+                Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
                 int length = operation.Read<int>(ref bytePosition);
                 DataType dataType = world.Schema.GetArrayDataType(layout);
                 int arrayType = dataType.index;
@@ -748,7 +748,7 @@ namespace Worlds
 
             private void SetArray()
             {
-                TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
+                Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetArrayDataType(layout);
                 int arrayType = dataType.index;
                 int length = operation.Read<int>(ref bytePosition);
@@ -763,7 +763,7 @@ namespace Worlds
 
             private void CreateOrSetArray()
             {
-                TypeLayout layout = operation.ReadTypeLayout(ref bytePosition);
+                Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetArrayDataType(layout);
                 int arrayType = dataType.index;
                 int length = operation.Read<int>(ref bytePosition);
