@@ -357,7 +357,7 @@ namespace Worlds
 
             Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
             long hash = componentTypeHashes[componentType];
-            return TypeRegistry.GetType(hash);
+            return MetadataRegistry.GetType(hash);
         }
 
         /// <summary>
@@ -370,7 +370,7 @@ namespace Worlds
 
             Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
             long hash = arrayTypeHashes[arrayType];
-            return TypeRegistry.GetType(hash);
+            return MetadataRegistry.GetType(hash);
         }
 
         /// <summary>
@@ -383,7 +383,7 @@ namespace Worlds
 
             Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
             long hash = tagTypeHashes[tagType];
-            return TypeRegistry.GetType(hash);
+            return MetadataRegistry.GetType(hash);
         }
 
         /// <summary>
@@ -400,7 +400,7 @@ namespace Worlds
         /// </summary>
         public readonly int RegisterComponent<T>() where T : unmanaged
         {
-            int newComponentType = RegisterComponent(TypeRegistry.GetOrRegisterType<T>());
+            int newComponentType = RegisterComponent(MetadataRegistry.GetOrRegisterType<T>());
             SchemaTypeCache<T>.SetComponentType(this, newComponentType);
             return newComponentType;
         }
@@ -434,7 +434,7 @@ namespace Worlds
         /// </summary>
         public readonly int RegisterArray<T>() where T : unmanaged
         {
-            int arrayType = RegisterArray(TypeRegistry.GetOrRegisterType<T>());
+            int arrayType = RegisterArray(MetadataRegistry.GetOrRegisterType<T>());
             SchemaTypeCache<T>.SetArrayType(this, arrayType);
             return arrayType;
         }
@@ -468,7 +468,7 @@ namespace Worlds
         /// </summary>
         public readonly int RegisterTag<T>() where T : unmanaged
         {
-            int tagType = RegisterTag(TypeRegistry.GetOrRegisterType<T>());
+            int tagType = RegisterTag(MetadataRegistry.GetOrRegisterType<T>());
             SchemaTypeCache<T>.SetTagType(this, tagType);
             return tagType;
         }
@@ -621,7 +621,7 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsComponentType<T>() where T : unmanaged
         {
-            if (!TypeRegistry.IsTypeRegistered<T>())
+            if (!MetadataRegistry.IsTypeRegistered<T>())
             {
                 return false;
             }
@@ -683,7 +683,7 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsArrayType<T>() where T : unmanaged
         {
-            if (!TypeRegistry.IsTypeRegistered<T>())
+            if (!MetadataRegistry.IsTypeRegistered<T>())
             {
                 return false;
             }
@@ -782,7 +782,7 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsTagType<T>() where T : unmanaged
         {
-            if (!TypeRegistry.IsTypeRegistered<T>())
+            if (!MetadataRegistry.IsTypeRegistered<T>())
             {
                 return false;
             }
@@ -1639,7 +1639,7 @@ namespace Worlds
 
         private static class TypeLayoutHashCodeCache<T> where T : unmanaged
         {
-            public static readonly long value = TypeRegistry.GetType<T>().Hash;
+            public static readonly long value = MetadataRegistry.GetType<T>().Hash;
         }
 
         /// <summary>

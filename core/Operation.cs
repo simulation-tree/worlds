@@ -153,7 +153,7 @@ namespace Worlds
 
             long hash = operation->buffer.Read<long>(bytePosition);
             bytePosition += sizeof(long);
-            return TypeRegistry.GetType(hash);
+            return MetadataRegistry.GetType(hash);
         }
 
         private readonly T Read<T>(ref int bytePosition) where T : unmanaged
@@ -251,7 +251,7 @@ namespace Worlds
         public readonly void AddComponent<T>(T component) where T : unmanaged
         {
             WriteInstructionType(InstructionType.AddComponent);
-            WriteTypeLayout(TypeRegistry.GetType<T>());
+            WriteTypeLayout(MetadataRegistry.GetType<T>());
             WriteValue(component);
         }
 
@@ -261,7 +261,7 @@ namespace Worlds
         public readonly void AddComponent<T>() where T : unmanaged
         {
             WriteInstructionType(InstructionType.AddComponent);
-            WriteTypeLayout(TypeRegistry.GetType<T>());
+            WriteTypeLayout(MetadataRegistry.GetType<T>());
             WriteValue(default(T));
         }
 
@@ -271,7 +271,7 @@ namespace Worlds
         public readonly void SetComponent<T>(T component) where T : unmanaged
         {
             WriteInstructionType(InstructionType.SetComponent);
-            WriteTypeLayout(TypeRegistry.GetType<T>());
+            WriteTypeLayout(MetadataRegistry.GetType<T>());
             WriteValue(component);
         }
 
@@ -281,7 +281,7 @@ namespace Worlds
         public readonly void AddOrSetComponent<T>(T component) where T : unmanaged
         {
             WriteInstructionType(InstructionType.AddOrSetComponent);
-            WriteTypeLayout(TypeRegistry.GetType<T>());
+            WriteTypeLayout(MetadataRegistry.GetType<T>());
             WriteValue(component);
         }
 
@@ -291,7 +291,7 @@ namespace Worlds
         public readonly void RemoveComponent<T>() where T : unmanaged
         {
             WriteInstructionType(InstructionType.RemoveComponent);
-            WriteTypeLayout(TypeRegistry.GetType<T>());
+            WriteTypeLayout(MetadataRegistry.GetType<T>());
         }
 
         /// <summary>
@@ -300,7 +300,7 @@ namespace Worlds
         public readonly void CreateArray<T>(int length = 0) where T : unmanaged
         {
             WriteInstructionType(InstructionType.CreateArray);
-            WriteTypeLayout(TypeRegistry.GetType<T>());
+            WriteTypeLayout(MetadataRegistry.GetType<T>());
             WriteValue(length);
         }
 
@@ -311,7 +311,7 @@ namespace Worlds
         public readonly void CreateArray<T>(Span<T> values) where T : unmanaged
         {
             WriteInstructionType(InstructionType.CreateAndInitializeArray);
-            WriteTypeLayout(TypeRegistry.GetType<T>());
+            WriteTypeLayout(MetadataRegistry.GetType<T>());
             WriteValue(values.Length);
             if (values.Length > 0)
             {
@@ -326,7 +326,7 @@ namespace Worlds
         public readonly void CreateArray<T>(ReadOnlySpan<T> values) where T : unmanaged
         {
             WriteInstructionType(InstructionType.CreateAndInitializeArray);
-            WriteTypeLayout(TypeRegistry.GetType<T>());
+            WriteTypeLayout(MetadataRegistry.GetType<T>());
             WriteValue(values.Length);
             if (values.Length > 0)
             {
@@ -341,7 +341,7 @@ namespace Worlds
         public readonly void ResizeArray<T>(int newLength) where T : unmanaged
         {
             WriteInstructionType(InstructionType.ResizeArray);
-            WriteTypeLayout(TypeRegistry.GetType<T>());
+            WriteTypeLayout(MetadataRegistry.GetType<T>());
             WriteValue(newLength);
         }
 
@@ -352,7 +352,7 @@ namespace Worlds
         {
             WriteInstructionType(InstructionType.SetArrayElements);
             WriteValue(index);
-            WriteTypeLayout(TypeRegistry.GetType<T>());
+            WriteTypeLayout(MetadataRegistry.GetType<T>());
             WriteValue(1);
             WriteValue(value);
         }
@@ -366,7 +366,7 @@ namespace Worlds
             {
                 WriteInstructionType(InstructionType.SetArrayElements);
                 WriteValue(0);
-                WriteTypeLayout(TypeRegistry.GetType<T>());
+                WriteTypeLayout(MetadataRegistry.GetType<T>());
                 WriteValue(values.Length);
                 WriteSpan(values);
             }
@@ -381,7 +381,7 @@ namespace Worlds
             {
                 WriteInstructionType(InstructionType.SetArrayElements);
                 WriteValue(index);
-                WriteTypeLayout(TypeRegistry.GetType<T>());
+                WriteTypeLayout(MetadataRegistry.GetType<T>());
                 WriteValue(values.Length);
                 WriteSpan(values);
             }
@@ -393,7 +393,7 @@ namespace Worlds
         public readonly void SetArray<T>(ReadOnlySpan<T> values) where T : unmanaged
         {
             WriteInstructionType(InstructionType.SetArray);
-            WriteTypeLayout(TypeRegistry.GetType<T>());
+            WriteTypeLayout(MetadataRegistry.GetType<T>());
             WriteValue(values.Length);
             WriteSpan(values);
         }
@@ -405,7 +405,7 @@ namespace Worlds
         public readonly void CreateOrSetArray<T>(ReadOnlySpan<T> values) where T : unmanaged
         {
             WriteInstructionType(InstructionType.CreateOrSetArray);
-            WriteTypeLayout(TypeRegistry.GetType<T>());
+            WriteTypeLayout(MetadataRegistry.GetType<T>());
             WriteValue(values.Length);
             WriteSpan(values);
         }
@@ -417,7 +417,7 @@ namespace Worlds
         public readonly void CreateOrSetArray<T>(Span<T> values) where T : unmanaged
         {
             WriteInstructionType(InstructionType.CreateOrSetArray);
-            WriteTypeLayout(TypeRegistry.GetType<T>());
+            WriteTypeLayout(MetadataRegistry.GetType<T>());
             WriteValue(values.Length);
             WriteSpan(values);
         }

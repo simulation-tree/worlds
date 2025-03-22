@@ -128,8 +128,8 @@ namespace Worlds.Tests
             using World loadedWorld = reader.ReadObject<World>();
 
             Schema loadedSchema = loadedWorld.Schema;
-            Assert.That(loadedSchema.TryGetComponentType(TypeRegistry.GetType<Fruit>(), out int loadedFruitType), Is.True);
-            Assert.That(loadedSchema.TryGetComponentType(TypeRegistry.GetType<Cherry>(), out int loadedCherryType), Is.True);
+            Assert.That(loadedSchema.TryGetComponentType(MetadataRegistry.GetType<Fruit>(), out int loadedFruitType), Is.True);
+            Assert.That(loadedSchema.TryGetComponentType(MetadataRegistry.GetType<Cherry>(), out int loadedCherryType), Is.True);
             Assert.That(loadedSchema.ContainsTagType<IsPrefab>(), Is.True);
             Assert.That(loadedFruitType, Is.EqualTo(fruitType));
             Assert.That(loadedCherryType, Is.EqualTo(cherryType));
@@ -161,7 +161,7 @@ namespace Worlds.Tests
                 if (type.Is<Fruit>())
                 {
                     //replace fruit with another
-                    return TypeRegistry.GetType<Another>();
+                    return MetadataRegistry.GetType<Another>();
                 }
                 else
                 {

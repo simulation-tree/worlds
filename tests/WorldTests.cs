@@ -7,7 +7,7 @@ namespace Worlds.Tests
     {
         static WorldTests()
         {
-            TypeRegistry.Load<WorldsTestsTypeBank>();
+            MetadataRegistry.Load<WorldsTestsTypeBank>();
         }
 
         protected World CreateWorld()
