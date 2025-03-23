@@ -6,7 +6,7 @@ namespace Worlds
     /// <summary>
     /// Describes an entity slot in a <see cref="World"/>.
     /// </summary>
-    public struct Slot
+    internal struct Slot
     {
         /// <summary>
         /// The entity that is the parent of the entity in this slot.
@@ -38,10 +38,8 @@ namespace Worlds
         /// </summary>
         public int childrenCount;
 
-        /// <summary>
-        /// The range referring to the references for the entity.
-        /// </summary>
-        public (int start, int length) references;
+        public int referenceStart;
+        public int referenceCount;
 
         /// <summary>
         /// All arrays stored in the entity.
@@ -72,6 +70,19 @@ namespace Worlds
         /// Checks if this slot has outdated children.
         /// </summary>
         public readonly bool ChildrenOutdated => (flags & Flags.ChildrenOutdated) != 0;
+
+        public Slot()
+        {
+            parent = 0;
+            state = State.Free;
+            flags = Flags.None;
+            chunk = default;
+            index = 0;
+            childrenCount = 0;
+            referenceStart = 0;
+            referenceCount = 0;
+            arrays = default;
+        }
 
         /// <summary>
         /// All possible states of an entity.
