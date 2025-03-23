@@ -5,34 +5,26 @@ using System;
 namespace Worlds
 {
     /// <summary>
-    /// A <see cref="uint"/> type that refers to a reference local to its entity.
-    /// <para>Can be explicitly cast from and into a <see cref="uint"/> value.
+    /// A <see cref="int"/> type that refers to a reference local to its entity.
+    /// <para>
+    /// Can be explicitly cast from a <see cref="int"/> value.
     /// </para>
     /// </summary>
     public readonly struct rint : IEquatable<rint>
     {
-        internal readonly uint value;
+        internal readonly int value;
 
 #if NET
         /// <inheritdoc/>
         [Obsolete("Default constructor not supported", true)]
         public rint()
         {
-            throw new NotSupportedException();
         }
 #endif
 
-        internal rint(uint value)
-        {
-            this.value = value;
-        }
-
         internal rint(int value)
         {
-            unchecked
-            {
-                this.value = (uint)value;
-            }
+            this.value = value;
         }
 
         /// <inheritdoc/>
@@ -82,15 +74,6 @@ namespace Worlds
         public static bool operator !=(rint left, rint right)
         {
             return !(left == right);
-        }
-
-        /// <inheritdoc/>
-        public static explicit operator int(rint value)
-        {
-            unchecked
-            {
-                return (int)value.value;
-            }
         }
 
         /// <inheritdoc/>

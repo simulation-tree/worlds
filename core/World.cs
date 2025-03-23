@@ -1286,7 +1286,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfReferenceIsMissing(entity, reference);
 
-            world->references[world->slots[(int)entity].referenceStart + (int)reference - 1] = referencedEntity;
+            world->references[world->slots[(int)entity].referenceStart + reference.value - 1] = referencedEntity;
         }
 
         /// <summary>
@@ -1312,7 +1312,7 @@ namespace Worlds
 
             unchecked
             {
-                return (uint)world->slots[(int)entity].referenceCount >= reference.value - 1;
+                return (uint)world->slots[(int)entity].referenceCount >= ((uint)reference.value - 1);
             }
         }
 
@@ -1336,7 +1336,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfReferenceIsMissing(entity, reference);
 
-            return world->references[world->slots[(int)entity].referenceStart + (int)reference - 1];
+            return world->references[world->slots[(int)entity].referenceStart + reference.value - 1];
         }
 
         /// <summary>
@@ -1362,14 +1362,14 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
 
             ref Slot slot = ref world->slots[(int)entity];
-            if (slot.referenceCount < (int)reference)
+            if (slot.referenceCount < reference.value)
             {
                 referencedEntity = default;
                 return false;
             }
             else
             {
-                referencedEntity = world->references[slot.referenceStart + (int)reference - 1];
+                referencedEntity = world->references[slot.referenceStart + reference.value - 1];
                 return true;
             }
         }
@@ -1387,7 +1387,7 @@ namespace Worlds
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
             List<uint> references = world->references;
-            int index = slot.referenceStart + (int)reference - 1;
+            int index = slot.referenceStart + reference.value - 1;
             slot.referenceCount--;
             uint removed = references[index];
             references.RemoveAt(index);
@@ -2699,7 +2699,7 @@ namespace Worlds
         public readonly void CopyReferencesTo(uint sourceEntity, World destinationWorld, uint destinationEntity)
         {
             int referenceCount = GetReferenceCount(sourceEntity);
-            for (uint r = 1; r <= referenceCount; r++)
+            for (int r = 1; r <= referenceCount; r++)
             {
                 uint referencedEntity = GetReference(sourceEntity, new rint(r));
                 destinationWorld.AddReference(destinationEntity, referencedEntity);
@@ -2751,8 +2751,7 @@ namespace Worlds
         private readonly void ThrowIfReferenceIsMissing(uint entity, rint reference)
         {
             ref Slot slot = ref world->slots[(int)entity];
-            int index = (int)reference;
-            if (index == 0 || index > slot.referenceCount)
+            if (reference.value == 0 || reference.value > slot.referenceCount)
             {
                 throw new NullReferenceException($"Reference `{reference}` not found on entity `{entity}`");
             }
