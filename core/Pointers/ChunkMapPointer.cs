@@ -3,18 +3,18 @@ using Unmanaged;
 
 namespace Worlds.Pointers
 {
-    internal struct ChunkMap
+    internal struct ChunkMapPointer
     {
-        public readonly Worlds.Schema schema;
+        public readonly Schema schema;
         public int count;
         public int capacity;
-        public List<Worlds.Chunk> chunks;
+        public List<Chunk> chunks;
         public MemoryAddress keys;
         public MemoryAddress hashCodes;
         public MemoryAddress occupied;
-        public Worlds.Chunk defaultChunk;
+        public Chunk defaultChunk;
 
-        public unsafe ChunkMap(Worlds.Schema schema)
+        public unsafe ChunkMapPointer(Schema schema)
         {
             this.schema = schema;
             count = 0;

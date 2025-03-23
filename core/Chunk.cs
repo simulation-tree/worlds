@@ -3,7 +3,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Unmanaged;
-using Pointer = Worlds.Pointers.Chunk;
+using Worlds.Pointers;
 
 namespace Worlds
 {
@@ -13,7 +13,7 @@ namespace Worlds
     [SkipLocalsInit]
     public unsafe struct Chunk : IDisposable, IEquatable<Chunk>
     {
-        private Pointer* chunk;
+        private ChunkPointer* chunk;
 
         /// <summary>
         /// Checks if this chunk is disposed.
@@ -88,9 +88,9 @@ namespace Worlds
         /// </summary>
         public Chunk(Schema schema)
         {
-            ref Pointer chunk = ref MemoryAddress.Allocate<Pointer>();
+            ref ChunkPointer chunk = ref MemoryAddress.Allocate<ChunkPointer>();
             chunk = new(default, schema);
-            fixed (Pointer* pointer = &chunk)
+            fixed (ChunkPointer* pointer = &chunk)
             {
                 this.chunk = pointer;
             }
@@ -101,7 +101,7 @@ namespace Worlds
         /// </summary>
         public Chunk(void* pointer)
         {
-            chunk = (Pointer*)pointer;
+            chunk = (ChunkPointer*)pointer;
         }
 
         /// <summary>
@@ -109,9 +109,9 @@ namespace Worlds
         /// </summary>
         public Chunk(Definition definition, Schema schema)
         {
-            ref Pointer chunk = ref MemoryAddress.Allocate<Pointer>();
+            ref ChunkPointer chunk = ref MemoryAddress.Allocate<ChunkPointer>();
             chunk = new(definition, schema);
-            fixed (Pointer* pointer = &chunk)
+            fixed (ChunkPointer* pointer = &chunk)
             {
                 this.chunk = pointer;
             }

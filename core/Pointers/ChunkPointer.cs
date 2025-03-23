@@ -3,17 +3,17 @@ using Collections.Generic;
 
 namespace Worlds.Pointers
 {
-    internal struct Chunk
+    internal struct ChunkPointer
     {
         public uint lastEntity;
         public int count;
         public readonly Definition definition;
-        public readonly Worlds.Schema schema;
+        public readonly Schema schema;
         public readonly List<uint> entities;
         public readonly List components;
         public readonly int stride;
 
-        public Chunk(Definition definition, Worlds.Schema schema)
+        public ChunkPointer(Definition definition, Schema schema)
         {
             lastEntity = 0;
             count = 0;

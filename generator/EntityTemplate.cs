@@ -259,9 +259,9 @@
     /// <summary>
     /// Retrieves the entity found with the given <paramref name=""reference""/> value.
     /// </summary>
-    public readonly ref uint GetReference(rint reference)
+    public readonly uint GetReference(rint reference)
     {
-        return ref world.GetReference(value, reference);
+        return world.GetReference(value, reference);
     }
 
     /// <summary>

@@ -270,9 +270,9 @@ namespace Worlds
         /// <summary>
         /// Retrieves the referenced entity at <paramref name="reference"/>.
         /// </summary>
-        public readonly ref uint GetReference(rint reference)
+        public readonly uint GetReference(rint reference)
         {
-            return ref world.GetReference(value, reference);
+            return world.GetReference(value, reference);
         }
 
         /// <summary>

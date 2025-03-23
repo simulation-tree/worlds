@@ -1,18 +1,18 @@
 ﻿using System;
 using Unmanaged;
-using Pointer = Worlds.Pointers.ChunkMap;
+using Worlds.Pointers;
 
 namespace Worlds
 {
     internal unsafe struct ChunkMap
     {
-        public Pointer* chunkMap;
+        public ChunkMapPointer* chunkMap;
 
         public ChunkMap(Schema schema)
         {
-            ref Pointer chunkMap = ref MemoryAddress.Allocate<Pointer>();
+            ref ChunkMapPointer chunkMap = ref MemoryAddress.Allocate<ChunkMapPointer>();
             chunkMap = new(schema);
-            fixed (Pointer* pointer = &chunkMap)
+            fixed (ChunkMapPointer* pointer = &chunkMap)
             {
                 this.chunkMap = pointer;
                 this.chunkMap->defaultChunk = CreateDefault();
@@ -86,7 +86,7 @@ namespace Worlds
             {
                 return chunkMap->defaultChunk;
             }
-            
+
             int capacity = chunkMap->capacity;
             long hashCode = definition.GetLongHashCode();
             int index = GetIndex(hashCode, capacity);
@@ -132,7 +132,7 @@ namespace Worlds
             chunkMap->chunks.Add(newChunk);
             return newChunk;
         }
-        
+
         private readonly Chunk CreateDefault()
         {
             int capacity = chunkMap->capacity;

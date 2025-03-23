@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using Types;
 using Unmanaged;
-using Pointer = Worlds.Pointers.Schema;
+using Worlds.Pointers;
 
 namespace Worlds
 {
@@ -23,7 +23,7 @@ namespace Worlds
 
         private static int createdSchemas;
 
-        private Pointer* schema;
+        private SchemaPointer* schema;
 
         /// <summary>
         /// Checks if this schema is disposed.
@@ -209,11 +209,11 @@ namespace Worlds
         /// </summary>
         public Schema()
         {
-            ref Pointer schema = ref MemoryAddress.Allocate<Pointer>();
+            ref SchemaPointer schema = ref MemoryAddress.Allocate<SchemaPointer>();
             schema = new(createdSchemas);
             createdSchemas++;
 
-            fixed (Pointer* pointer = &schema)
+            fixed (SchemaPointer* pointer = &schema)
             {
                 this.schema = pointer;
             }
@@ -225,7 +225,7 @@ namespace Worlds
         /// </summary>
         public Schema(void* pointer)
         {
-            schema = (Pointer*)pointer;
+            schema = (SchemaPointer*)pointer;
         }
 
         /// <inheritdoc/>
@@ -1448,11 +1448,11 @@ namespace Worlds
         /// </summary>
         public static Schema Create()
         {
-            ref Pointer schema = ref MemoryAddress.Allocate<Pointer>();
+            ref SchemaPointer schema = ref MemoryAddress.Allocate<SchemaPointer>();
             schema = new(createdSchemas);
             createdSchemas++;
 
-            fixed (Pointer* pointer = &schema)
+            fixed (SchemaPointer* pointer = &schema)
             {
                 return new(pointer);
             }
@@ -1592,10 +1592,10 @@ namespace Worlds
 
         void ISerializable.Read(ByteReader reader)
         {
-            ref Pointer pointer = ref MemoryAddress.Allocate<Pointer>();
+            ref SchemaPointer pointer = ref MemoryAddress.Allocate<SchemaPointer>();
             pointer = new(createdSchemas);
             createdSchemas++;
-            fixed (Pointer* p = &pointer)
+            fixed (SchemaPointer* p = &pointer)
             {
                 schema = p;
             }
