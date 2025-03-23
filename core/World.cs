@@ -1279,7 +1279,7 @@ namespace Worlds
             }
 
             slot.referenceCount++;
-            return (rint)slot.referenceCount;
+            return new(slot.referenceCount);
         }
 
         /// <summary>
@@ -1316,13 +1316,10 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            if (reference == default)
+            unchecked
             {
-                //todo: this branch could be skipped if the reference is subtracted, and then cast to a uint
-                return false;
+                return (uint)world->slots[(int)entity].referenceCount >= reference.value - 1;
             }
-
-            return world->slots[(int)entity].referenceCount >= (int)reference;
         }
 
         /// <summary>
@@ -1360,7 +1357,7 @@ namespace Worlds
             ref Slot slot = ref world->slots[(int)entity];
             Span<uint> references = world->references.AsSpan(slot.referenceStart, slot.referenceCount);
             int index = references.IndexOf(referencedEntity);
-            return (rint)(index + 1);
+            return new(index + 1);
         }
 
         /// <summary>
@@ -1441,7 +1438,7 @@ namespace Worlds
                 }
             }
 
-            return (rint)(index + 1);
+            return new(index + 1);
         }
 
         /// <summary>
@@ -2709,7 +2706,7 @@ namespace Worlds
             int referenceCount = GetReferenceCount(sourceEntity);
             for (uint r = 1; r <= referenceCount; r++)
             {
-                uint referencedEntity = GetReference(sourceEntity, (rint)r);
+                uint referencedEntity = GetReference(sourceEntity, new rint(r));
                 destinationWorld.AddReference(destinationEntity, referencedEntity);
             }
         }
@@ -2759,7 +2756,7 @@ namespace Worlds
         private readonly void ThrowIfReferenceIsMissing(uint entity, rint reference)
         {
             ref Slot slot = ref world->slots[(int)entity];
-            uint index = (uint)reference;
+            int index = (int)reference;
             if (index == 0 || index > slot.referenceCount)
             {
                 throw new NullReferenceException($"Reference `{reference}` not found on entity `{entity}`");
