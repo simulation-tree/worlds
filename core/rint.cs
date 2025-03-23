@@ -93,6 +93,12 @@ namespace Worlds
             }
         }
 
+        /// <inheritdoc/>
+        public static explicit operator rint(int value)
+        {
+            return new(value);
+        }
+
         /// <summary>
         /// Checks if the left <see cref="rint"/> value is less than the right <see cref="int"/> value.
         /// </summary>
