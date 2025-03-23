@@ -1291,9 +1291,8 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfReferenceIsMissing(entity, reference);
 
-            ref Slot slot = ref world->slots[(int)entity];
             List<uint> references = world->references;
-            references[slot.referenceStart + (int)reference - 1] = referencedEntity;
+            references[world->slots[(int)entity].referenceStart + (int)reference - 1] = referencedEntity;
         }
 
         /// <summary>
@@ -1319,11 +1318,11 @@ namespace Worlds
 
             if (reference == default)
             {
+                //todo: this branch could be skipped if the reference is subtracted, and then cast to a uint
                 return false;
             }
 
-            ref Slot slot = ref world->slots[(int)entity];
-            return slot.referenceCount >= (int)reference;
+            return world->slots[(int)entity].referenceCount >= (int)reference;
         }
 
         /// <summary>
@@ -1334,8 +1333,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            ref Slot slot = ref world->slots[(int)entity];
-            return slot.referenceCount;
+            return world->slots[(int)entity].referenceCount;
         }
 
         /// <summary>
@@ -1347,8 +1345,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfReferenceIsMissing(entity, reference);
 
-            ref Slot slot = ref world->slots[(int)entity];
-            return world->references[slot.referenceStart + (int)reference - 1];
+            return world->references[world->slots[(int)entity].referenceStart + (int)reference - 1];
         }
 
         /// <summary>
