@@ -30,6 +30,11 @@ namespace Worlds
         public readonly ReadOnlySpan<uint> References => world.GetReferences(value);
 
         /// <summary>
+        /// Retrieves the amount of references this entity has.
+        /// </summary>
+        public readonly int ReferenceCount => world.GetReferenceCount(value);
+
+        /// <summary>
         /// Checks if the entity is enabled.
         /// </summary>
         public readonly bool IsEnabled
