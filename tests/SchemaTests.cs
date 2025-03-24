@@ -32,8 +32,7 @@ namespace Worlds.Tests
             Assert.That(schema.ContainsComponentType<Stress>(), Is.True);
             Assert.That(schema.ContainsTagType<IsThing>(), Is.True);
 
-            using Schema copy = new();
-            copy.CopyFrom(schema);
+            using Schema copy = schema.Clone();
 
             Assert.That(copy.ContainsComponentType<Stress>(), Is.True);
             Assert.That(copy.ContainsComponentType<bool>(), Is.True);

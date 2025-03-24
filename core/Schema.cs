@@ -234,25 +234,7 @@ namespace Worlds
             MemoryAddress.Free(ref schema);
         }
 
-        /// <summary>
-        /// Copies the state of this schema into the <paramref name="destination"/>.
-        /// </summary>
-        public readonly void CopyTo(Schema destination)
-        {
-            destination.schema->componentCount = schema->componentCount;
-            destination.schema->arraysCount = schema->arraysCount;
-            destination.schema->tagsCount = schema->tagsCount;
-            destination.schema->definitionMask = schema->definitionMask;
-            destination.schema->componentRowSize = schema->componentRowSize;
-            destination.schema->offsets.CopyTo(schema->offsets, OffsetsLengthInBytes);
-            schema->sizes.CopyTo(destination.schema->sizes, SizesLengthInBytes);
-            schema->typeHashes.CopyTo(destination.schema->typeHashes, TypeHashesLengthInBytes);
-        }
-
-        /// <summary>
-        /// Copies the state of the <paramref name="source"/> schema entirely.
-        /// </summary>
-        public readonly void CopyFrom(Schema source)
+        internal readonly void CopyFrom(Schema source)
         {
             schema->componentCount = source.schema->componentCount;
             schema->arraysCount = source.schema->arraysCount;

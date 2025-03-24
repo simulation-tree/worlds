@@ -266,6 +266,17 @@ namespace Worlds
             }
         }
 
+        /// <summary>
+        /// Copies the state of this world's schema to match the given <paramref name="sourceSchema"/>.
+        /// </summary>
+        public readonly void CopySchemaFrom(Schema sourceSchema)
+        {
+            MemoryAddress.ThrowIfDefault(world);
+
+            world->schema.CopyFrom(sourceSchema);
+            world->chunks.UpdateDefaultChunkStrideToMatchSchema();
+        }
+
         /// <inheritdoc/>
         public readonly override string ToString()
         {
@@ -2916,10 +2927,11 @@ namespace Worlds
             }
 
             //deserialize the schema first
-            Schema schema = Schema.Create();
-            using Schema loadedSchema = reader.ReadObject<Schema>();
+            Schema schema;
             if (process is not null)
             {
+                schema = Schema.Create();
+                using Schema loadedSchema = reader.ReadObject<Schema>();
                 foreach (int componentType in loadedSchema.ComponentTypes)
                 {
                     Types.Type typeLayout = loadedSchema.GetComponentLayout(componentType);
@@ -2943,7 +2955,7 @@ namespace Worlds
             }
             else
             {
-                schema.CopyFrom(loadedSchema);
+                schema = reader.ReadObject<Schema>();
             }
 
             World value = new(schema);
