@@ -42,7 +42,7 @@ namespace Worlds
         /// </summary>
         public Operation()
         {
-            operation = Implementation.Allocate();
+            operation = Implementation.Allocate(4);
         }
 #endif
 
@@ -519,7 +519,7 @@ namespace Worlds
         /// </summary>
         public static Operation Create()
         {
-            return new(Implementation.Allocate());
+            return new(Implementation.Allocate(4));
         }
 
         readonly void ISerializable.Write(ByteWriter writer)
@@ -535,11 +535,10 @@ namespace Worlds
             int count = reader.ReadValue<int>();
             int bytesLength = reader.ReadValue<int>();
             int bytesCapacity = reader.ReadValue<int>();
-            operation = Implementation.Allocate();
+            operation = Implementation.Allocate(bytesCapacity);
             operation->count = count;
             operation->bytesLength = bytesLength;
             operation->bytesCapacity = bytesCapacity;
-            MemoryAddress.Resize(ref operation->buffer, bytesCapacity);
             reader.ReadSpan<byte>(bytesLength).CopyTo(operation->buffer.GetSpan(bytesLength));
         }
 
@@ -563,8 +562,7 @@ namespace Worlds
             private void CreateEntities()
             {
                 int count = operation.Read<int>(ref bytePosition);
-                bool select = operation.Read<bool>(ref bytePosition);
-                if (select)
+                if (operation.Read<bool>(ref bytePosition))
                 {
                     for (int i = 0; i < count; i++)
                     {
@@ -889,18 +887,14 @@ namespace Worlds
             public int bytesCapacity;
             public MemoryAddress buffer;
 
-            public static Implementation* Allocate(int minimumCapacity = 4)
+            public static Implementation* Allocate(int minimumCapacity)
             {
-                minimumCapacity = Math.Max(1, minimumCapacity.GetNextPowerOf2());
-                ref Implementation operation = ref MemoryAddress.Allocate<Implementation>();
-                operation.count = 0;
-                operation.bytesLength = 0;
-                operation.bytesCapacity = minimumCapacity;
-                operation.buffer = MemoryAddress.Allocate(minimumCapacity);
-                fixed (Implementation* pointer = &operation)
-                {
-                    return pointer;
-                }
+                Implementation* operation = MemoryAddress.AllocatePointer<Implementation>();
+                operation->count = 0;
+                operation->bytesLength = 0;
+                operation->bytesCapacity = minimumCapacity;
+                operation->buffer = MemoryAddress.Allocate(minimumCapacity);
+                return operation;
             }
 
             public static void Free(ref Implementation* operation)
