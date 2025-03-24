@@ -853,7 +853,7 @@ namespace Worlds
                     if (arrayTypes.Contains(a))
                     {
                         int arrayElementSize = world->schema.GetArraySize(a);
-                        arrays[a] = new(new Array(0, arrayElementSize));
+                        arrays[a] = new(0, arrayElementSize);
                     }
                 }
 
@@ -894,7 +894,7 @@ namespace Worlds
                     if (arrayTypes.Contains(a))
                     {
                         int arrayElementSize = world->schema.GetArraySize(a);
-                        arrays[a] = new(new Array(0, arrayElementSize));
+                        arrays[a] = new(0, arrayElementSize);
                     }
                 }
 

@@ -17,20 +17,7 @@ namespace Worlds
         /// <summary>
         /// Length of the array.
         /// </summary>
-        public readonly int Length
-        {
-            get => pointer->length;
-            set
-            {
-
-                if (pointer->length != value)
-                {
-                    int oldLength = pointer->length;
-                    MemoryAddress.Resize(ref pointer->items, sizeof(T) * value);
-                    pointer->length = value;
-                }
-            }
-        }
+        public readonly int Length => pointer->length;
 
         /// <summary>
         /// Access the reference to the element at <paramref name="index"/>.
@@ -45,9 +32,17 @@ namespace Worlds
             }
         }
 
-        internal Values(Array<T> array)
+        /// <summary>
+        /// Access the reference to the element at <paramref name="index"/>.
+        /// </summary>
+        public readonly ref T this[uint index]
         {
-            this.pointer = array.Pointer;
+            get
+            {
+                ThrowIfOutOfRange(index);
+
+                return ref pointer->items.ReadElement<T>(index);
+            }
         }
 
         internal Values(int length)
@@ -76,6 +71,15 @@ namespace Worlds
 
         [Conditional("DEBUG")]
         private readonly void ThrowIfOutOfRange(int index)
+        {
+            if (index >= pointer->length || index < 0)
+            {
+                throw new InvalidOperationException($"Index {index} is out of range for values of length {pointer->length}");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfOutOfRange(uint index)
         {
             if (index >= pointer->length)
             {
@@ -154,6 +158,36 @@ namespace Worlds
         {
             pointer->length = 0;
             MemoryAddress.Resize(ref pointer->items, sizeof(T) * pointer->length);
+        }
+
+        /// <summary>
+        /// Resizes the array to be able to store <paramref name="newLength"/> amount of elements.
+        /// <para>
+        /// New elements will be uninitialized.
+        /// </para>
+        /// </summary>
+        public readonly void Resize(int newLength)
+        {
+            MemoryAddress.Resize(ref pointer->items, sizeof(T) * newLength);
+            pointer->length = newLength;
+        }
+
+        /// <summary>
+        /// Resizes the array to be able to store <paramref name="newLength"/> amount of elements.
+        /// <para>
+        /// New elements will be initialized to <paramref name="defaultValue"/>.
+        /// </para>
+        /// </summary>
+        public readonly void Resize(int newLength, T defaultValue)
+        {
+            MemoryAddress.Resize(ref pointer->items, sizeof(T) * newLength);
+            if (newLength > pointer->length)
+            {
+                Span<T> span = new(pointer->items.Pointer + pointer->length * sizeof(T), newLength - pointer->length);
+                span.Fill(defaultValue);
+            }
+
+            pointer->length = newLength;
         }
 
         /// <summary>
@@ -351,11 +385,6 @@ namespace Worlds
 
                 return new(pointer->items.Pointer + pointer->stride * index);
             }
-        }
-
-        internal Values(Array array)
-        {
-            this.pointer = array.Pointer;
         }
 
         internal Values(int length, int stride)

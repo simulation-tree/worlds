@@ -77,7 +77,7 @@ namespace Worlds.Tests
             list[0] = new("apple");
             list[1] = new("banana");
 
-            list.Length = 4;
+            list.Resize(4);
 
             Assert.That(world.GetArrayLength<SimpleComponent>(a), Is.EqualTo(4));
             Assert.That(list[0].data.ToString(), Is.EqualTo("apple"));
