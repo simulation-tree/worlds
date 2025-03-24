@@ -32,8 +32,7 @@ namespace Worlds.Tests
             Assert.That(schema.ContainsComponentType<Stress>(), Is.True);
             Assert.That(schema.ContainsTagType<IsThing>(), Is.True);
 
-            using Schema copy = new();
-            copy.CopyFrom(schema);
+            using Schema copy = schema.Clone();
 
             Assert.That(copy.ContainsComponentType<Stress>(), Is.True);
             Assert.That(copy.ContainsComponentType<bool>(), Is.True);
@@ -135,7 +134,7 @@ namespace Worlds.Tests
             Assert.That(shortType.kind, Is.EqualTo(DataType.Kind.Component));
             Assert.That(charType.size, Is.EqualTo(sizeof(char)));
             Assert.That(charType.kind, Is.EqualTo(DataType.Kind.Array));
-            Assert.That(intType.size, Is.EqualTo(0));
+            Assert.That(intType.size, Is.EqualTo(1));
             Assert.That(intType.kind, Is.EqualTo(DataType.Kind.Tag));
 
             Assert.That(schema.GetComponentSize(boolType.index), Is.EqualTo(sizeof(bool)));

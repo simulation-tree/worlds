@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using Types;
 using Unmanaged;
-using Pointer = Worlds.Pointers.Schema;
+using Worlds.Pointers;
 
 namespace Worlds
 {
@@ -23,7 +23,7 @@ namespace Worlds
 
         private static int createdSchemas;
 
-        private Pointer* schema;
+        private SchemaPointer* schema;
 
         /// <summary>
         /// Checks if this schema is disposed.
@@ -209,14 +209,17 @@ namespace Worlds
         /// </summary>
         public Schema()
         {
-            ref Pointer schema = ref MemoryAddress.Allocate<Pointer>();
-            schema = new(createdSchemas);
+            schema = MemoryAddress.AllocatePointer<SchemaPointer>();
+            schema->componentCount = 0;
+            schema->arraysCount = 0;
+            schema->tagsCount = 0;
+            schema->componentRowSize = 0;
+            schema->definitionMask = default;
+            schema->offsets = MemoryAddress.AllocateZeroed(OffsetsLengthInBytes);
+            schema->sizes = MemoryAddress.AllocateZeroed(SizesLengthInBytes);
+            schema->typeHashes = MemoryAddress.AllocateZeroed(TypeHashesLengthInBytes);
+            schema->schemaIndex = createdSchemas;
             createdSchemas++;
-
-            fixed (Pointer* pointer = &schema)
-            {
-                this.schema = pointer;
-            }
         }
 #endif
 
@@ -225,7 +228,7 @@ namespace Worlds
         /// </summary>
         public Schema(void* pointer)
         {
-            schema = (Pointer*)pointer;
+            schema = (SchemaPointer*)pointer;
         }
 
         /// <inheritdoc/>
@@ -239,25 +242,7 @@ namespace Worlds
             MemoryAddress.Free(ref schema);
         }
 
-        /// <summary>
-        /// Copies the state of this schema into the <paramref name="destination"/>.
-        /// </summary>
-        public readonly void CopyTo(Schema destination)
-        {
-            destination.schema->componentCount = schema->componentCount;
-            destination.schema->arraysCount = schema->arraysCount;
-            destination.schema->tagsCount = schema->tagsCount;
-            destination.schema->definitionMask = schema->definitionMask;
-            destination.schema->componentRowSize = schema->componentRowSize;
-            destination.schema->offsets.CopyTo(schema->offsets, OffsetsLengthInBytes);
-            schema->sizes.CopyTo(destination.schema->sizes, SizesLengthInBytes);
-            schema->typeHashes.CopyTo(destination.schema->typeHashes, TypeHashesLengthInBytes);
-        }
-
-        /// <summary>
-        /// Copies the state of the <paramref name="source"/> schema entirely.
-        /// </summary>
-        public readonly void CopyFrom(Schema source)
+        internal readonly void CopyFrom(Schema source)
         {
             schema->componentCount = source.schema->componentCount;
             schema->arraysCount = source.schema->arraysCount;
@@ -637,15 +622,7 @@ namespace Worlds
         {
             ThrowIfComponentTypeIsMissing<T>();
 
-            if (!SchemaTypeCache<T>.TryGetComponentType(this, out int componentType))
-            {
-                Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
-                componentType = componentTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
-                SchemaTypeCache<T>.SetComponentType(this, componentType);
-                Trace.WriteLine($"Cached component type for {typeof(T).FullName}");
-            }
-
-            return componentType;
+            return SchemaTypeCache<T>.GetOrSetComponentType(this);
         }
 
         /// <summary>
@@ -655,15 +632,7 @@ namespace Worlds
         {
             ThrowIfComponentTypeIsMissing<T>();
 
-            if (!SchemaTypeCache<T>.TryGetComponentType(this, out int componentType))
-            {
-                Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
-                componentType = componentTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
-                SchemaTypeCache<T>.SetComponentType(this, componentType);
-                Trace.WriteLine($"Cached component type for {typeof(T).FullName}");
-            }
-
-            return new(componentType, DataType.Kind.Component, sizeof(T));
+            return new(SchemaTypeCache<T>.GetOrSetComponentType(this), DataType.Kind.Component, sizeof(T));
         }
 
         /// <summary>
@@ -699,15 +668,7 @@ namespace Worlds
         {
             ThrowIfArrayTypeIsMissing<T>();
 
-            if (!SchemaTypeCache<T>.TryGetArrayType(this, out int arrayType))
-            {
-                Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-                arrayType = arrayTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
-                SchemaTypeCache<T>.SetArrayType(this, arrayType);
-                Trace.WriteLine($"Cached array type for {typeof(T).FullName}");
-            }
-
-            return arrayType;
+            return SchemaTypeCache<T>.GetOrSetArrayType(this);
         }
 
         /// <summary>
@@ -717,15 +678,7 @@ namespace Worlds
         {
             ThrowIfArrayTypeIsMissing<T>();
 
-            if (!SchemaTypeCache<T>.TryGetArrayType(this, out int arrayType))
-            {
-                Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-                arrayType = arrayTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
-                SchemaTypeCache<T>.SetArrayType(this, arrayType);
-                Trace.WriteLine($"Cached array type for {typeof(T).FullName}");
-            }
-
-            return new(arrayType, DataType.Kind.Array, sizeof(T));
+            return new(SchemaTypeCache<T>.GetOrSetArrayType(this), DataType.Kind.Array, sizeof(T));
         }
 
         /// <summary>
@@ -747,15 +700,7 @@ namespace Worlds
         {
             ThrowIfTagIsMissing<T>();
 
-            if (!SchemaTypeCache<T>.TryGetTagType(this, out int tagType))
-            {
-                Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
-                tagType = tagTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
-                SchemaTypeCache<T>.SetTagType(this, tagType);
-                Trace.WriteLine($"Cached tag type for {typeof(T).FullName}");
-            }
-
-            return tagType;
+            return SchemaTypeCache<T>.GetOrSetTagType(this);
         }
 
         /// <summary>
@@ -765,15 +710,7 @@ namespace Worlds
         {
             ThrowIfTagIsMissing<T>();
 
-            if (!SchemaTypeCache<T>.TryGetTagType(this, out int tagType))
-            {
-                Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
-                tagType = tagTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
-                SchemaTypeCache<T>.SetTagType(this, tagType);
-                Trace.WriteLine($"Cached tag type for {typeof(T).FullName}");
-            }
-
-            return new(tagType, DataType.Kind.Tag, default);
+            return new(SchemaTypeCache<T>.GetOrSetTagType(this), DataType.Kind.Tag, 1);
         }
 
         /// <summary>
@@ -1448,14 +1385,18 @@ namespace Worlds
         /// </summary>
         public static Schema Create()
         {
-            ref Pointer schema = ref MemoryAddress.Allocate<Pointer>();
-            schema = new(createdSchemas);
+            SchemaPointer* schema = MemoryAddress.AllocatePointer<SchemaPointer>();
+            schema->componentCount = 0;
+            schema->arraysCount = 0;
+            schema->tagsCount = 0;
+            schema->componentRowSize = 0;
+            schema->definitionMask = default;
+            schema->offsets = MemoryAddress.AllocateZeroed(OffsetsLengthInBytes);
+            schema->sizes = MemoryAddress.AllocateZeroed(SizesLengthInBytes);
+            schema->typeHashes = MemoryAddress.AllocateZeroed(TypeHashesLengthInBytes);
+            schema->schemaIndex = createdSchemas;
             createdSchemas++;
-
-            fixed (Pointer* pointer = &schema)
-            {
-                return new(pointer);
-            }
+            return new Schema(schema);
         }
 
         [Conditional("DEBUG")]
@@ -1592,14 +1533,10 @@ namespace Worlds
 
         void ISerializable.Read(ByteReader reader)
         {
-            ref Pointer pointer = ref MemoryAddress.Allocate<Pointer>();
-            pointer = new(createdSchemas);
-            createdSchemas++;
-            fixed (Pointer* p = &pointer)
-            {
-                schema = p;
-            }
-
+            schema = MemoryAddress.AllocatePointer<SchemaPointer>();
+            schema->offsets = MemoryAddress.AllocateZeroed(OffsetsLengthInBytes);
+            schema->sizes = MemoryAddress.AllocateZeroed(SizesLengthInBytes);
+            schema->typeHashes = MemoryAddress.AllocateZeroed(TypeHashesLengthInBytes);
             schema->componentCount = reader.ReadValue<byte>();
             schema->arraysCount = reader.ReadValue<byte>();
             schema->tagsCount = reader.ReadValue<byte>();
@@ -1608,10 +1545,12 @@ namespace Worlds
             schema->offsets.CopyFrom(reader.ReadSpan<int>(BitMask.Capacity));
             schema->sizes.CopyFrom(reader.ReadSpan<int>(BitMask.Capacity * 2));
             schema->typeHashes.CopyFrom(reader.ReadSpan<long>(BitMask.Capacity * 3));
+            schema->schemaIndex = createdSchemas;
+            createdSchemas++;
         }
 
         /// <summary>
-        /// Resets the schema to its <c>default</c> state.
+        /// Resets the schema to <see langword="default"/> state.
         /// </summary>
         public readonly void Clear()
         {
@@ -1657,12 +1596,12 @@ namespace Worlds
 
             static SchemaTypeCache()
             {
-                components = new int[0];
-                arrays = new int[0];
-                tags = new int[0];
                 componentCapacity = 0;
                 arrayCapacity = 0;
                 tagCapacity = 0;
+                components = new int[componentCapacity];
+                arrays = new int[arrayCapacity];
+                tags = new int[tagCapacity];
             }
 
             public static void SetComponentType(Schema schema, int componentType)
@@ -1698,42 +1637,61 @@ namespace Worlds
                 tags[schema.schema->schemaIndex] = tagType;
             }
 
-            public static bool TryGetComponentType(Schema schema, out int componentType)
+            public static int GetOrSetComponentType(Schema schema)
             {
-                if (schema.schema->schemaIndex < componentCapacity)
+                int schemaIndex = schema.schema->schemaIndex;
+                if (schemaIndex < componentCapacity)
                 {
-                    componentType = components[schema.schema->schemaIndex];
-                    return true;
+                    return components[schemaIndex];
                 }
                 else
                 {
-                    componentType = -1;
-                    return false;
+                    componentCapacity = schemaIndex + 1;
+                    Array.Resize(ref components, componentCapacity);
+
+                    Span<long> componentTypeHashes = new(schema.schema->typeHashes.Pointer, BitMask.Capacity);
+                    int componentType = componentTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
+                    components[schemaIndex] = componentType;
+                    return componentType;
                 }
             }
 
-            public static bool TryGetArrayType(Schema schema, out int arrayType)
+            public static int GetOrSetArrayType(Schema schema)
             {
-                if (schema.schema->schemaIndex < arrayCapacity)
+                int schemaIndex = schema.schema->schemaIndex;
+                if (schemaIndex < arrayCapacity)
                 {
-                    arrayType = arrays[schema.schema->schemaIndex];
-                    return true;
+                    return arrays[schemaIndex];
                 }
+                else
+                {
+                    arrayCapacity = schemaIndex + 1;
+                    Array.Resize(ref arrays, arrayCapacity);
 
-                arrayType = -1;
-                return false;
+                    Span<long> arrayTypeHashes = new(schema.schema->typeHashes.Pointer + BitMask.Capacity * sizeof(long), BitMask.Capacity);
+                    int arrayType = arrayTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
+                    arrays[schemaIndex] = arrayType;
+                    return arrayType;
+                }
             }
 
-            public static bool TryGetTagType(Schema schema, out int tagType)
+            public static int GetOrSetTagType(Schema schema)
             {
-                if (schema.schema->schemaIndex < tagCapacity)
+                int schemaIndex = schema.schema->schemaIndex;
+                if (schemaIndex < tagCapacity)
                 {
-                    tagType = tags[schema.schema->schemaIndex];
-                    return true;
+                    return tags[schemaIndex];
                 }
+                else
+                {
+                    tagCapacity = schemaIndex + 1;
+                    Array.Resize(ref tags, tagCapacity);
 
-                tagType = -1;
-                return false;
+                    Span<long> tagTypeHashes = new(schema.schema->typeHashes.Pointer + BitMask.Capacity * sizeof(long) * 2, BitMask.Capacity);
+                    int tagType = tagTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
+                    tags[schemaIndex] = tagType;
+                    return tagType;
+                }
             }
         }
     }

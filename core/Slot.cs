@@ -6,7 +6,7 @@ namespace Worlds
     /// <summary>
     /// Describes an entity slot in a <see cref="World"/>.
     /// </summary>
-    public struct Slot
+    internal struct Slot
     {
         /// <summary>
         /// The entity that is the parent of the entity in this slot.
@@ -38,10 +38,8 @@ namespace Worlds
         /// </summary>
         public int childrenCount;
 
-        /// <summary>
-        /// The other entities that are referenced.
-        /// </summary>
-        public List<uint> references;
+        public int referenceStart;
+        public int referenceCount;
 
         /// <summary>
         /// All arrays stored in the entity.
@@ -64,11 +62,6 @@ namespace Worlds
         public readonly bool ContainsChildren => (flags & Flags.ContainsChildren) != 0;
 
         /// <summary>
-        /// Checks if this slot contains references to other entities.
-        /// </summary>
-        public readonly bool ContainsReferences => (flags & Flags.ContainsReferences) != 0;
-
-        /// <summary>
         /// Checks if this slot has outdated arrays.
         /// </summary>
         public readonly bool ArraysOutdated => (flags & Flags.ArraysOutdated) != 0;
@@ -78,10 +71,18 @@ namespace Worlds
         /// </summary>
         public readonly bool ChildrenOutdated => (flags & Flags.ChildrenOutdated) != 0;
 
-        /// <summary>
-        /// Checks if this slot has outdated references to other entities.
-        /// </summary>
-        public readonly bool ReferencesOutdated => (flags & Flags.ReferencesOutdated) != 0;
+        public Slot()
+        {
+            parent = 0;
+            state = State.Free;
+            flags = Flags.None;
+            chunk = default;
+            index = default;
+            childrenCount = default;
+            referenceStart = default;
+            referenceCount = default;
+            arrays = default;
+        }
 
         /// <summary>
         /// All possible states of an entity.
@@ -136,11 +137,6 @@ namespace Worlds
             ContainsChildren = 2,
 
             /// <summary>
-            /// Entity contains references to other entities.
-            /// </summary>
-            ContainsReferences = 4,
-
-            /// <summary>
             /// The arrays on this entity are outdated.
             /// </summary>
             ArraysOutdated = 8,
@@ -151,14 +147,9 @@ namespace Worlds
             ChildrenOutdated = 16,
 
             /// <summary>
-            /// The references to other entities are outdated.
-            /// </summary>
-            ReferencesOutdated = 32,
-
-            /// <summary>
             /// The entity is outdated and needs to be refreshed back to initial state.
             /// </summary>
-            Outdated = ArraysOutdated | ChildrenOutdated | ReferencesOutdated
+            Outdated = ArraysOutdated | ChildrenOutdated
         }
     }
 }

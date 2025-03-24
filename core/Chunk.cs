@@ -3,7 +3,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Unmanaged;
-using Pointer = Worlds.Pointers.Chunk;
+using Worlds.Pointers;
 
 namespace Worlds
 {
@@ -13,7 +13,7 @@ namespace Worlds
     [SkipLocalsInit]
     public unsafe struct Chunk : IDisposable, IEquatable<Chunk>
     {
-        private Pointer* chunk;
+        private ChunkPointer* chunk;
 
         /// <summary>
         /// Checks if this chunk is disposed.
@@ -34,13 +34,13 @@ namespace Worlds
             {
                 MemoryAddress.ThrowIfDefault(chunk);
 
-                return chunk->entities.AsSpan(1);
+                return new ReadOnlySpan<uint>(chunk->entities.Items.Pointer + sizeof(uint), chunk->count);
             }
         }
 
         internal readonly List Components => chunk->components;
         internal readonly uint LastEntity => chunk->lastEntity;
-        internal readonly Span<uint> EntitiesList => chunk->entities.AsSpan();
+        internal readonly Span<uint> EntitiesList => new(chunk->entities.Items.Pointer, chunk->count + 1);
 
         /// <summary>
         /// Amount of entities stored in this chunk.
@@ -84,37 +84,19 @@ namespace Worlds
 #endif
 
         /// <summary>
-        /// Creates an empty chunk.
-        /// </summary>
-        public Chunk(Schema schema)
-        {
-            ref Pointer chunk = ref MemoryAddress.Allocate<Pointer>();
-            chunk = new(default, schema);
-            fixed (Pointer* pointer = &chunk)
-            {
-                this.chunk = pointer;
-            }
-        }
-
-        /// <summary>
-        /// Initializes an existing chunk from the given <paramref name="pointer"/>.
-        /// </summary>
-        public Chunk(void* pointer)
-        {
-            chunk = (Pointer*)pointer;
-        }
-
-        /// <summary>
         /// Creates a new chunk with the given <paramref name="definition"/>.
         /// </summary>
-        public Chunk(Definition definition, Schema schema)
+        public Chunk(Schema schema, Definition definition = default)
         {
-            ref Pointer chunk = ref MemoryAddress.Allocate<Pointer>();
-            chunk = new(definition, schema);
-            fixed (Pointer* pointer = &chunk)
-            {
-                this.chunk = pointer;
-            }
+            chunk = MemoryAddress.AllocatePointer<ChunkPointer>();
+            chunk->lastEntity = 0;
+            chunk->count = 0;
+            chunk->entities = new(4);
+            chunk->entities.AddDefault(); //reserved
+            chunk->components = new(4, schema.ComponentRowSize);
+            chunk->components.AddDefault(); //reserved
+            chunk->schema = schema;
+            chunk->definition = definition;
         }
 
         /// <inheritdoc/>
@@ -125,6 +107,13 @@ namespace Worlds
             chunk->entities.Dispose();
             chunk->components.Dispose();
             MemoryAddress.Free(ref chunk);
+        }
+
+        internal readonly void UpdateStrideToMatchSchema()
+        {
+            chunk->components.Dispose();
+            chunk->components = new(4, chunk->schema.ComponentRowSize);
+            chunk->components.AddDefault(); //reserved
         }
 
         [Conditional("DEBUG")]
@@ -171,7 +160,7 @@ namespace Worlds
             if (!Definition.IsEmpty)
             {
                 destination[length++] = ' ';
-                length += Definition.ToString(destination.Slice(length));
+                length += Definition.ToString(chunk->schema, destination.Slice(length));
             }
 
             return length;
@@ -334,10 +323,7 @@ namespace Worlds
 
             current.chunk->entities.RemoveAtBySwapping(index);
             current.chunk->lastEntity = current.chunk->entities[--current.chunk->count];
-
-            MemoryAddress sourceComponentRow = current.chunk->components[index];
-            destination.chunk->components.Add(sourceComponentRow);
-            current.chunk->components.RemoveAtBySwapping(index);
+            current.chunk->components.RemoveAtBySwappingAndAdd(index, destination.chunk->components);
 
             index = destination.chunk->count + 1;
             destination.chunk->entities.Add(entity);

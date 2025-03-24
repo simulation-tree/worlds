@@ -5,24 +5,24 @@ using System;
 namespace Worlds
 {
     /// <summary>
-    /// A <see cref="ushort"/> type that refers to a reference local to its entity.
-    /// <para>Can be explicitly cast from and into a <see cref="ushort"/> value.
+    /// A <see cref="int"/> type that refers to a reference local to its entity.
+    /// <para>
+    /// Can be explicitly cast from a <see cref="int"/> value.
     /// </para>
     /// </summary>
     public readonly struct rint : IEquatable<rint>
     {
-        internal readonly ushort value;
+        internal readonly int value;
 
 #if NET
         /// <inheritdoc/>
         [Obsolete("Default constructor not supported", true)]
         public rint()
         {
-            throw new NotSupportedException();
         }
 #endif
 
-        private rint(ushort value)
+        internal rint(int value)
         {
             this.value = value;
         }
@@ -58,7 +58,10 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return HashCode.Combine(value);
+            unchecked
+            {
+                return (int)value;
+            }
         }
 
         /// <inheritdoc/>
@@ -74,15 +77,129 @@ namespace Worlds
         }
 
         /// <inheritdoc/>
-        public static explicit operator ushort(rint value)
+        public static explicit operator rint(int value)
         {
-            return value.value;
+            return new(value);
         }
 
-        /// <inheritdoc/>
-        public static explicit operator rint(ushort value)
+        /// <summary>
+        /// Checks if the left <see cref="rint"/> value is less than the right <see cref="int"/> value.
+        /// </summary>
+        public static bool operator <(rint left, int right)
         {
-            return new rint(value);
+            unchecked
+            {
+                return left.value < (uint)right;
+            }
+        }
+
+        /// <summary>
+        /// Checks if the left <see cref="int"/> value is less than the right <see cref="rint"/> value.
+        /// </summary>
+        public static bool operator <(int left, rint right)
+        {
+            unchecked
+            {
+                return (uint)left < right.value;
+            }
+        }
+
+        /// <summary>
+        /// Checks if the left <see cref="rint"/> value is less than the right <see cref="rint"/> value.
+        /// </summary>
+        public static bool operator <(rint left, rint right)
+        {
+            return left.value < right.value;
+        }
+
+        /// <summary>
+        /// Checks if the left <see cref="rint"/> value is greater than the right <see cref="int"/> value.
+        /// </summary>
+        public static bool operator >(rint left, int right)
+        {
+            unchecked
+            {
+                return left.value > (uint)right;
+            }
+        }
+
+        /// <summary>
+        /// Checks if the left <see cref="int"/> value is greater than the right <see cref="rint"/> value.
+        /// </summary>
+        public static bool operator >(int left, rint right)
+        {
+            unchecked
+            {
+                return (uint)left > right.value;
+            }
+        }
+
+        /// <summary>
+        /// Checks if the left <see cref="rint"/> value is greater than the right <see cref="rint"/> value.
+        /// </summary>
+        public static bool operator >(rint left, rint right)
+        {
+            return left.value > right.value;
+        }
+
+        /// <summary>
+        /// Checks if the left <see cref="rint"/> value is less than or equal to the right <see cref="int"/> value.
+        /// </summary>
+        public static bool operator <=(rint left, int right)
+        {
+            unchecked
+            {
+                return left.value <= (uint)right;
+            }
+        }
+
+        /// <summary>
+        /// Checks if the left <see cref="int"/> value is less than or equal to the right <see cref="rint"/> value.
+        /// </summary>
+        public static bool operator <=(int left, rint right)
+        {
+            unchecked
+            {
+                return (uint)left <= right.value;
+            }
+        }
+
+        /// <summary>
+        /// Checks if the left <see cref="rint"/> value is less than or equal to the right <see cref="rint"/> value.
+        /// </summary>
+        public static bool operator <=(rint left, rint right)
+        {
+            return left.value <= right.value;
+        }
+
+        /// <summary>
+        /// Checks if the left <see cref="rint"/> value is greater than or equal to the right <see cref="int"/> value.
+        /// </summary>
+        public static bool operator >=(rint left, int right)
+        {
+            unchecked
+            {
+                return left.value >= (uint)right;
+            }
+        }
+
+        /// <summary>
+        /// Checks if the left <see cref="int"/> value is greater than or equal to the right <see cref="rint"/> value.
+        /// </summary>
+        public static bool operator >=(int left, rint right)
+        {
+            unchecked
+            {
+                return (uint)left >= right.value;
+            }
+        }
+
+        /// <summary>
+        /// Checks if the left <see cref="rint"/> value is greater than or equal to the right <see cref="rint"/> value.
+        /// </summary>
+        public static bool operator >=(rint left, rint right)
+        {
+            return left.value >= right.value;
         }
     }
 }

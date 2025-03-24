@@ -25,7 +25,7 @@ namespace Worlds.Tests
 
             Definition definition = new();
             definition.AddComponentTypes<Integer, Float>(schema);
-            Chunk chunk = new(definition, schema);
+            Chunk chunk = new(schema, definition);
             uint entity = 7;
             int index = 0;
             chunk.AddEntity(entity, ref index);
@@ -54,7 +54,7 @@ namespace Worlds.Tests
 
             Definition definition = new();
             definition.AddComponentTypes<Integer, Float>(schema);
-            Chunk chunk = new(definition, schema);
+            Chunk chunk = new(schema, definition);
             uint entity = 7;
             int index = 0;
             chunk.AddEntity(entity, ref index);
@@ -80,7 +80,7 @@ namespace Worlds.Tests
             int floatType = schema.GetComponentType<Float>();
             int fruitType = schema.GetComponentType<Fruit>();
 
-            Chunk chunkA = new(default, schema);
+            Chunk chunkA = new(schema);
             Chunk currentChunk = chunkA;
             uint entity = 7;
             int index = 0;
@@ -88,7 +88,7 @@ namespace Worlds.Tests
 
             Definition definitionB = new();
             definitionB.AddComponentType(integerType);
-            Chunk chunkB = new(definitionB, schema);
+            Chunk chunkB = new(schema, definitionB);
             Chunk.MoveEntityAt(entity, ref index, ref currentChunk, chunkB);
             ref Integer intComponent = ref chunkB.GetComponent<Integer>(index, integerType);
             intComponent = 42;
@@ -102,7 +102,7 @@ namespace Worlds.Tests
 
             Definition definitionC = new();
             definitionC.AddComponentTypes(floatType, integerType);
-            Chunk chunkC = new(definitionC, schema);
+            Chunk chunkC = new(schema, definitionC);
             Chunk.MoveEntityAt(entity, ref index, ref currentChunk, chunkC);
             ref Float floatComponent = ref chunkC.GetComponent<Float>(index, floatType);
             floatComponent = 3.14f;
@@ -120,7 +120,7 @@ namespace Worlds.Tests
 
             Definition definitionD = new();
             definitionD.AddComponentType(fruitType);
-            Chunk chunkD = new(definitionD, schema);
+            Chunk chunkD = new(schema, definitionD);
             Chunk.MoveEntityAt(entity, ref index, ref currentChunk, chunkD);
 
             Assert.That(chunkC.Entities.Length, Is.EqualTo(0));
@@ -142,8 +142,8 @@ namespace Worlds.Tests
             definitionA.AddComponentTypes<Integer, Float>(schema);
             Definition definitionB = new();
             definitionB.AddComponentTypes<Float, Integer>(schema);
-            Chunk chunkA = new(definitionA, schema);
-            Chunk chunkB = new(definitionB, schema);
+            Chunk chunkA = new(schema, definitionA);
+            Chunk chunkB = new(schema, definitionB);
             int hashA = chunkA.GetHashCode();
             int hashB = chunkB.GetHashCode();
             Assert.That(hashA, Is.EqualTo(hashB));
@@ -160,7 +160,7 @@ namespace Worlds.Tests
             int floatType = schema.GetComponentType<Float>();
             definition.AddComponentType(intType);
             definition.AddComponentType(floatType);
-            using Chunk chunk = new(definition, schema);
+            using Chunk chunk = new(schema, definition);
             uint a = 7;
             uint b = 8;
             uint c = 9;
@@ -189,7 +189,7 @@ namespace Worlds.Tests
             int floatType = schema.GetComponentType<Float>();
             definition.AddComponentType(intType);
             definition.AddComponentType(floatType);
-            using Chunk chunk = new(definition, schema);
+            using Chunk chunk = new(schema, definition);
             uint a = 7;
             uint b = 8;
             uint c = 9;

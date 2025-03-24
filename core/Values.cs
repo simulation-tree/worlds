@@ -1,9 +1,9 @@
 ﻿using Collections.Generic;
+using Collections.Pointers;
 using System;
 using System.Diagnostics;
 using Unmanaged;
 using Array = Collections.Array;
-using Pointer = Collections.Pointers.Array;
 
 namespace Worlds
 {
@@ -12,25 +12,12 @@ namespace Worlds
     /// </summary>
     public unsafe readonly struct Values<T> where T : unmanaged
     {
-        private readonly Pointer* pointer;
+        private readonly ArrayPointer* pointer;
 
         /// <summary>
         /// Length of the array.
         /// </summary>
-        public readonly int Length
-        {
-            get => pointer->length;
-            set
-            {
-
-                if (pointer->length != value)
-                {
-                    int oldLength = pointer->length;
-                    MemoryAddress.Resize(ref pointer->items, sizeof(T) * value);
-                    pointer->length = value;
-                }
-            }
-        }
+        public readonly int Length => pointer->length;
 
         /// <summary>
         /// Access the reference to the element at <paramref name="index"/>.
@@ -45,9 +32,17 @@ namespace Worlds
             }
         }
 
-        internal Values(Array<T> array)
+        /// <summary>
+        /// Access the reference to the element at <paramref name="index"/>.
+        /// </summary>
+        public readonly ref T this[uint index]
         {
-            this.pointer = array.Pointer;
+            get
+            {
+                ThrowIfOutOfRange(index);
+
+                return ref pointer->items.ReadElement<T>(index);
+            }
         }
 
         internal Values(int length)
@@ -60,7 +55,7 @@ namespace Worlds
             this.pointer = new Array<T>(values).Pointer;
         }
 
-        internal Values(Pointer* array)
+        internal Values(ArrayPointer* array)
         {
             this.pointer = array;
         }
@@ -76,6 +71,15 @@ namespace Worlds
 
         [Conditional("DEBUG")]
         private readonly void ThrowIfOutOfRange(int index)
+        {
+            if (index >= pointer->length || index < 0)
+            {
+                throw new InvalidOperationException($"Index {index} is out of range for values of length {pointer->length}");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfOutOfRange(uint index)
         {
             if (index >= pointer->length)
             {
@@ -153,7 +157,37 @@ namespace Worlds
         public readonly void Clear()
         {
             pointer->length = 0;
-            MemoryAddress.Resize(ref pointer->items, sizeof(T) * pointer->length);
+            MemoryAddress.Resize(ref pointer->items, 0);
+        }
+
+        /// <summary>
+        /// Resizes the array to be able to store <paramref name="newLength"/> amount of elements.
+        /// <para>
+        /// New elements will be uninitialized.
+        /// </para>
+        /// </summary>
+        public readonly void Resize(int newLength)
+        {
+            MemoryAddress.Resize(ref pointer->items, sizeof(T) * newLength);
+            pointer->length = newLength;
+        }
+
+        /// <summary>
+        /// Resizes the array to be able to store <paramref name="newLength"/> amount of elements.
+        /// <para>
+        /// New elements will be initialized to <paramref name="defaultValue"/>.
+        /// </para>
+        /// </summary>
+        public readonly void Resize(int newLength, T defaultValue)
+        {
+            MemoryAddress.Resize(ref pointer->items, sizeof(T) * newLength);
+            if (newLength > pointer->length)
+            {
+                Span<T> span = new(pointer->items.Pointer + pointer->length * sizeof(T), newLength - pointer->length);
+                span.Fill(defaultValue);
+            }
+
+            pointer->length = newLength;
         }
 
         /// <summary>
@@ -297,13 +331,13 @@ namespace Worlds
         {
             return new Values(values.pointer);
         }
-        
+
         /// <inheritdoc/>
         public static implicit operator Span<T>(Values<T> values)
         {
             return new Span<T>(values.pointer->items.Pointer, values.pointer->length);
         }
-        
+
         /// <inheritdoc/>
         public static implicit operator ReadOnlySpan<T>(Values<T> values)
         {
@@ -316,7 +350,7 @@ namespace Worlds
     /// </summary>
     public unsafe readonly struct Values : IEquatable<Values>
     {
-        internal readonly Pointer* pointer;
+        internal readonly ArrayPointer* pointer;
 
         /// <summary>
         /// Length of the array.
@@ -353,17 +387,12 @@ namespace Worlds
             }
         }
 
-        internal Values(Array array)
-        {
-            this.pointer = array.Pointer;
-        }
-
         internal Values(int length, int stride)
         {
             this.pointer = new Array(length, stride).Pointer;
         }
 
-        internal Values(Pointer* array)
+        internal Values(ArrayPointer* array)
         {
             this.pointer = array;
         }
@@ -458,6 +487,14 @@ namespace Worlds
         /// Retrieves the memory address to the <paramref name="bytePosition"/>.
         /// </summary>
         public readonly MemoryAddress Read(int bytePosition)
+        {
+            return pointer->items.Read(bytePosition);
+        }
+
+        /// <summary>
+        /// Retrieves the memory address to the <paramref name="bytePosition"/>.
+        /// </summary>
+        public readonly MemoryAddress Read(uint bytePosition)
         {
             return pointer->items.Read(bytePosition);
         }

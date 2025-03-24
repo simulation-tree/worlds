@@ -1,22 +1,24 @@
 ﻿using System;
 using Unmanaged;
-using Pointer = Worlds.Pointers.ChunkMap;
+using Worlds.Pointers;
 
 namespace Worlds
 {
     internal unsafe struct ChunkMap
     {
-        public Pointer* chunkMap;
+        public ChunkMapPointer* chunkMap;
 
         public ChunkMap(Schema schema)
         {
-            ref Pointer chunkMap = ref MemoryAddress.Allocate<Pointer>();
-            chunkMap = new(schema);
-            fixed (Pointer* pointer = &chunkMap)
-            {
-                this.chunkMap = pointer;
-                this.chunkMap->defaultChunk = CreateDefault();
-            }
+            chunkMap = MemoryAddress.AllocatePointer<ChunkMapPointer>();
+            chunkMap->schema = schema;
+            chunkMap->count = 0;
+            chunkMap->capacity = 32;
+            chunkMap->chunks = new(32);
+            chunkMap->keys = MemoryAddress.Allocate(32 * sizeof(ChunkKey));
+            chunkMap->hashCodes = MemoryAddress.Allocate(32 * sizeof(ulong));
+            chunkMap->occupied = MemoryAddress.AllocateZeroed(32);
+            chunkMap->defaultChunk = CreateDefault();
         }
 
         public void Dispose()
@@ -86,7 +88,7 @@ namespace Worlds
             {
                 return chunkMap->defaultChunk;
             }
-            
+
             int capacity = chunkMap->capacity;
             long hashCode = definition.GetLongHashCode();
             int index = GetIndex(hashCode, capacity);
@@ -125,14 +127,14 @@ namespace Worlds
                 index = (index + 1) % capacity;
             }
 
-            Chunk newChunk = new(definition, chunkMap->schema);
+            Chunk newChunk = new(chunkMap->schema, definition);
             occupied[index] = true;
             hashCodes[index] = hashCode;
             values[index] = new(newChunk);
             chunkMap->chunks.Add(newChunk);
             return newChunk;
         }
-        
+
         private readonly Chunk CreateDefault()
         {
             int capacity = chunkMap->capacity;
@@ -141,13 +143,18 @@ namespace Worlds
             Span<bool> occupied = new(chunkMap->occupied.Pointer, capacity);
             Span<ChunkKey> values = new(chunkMap->keys.Pointer, capacity);
             Span<long> hashCodes = new(chunkMap->hashCodes.Pointer, capacity);
-            Chunk newDefaultChunk = new(default, chunkMap->schema);
+            Chunk newDefaultChunk = new(chunkMap->schema);
             occupied[index] = true;
             hashCodes[index] = hashCode;
             values[index] = new(newDefaultChunk);
             chunkMap->chunks.Add(newDefaultChunk);
             chunkMap->count = 1;
             return newDefaultChunk;
+        }
+
+        internal readonly void UpdateDefaultChunkStrideToMatchSchema()
+        {
+            chunkMap->defaultChunk.UpdateStrideToMatchSchema();
         }
 
         public readonly void Clear()
