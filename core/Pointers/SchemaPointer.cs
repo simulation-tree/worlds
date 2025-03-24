@@ -22,9 +22,9 @@ namespace Worlds.Pointers
             tagsCount = 0;
             componentRowSize = 0;
             definitionMask = default;
-            offsets = MemoryAddress.AllocateZeroed(Worlds.Schema.OffsetsLengthInBytes);
-            sizes = MemoryAddress.AllocateZeroed(Worlds.Schema.SizesLengthInBytes);
-            typeHashes = MemoryAddress.AllocateZeroed(Worlds.Schema.TypeHashesLengthInBytes);
+            offsets = MemoryAddress.AllocateZeroed(Schema.OffsetsLengthInBytes);
+            sizes = MemoryAddress.AllocateZeroed(Schema.SizesLengthInBytes);
+            typeHashes = MemoryAddress.AllocateZeroed(Schema.TypeHashesLengthInBytes);
             this.schemaIndex = schemaIndex;
         }
     }

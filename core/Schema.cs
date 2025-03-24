@@ -632,15 +632,7 @@ namespace Worlds
         {
             ThrowIfComponentTypeIsMissing<T>();
 
-            if (!SchemaTypeCache<T>.TryGetComponentType(this, out int componentType))
-            {
-                Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
-                componentType = componentTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
-                SchemaTypeCache<T>.SetComponentType(this, componentType);
-                Trace.WriteLine($"Cached component type for {typeof(T).FullName}");
-            }
-
-            return componentType;
+            return SchemaTypeCache<T>.GetOrSetComponentType(this);
         }
 
         /// <summary>
@@ -650,15 +642,7 @@ namespace Worlds
         {
             ThrowIfComponentTypeIsMissing<T>();
 
-            if (!SchemaTypeCache<T>.TryGetComponentType(this, out int componentType))
-            {
-                Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
-                componentType = componentTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
-                SchemaTypeCache<T>.SetComponentType(this, componentType);
-                Trace.WriteLine($"Cached component type for {typeof(T).FullName}");
-            }
-
-            return new(componentType, DataType.Kind.Component, sizeof(T));
+            return new(SchemaTypeCache<T>.GetOrSetComponentType(this), DataType.Kind.Component, sizeof(T));
         }
 
         /// <summary>
@@ -694,15 +678,7 @@ namespace Worlds
         {
             ThrowIfArrayTypeIsMissing<T>();
 
-            if (!SchemaTypeCache<T>.TryGetArrayType(this, out int arrayType))
-            {
-                Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-                arrayType = arrayTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
-                SchemaTypeCache<T>.SetArrayType(this, arrayType);
-                Trace.WriteLine($"Cached array type for {typeof(T).FullName}");
-            }
-
-            return arrayType;
+            return SchemaTypeCache<T>.GetOrSetArrayType(this);
         }
 
         /// <summary>
@@ -712,15 +688,7 @@ namespace Worlds
         {
             ThrowIfArrayTypeIsMissing<T>();
 
-            if (!SchemaTypeCache<T>.TryGetArrayType(this, out int arrayType))
-            {
-                Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-                arrayType = arrayTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
-                SchemaTypeCache<T>.SetArrayType(this, arrayType);
-                Trace.WriteLine($"Cached array type for {typeof(T).FullName}");
-            }
-
-            return new(arrayType, DataType.Kind.Array, sizeof(T));
+            return new(SchemaTypeCache<T>.GetOrSetArrayType(this), DataType.Kind.Array, sizeof(T));
         }
 
         /// <summary>
@@ -742,15 +710,7 @@ namespace Worlds
         {
             ThrowIfTagIsMissing<T>();
 
-            if (!SchemaTypeCache<T>.TryGetTagType(this, out int tagType))
-            {
-                Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
-                tagType = tagTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
-                SchemaTypeCache<T>.SetTagType(this, tagType);
-                Trace.WriteLine($"Cached tag type for {typeof(T).FullName}");
-            }
-
-            return tagType;
+            return SchemaTypeCache<T>.GetOrSetTagType(this);
         }
 
         /// <summary>
@@ -760,15 +720,7 @@ namespace Worlds
         {
             ThrowIfTagIsMissing<T>();
 
-            if (!SchemaTypeCache<T>.TryGetTagType(this, out int tagType))
-            {
-                Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
-                tagType = tagTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
-                SchemaTypeCache<T>.SetTagType(this, tagType);
-                Trace.WriteLine($"Cached tag type for {typeof(T).FullName}");
-            }
-
-            return new(tagType, DataType.Kind.Tag, default);
+            return new(SchemaTypeCache<T>.GetOrSetTagType(this), DataType.Kind.Tag, 1);
         }
 
         /// <summary>
@@ -1648,12 +1600,12 @@ namespace Worlds
 
             static SchemaTypeCache()
             {
-                components = new int[0];
-                arrays = new int[0];
-                tags = new int[0];
                 componentCapacity = 0;
                 arrayCapacity = 0;
                 tagCapacity = 0;
+                components = new int[componentCapacity];
+                arrays = new int[arrayCapacity];
+                tags = new int[tagCapacity];
             }
 
             public static void SetComponentType(Schema schema, int componentType)
@@ -1689,42 +1641,61 @@ namespace Worlds
                 tags[schema.schema->schemaIndex] = tagType;
             }
 
-            public static bool TryGetComponentType(Schema schema, out int componentType)
+            public static int GetOrSetComponentType(Schema schema)
             {
-                if (schema.schema->schemaIndex < componentCapacity)
+                int schemaIndex = schema.schema->schemaIndex;
+                if (schemaIndex < componentCapacity)
                 {
-                    componentType = components[schema.schema->schemaIndex];
-                    return true;
+                    return components[schemaIndex];
                 }
                 else
                 {
-                    componentType = -1;
-                    return false;
+                    componentCapacity = schemaIndex + 1;
+                    Array.Resize(ref components, componentCapacity);
+
+                    Span<long> componentTypeHashes = new(schema.schema->typeHashes.Pointer, BitMask.Capacity);
+                    int componentType = componentTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
+                    components[schemaIndex] = componentType;
+                    return componentType;
                 }
             }
 
-            public static bool TryGetArrayType(Schema schema, out int arrayType)
+            public static int GetOrSetArrayType(Schema schema)
             {
-                if (schema.schema->schemaIndex < arrayCapacity)
+                int schemaIndex = schema.schema->schemaIndex;
+                if (schemaIndex < arrayCapacity)
                 {
-                    arrayType = arrays[schema.schema->schemaIndex];
-                    return true;
+                    return arrays[schemaIndex];
                 }
+                else
+                {
+                    arrayCapacity = schemaIndex + 1;
+                    Array.Resize(ref arrays, arrayCapacity);
 
-                arrayType = -1;
-                return false;
+                    Span<long> arrayTypeHashes = new(schema.schema->typeHashes.Pointer + BitMask.Capacity * sizeof(long), BitMask.Capacity);
+                    int arrayType = arrayTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
+                    arrays[schemaIndex] = arrayType;
+                    return arrayType;
+                }
             }
 
-            public static bool TryGetTagType(Schema schema, out int tagType)
+            public static int GetOrSetTagType(Schema schema)
             {
-                if (schema.schema->schemaIndex < tagCapacity)
+                int schemaIndex = schema.schema->schemaIndex;
+                if (schemaIndex < tagCapacity)
                 {
-                    tagType = tags[schema.schema->schemaIndex];
-                    return true;
+                    return tags[schemaIndex];
                 }
+                else
+                {
+                    tagCapacity = schemaIndex + 1;
+                    Array.Resize(ref tags, tagCapacity);
 
-                tagType = -1;
-                return false;
+                    Span<long> tagTypeHashes = new(schema.schema->typeHashes.Pointer + BitMask.Capacity * sizeof(long) * 2, BitMask.Capacity);
+                    int tagType = tagTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
+                    tags[schemaIndex] = tagType;
+                    return tagType;
+                }
             }
         }
     }
