@@ -1378,9 +1378,8 @@ namespace Worlds
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
             List<uint> references = world->references;
-            int index = slot.referenceStart + reference.value - 1;
             slot.referenceCount--;
-            references.RemoveAt(index);
+            references.RemoveAt(slot.referenceStart + reference.value - 1);
 
             //shift all other ranges back by 1
             for (int e = 1; e < slots.Length; e++)
