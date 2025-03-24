@@ -77,10 +77,10 @@ namespace Worlds
             state = State.Free;
             flags = Flags.None;
             chunk = default;
-            index = 0;
-            childrenCount = 0;
-            referenceStart = 0;
-            referenceCount = 0;
+            index = default;
+            childrenCount = default;
+            referenceStart = default;
+            referenceCount = default;
             arrays = default;
         }
 

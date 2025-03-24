@@ -209,14 +209,9 @@ namespace Worlds
         /// </summary>
         public Schema()
         {
-            ref SchemaPointer schema = ref MemoryAddress.Allocate<SchemaPointer>();
-            schema = new(createdSchemas);
+            schema = MemoryAddress.AllocatePointer<SchemaPointer>();
+            *schema = new(createdSchemas);
             createdSchemas++;
-
-            fixed (SchemaPointer* pointer = &schema)
-            {
-                this.schema = pointer;
-            }
         }
 #endif
 
@@ -1448,14 +1443,10 @@ namespace Worlds
         /// </summary>
         public static Schema Create()
         {
-            ref SchemaPointer schema = ref MemoryAddress.Allocate<SchemaPointer>();
-            schema = new(createdSchemas);
+            SchemaPointer* pointer = MemoryAddress.AllocatePointer<SchemaPointer>();
+            *pointer = new(createdSchemas);
             createdSchemas++;
-
-            fixed (SchemaPointer* pointer = &schema)
-            {
-                return new(pointer);
-            }
+            return new(pointer);
         }
 
         [Conditional("DEBUG")]

@@ -463,6 +463,14 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves the memory address to the <paramref name="bytePosition"/>.
+        /// </summary>
+        public readonly MemoryAddress Read(uint bytePosition)
+        {
+            return pointer->items.Read(bytePosition);
+        }
+
+        /// <summary>
         /// Copies the state from the given <paramref name="bytes"/>.
         /// </summary>
         public readonly void CopyFrom(ReadOnlySpan<byte> bytes)
