@@ -34,7 +34,7 @@ namespace Worlds
             {
                 MemoryAddress.ThrowIfDefault(chunk);
 
-                return chunk->entities.AsSpan(1);
+                return new ReadOnlySpan<uint>(chunk->entities.Items.Pointer + sizeof(uint), chunk->count);
             }
         }
 
