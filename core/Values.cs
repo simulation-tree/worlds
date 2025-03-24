@@ -157,7 +157,7 @@ namespace Worlds
         public readonly void Clear()
         {
             pointer->length = 0;
-            MemoryAddress.Resize(ref pointer->items, sizeof(T) * pointer->length);
+            MemoryAddress.Resize(ref pointer->items, 0);
         }
 
         /// <summary>
