@@ -1,9 +1,9 @@
 ﻿using Collections.Generic;
+using Collections.Pointers;
 using System;
 using System.Diagnostics;
 using Unmanaged;
 using Array = Collections.Array;
-using Pointer = Collections.Pointers.Array;
 
 namespace Worlds
 {
@@ -12,7 +12,7 @@ namespace Worlds
     /// </summary>
     public unsafe readonly struct Values<T> where T : unmanaged
     {
-        private readonly Pointer* pointer;
+        private readonly ArrayPointer* pointer;
 
         /// <summary>
         /// Length of the array.
@@ -60,7 +60,7 @@ namespace Worlds
             this.pointer = new Array<T>(values).Pointer;
         }
 
-        internal Values(Pointer* array)
+        internal Values(ArrayPointer* array)
         {
             this.pointer = array;
         }
@@ -297,13 +297,13 @@ namespace Worlds
         {
             return new Values(values.pointer);
         }
-        
+
         /// <inheritdoc/>
         public static implicit operator Span<T>(Values<T> values)
         {
             return new Span<T>(values.pointer->items.Pointer, values.pointer->length);
         }
-        
+
         /// <inheritdoc/>
         public static implicit operator ReadOnlySpan<T>(Values<T> values)
         {
@@ -316,7 +316,7 @@ namespace Worlds
     /// </summary>
     public unsafe readonly struct Values : IEquatable<Values>
     {
-        internal readonly Pointer* pointer;
+        internal readonly ArrayPointer* pointer;
 
         /// <summary>
         /// Length of the array.
@@ -363,7 +363,7 @@ namespace Worlds
             this.pointer = new Array(length, stride).Pointer;
         }
 
-        internal Values(Pointer* array)
+        internal Values(ArrayPointer* array)
         {
             this.pointer = array;
         }
