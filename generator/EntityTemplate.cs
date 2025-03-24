@@ -240,25 +240,49 @@
     /// <summary>
     /// Removes the reference to the <paramref name=""otherEntity""/> from this entity.
     /// </summary>
-    public readonly rint RemoveReference(uint otherEntity)
+    public readonly void RemoveReference(uint otherEntity)
     {
-        return world.RemoveReference(value, otherEntity);
-    }
-
-    /// <summary>
-    /// Removes the given reference <paramref name=""reference""/> from this entity.
-    /// </summary>
-    public readonly uint RemoveReference(rint reference)
-    {
-        return world.RemoveReference(value, reference);
+        world.RemoveReference(value, otherEntity);
     }
 
     /// <summary>
     /// Removes the reference to the <paramref name=""otherEntity""/> from this entity.
     /// </summary>
-    public readonly rint RemoveReference<T>(T otherEntity) where T : unmanaged, IEntity
+    public readonly void RemoveReference(uint otherEntity, out rint removedReference)
     {
-        return world.RemoveReference(value, otherEntity.GetEntityValue());
+        world.RemoveReference(value, otherEntity, out removedReference);
+    }
+
+    /// <summary>
+    /// Removes the given reference <paramref name=""reference""/> from this entity.
+    /// </summary>
+    public readonly void RemoveReference(rint reference)
+    {
+        world.RemoveReference(value, reference);
+    }
+
+    /// <summary>
+    /// Removes the given reference <paramref name=""reference""/> from this entity.
+    /// </summary>
+    public readonly void RemoveReference(rint reference, out uint referencedEntity)
+    {
+        world.RemoveReference(value, reference, out referencedEntity);
+    }
+
+    /// <summary>
+    /// Removes the reference to the <paramref name=""otherEntity""/> from this entity.
+    /// </summary>
+    public readonly void RemoveReference<T>(T otherEntity) where T : unmanaged, IEntity
+    {
+        world.RemoveReference(value, otherEntity.GetEntityValue());
+    }
+
+    /// <summary>
+    /// Removes the reference to the <paramref name=""otherEntity""/> from this entity.
+    /// </summary>
+    public readonly void RemoveReference<T>(T otherEntity, out rint removedReference) where T : unmanaged, IEntity
+    {
+        world.RemoveReference(value, otherEntity.GetEntityValue(), out removedReference);
     }
 
     /// <summary>

@@ -1369,7 +1369,7 @@ namespace Worlds
         /// Removes the reference at the given <paramref name="reference"/> index on <paramref name="entity"/>.
         /// </summary>
         /// <returns>The other entity that was being referenced.</returns>
-        public readonly uint RemoveReference(uint entity, rint reference)
+        public readonly void RemoveReference(uint entity, rint reference)
         {
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
@@ -1380,7 +1380,6 @@ namespace Worlds
             List<uint> references = world->references;
             int index = slot.referenceStart + reference.value - 1;
             slot.referenceCount--;
-            uint removed = references[index];
             references.RemoveAt(index);
 
             //shift all other ranges back by 1
@@ -1392,15 +1391,70 @@ namespace Worlds
                     currentSlot.referenceStart--;
                 }
             }
+        }
 
-            return removed;
+        /// <summary>
+        /// Removes the reference at the given <paramref name="reference"/> index on <paramref name="entity"/>.
+        /// </summary>
+        /// <returns>The other entity that was being referenced.</returns>
+        public readonly void RemoveReference(uint entity, rint reference, out uint referencedEntity)
+        {
+            MemoryAddress.ThrowIfDefault(world);
+            ThrowIfEntityIsMissing(entity);
+            ThrowIfReferenceIsMissing(entity, reference);
+
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
+            List<uint> references = world->references;
+            int index = slot.referenceStart + reference.value - 1;
+            slot.referenceCount--;
+            referencedEntity = references[index];
+            references.RemoveAt(index);
+
+            //shift all other ranges back by 1
+            for (int e = 1; e < slots.Length; e++)
+            {
+                ref Slot currentSlot = ref slots[e];
+                if (currentSlot.referenceStart > slot.referenceStart)
+                {
+                    currentSlot.referenceStart--;
+                }
+            }
         }
 
         /// <summary>
         /// Removes the <paramref name="referencedEntity"/> from <paramref name="entity"/>.
         /// </summary>
         /// <returns>The reference that was removed.</returns>
-        public readonly rint RemoveReference(uint entity, uint referencedEntity)
+        public readonly void RemoveReference(uint entity, uint referencedEntity)
+        {
+            MemoryAddress.ThrowIfDefault(world);
+            ThrowIfEntityIsMissing(entity);
+            ThrowIfReferencedEntityIsMissing(entity, referencedEntity);
+
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
+            List<uint> references = world->references;
+            Span<uint> referenceSpan = world->references.AsSpan(slot.referenceStart, slot.referenceCount);
+            slot.referenceCount--;
+            references.RemoveAt(referenceSpan.IndexOf(referencedEntity));
+
+            //shift all other ranges back by 1
+            for (int e = 1; e < slots.Length; e++)
+            {
+                ref Slot currentSlot = ref slots[e];
+                if (currentSlot.referenceStart > slot.referenceStart)
+                {
+                    currentSlot.referenceStart--;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Removes the <paramref name="referencedEntity"/> from <paramref name="entity"/>.
+        /// </summary>
+        /// <returns>The reference that was removed.</returns>
+        public readonly void RemoveReference(uint entity, uint referencedEntity, out rint removedReference)
         {
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
@@ -1424,7 +1478,7 @@ namespace Worlds
                 }
             }
 
-            return new(index + 1);
+            removedReference = new(index + 1);
         }
 
         /// <summary>
