@@ -5,7 +5,6 @@ using System.Runtime.CompilerServices;
 using Unmanaged;
 using Worlds.Functions;
 using Worlds.Pointers;
-using Array = Collections.Array;
 
 namespace Worlds
 {
@@ -175,8 +174,22 @@ namespace Worlds
         /// </summary>
         public World()
         {
+            Schema schema = new();
             world = MemoryAddress.AllocatePointer<WorldPointer>();
-            *world = new(new());
+            world->schema = schema;
+            world->slots = new(4);
+            world->freeEntities = new(4);
+            world->chunks = new(schema);
+            world->entityCreatedOrDestroyed = new(4);
+            world->entityParentChanged = new(4);
+            world->entityDataChanged = new(4);
+            world->references = new(4);
+            world->entityCreatedOrDestroyedCount = 0;
+            world->entityParentChangedCount = 0;
+            world->entityDataChangedCount = 0;
+
+            //add reserve values at index 0
+            world->slots.AddDefault();
         }
 #endif
 
@@ -186,7 +199,20 @@ namespace Worlds
         public World(Schema schema)
         {
             world = MemoryAddress.AllocatePointer<WorldPointer>();
-            *world = new(schema);
+            world->schema = schema;
+            world->slots = new(4);
+            world->freeEntities = new(4);
+            world->chunks = new(schema);
+            world->entityCreatedOrDestroyed = new(4);
+            world->entityParentChanged = new(4);
+            world->entityDataChanged = new(4);
+            world->references = new(4);
+            world->entityCreatedOrDestroyedCount = 0;
+            world->entityParentChangedCount = 0;
+            world->entityDataChangedCount = 0;
+
+            //add reserve values at index 0
+            world->slots.AddDefault();
         }
 
         /// <summary>
