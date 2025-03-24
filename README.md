@@ -304,7 +304,7 @@ static TypeLayout Process(TypeLayout type, DataType.Kind dataType)
     if (type.Name.SequenceEquals("Fruit") && type.Size == sizeof(uint))
     {
         //change the type to uint
-        return TypeRegistry.Get<uint>();
+        return MetadataRegistry.GetType<uint>();
     }
     else
     {
