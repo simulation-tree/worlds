@@ -210,7 +210,15 @@ namespace Worlds
         public Schema()
         {
             schema = MemoryAddress.AllocatePointer<SchemaPointer>();
-            *schema = new(createdSchemas);
+            schema->componentCount = 0;
+            schema->arraysCount = 0;
+            schema->tagsCount = 0;
+            schema->componentRowSize = 0;
+            schema->definitionMask = default;
+            schema->offsets = MemoryAddress.AllocateZeroed(OffsetsLengthInBytes);
+            schema->sizes = MemoryAddress.AllocateZeroed(SizesLengthInBytes);
+            schema->typeHashes = MemoryAddress.AllocateZeroed(TypeHashesLengthInBytes);
+            schema->schemaIndex = createdSchemas;
             createdSchemas++;
         }
 #endif
@@ -1377,10 +1385,18 @@ namespace Worlds
         /// </summary>
         public static Schema Create()
         {
-            SchemaPointer* pointer = MemoryAddress.AllocatePointer<SchemaPointer>();
-            *pointer = new(createdSchemas);
+            SchemaPointer* schema = MemoryAddress.AllocatePointer<SchemaPointer>();
+            schema->componentCount = 0;
+            schema->arraysCount = 0;
+            schema->tagsCount = 0;
+            schema->componentRowSize = 0;
+            schema->definitionMask = default;
+            schema->offsets = MemoryAddress.AllocateZeroed(OffsetsLengthInBytes);
+            schema->sizes = MemoryAddress.AllocateZeroed(SizesLengthInBytes);
+            schema->typeHashes = MemoryAddress.AllocateZeroed(TypeHashesLengthInBytes);
+            schema->schemaIndex = createdSchemas;
             createdSchemas++;
-            return new(pointer);
+            return new Schema(schema);
         }
 
         [Conditional("DEBUG")]
@@ -1517,14 +1533,10 @@ namespace Worlds
 
         void ISerializable.Read(ByteReader reader)
         {
-            ref SchemaPointer pointer = ref MemoryAddress.Allocate<SchemaPointer>();
-            pointer = new(createdSchemas);
-            createdSchemas++;
-            fixed (SchemaPointer* p = &pointer)
-            {
-                schema = p;
-            }
-
+            schema = MemoryAddress.AllocatePointer<SchemaPointer>();
+            schema->offsets = MemoryAddress.AllocateZeroed(OffsetsLengthInBytes);
+            schema->sizes = MemoryAddress.AllocateZeroed(SizesLengthInBytes);
+            schema->typeHashes = MemoryAddress.AllocateZeroed(TypeHashesLengthInBytes);
             schema->componentCount = reader.ReadValue<byte>();
             schema->arraysCount = reader.ReadValue<byte>();
             schema->tagsCount = reader.ReadValue<byte>();
@@ -1533,10 +1545,12 @@ namespace Worlds
             schema->offsets.CopyFrom(reader.ReadSpan<int>(BitMask.Capacity));
             schema->sizes.CopyFrom(reader.ReadSpan<int>(BitMask.Capacity * 2));
             schema->typeHashes.CopyFrom(reader.ReadSpan<long>(BitMask.Capacity * 3));
+            schema->schemaIndex = createdSchemas;
+            createdSchemas++;
         }
 
         /// <summary>
-        /// Resets the schema to its <c>default</c> state.
+        /// Resets the schema to <see langword="default"/> state.
         /// </summary>
         public readonly void Clear()
         {
