@@ -351,7 +351,7 @@ namespace Worlds
                 for (int i = 0; i < count; i++)
                 {
                     (EntityCreatedOrDestroyed callback, ulong userData) = world->entityCreatedOrDestroyed[i];
-                    callback.Invoke(this, entity, ChangeType.Positive, userData);
+                    callback.Invoke(this, entity, true, userData);
                 }
             }
         }
@@ -379,7 +379,7 @@ namespace Worlds
                 for (int i = 0; i < count; i++)
                 {
                     (EntityDataChanged callback, ulong userData) = world->entityDataChanged[i];
-                    callback.Invoke(this, entity, type, ChangeType.Positive, userData);
+                    callback.Invoke(this, entity, type, true, userData);
                 }
             }
         }
@@ -394,7 +394,7 @@ namespace Worlds
                 for (int i = 0; i < count; i++)
                 {
                     (EntityDataChanged callback, ulong userData) = world->entityDataChanged[i];
-                    callback.Invoke(this, entity, type, ChangeType.Negative, userData);
+                    callback.Invoke(this, entity, type, false, userData);
                 }
             }
         }
@@ -408,7 +408,7 @@ namespace Worlds
                 for (int i = 0; i < count; i++)
                 {
                     (EntityDataChanged callback, ulong userData) = world->entityDataChanged[i];
-                    callback.Invoke(this, entity, type, ChangeType.Positive, userData);
+                    callback.Invoke(this, entity, type, true, userData);
                 }
             }
         }
@@ -422,7 +422,7 @@ namespace Worlds
                 for (int i = 0; i < count; i++)
                 {
                     (EntityDataChanged callback, ulong userData) = world->entityDataChanged[i];
-                    callback.Invoke(this, entity, type, ChangeType.Negative, userData);
+                    callback.Invoke(this, entity, type, false, userData);
                 }
             }
         }
@@ -436,7 +436,7 @@ namespace Worlds
                 for (int i = 0; i < count; i++)
                 {
                     (EntityDataChanged callback, ulong userData) = world->entityDataChanged[i];
-                    callback.Invoke(this, entity, type, ChangeType.Positive, userData);
+                    callback.Invoke(this, entity, type, true, userData);
                 }
             }
         }
@@ -450,7 +450,7 @@ namespace Worlds
                 for (int i = 0; i < count; i++)
                 {
                     (EntityDataChanged callback, ulong userData) = world->entityDataChanged[i];
-                    callback.Invoke(this, entity, type, ChangeType.Negative, userData);
+                    callback.Invoke(this, entity, type, false, userData);
                 }
             }
         }
@@ -563,10 +563,6 @@ namespace Worlds
 
         /// <summary>
         /// Adds a function that listens to whenever an entity is either created, or destroyed.
-        /// <para>
-        /// Creation events are indicated by <see cref="ChangeType.Positive"/>,
-        /// while destruction events are indicated by <see cref="ChangeType.Negative"/>.
-        /// </para>
         /// </summary>
         public readonly void ListenToEntityCreationOrDestruction(EntityCreatedOrDestroyed function,
             ulong userData = default)
@@ -657,7 +653,7 @@ namespace Worlds
                 for (int i = 0; i < count; i++)
                 {
                     (EntityCreatedOrDestroyed callback, ulong userData) = world->entityCreatedOrDestroyed[i];
-                    callback.Invoke(this, entity, ChangeType.Negative, userData);
+                    callback.Invoke(this, entity, false, userData);
                 }
             }
         }

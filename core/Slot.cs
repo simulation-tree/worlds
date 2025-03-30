@@ -71,17 +71,19 @@ namespace Worlds
         /// </summary>
         public readonly bool ChildrenOutdated => (flags & Flags.ChildrenOutdated) != 0;
 
-        public Slot()
+        public static Slot CreateDefault()
         {
-            parent = 0;
-            state = State.Free;
-            flags = Flags.None;
-            chunk = default;
-            index = default;
-            childrenCount = default;
-            referenceStart = default;
-            referenceCount = default;
-            arrays = default;
+            Slot slot = default;
+            slot.parent = 0;
+            slot.state = State.Free;
+            slot.flags = Flags.None;
+            slot.chunk = default;
+            slot.index = default;
+            slot.childrenCount = default;
+            slot.referenceStart = default;
+            slot.referenceCount = default;
+            slot.arrays = default;
+            return slot;
         }
 
         /// <summary>

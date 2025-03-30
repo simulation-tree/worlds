@@ -1404,7 +1404,7 @@ namespace Worlds
         {
             if (schema->componentCount == BitMask.MaxValue)
             {
-                throw new Exception("Too many components types registered");
+                throw new Exception("Too many components types registered in schema");
             }
         }
 
@@ -1413,7 +1413,7 @@ namespace Worlds
         {
             if (schema->arraysCount == BitMask.MaxValue)
             {
-                throw new Exception("Too many arrays element types registered");
+                throw new Exception("Too many array types registered in schema");
             }
         }
 
@@ -1422,7 +1422,7 @@ namespace Worlds
         {
             if (schema->tagsCount == BitMask.MaxValue)
             {
-                throw new Exception("Too many tag types registered");
+                throw new Exception("Too many tag types registered in schema");
             }
         }
 

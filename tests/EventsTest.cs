@@ -29,16 +29,16 @@ namespace Worlds.Tests
             Assert.That(events[1].entity, Is.EqualTo(c));
 
             [UnmanagedCallersOnly]
-            static void OnCreatedOrDestroyed(World world, uint entity, ChangeType type, ulong userData)
+            static void OnCreatedOrDestroyed(EntityCreatedOrDestroyed.Input input)
             {
-                List<(uint, bool)> events = new((void*)userData);
-                if (type == ChangeType.Positive)
+                List<(uint, bool)> events = new((void*)input.userData);
+                if (input.isCreated)
                 {
-                    events.Add((entity, true));
+                    events.Add((input.entity, true));
                 }
                 else
                 {
-                    events.Add((entity, false));
+                    events.Add((input.entity, false));
                 }
             }
         }
@@ -70,18 +70,18 @@ namespace Worlds.Tests
             Assert.That(events[0].added, Is.False);
 
             [UnmanagedCallersOnly]
-            static void OnComponentChanged(World world, uint entity, DataType type, ChangeType changeType, ulong userData)
+            static void OnComponentChanged(EntityDataChanged.Input input)
             {
-                if (type.IsComponent)
+                if (input.type.IsComponent)
                 {
-                    List<(uint, int, bool)> events = new((void*)userData);
-                    if (changeType == ChangeType.Positive)
+                    List<(uint, int, bool)> events = new((void*)input.userData);
+                    if (input.isPositive)
                     {
-                        events.Add((entity, type.index, true));
+                        events.Add((input.entity, input.type.index, true));
                     }
                     else
                     {
-                        events.Add((entity, type.index, false));
+                        events.Add((input.entity, input.type.index, false));
                     }
                 }
             }

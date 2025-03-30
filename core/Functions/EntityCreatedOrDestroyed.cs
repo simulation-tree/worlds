@@ -8,18 +8,18 @@ namespace Worlds.Functions
     public unsafe readonly struct EntityCreatedOrDestroyed : IEquatable<EntityCreatedOrDestroyed>
     {
 #if NET
-        private readonly delegate* unmanaged<World, uint, ChangeType, ulong, void> function;
+        private readonly delegate* unmanaged<Input, void> function;
 
         /// <inheritdoc/>
-        public EntityCreatedOrDestroyed(delegate* unmanaged<World, uint, ChangeType, ulong, void> function)
+        public EntityCreatedOrDestroyed(delegate* unmanaged<Input, void> function)
         {
             this.function = function;
         }
 #else
-        private readonly delegate*<World, uint, ChangeType, ulong, void> function;
+        private readonly delegate*<Input, void> function;
         
         /// <inheritdoc/>
-        public EntityCreatedOrDestroyed(delegate*<World, uint, ChangeType, ulong, void> function)
+        public EntityCreatedOrDestroyed(delegate*<Input, void> function)
         {
             this.function = function;
         }
@@ -44,9 +44,9 @@ namespace Worlds.Functions
         }
 
         /// <inheritdoc/>
-        public readonly void Invoke(World world, uint entity, ChangeType changeType, ulong userData)
+        public readonly void Invoke(World world, uint entity, bool isPositive, ulong userData)
         {
-            function(world, entity, changeType, userData);
+            function(new(world, entity, isPositive, userData));
         }
 
         /// <inheritdoc/>
@@ -59,6 +59,41 @@ namespace Worlds.Functions
         public static bool operator !=(EntityCreatedOrDestroyed left, EntityCreatedOrDestroyed right)
         {
             return !(left == right);
+        }
+
+        /// <inheritdoc/>
+        public readonly struct Input
+        {
+            /// <summary>
+            /// The world in which the entity was created or destroyed.
+            /// </summary>
+            public readonly World world;
+
+            /// <summary>
+            /// The entity.
+            /// </summary>
+            public readonly uint entity;
+
+            /// <summary>
+            /// Indicates whether the entity was created or destroyed.
+            /// </summary>
+            public readonly bool isCreated;
+
+            /// <summary>
+            /// Custom user data.
+            /// </summary>
+            public readonly ulong userData;
+
+            /// <summary>
+            /// Creates a new input parameter.
+            /// </summary>
+            public Input(World world, uint entity, bool isCreated, ulong userData)
+            {
+                this.world = world;
+                this.entity = entity;
+                this.isCreated = isCreated;
+                this.userData = userData;
+            }
         }
     }
 }

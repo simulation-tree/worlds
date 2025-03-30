@@ -18,10 +18,10 @@ namespace Worlds.Functions
             this.function = function;
         }
 #else
-        private readonly delegate*<Input, TypeLayout> function;
+        private readonly delegate*<Input, Types.Type> function;
         
         /// <inheritdoc/>
-        public ProcessSchema(delegate*<Input, TypeLayout> function)
+        public ProcessSchema(delegate*<Input, Types.Type> function)
         {
             this.function = function;
         }
