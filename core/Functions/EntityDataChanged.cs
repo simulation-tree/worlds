@@ -1,4 +1,5 @@
 ﻿using System;
+using Unmanaged;
 
 namespace Worlds.Functions
 {
@@ -84,7 +85,7 @@ namespace Worlds.Functions
             /// <summary>
             /// Indicates whether the component, array or tag was added or removed.
             /// </summary>
-            public readonly bool isPositive;
+            public readonly Bool isPositive;
 
             /// <summary>
             /// Custom user data.
@@ -94,7 +95,7 @@ namespace Worlds.Functions
             /// <summary>
             /// Creates the input type.
             /// </summary>
-            public Input(World world, uint entity, DataType type, bool isPositive, ulong userData)
+            public Input(World world, uint entity, DataType type, Bool isPositive, ulong userData)
             {
                 this.world = world;
                 this.entity = entity;

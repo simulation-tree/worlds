@@ -1,4 +1,5 @@
 ﻿using System;
+using Unmanaged;
 
 namespace Worlds.Functions
 {
@@ -77,7 +78,7 @@ namespace Worlds.Functions
             /// <summary>
             /// Indicates whether the entity was created or destroyed.
             /// </summary>
-            public readonly bool isCreated;
+            public readonly Bool isCreated;
 
             /// <summary>
             /// Custom user data.
@@ -87,7 +88,7 @@ namespace Worlds.Functions
             /// <summary>
             /// Creates a new input parameter.
             /// </summary>
-            public Input(World world, uint entity, bool isCreated, ulong userData)
+            public Input(World world, uint entity, Bool isCreated, ulong userData)
             {
                 this.world = world;
                 this.entity = entity;
