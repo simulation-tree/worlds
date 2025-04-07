@@ -525,9 +525,9 @@ namespace Worlds
 
                 ReadOnlySpan<uint> references = GetReferences(e);
                 writer.WriteValue(references.Length);
-                for (uint r = 0; r < references.Length; r++)
+                for (int r = 0; r < references.Length; r++)
                 {
-                    writer.WriteValue(r);
+                    writer.WriteValue(references[r]);
                 }
             }
         }
@@ -3044,7 +3044,7 @@ namespace Worlds
                 int referenceCount = reader.ReadValue<int>();
                 if (referenceCount > 0)
                 {
-                    slot.referenceStart = references.Count - 1;
+                    slot.referenceStart = references.Count;
                     slot.referenceCount = referenceCount;
                     for (int r = 0; r < referenceCount; r++)
                     {

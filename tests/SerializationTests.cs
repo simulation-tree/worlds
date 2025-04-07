@@ -24,6 +24,13 @@ namespace Worlds.Tests
             uint list = world.CreateEntity();
             world.CreateArray(list, "Well hello there list".AsSpan().As<char, Character>());
 
+            uint d = world.CreateEntity();
+            world.AddReference(d, c);
+            world.AddReference(d, a);
+            world.AddReference(d, b);
+
+            Assert.That(world.GetReferenceCount(d), Is.EqualTo(3));
+
             using List<uint> oldEntities = new(world.Entities);
             using List<(uint, Fruit)> apples = new();
             foreach (uint entity in world.GetAllContaining<Fruit>())
@@ -63,6 +70,12 @@ namespace Worlds.Tests
             Assert.That(loadedWorld.ContainsEntity(list), Is.True);
             Assert.That(loadedWorld.ContainsArray<Character>(list), Is.True);
             Assert.That(loadedWorld.GetArray<Character>(list).AsSpan<char>().ToString(), Is.EqualTo("Well hello there list"));
+
+            Assert.That(loadedWorld.ContainsEntity(d), Is.True);
+            Assert.That(loadedWorld.GetReferenceCount(d), Is.EqualTo(3));
+            Assert.That(loadedWorld.GetReference(d, (rint)1), Is.EqualTo(c));
+            Assert.That(loadedWorld.GetReference(d, (rint)2), Is.EqualTo(a));
+            Assert.That(loadedWorld.GetReference(d, (rint)3), Is.EqualTo(b));
         }
 
         [Test]
