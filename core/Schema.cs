@@ -215,7 +215,7 @@ namespace Worlds
             schema->tagsCount = 0;
             schema->componentRowSize = 0;
             schema->definitionMask = default;
-            schema->offsets = MemoryAddress.AllocateZeroed(OffsetsLengthInBytes);
+            schema->componentOffsets = MemoryAddress.AllocateZeroed(OffsetsLengthInBytes);
             schema->sizes = MemoryAddress.AllocateZeroed(SizesLengthInBytes);
             schema->typeHashes = MemoryAddress.AllocateZeroed(TypeHashesLengthInBytes);
             schema->schemaIndex = createdSchemas;
@@ -236,7 +236,7 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            schema->offsets.Dispose();
+            schema->componentOffsets.Dispose();
             schema->sizes.Dispose();
             schema->typeHashes.Dispose();
             MemoryAddress.Free(ref schema);
@@ -249,7 +249,7 @@ namespace Worlds
             schema->tagsCount = source.schema->tagsCount;
             schema->definitionMask = source.schema->definitionMask;
             schema->componentRowSize = source.schema->componentRowSize;
-            schema->offsets.CopyFrom(source.schema->offsets, OffsetsLengthInBytes);
+            schema->componentOffsets.CopyFrom(source.schema->componentOffsets, OffsetsLengthInBytes);
             source.schema->sizes.CopyTo(schema->sizes, SizesLengthInBytes);
             source.schema->typeHashes.CopyTo(schema->typeHashes, TypeHashesLengthInBytes);
         }
@@ -278,7 +278,7 @@ namespace Worlds
         {
             ThrowIfComponentTypeIsMissing<T>();
 
-            return schema->offsets.ReadElement<int>(GetComponentType<T>());
+            return schema->componentOffsets.ReadElement<int>(GetComponentType<T>());
         }
 
         /// <summary>
@@ -287,7 +287,7 @@ namespace Worlds
         /// </summary>
         public readonly int GetComponentOffset(int componentType)
         {
-            return schema->offsets.ReadElement<int>(componentType);
+            return schema->componentOffsets.ReadElement<int>(componentType);
         }
 
         /// <summary>
@@ -404,7 +404,7 @@ namespace Worlds
             ThrowIfTooManyComponents();
 
             componentType = schema->componentCount;
-            schema->offsets.WriteElement(componentType, schema->componentRowSize);
+            schema->componentOffsets.WriteElement(componentType, schema->componentRowSize);
             schema->sizes.WriteElement(componentType, (int)type.size);
             schema->typeHashes.WriteElement(componentType, type.Hash);
             schema->componentCount++;
@@ -1391,7 +1391,7 @@ namespace Worlds
             schema->tagsCount = 0;
             schema->componentRowSize = 0;
             schema->definitionMask = default;
-            schema->offsets = MemoryAddress.AllocateZeroed(OffsetsLengthInBytes);
+            schema->componentOffsets = MemoryAddress.AllocateZeroed(OffsetsLengthInBytes);
             schema->sizes = MemoryAddress.AllocateZeroed(SizesLengthInBytes);
             schema->typeHashes = MemoryAddress.AllocateZeroed(TypeHashesLengthInBytes);
             schema->schemaIndex = createdSchemas;
@@ -1523,7 +1523,7 @@ namespace Worlds
             writer.WriteValue(schema->tagsCount);
             writer.WriteValue(schema->componentRowSize);
             writer.WriteValue(schema->definitionMask);
-            Span<int> offsets = new(schema->offsets.Pointer, BitMask.Capacity);
+            Span<int> offsets = new(schema->componentOffsets.Pointer, BitMask.Capacity);
             Span<int> sizes = new(schema->sizes.Pointer, BitMask.Capacity * 2);
             Span<long> typeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity * 3);
             writer.WriteSpan(offsets);
@@ -1534,7 +1534,7 @@ namespace Worlds
         void ISerializable.Read(ByteReader reader)
         {
             schema = MemoryAddress.AllocatePointer<SchemaPointer>();
-            schema->offsets = MemoryAddress.AllocateZeroed(OffsetsLengthInBytes);
+            schema->componentOffsets = MemoryAddress.AllocateZeroed(OffsetsLengthInBytes);
             schema->sizes = MemoryAddress.AllocateZeroed(SizesLengthInBytes);
             schema->typeHashes = MemoryAddress.AllocateZeroed(TypeHashesLengthInBytes);
             schema->componentCount = reader.ReadValue<byte>();
@@ -1542,7 +1542,7 @@ namespace Worlds
             schema->tagsCount = reader.ReadValue<byte>();
             schema->componentRowSize = reader.ReadValue<int>();
             schema->definitionMask = reader.ReadValue<Definition>();
-            schema->offsets.CopyFrom(reader.ReadSpan<int>(BitMask.Capacity));
+            schema->componentOffsets.CopyFrom(reader.ReadSpan<int>(BitMask.Capacity));
             schema->sizes.CopyFrom(reader.ReadSpan<int>(BitMask.Capacity * 2));
             schema->typeHashes.CopyFrom(reader.ReadSpan<long>(BitMask.Capacity * 3));
             schema->schemaIndex = createdSchemas;
@@ -1559,7 +1559,7 @@ namespace Worlds
             schema->tagsCount = 0;
             schema->componentRowSize = 0;
             schema->definitionMask = default;
-            schema->offsets.Clear(OffsetsLengthInBytes);
+            schema->componentOffsets.Clear(OffsetsLengthInBytes);
             schema->sizes.Clear(SizesLengthInBytes);
             schema->typeHashes.Clear(TypeHashesLengthInBytes);
         }

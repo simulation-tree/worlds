@@ -10,7 +10,7 @@ namespace Worlds.Pointers
         public byte tagsCount;
         public int componentRowSize;
         public Definition definitionMask;
-        public MemoryAddress offsets;
+        public MemoryAddress componentOffsets;
         public MemoryAddress sizes;
         public MemoryAddress typeHashes;
     }
