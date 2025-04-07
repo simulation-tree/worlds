@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Worlds.Tests
+﻿namespace Worlds.Tests
 {
     public class ArrayTests : WorldTests
     {
@@ -16,7 +14,7 @@ namespace Worlds.Tests
 
             Assert.That(world.ContainsEntity(a), Is.False);
 #if DEBUG
-            Assert.Throws<NullReferenceException>(() =>
+            Assert.Throws<EntityIsMissingException>(() =>
             {
                 world.ContainsArray<SimpleComponent>(a);
             });

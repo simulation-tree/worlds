@@ -1139,11 +1139,7 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
-
-            if (entity == newParent)
-            {
-                throw new InvalidOperationException($"Entity {entity} cannot be its own parent");
-            }
+            ThrowIfParentIsSameAsChild(entity, newParent);
 
             if (!ContainsEntity(newParent))
             {
@@ -2009,6 +2005,20 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves the array of the given <paramref name="arrayType"/> from the given <paramref name="entity"/>.
+        /// <para>
+        /// If one does not exist, a <see langword="default"/> array is returned.
+        /// </para>
+        /// </summary>
+        public readonly Values GetArrayOrDefault(uint entity, int arrayType)
+        {
+            MemoryAddress.ThrowIfDefault(world);
+            ThrowIfEntityIsMissing(entity);
+
+            return world->slots[entity].arrays[arrayType];
+        }
+
+        /// <summary>
         /// Attempts to retrieve an array of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
         /// </summary>
         public readonly bool TryGetArray<T>(uint entity, out Values<T> array) where T : unmanaged
@@ -2814,13 +2824,22 @@ namespace Worlds
 
             if (entity >= world->slots.Count)
             {
-                throw new NullReferenceException($"Entity `{entity}` not found in a world with {Count} entities");
+                throw new EntityIsMissingException(this, entity);
             }
 
             ref Slot.State state = ref world->slots[entity].state;
             if (state == Slot.State.Free)
             {
-                throw new NullReferenceException($"Entity `{entity}` not found in a world with {Count} entities");
+                throw new EntityIsMissingException(this, entity);
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfParentIsSameAsChild(uint entity, uint parent)
+        {
+            if (entity == parent)
+            {
+                throw new InvalidOperationException($"Entity `{entity}` cannot be its own parent");
             }
         }
 
@@ -2830,7 +2849,7 @@ namespace Worlds
             ref Slot slot = ref world->slots[entity];
             if (reference.value == 0 || reference.value > slot.referenceCount)
             {
-                throw new NullReferenceException($"Reference `{reference}` not found on entity `{entity}`");
+                throw new ReferenceToEntityIsMissingException(this, entity, reference);
             }
         }
 
@@ -2841,7 +2860,7 @@ namespace Worlds
             Span<uint> references = world->references.AsSpan(slot.referenceStart, slot.referenceCount);
             if (!references.Contains(referencedEntity))
             {
-                throw new NullReferenceException($"Entity `{entity}` does not reference `{referencedEntity}`");
+                throw new ReferenceToEntityIsMissingException(this, entity, referencedEntity);
             }
         }
 
@@ -2851,8 +2870,7 @@ namespace Worlds
             BitMask componentTypes = world->slots[entity].Definition.componentTypes;
             if (!componentTypes.Contains(componentType))
             {
-                throw new NullReferenceException(
-                    $"Component `{DataType.GetComponent(componentType, world->schema).ToString(world->schema)}` not found on `{entity}`");
+                throw new ComponentIsMissingException(this, entity, componentType);
             }
         }
 
@@ -2862,8 +2880,7 @@ namespace Worlds
             BitMask componentTypes = world->slots[entity].Definition.componentTypes;
             if (componentTypes.Contains(componentType))
             {
-                throw new InvalidOperationException(
-                    $"Component `{DataType.GetComponent(componentType, world->schema).ToString(world->schema)}` already present on `{entity}`");
+                throw new ComponentIsAlreadyPresentException(this, entity, componentType);
             }
         }
 
@@ -2873,8 +2890,7 @@ namespace Worlds
             BitMask tagTypes = world->slots[entity].Definition.tagTypes;
             if (tagTypes.Contains(tagType))
             {
-                throw new InvalidOperationException(
-                    $"Tag `{DataType.GetTag(tagType, world->schema).ToString(world->schema)}` already present on `{entity}`");
+                throw new TagIsAlreadyPresentException(this, entity, tagType);
             }
         }
 
@@ -2884,8 +2900,7 @@ namespace Worlds
             BitMask tagTypes = world->slots[entity].Definition.tagTypes;
             if (!tagTypes.Contains(tagType))
             {
-                throw new NullReferenceException(
-                    $"Tag `{DataType.GetTag(tagType, world->schema).ToString(world->schema)}` not found on `{entity}`");
+                throw new TagIsMissingException(this, entity, tagType);
             }
         }
 
@@ -2895,8 +2910,7 @@ namespace Worlds
             BitMask arrayTypes = world->slots[entity].Definition.arrayTypes;
             if (!arrayTypes.Contains(arrayType))
             {
-                throw new NullReferenceException(
-                    $"Array of type `{DataType.GetArray(arrayType, world->schema).ToString(world->schema)}` not found on entity `{entity}`");
+                throw new ArrayIsMissingException(this, entity, arrayType);
             }
         }
 
@@ -2906,8 +2920,7 @@ namespace Worlds
             BitMask arrayTypes = world->slots[entity].Definition.arrayTypes;
             if (arrayTypes.Contains(arrayType))
             {
-                throw new InvalidOperationException(
-                    $"Array of type `{DataType.GetArray(arrayType, world->schema).ToString(world->schema)}` already present on `{entity}`");
+                throw new ArrayIsAlreadyPresentException(this, entity, arrayType);
             }
         }
 

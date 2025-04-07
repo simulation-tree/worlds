@@ -211,7 +211,7 @@ namespace Worlds.Tests
             world.DestroyEntity(a);
             Assert.That(world.ContainsEntity(a), Is.False);
             Assert.That(world.Count, Is.EqualTo(0));
-            Assert.Throws<NullReferenceException>(() => world.GetComponent<SimpleComponent>(a));
+            Assert.Throws<EntityIsMissingException>(() => world.GetComponent<SimpleComponent>(a));
             uint b = world.CreateEntity();
             Assert.That(world.ContainsEntity(b), Is.True);
             Assert.That(world.Count, Is.EqualTo(1));
@@ -230,7 +230,7 @@ namespace Worlds.Tests
             Assert.That(world.GetComponent<SimpleComponent>(entity).data.ToString(), Is.EqualTo(component1.data.ToString()));
             Assert.That(world.GetComponent<Another>(entity).data, Is.EqualTo(component2.data));
             world.RemoveComponent<SimpleComponent>(entity);
-            Assert.Throws<NullReferenceException>(() => world.GetComponent<SimpleComponent>(entity));
+            Assert.Throws<ComponentIsMissingException>(() => world.GetComponent<SimpleComponent>(entity));
             Assert.That(world.GetComponent<Another>(entity).data, Is.EqualTo(component2.data));
         }
 #endif
