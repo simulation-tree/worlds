@@ -1983,6 +1983,25 @@ namespace Worlds
         /// <summary>
         /// Retrieves the array of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
         /// </summary>
+        public readonly Span<T> GetArrayOrDefault<T>(uint entity) where T : unmanaged
+        {
+            MemoryAddress.ThrowIfDefault(world);
+            ThrowIfEntityIsMissing(entity);
+
+            Array<Values> arrays = world->slots[entity].arrays;
+            if (arrays == default)
+            {
+                return default;
+            }
+
+            int arrayType = world->schema.GetArrayType<T>();
+            Collections.Pointers.ArrayPointer* pointer = arrays[arrayType].pointer;
+            return pointer == default ? default : new(pointer->items.Pointer, pointer->length);
+        }
+
+        /// <summary>
+        /// Retrieves the array of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
+        /// </summary>
         public readonly Values<T> GetArray<T>(uint entity, int arrayType) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(world);
@@ -1990,6 +2009,24 @@ namespace Worlds
             ThrowIfArrayIsMissing(entity, arrayType);
 
             return new(world->slots[entity].arrays[arrayType].pointer);
+        }
+
+        /// <summary>
+        /// Retrieves the array of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
+        /// </summary>
+        public readonly Span<T> GetArrayOrDefault<T>(uint entity, int arrayType) where T : unmanaged
+        {
+            MemoryAddress.ThrowIfDefault(world);
+            ThrowIfEntityIsMissing(entity);
+
+            Array<Values> arrays = world->slots[entity].arrays;
+            if (arrays == default)
+            {
+                return default;
+            }
+
+            Collections.Pointers.ArrayPointer* pointer = arrays[arrayType].pointer;
+            return pointer == default ? default : new(pointer->items.Pointer, pointer->length);
         }
 
         /// <summary>
@@ -2015,7 +2052,13 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            return world->slots[entity].arrays[arrayType];
+            Array<Values> arrays = world->slots[entity].arrays;
+            if (arrays == default)
+            {
+                return default;
+            }
+
+            return arrays[arrayType];
         }
 
         /// <summary>

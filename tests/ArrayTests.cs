@@ -1,4 +1,6 @@
-﻿namespace Worlds.Tests
+﻿using System;
+
+namespace Worlds.Tests
 {
     public class ArrayTests : WorldTests
     {
@@ -30,6 +32,17 @@
             Assert.That(world.GetArrayLength<SimpleComponent>(b), Is.EqualTo(2));
 
             world.Dispose();
+        }
+
+        [Test]
+        public void RetrieveMissingArrayAsDefault()
+        {
+            using World world = CreateWorld();
+            uint entity = world.CreateEntity();
+            Assert.That(world.ContainsArray<SimpleComponent>(entity), Is.False);
+            ReadOnlySpan<SimpleComponent> list = world.GetArrayOrDefault<SimpleComponent>(entity);
+            Assert.That(list.Length, Is.EqualTo(0));
+            Assert.That(list.IsEmpty, Is.True);
         }
 
         [Test]
