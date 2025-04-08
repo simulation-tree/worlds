@@ -563,9 +563,25 @@
     /// <summary>
     /// Retrieves the <typeparamref name=""T""/> array present on this entity.
     /// </summary>
+    public readonly Span<T> GetArrayOrDefault<T>() where T : unmanaged
+    {
+        return world.GetArrayOrDefault<T>(value);
+    }
+
+    /// <summary>
+    /// Retrieves the <typeparamref name=""T""/> array present on this entity.
+    /// </summary>
     public readonly Values<T> GetArray<T>(int arrayType) where T : unmanaged
     {
         return world.GetArray<T>(value, arrayType);
+    }
+
+    /// <summary>
+    /// Retrieves the <typeparamref name=""T""/> array present on this entity.
+    /// </summary>
+    public readonly Span<T> GetArrayOrDefault<T>(int arrayType) where T : unmanaged
+    {
+        return world.GetArrayOrDefault<T>(value, arrayType);
     }
 
     /// <summary>
