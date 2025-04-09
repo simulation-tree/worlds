@@ -1,5 +1,6 @@
 using Collections;
 using System;
+using System.Diagnostics;
 using Unmanaged;
 
 namespace Worlds
@@ -703,7 +704,7 @@ namespace Worlds
         /// </summary>
         public readonly Enumerator GetEnumerator()
         {
-            return new(required, exclude, world.Chunks, world.Schema);
+            return new(this);
         }
 
         /// <inheritdoc/>
@@ -711,6 +712,8 @@ namespace Worlds
         {
             private readonly MemoryAddress chunks;
             private readonly int chunkCount;
+            private readonly int version;
+            private readonly ComponentQuery<C1, C2, C3, C4, C5> query;
             private readonly int componentType1;
             private int componentOffset1;
             private readonly int componentType2;
@@ -745,9 +748,12 @@ namespace Worlds
                 }
             }
 
-            internal Enumerator(Definition required, Definition exclude, ReadOnlySpan<Chunk> allChunks, Schema schema)
+            internal Enumerator(ComponentQuery<C1, C2, C3, C4, C5> query)
             {
+                this.query = query;
+                this.version = query.world.Version;
                 chunkCount = 0;
+                ReadOnlySpan<Chunk> allChunks = query.world.Chunks;
                 Span<Chunk> chunksBuffer = stackalloc Chunk[allChunks.Length];
                 foreach (Chunk chunk in allChunks)
                 {
@@ -756,33 +762,33 @@ namespace Worlds
                         Definition key = chunk.Definition;
 
                         //check if chunk contains inclusion
-                        if ((key.componentTypes & required.componentTypes) != required.componentTypes)
+                        if (!key.componentTypes.ContainsAll(query.required.componentTypes))
                         {
                             continue;
                         }
 
-                        if ((key.arrayTypes & required.arrayTypes) != required.arrayTypes)
+                        if (!key.arrayTypes.ContainsAll(query.required.arrayTypes))
                         {
                             continue;
                         }
 
-                        if ((key.tagTypes & required.tagTypes) != required.tagTypes)
+                        if (!key.tagTypes.ContainsAll(query.required.tagTypes))
                         {
                             continue;
                         }
 
                         //check if chunk doesnt contain exclusion
-                        if (key.componentTypes.ContainsAny(exclude.componentTypes))
+                        if (key.componentTypes.ContainsAny(query.exclude.componentTypes))
                         {
                             continue;
                         }
 
-                        if (key.arrayTypes.ContainsAny(exclude.arrayTypes))
+                        if (key.arrayTypes.ContainsAny(query.exclude.arrayTypes))
                         {
                             continue;
                         }
 
-                        if (key.tagTypes.ContainsAny(exclude.tagTypes))
+                        if (key.tagTypes.ContainsAny(query.exclude.tagTypes))
                         {
                             continue;
                         }
@@ -793,6 +799,7 @@ namespace Worlds
 
                 entityIndex = 0;
                 chunkIndex = 0;
+                Schema schema = query.world.Schema;
                 componentType1 = schema.GetComponentType<C1>();
                 componentType2 = schema.GetComponentType<C2>();
                 componentType3 = schema.GetComponentType<C3>();
@@ -805,11 +812,22 @@ namespace Worlds
                 }
             }
 
+            [Conditional("DEBUG")]
+            private readonly void ThrowIfVersionIsDifferent() 
+            {
+                if (version != query.world.Version)
+                {
+                    throw new($"Data in the world has changed while the component query has enumerated");
+                }
+            }
+
             /// <summary>
             /// Moves to the next result.
             /// </summary>
             public bool MoveNext()
             {
+                ThrowIfVersionIsDifferent();
+
                 if (entityIndex < entityCount)
                 {
                     entityIndex++;

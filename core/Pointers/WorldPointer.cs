@@ -5,6 +5,7 @@ namespace Worlds.Pointers
 {
     internal struct WorldPointer
     {
+        public int version;
         public Schema schema;
         public List<Slot> slots;
         public Stack<uint> freeEntities;
