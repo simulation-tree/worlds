@@ -482,5 +482,26 @@ namespace Worlds.Tests
             Assert.That(entities.Contains(b), Is.True);
             Assert.That(entities.Contains(d), Is.True);
         }
+
+#if DEBUG
+        [Test]
+        public void ThrowIfVersionChanges()
+        {
+            using World world = CreateWorld();
+            uint a = world.CreateEntity();
+            uint b = world.CreateEntity();
+            uint c = world.CreateEntity();
+            world.AddComponent(a, new Apple());
+            world.AddComponent(b, new Apple());
+            ComponentQuery<Apple> appleQuery = new(world);
+            Assert.Throws<Exception>(() =>
+            {
+                foreach (var r in appleQuery)
+                {
+                    world.AddTag<IsThing>(r.entity);
+                }
+            });
+        }
+#endif
     }
 }
