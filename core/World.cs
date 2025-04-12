@@ -2303,6 +2303,35 @@ namespace Worlds
             return ref destinationChunk.GetComponent<T>(slot.index, componentType);
         }
 
+
+
+        /// <summary>
+        /// Adds a <typeparamref name="T"/> component with <see langword="default"/> memory to <paramref name="entity"/>,
+        /// and returns it by reference.
+        /// </summary>
+        public readonly ref T AddComponent<T>(uint entity, int componentType) where T : unmanaged
+        {
+            MemoryAddress.ThrowIfDefault(world);
+            ThrowIfEntityIsMissing(entity);
+            ThrowIfComponentAlreadyPresent(entity, componentType);
+
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
+
+            if (entity != slot.chunk.LastEntity)
+            {
+                slots[(int)slot.chunk.LastEntity].index = slot.index;
+            }
+
+            Definition definition = slot.chunk.Definition;
+            definition.AddComponentType(componentType);
+            Chunk destinationChunk = world->chunks.GetOrCreate(definition);
+            Chunk.MoveEntityAt(entity, ref slot.index, ref slot.chunk, destinationChunk);
+            world->version++;
+            NotifyComponentAdded(entity, componentType);
+            return ref destinationChunk.GetComponent<T>(slot.index, componentType);
+        }
+
         /// <summary>
         /// Adds a new <see langword="default"/> component of type <paramref name="componentType"/>.
         /// </summary>

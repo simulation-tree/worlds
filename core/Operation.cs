@@ -1,5 +1,4 @@
-﻿using Collections;
-using Collections.Generic;
+﻿using Collections.Generic;
 using System;
 using Types;
 using Unmanaged;
@@ -243,6 +242,30 @@ namespace Worlds
         public readonly void DestroySelected()
         {
             WriteInstructionType(InstructionType.DestroySelectedEntities);
+        }
+
+        /// <summary>
+        /// Assigns the enabled state of the selected entities.
+        /// </summary>
+        public readonly void SetEnabledState(bool enabled)
+        {
+            WriteInstructionType(enabled ? InstructionType.Enable : InstructionType.Disable);
+        }
+
+        /// <summary>
+        /// Enable selected entities.
+        /// </summary>
+        public readonly void EnableEntities()
+        {
+            WriteInstructionType(InstructionType.Enable);
+        }
+
+        /// <summary>
+        /// Disables selected entities.
+        /// </summary>
+        public readonly void DisableEntities()
+        {
+            WriteInstructionType(InstructionType.Disable);
         }
 
         /// <summary>
@@ -581,16 +604,17 @@ namespace Worlds
                 }
             }
 
-            private void DestroySelectedEntities()
+            private readonly void DestroySelectedEntities()
             {
-                for (int i = 0; i < selection.Count; i++)
+                ReadOnlySpan<uint> selection = this.selection.AsSpan();
+                for (int i = 0; i < selection.Length; i++)
                 {
                     uint entity = selection[i];
                     world.DestroyEntity(entity);
                     history.TryRemove(entity);
                 }
 
-                selection.Clear();
+                this.selection.Clear();
             }
 
             private void SelectEntities()
@@ -608,9 +632,28 @@ namespace Worlds
             private void SetParent()
             {
                 uint parent = operation.Read<uint>(ref bytePosition);
-                for (int i = 0; i < selection.Count; i++)
+                ReadOnlySpan<uint> selection = this.selection.AsSpan();
+                for (int i = 0; i < selection.Length; i++)
                 {
                     world.SetParent(selection[i], parent);
+                }
+            }
+
+            private readonly void EnableEntities()
+            {
+                ReadOnlySpan<uint> selection = this.selection.AsSpan();
+                for (int i = 0; i < selection.Length; i++)
+                {
+                    world.SetEnabled(selection[i], true);
+                }
+            }
+
+            private readonly void DisableEntities()
+            {
+                ReadOnlySpan<uint> selection = this.selection.AsSpan();
+                for (int i = 0; i < selection.Length; i++)
+                {
+                    world.SetEnabled(selection[i], false);
                 }
             }
 
@@ -620,7 +663,8 @@ namespace Worlds
                 DataType dataType = world.Schema.GetComponentDataType(layout);
                 int componentType = dataType.index;
                 ReadOnlySpan<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
-                for (int i = 0; i < selection.Count; i++)
+                ReadOnlySpan<uint> selection = this.selection.AsSpan();
+                for (int i = 0; i < selection.Length; i++)
                 {
                     world.AddComponentBytes(selection[i], componentType, component);
                 }
@@ -632,7 +676,8 @@ namespace Worlds
                 DataType dataType = world.Schema.GetComponentDataType(layout);
                 int componentType = dataType.index;
                 ReadOnlySpan<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
-                for (int i = 0; i < selection.Count; i++)
+                ReadOnlySpan<uint> selection = this.selection.AsSpan();
+                for (int i = 0; i < selection.Length; i++)
                 {
                     world.SetComponentBytes(selection[i], componentType, component);
                 }
@@ -644,7 +689,8 @@ namespace Worlds
                 DataType dataType = world.Schema.GetComponentDataType(layout);
                 int componentType = dataType.index;
                 ReadOnlySpan<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
-                for (int i = 0; i < selection.Count; i++)
+                ReadOnlySpan<uint> selection = this.selection.AsSpan();
+                for (int i = 0; i < selection.Length; i++)
                 {
                     uint entity = selection[i];
                     if (world.ContainsComponent(entity, componentType))
@@ -663,7 +709,8 @@ namespace Worlds
                 Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetComponentDataType(layout);
                 int componentType = dataType.index;
-                for (int i = 0; i < selection.Count; i++)
+                ReadOnlySpan<uint> selection = this.selection.AsSpan();
+                for (int i = 0; i < selection.Length; i++)
                 {
                     world.RemoveComponent(selection[i], componentType);
                 }
@@ -672,7 +719,8 @@ namespace Worlds
             private void RemoveReference()
             {
                 rint reference = operation.Read<rint>(ref bytePosition);
-                for (int i = 0; i < selection.Count; i++)
+                ReadOnlySpan<uint> selection = this.selection.AsSpan();
+                for (int i = 0; i < selection.Length; i++)
                 {
                     world.RemoveReference(selection[i], reference);
                 }
@@ -684,7 +732,8 @@ namespace Worlds
                 DataType dataType = world.Schema.GetArrayDataType(layout);
                 int arrayType = dataType.index;
                 int arrayLength = operation.Read<int>(ref bytePosition);
-                for (int i = 0; i < selection.Count; i++)
+                ReadOnlySpan<uint> selection = this.selection.AsSpan();
+                for (int i = 0; i < selection.Length; i++)
                 {
                     world.CreateArray(selection[i], arrayType, arrayLength);
                 }
@@ -695,11 +744,12 @@ namespace Worlds
                 Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
                 DataType dataType = world.Schema.GetArrayDataType(layout);
                 int arrayType = dataType.index;
+                ReadOnlySpan<uint> selection = this.selection.AsSpan();
                 int length = operation.Read<int>(ref bytePosition);
                 if (length > 0)
                 {
                     ReadOnlySpan<byte> bytes = operation.ReadBytes(dataType.size * length, ref bytePosition);
-                    for (int i = 0; i < selection.Count; i++)
+                    for (int i = 0; i < selection.Length; i++)
                     {
                         Values array = world.CreateArray(selection[i], arrayType, length);
                         array.CopyFrom(bytes);
@@ -707,7 +757,7 @@ namespace Worlds
                 }
                 else
                 {
-                    for (int i = 0; i < selection.Count; i++)
+                    for (int i = 0; i < selection.Length; i++)
                     {
                         world.CreateArray(selection[i], arrayType);
                     }
@@ -720,7 +770,8 @@ namespace Worlds
                 DataType dataType = world.Schema.GetArrayDataType(layout);
                 int arrayType = dataType.index;
                 int length = operation.Read<int>(ref bytePosition);
-                for (int i = 0; i < selection.Count; i++)
+                ReadOnlySpan<uint> selection = this.selection.AsSpan();
+                for (int i = 0; i < selection.Length; i++)
                 {
                     Values array = world.GetArray(selection[i], arrayType);
                     array.Length = length;
@@ -736,7 +787,8 @@ namespace Worlds
                 int arrayType = dataType.index;
                 int stride = dataType.size;
                 ReadOnlySpan<byte> bytes = operation.ReadBytes(stride * length, ref bytePosition);
-                for (int i = 0; i < selection.Count; i++)
+                ReadOnlySpan<uint> selection = this.selection.AsSpan();
+                for (int i = 0; i < selection.Length; i++)
                 {
                     Values array = world.GetArray(selection[i], arrayType);
                     MemoryAddress memory = array.Read(index * stride);
@@ -751,7 +803,8 @@ namespace Worlds
                 int arrayType = dataType.index;
                 int length = operation.Read<int>(ref bytePosition);
                 ReadOnlySpan<byte> bytes = operation.ReadBytes(dataType.size * length, ref bytePosition);
-                for (int i = 0; i < selection.Count; i++)
+                ReadOnlySpan<uint> selection = this.selection.AsSpan();
+                for (int i = 0; i < selection.Length; i++)
                 {
                     uint entity = selection[i];
                     Values array = world.GetArray(entity, arrayType);
@@ -766,7 +819,8 @@ namespace Worlds
                 int arrayType = dataType.index;
                 int length = operation.Read<int>(ref bytePosition);
                 ReadOnlySpan<byte> bytes = operation.ReadBytes(dataType.size * length, ref bytePosition);
-                for (int i = 0; i < selection.Count; i++)
+                ReadOnlySpan<uint> selection = this.selection.AsSpan();
+                for (int i = 0; i < selection.Length; i++)
                 {
                     uint entity = selection[i];
                     Values array;
@@ -787,7 +841,8 @@ namespace Worlds
             {
                 int entitiesAgo = operation.Read<int>(ref bytePosition);
                 uint parent = history[history.Count - entitiesAgo - 1];
-                for (int i = 0; i < selection.Count; i++)
+                ReadOnlySpan<uint> selection = this.selection.AsSpan();
+                for (int i = 0; i < selection.Length; i++)
                 {
                     world.SetParent(selection[i], parent);
                 }
@@ -803,7 +858,8 @@ namespace Worlds
             {
                 int entitiesAgo = operation.Read<int>(ref bytePosition);
                 uint referencedEntity = history[history.Count - entitiesAgo - 1];
-                for (int i = 0; i < selection.Count; i++)
+                ReadOnlySpan<uint> selection = this.selection.AsSpan();
+                for (int i = 0; i < selection.Length; i++)
                 {
                     world.AddReference(selection[i], referencedEntity);
                 }
@@ -830,6 +886,12 @@ namespace Worlds
                             break;
                         case InstructionType.SetParent:
                             SetParent();
+                            break;
+                        case InstructionType.Enable:
+                            EnableEntities();
+                            break;
+                        case InstructionType.Disable:
+                            DisableEntities();
                             break;
                         case InstructionType.AddComponent:
                             AddComponent();

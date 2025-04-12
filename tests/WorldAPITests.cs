@@ -95,15 +95,15 @@ namespace Worlds.Tests
             Assert.That(entities[4], Is.EqualTo(5));
             Assert.That(entities[5], Is.EqualTo(6));
             Assert.That(entities[6], Is.EqualTo(7));
-            
+
             world.DestroyEntity(entities[0]);
             world.DestroyEntity(entities[1]);
             world.DestroyEntity(entities[2]);
-            
+
             Assert.That(world.Count, Is.EqualTo(7 - 3));
-            
+
             world.CreateEntities(entities);
-            
+
             Assert.That(world.Count, Is.EqualTo(7 - 3 + 7));
             Assert.That(entities[0], Is.EqualTo(3));
             Assert.That(entities[1], Is.EqualTo(2));

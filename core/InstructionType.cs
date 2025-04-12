@@ -41,6 +41,16 @@
         SetParent,
 
         /// <summary> 
+        /// Makes selected entities enabled
+        /// </summary>
+        Enable,
+
+        /// <summary> 
+        /// Makes selected entities disabled
+        /// </summary>
+        Disable,
+
+        /// <summary> 
         /// Add a component to selected entities. 
         /// </summary>
         AddComponent,

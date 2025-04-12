@@ -474,11 +474,27 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Adds a new component of type <typeparamref name="T"/> and retrieves its reference.
+        /// </summary>
+        public readonly ref T AddComponent<T>(int componentType) where T : unmanaged
+        {
+            return ref world.AddComponent<T>(value, componentType);
+        }
+
+        /// <summary>
         /// Adds the <paramref name="component"/> to the entity.
         /// </summary>
         public readonly void AddComponent<T>(T component) where T : unmanaged
         {
             world.AddComponent(value, component);
+        }
+
+        /// <summary>
+        /// Adds the <paramref name="component"/> to the entity.
+        /// </summary>
+        public readonly void AddComponent<T>(int componentType, T component) where T : unmanaged
+        {
+            world.AddComponent(value, componentType, component);
         }
 
         /// <summary>
@@ -519,6 +535,14 @@ namespace Worlds
         public readonly Values<T> GetArray<T>() where T : unmanaged
         {
             return world.GetArray<T>(value);
+        }
+
+        /// <summary>
+        /// Retrieves the entire existing array of type <typeparamref name="T"/>.
+        /// </summary>
+        public readonly Values<T> GetArray<T>(int arrayType) where T : unmanaged
+        {
+            return world.GetArray<T>(value, arrayType);
         }
 
         /// <summary>

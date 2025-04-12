@@ -71,7 +71,7 @@ namespace Worlds.Functions
             /// The world where the change occured.
             /// </summary>
             public readonly World world;
-            
+
             /// <summary>
             /// The entity with the event.
             /// </summary>

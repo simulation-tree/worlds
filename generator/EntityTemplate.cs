@@ -499,6 +499,23 @@
     /// Adds a new component of type <typeparamref name=""T""/> to this entity and
     /// retrieves a reference to it.
     /// </summary>
+    public readonly ref T AddComponent<T>(int componentType) where T : unmanaged
+    {
+        return ref world.AddComponent<T>(value, componentType);
+    }
+
+    /// <summary>
+    /// Adds the given <paramref name=""component""/> to this entity.
+    /// </summary>
+    public readonly void AddComponent<T>(int componentType, T component) where T : unmanaged
+    {
+        world.AddComponent(value, componentType, component);
+    }
+
+    /// <summary>
+    /// Adds a new component of type <typeparamref name=""T""/> to this entity and
+    /// retrieves a reference to it.
+    /// </summary>
     public readonly ref T AddComponent<T>() where T : unmanaged
     {
         return ref world.AddComponent<T>(value);

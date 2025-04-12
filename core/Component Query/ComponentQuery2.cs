@@ -50,7 +50,7 @@ namespace Worlds
 
             return this;
         }
-        
+
         /// <summary>
         /// Makes the given array types required.
         /// </summary>
@@ -801,7 +801,7 @@ namespace Worlds
             }
 
             [Conditional("DEBUG")]
-            private readonly void ThrowIfVersionIsDifferent() 
+            private readonly void ThrowIfVersionIsDifferent()
             {
                 if (version != query.world.Version)
                 {

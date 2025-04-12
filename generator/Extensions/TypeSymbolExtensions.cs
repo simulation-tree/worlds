@@ -47,7 +47,7 @@ namespace Worlds
                 }
             }
         }
-        
+
         public static string GetFullTypeName(this ITypeSymbol symbol)
         {
             SpecialType special = symbol.SpecialType;
