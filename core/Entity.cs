@@ -646,6 +646,14 @@ namespace Worlds
             }
         }
 
+        /// <summary>
+        /// Retrieves an existing entity of type <typeparamref name="T"/>.
+        /// </summary>
+        public static T Get<T>(World world, uint value) where T : unmanaged, IEntity
+        {
+            return new Entity(world, value).As<T>();
+        }
+
         /// <inheritdoc/>
         public static bool operator ==(Entity left, Entity right)
         {
