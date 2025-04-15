@@ -18,13 +18,10 @@ namespace Worlds
             for (int i = 0; i < chunks.Length; i++)
             {
                 Chunk chunk = chunks[i];
-                if (chunk.Definition.ContainsComponent(componentType))
+                if (chunk.Count > 0 && chunk.Definition.ContainsComponent(componentType))
                 {
-                    if (chunk.Count > 0)
-                    {
-                        contains = true;
-                        return ref chunk.GetComponent<T>(1, componentType);
-                    }
+                    contains = true;
+                    return ref chunk.GetComponent<T>(1, componentType);
                 }
             }
 
@@ -42,13 +39,10 @@ namespace Worlds
             for (int i = 0; i < chunks.Length; i++)
             {
                 Chunk chunk = chunks[i];
-                if (chunk.Definition.ContainsComponent(componentType))
+                if (chunk.Count > 0 && chunk.Definition.ContainsComponent(componentType))
                 {
-                    if (chunk.Count > 0)
-                    {
-                        component = chunk.GetComponent<T>(1, componentType);
-                        return true;
-                    }
+                    component = chunk.GetComponent<T>(1, componentType);
+                    return true;
                 }
             }
 
@@ -66,13 +60,10 @@ namespace Worlds
             for (int i = 0; i < chunks.Length; i++)
             {
                 Chunk chunk = chunks[i];
-                if (chunk.Definition.ContainsComponent(componentType))
+                if (chunk.Count > 0 && chunk.Definition.ContainsComponent(componentType))
                 {
-                    if (chunk.Count > 0)
-                    {
-                        entity = chunk.Entities[0];
-                        return true;
-                    }
+                    entity = chunk.Entities[0];
+                    return true;
                 }
             }
 
@@ -90,14 +81,11 @@ namespace Worlds
             for (int i = 0; i < chunks.Length; i++)
             {
                 Chunk chunk = chunks[i];
-                if (chunk.Definition.ContainsComponent(componentType))
+                if (chunk.Count > 0 && chunk.Definition.ContainsComponent(componentType))
                 {
-                    if (chunk.Count > 0)
-                    {
-                        entity = chunk.Entities[0];
-                        contains = true;
-                        return ref chunk.GetComponent<T>(1, componentType);
-                    }
+                    entity = chunk.Entities[0];
+                    contains = true;
+                    return ref chunk.GetComponent<T>(1, componentType);
                 }
             }
 
@@ -120,12 +108,9 @@ namespace Worlds
             for (int i = 0; i < chunks.Length; i++)
             {
                 Chunk chunk = chunks[i];
-                if (chunk.Definition.ContainsComponent(componentType))
+                if (chunk.Count > 0 && chunk.Definition.ContainsComponent(componentType))
                 {
-                    if (chunk.Count > 0)
-                    {
-                        return ref chunk.GetComponent<T>(1, componentType);
-                    }
+                    return ref chunk.GetComponent<T>(1, componentType);
                 }
             }
 
@@ -146,13 +131,10 @@ namespace Worlds
             for (int i = 0; i < chunks.Length; i++)
             {
                 Chunk chunk = chunks[i];
-                if (chunk.Definition.ContainsComponent(componentType))
+                if (chunk.Count > 0 && chunk.Definition.ContainsComponent(componentType))
                 {
-                    if (chunk.Count > 0)
-                    {
-                        entity = chunk.Entities[0];
-                        return ref chunk.GetComponent<T>(1, componentType);
-                    }
+                    entity = chunk.Entities[0];
+                    return ref chunk.GetComponent<T>(1, componentType);
                 }
             }
 
