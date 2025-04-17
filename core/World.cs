@@ -192,6 +192,7 @@ namespace Worlds
             world->schema = schema;
             world->version = 0;
             world->slots = new(4);
+            world->arrays = new(4);
             world->freeEntities = new(4);
             world->chunks = new(schema);
             world->entityCreatedOrDestroyed = new(4);
@@ -204,6 +205,7 @@ namespace Worlds
 
             //add reserve values at index 0
             world->slots.AddDefault();
+            world->arrays.AddDefault();
         }
 #endif
 
@@ -216,6 +218,7 @@ namespace Worlds
             world->schema = schema;
             world->version = 0;
             world->slots = new(4);
+            world->arrays = new(4);
             world->freeEntities = new(4);
             world->chunks = new(schema);
             world->entityCreatedOrDestroyed = new(4);
@@ -228,6 +231,7 @@ namespace Worlds
 
             //add reserve values at index 0
             world->slots.AddDefault();
+            world->arrays.AddDefault();
         }
 
         /// <summary>
@@ -273,6 +277,7 @@ namespace Worlds
             world->freeEntities.Dispose();
             world->chunks.Dispose();
             world->slots.Dispose();
+            world->arrays.Dispose();
             MemoryAddress.Free(ref world);
         }
 
