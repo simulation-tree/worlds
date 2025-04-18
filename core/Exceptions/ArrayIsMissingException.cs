@@ -12,9 +12,9 @@ namespace Worlds
         {
         }
 
-        private static string GetMessage(World world, uint entity, int componentType)
+        private unsafe static string GetMessage(World world, uint entity, int componentType)
         {
-            Types.Type type = world.Schema.GetComponentLayout(componentType);
+            Types.Type type = world.world->schema.GetComponentLayout(componentType);
             return $"Entity `{entity}` is missing array `{type}`";
         }
     }

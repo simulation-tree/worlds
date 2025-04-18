@@ -397,6 +397,11 @@ namespace Worlds
             this.pointer = array;
         }
 
+        internal Values(nint address)
+        {
+            this.pointer = (ArrayPointer*)address;
+        }
+
         internal readonly void Dispose()
         {
             Array array = new(pointer);
