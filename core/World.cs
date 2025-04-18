@@ -22,7 +22,7 @@ namespace Worlds
         /// </summary>
         public const uint DataVersion = 1;
 
-        private WorldPointer* world;
+        internal WorldPointer* world;
 
         /// <summary>
         /// Native address of the world.
@@ -495,7 +495,7 @@ namespace Worlds
                 }
 
                 Chunk chunk = slot.chunk;
-                Definition definition = chunk.Definition;
+                Definition definition = chunk.chunk->definition;
                 writer.WriteValue(e);
                 writer.WriteValue(slot.state);
                 writer.WriteValue(slot.parent);
@@ -575,7 +575,7 @@ namespace Worlds
                     continue;
                 }
 
-                uint destinationEntity = destinationWorld.CreateEntity(sourceSlot.chunk.Definition);
+                uint destinationEntity = destinationWorld.CreateEntity(sourceSlot.chunk.chunk->definition);
                 sourceWorld.CopyComponentsTo(e, destinationWorld, destinationEntity);
                 sourceWorld.CopyArraysTo(e, destinationWorld, destinationEntity);
                 sourceWorld.CopyTagsTo(e, destinationWorld, destinationEntity);
@@ -748,7 +748,7 @@ namespace Worlds
 
             //move to different chunk
             Chunk previousChunk = entitySlot.chunk;
-            Definition previousDefinition = previousChunk.Definition;
+            Definition previousDefinition = previousChunk.chunk->definition;
             bool oldEnabled = !previousDefinition.tagTypes.Contains(Schema.DisabledTagType);
             bool newEnabled = entitySlot.state == Slot.State.Enabled;
             if (oldEnabled != newEnabled)
@@ -795,7 +795,7 @@ namespace Worlds
 
                     //move descentant to proper chunk
                     previousChunk = currentSlot.chunk;
-                    previousDefinition = previousChunk.Definition;
+                    previousDefinition = previousChunk.chunk->definition;
                     oldEnabled = !previousDefinition.tagTypes.Contains(Schema.DisabledTagType);
                     if (oldEnabled != enabled)
                     {
@@ -904,7 +904,7 @@ namespace Worlds
 
             //create arrays if necessary
             BitMask arrayTypes = definition.arrayTypes;
-            if (!arrayTypes.IsEmpty)
+            if (arrayTypes != BitMask.Default)
             {
                 ref Arrays arrays = ref world->arrays[entity];
                 for (int a = 0; a < BitMask.Capacity; a++)
@@ -946,7 +946,7 @@ namespace Worlds
 
             //create arrays if necessary
             BitMask arrayTypes = definition.arrayTypes;
-            if (!arrayTypes.IsEmpty)
+            if (arrayTypes != BitMask.Default)
             {
                 ref Arrays arrays = ref world->arrays[entity];
                 for (int a = 0; a < BitMask.Capacity; a++)
@@ -1014,7 +1014,7 @@ namespace Worlds
         {
             ThrowIfEntityIsMissing(entity);
 
-            Definition currentDefinition = world->slots[entity].chunk.Definition;
+            Definition currentDefinition = world->slots[entity].chunk.chunk->definition;
             if (!currentDefinition.componentTypes.ContainsAll(definition.componentTypes))
             {
                 return false;
@@ -1214,7 +1214,7 @@ namespace Worlds
 
                 //move to different chunk if disabled state changed
                 Chunk previousChunk = entitySlot.chunk;
-                Definition previousDefinition = previousChunk.Definition;
+                Definition previousDefinition = previousChunk.chunk->definition;
                 bool oldEnabled = !previousDefinition.tagTypes.Contains(Schema.DisabledTagType);
                 bool newEnabled = entitySlot.state == Slot.State.Enabled;
                 if (oldEnabled != newEnabled)
@@ -1584,7 +1584,7 @@ namespace Worlds
 
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
-            Definition newDefinition = slot.chunk.Definition;
+            Definition newDefinition = slot.chunk.chunk->definition;
             newDefinition.AddTagType(tagType);
 
             if (entity != slot.chunk.chunk->lastEntity)
@@ -1609,7 +1609,7 @@ namespace Worlds
 
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
-            Definition newDefinition = slot.chunk.Definition;
+            Definition newDefinition = slot.chunk.chunk->definition;
             newDefinition.AddTagType(tagType);
 
             if (entity != slot.chunk.chunk->lastEntity)
@@ -1636,7 +1636,7 @@ namespace Worlds
 
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
-            Definition newDefinition = slot.chunk.Definition;
+            Definition newDefinition = slot.chunk.chunk->definition;
             newDefinition.RemoveTagType(tagType);
 
             if (entity != slot.chunk.chunk->lastEntity)
@@ -1661,7 +1661,7 @@ namespace Worlds
 
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
-            Definition newDefinition = slot.chunk.Definition;
+            Definition newDefinition = slot.chunk.chunk->definition;
             newDefinition.RemoveTagType(tagType);
 
             if (entity != slot.chunk.chunk->lastEntity)
@@ -1728,7 +1728,7 @@ namespace Worlds
                 }
             }
 
-            Definition newDefinition = slot.chunk.Definition;
+            Definition newDefinition = slot.chunk.chunk->definition;
             newDefinition.AddArrayType(arrayType);
 
             if (entity != slot.chunk.chunk->lastEntity)
@@ -1777,7 +1777,7 @@ namespace Worlds
                 }
             }
 
-            Definition newDefinition = slot.chunk.Definition;
+            Definition newDefinition = slot.chunk.chunk->definition;
             newDefinition.AddArrayType(arrayType);
 
             if (entity != slot.chunk.chunk->lastEntity)
@@ -1826,7 +1826,7 @@ namespace Worlds
                 }
             }
 
-            Definition newDefinition = slot.chunk.Definition;
+            Definition newDefinition = slot.chunk.chunk->definition;
             newDefinition.AddArrayType(dataType.index);
 
             if (entity != slot.chunk.chunk->lastEntity)
@@ -1877,7 +1877,7 @@ namespace Worlds
                 }
             }
 
-            Definition newDefinition = slot.chunk.Definition;
+            Definition newDefinition = slot.chunk.chunk->definition;
             newDefinition.AddArrayType(arrayType);
 
             if (entity != slot.chunk.chunk->lastEntity)
@@ -1928,7 +1928,7 @@ namespace Worlds
                 }
             }
 
-            Definition newDefinition = slot.chunk.Definition;
+            Definition newDefinition = slot.chunk.chunk->definition;
             newDefinition.AddArrayType(arrayType);
 
             if (entity != slot.chunk.chunk->lastEntity)
@@ -1977,7 +1977,7 @@ namespace Worlds
                 }
             }
 
-            Definition newDefinition = slot.chunk.Definition;
+            Definition newDefinition = slot.chunk.chunk->definition;
             newDefinition.AddArrayType(arrayType);
 
             if (entity != slot.chunk.chunk->lastEntity)
@@ -2168,7 +2168,7 @@ namespace Worlds
             array.Dispose();
             arrays[arrayType] = default;
 
-            Definition newDefinition = slot.chunk.Definition;
+            Definition newDefinition = slot.chunk.chunk->definition;
             newDefinition.RemoveArrayType(arrayType);
 
             if (entity != slot.chunk.chunk->lastEntity)
@@ -2198,7 +2198,7 @@ namespace Worlds
             array.Dispose();
             arrays[arrayType] = default;
 
-            Definition newDefinition = slot.chunk.Definition;
+            Definition newDefinition = slot.chunk.chunk->definition;
             newDefinition.RemoveArrayType(arrayType);
 
             if (entity != slot.chunk.chunk->lastEntity)
@@ -2231,7 +2231,7 @@ namespace Worlds
                 slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
-            Definition definition = slot.chunk.Definition;
+            Definition definition = slot.chunk.chunk->definition;
             definition.AddComponentType(componentType);
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             Chunk.MoveEntityAt(entity, ref slot.index, ref slot.chunk, destinationChunk);
@@ -2257,7 +2257,7 @@ namespace Worlds
                 slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
-            Definition definition = slot.chunk.Definition;
+            Definition definition = slot.chunk.chunk->definition;
             definition.AddComponentType(componentType);
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             Chunk.MoveEntityAt(entity, ref slot.index, ref slot.chunk, destinationChunk);
@@ -2286,7 +2286,7 @@ namespace Worlds
                 slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
-            Definition definition = slot.chunk.Definition;
+            Definition definition = slot.chunk.chunk->definition;
             definition.AddComponentType(componentType);
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             Chunk.MoveEntityAt(entity, ref slot.index, ref slot.chunk, destinationChunk);
@@ -2315,7 +2315,7 @@ namespace Worlds
                 slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
-            Definition definition = slot.chunk.Definition;
+            Definition definition = slot.chunk.chunk->definition;
             definition.AddComponentType(componentType);
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             Chunk.MoveEntityAt(entity, ref slot.index, ref slot.chunk, destinationChunk);
@@ -2341,7 +2341,7 @@ namespace Worlds
                 slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
-            Definition definition = slot.chunk.Definition;
+            Definition definition = slot.chunk.chunk->definition;
             definition.AddComponentType(componentType);
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             Chunk.MoveEntityAt(entity, ref slot.index, ref slot.chunk, destinationChunk);
@@ -2366,7 +2366,7 @@ namespace Worlds
                 slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
-            Definition definition = slot.chunk.Definition;
+            Definition definition = slot.chunk.chunk->definition;
             definition.AddComponentType(componentType);
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             Chunk.MoveEntityAt(entity, ref slot.index, ref slot.chunk, destinationChunk);
@@ -2392,7 +2392,7 @@ namespace Worlds
                 slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
-            Definition definition = slot.chunk.Definition;
+            Definition definition = slot.chunk.chunk->definition;
             definition.AddComponentType(componentType);
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             Chunk.MoveEntityAt(entity, ref slot.index, ref slot.chunk, destinationChunk);
@@ -2419,7 +2419,7 @@ namespace Worlds
                 slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
-            Definition definition = slot.chunk.Definition;
+            Definition definition = slot.chunk.chunk->definition;
             definition.AddComponentType(componentType);
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             Chunk.MoveEntityAt(entity, ref slot.index, ref slot.chunk, destinationChunk);
@@ -2449,7 +2449,7 @@ namespace Worlds
                 slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
-            Definition definition = slot.chunk.Definition;
+            Definition definition = slot.chunk.chunk->definition;
             definition.AddComponentType(componentType);
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             Chunk.MoveEntityAt(entity, ref slot.index, ref slot.chunk, destinationChunk);
@@ -2476,7 +2476,7 @@ namespace Worlds
                 slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
-            Definition definition = slot.chunk.Definition;
+            Definition definition = slot.chunk.chunk->definition;
             definition.RemoveComponentType(componentType);
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             Chunk.MoveEntityAt(entity, ref slot.index, ref slot.chunk, destinationChunk);
@@ -2501,7 +2501,7 @@ namespace Worlds
                 slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
-            Definition definition = slot.chunk.Definition;
+            Definition definition = slot.chunk.chunk->definition;
             definition.RemoveComponentType(componentType);
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             Chunk.MoveEntityAt(entity, ref slot.index, ref slot.chunk, destinationChunk);
@@ -2518,9 +2518,9 @@ namespace Worlds
             int componentType = world->schema.GetComponentType<T>();
             foreach (Chunk chunk in world->chunks.chunkMap->chunks)
             {
-                if (chunk.Definition.componentTypes.Contains(componentType))
+                if (chunk.chunk->definition.componentTypes.Contains(componentType))
                 {
-                    if (chunk.Count > 0)
+                    if (chunk.chunk->count > 0)
                     {
                         return true;
                     }
@@ -2684,7 +2684,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
 
             ref Slot slot = ref world->slots[entity];
-            contains = slot.chunk.Definition.componentTypes.Contains(componentType);
+            contains = slot.chunk.chunk->definition.componentTypes.Contains(componentType);
             if (contains)
             {
                 return ref slot.chunk.GetComponent<T>(slot.index, componentType);
@@ -2705,7 +2705,7 @@ namespace Worlds
 
             int componentType = world->schema.GetComponentType<T>();
             ref Slot slot = ref world->slots[entity];
-            contains = slot.chunk.Definition.componentTypes.Contains(componentType);
+            contains = slot.chunk.chunk->definition.componentTypes.Contains(componentType);
             if (contains)
             {
                 return ref slot.chunk.GetComponent<T>(slot.index, componentType);
@@ -2725,7 +2725,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
 
             ref Slot slot = ref world->slots[entity];
-            if (slot.chunk.Definition.componentTypes.Contains(componentType))
+            if (slot.chunk.chunk->definition.componentTypes.Contains(componentType))
             {
                 component = slot.chunk.GetComponent<T>(slot.index, componentType);
                 return true;
@@ -2747,7 +2747,7 @@ namespace Worlds
 
             int componentType = world->schema.GetComponentType<T>();
             ref Slot slot = ref world->slots[entity];
-            if (slot.chunk.Definition.componentTypes.Contains(componentType))
+            if (slot.chunk.chunk->definition.componentTypes.Contains(componentType))
             {
                 component = slot.chunk.GetComponent<T>(slot.index, componentType);
                 return true;

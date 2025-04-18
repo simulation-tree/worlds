@@ -7,9 +7,9 @@ namespace Worlds
         public readonly Definition definition;
         public readonly Chunk chunk;
 
-        public ChunkKey(Chunk chunk)
+        public unsafe ChunkKey(Chunk chunk)
         {
-            this.definition = chunk.Definition;
+            this.definition = chunk.chunk->definition;
             this.chunk = chunk;
         }
 

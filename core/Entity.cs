@@ -150,9 +150,9 @@ namespace Worlds
         /// <summary>
         /// Checks if this entity complies with another entity of type <typeparamref name="T"/>
         /// </summary>
-        public readonly bool Is<T>() where T : unmanaged, IEntity
+        public unsafe readonly bool Is<T>() where T : unmanaged, IEntity
         {
-            Archetype archetype = Archetype.Get<T>(world.Schema);
+            Archetype archetype = Archetype.Get<T>(world.world->schema);
             return world.Is(value, archetype);
         }
 
@@ -175,9 +175,9 @@ namespace Worlds
         /// <summary>
         /// Makes this entity become another entity of type <typeparamref name="T"/>.
         /// </summary>
-        public readonly T Become<T>() where T : unmanaged, IEntity
+        public unsafe readonly T Become<T>() where T : unmanaged, IEntity
         {
-            Archetype archetype = Archetype.Get<T>(world.Schema);
+            Archetype archetype = Archetype.Get<T>(world.world->schema);
             world.Become(value, archetype);
             return new Entity(world, value).As<T>();
         }
@@ -704,7 +704,7 @@ namespace Worlds
             }
 
             /// <inheritdoc/>
-            public DebugView(World world, uint value)
+            public unsafe DebugView(World world, uint value)
             {
                 this.world = world;
                 this.value = value;
@@ -712,7 +712,7 @@ namespace Worlds
                 if (!destroyed)
                 {
                     Entity entity = new(world, value);
-                    Schema schema = world.Schema;
+                    Schema schema = world.world->schema;
 #if DEBUG
                     World.createStackTraces.TryGetValue(entity, out creation);
 #endif

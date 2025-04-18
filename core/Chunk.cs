@@ -37,8 +37,6 @@ namespace Worlds
             }
         }
 
-        internal readonly Span<uint> EntitiesList => new(chunk->entities.Items.Pointer, chunk->count + 1);
-
         /// <summary>
         /// Amount of entities stored in this chunk.
         /// </summary>
@@ -90,7 +88,7 @@ namespace Worlds
             chunk->count = 0;
             chunk->entities = new(4);
             chunk->entities.AddDefault(); //reserved
-            chunk->components = new(4, schema.ComponentRowSize);
+            chunk->components = new(4, schema.schema->componentRowSize);
             chunk->components.AddDefault(); //reserved
             chunk->schema = schema;
             chunk->definition = definition;
@@ -109,7 +107,7 @@ namespace Worlds
         internal readonly void UpdateStrideToMatchSchema()
         {
             chunk->components.Dispose();
-            chunk->components = new(4, chunk->schema.ComponentRowSize);
+            chunk->components = new(4, chunk->schema.schema->componentRowSize);
             chunk->components.AddDefault(); //reserved
         }
 
@@ -153,11 +151,11 @@ namespace Worlds
         public readonly int ToString(Span<char> destination)
         {
             int length = 0;
-            length += Count.ToString(destination);
-            if (!Definition.IsEmpty)
+            length += chunk->count.ToString(destination);
+            if (chunk->definition != Definition.Default)
             {
                 destination[length++] = ' ';
-                length += Definition.ToString(chunk->schema, destination.Slice(length));
+                length += chunk->definition.ToString(chunk->schema, destination.Slice(length));
             }
 
             return length;
@@ -166,7 +164,7 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return Definition.GetHashCode();
+            return chunk->definition.GetHashCode();
         }
 
         /// <summary>

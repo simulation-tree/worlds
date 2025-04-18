@@ -23,7 +23,7 @@ namespace Worlds
 
         private static int createdSchemas;
 
-        private SchemaPointer* schema;
+        internal SchemaPointer* schema;
 
         /// <summary>
         /// Checks if this schema is disposed.

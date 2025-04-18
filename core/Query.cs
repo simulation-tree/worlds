@@ -6,7 +6,7 @@ namespace Worlds
     /// <summary>
     /// A native query of entities.
     /// </summary>
-    public ref struct Query
+    public unsafe ref struct Query
     {
         private readonly World world;
         private Definition required;
@@ -22,9 +22,9 @@ namespace Worlds
                 int count = 0;
                 foreach (Chunk chunk in world.Chunks)
                 {
-                    if (chunk.Count > 0)
+                    if (chunk.chunk->count > 0)
                     {
-                        Definition key = chunk.Definition;
+                        Definition key = chunk.chunk->definition;
 
                         //check if chunk contains inclusion
                         if ((key.componentTypes & required.componentTypes) != required.componentTypes)
@@ -58,7 +58,7 @@ namespace Worlds
                             continue;
                         }
 
-                        count += chunk.Count;
+                        count += chunk.chunk->count;
                     }
                 }
 
@@ -78,7 +78,7 @@ namespace Worlds
         /// <summary>
         /// Creates a new query.
         /// </summary>
-        public unsafe Query(World world, Definition required = default, Definition exclude = default)
+        public Query(World world, Definition required = default, Definition exclude = default)
         {
             MemoryAddress.ThrowIfDefault((void*)world.Address);
 
@@ -109,7 +109,7 @@ namespace Worlds
         /// </summary>
         public Query RequireComponent<T>() where T : unmanaged
         {
-            required.AddComponentType<T>(world.Schema);
+            required.AddComponentType<T>(world.world->schema);
             return this;
         }
 
@@ -127,7 +127,7 @@ namespace Worlds
         /// </summary>
         public Query ExcludeComponent<T>() where T : unmanaged
         {
-            exclude.AddComponentType<T>(world.Schema);
+            exclude.AddComponentType<T>(world.world->schema);
             return this;
         }
 
@@ -136,7 +136,7 @@ namespace Worlds
         /// </summary>
         public Query RequireArrayElement<T>() where T : unmanaged
         {
-            required.AddArrayType<T>(world.Schema);
+            required.AddArrayType<T>(world.world->schema);
             return this;
         }
 
@@ -154,7 +154,7 @@ namespace Worlds
         /// </summary>
         public Query ExcludeArray<T>() where T : unmanaged
         {
-            exclude.AddArrayType<T>(world.Schema);
+            exclude.AddArrayType<T>(world.world->schema);
             return this;
         }
 
@@ -163,7 +163,7 @@ namespace Worlds
         /// </summary>
         public Query RequireTag<T>() where T : unmanaged
         {
-            required.AddTagType<T>(world.Schema);
+            required.AddTagType<T>(world.world->schema);
             return this;
         }
 
@@ -181,7 +181,7 @@ namespace Worlds
         /// </summary>
         public Query ExcludeTag<T>() where T : unmanaged
         {
-            exclude.AddTagType<T>(world.Schema);
+            exclude.AddTagType<T>(world.world->schema);
             return this;
         }
 
@@ -200,9 +200,9 @@ namespace Worlds
         {
             foreach (Chunk chunk in world.Chunks)
             {
-                if (chunk.Count > 0)
+                if (chunk.chunk->count > 0)
                 {
-                    Definition key = chunk.Definition;
+                    Definition key = chunk.chunk->definition;
 
                     //check if chunk contains inclusion
                     if ((key.componentTypes & required.componentTypes) != required.componentTypes)
@@ -273,7 +273,7 @@ namespace Worlds
                 for (int i = 0; i < world.Chunks.Length; i++)
                 {
                     Chunk chunk = world.Chunks[i];
-                    Definition key = chunk.Definition;
+                    Definition key = chunk.chunk->definition;
 
                     //check if chunk contains inclusion
                     if ((key.componentTypes & required.componentTypes) != required.componentTypes)
@@ -318,7 +318,7 @@ namespace Worlds
             /// </summary>
             public bool MoveNext()
             {
-                if (entityIndex < chunk.Count)
+                if (entityIndex < chunk.chunk->count)
                 {
                     entityIndex++;
                     return true;
@@ -332,9 +332,9 @@ namespace Worlds
                     for (int i = chunkIndex + 1; i < world.Chunks.Length; i++)
                     {
                         Chunk chunk = world.Chunks[i];
-                        if (chunk.Count > 0)
+                        if (chunk.chunk->count > 0)
                         {
-                            Definition key = chunk.Definition;
+                            Definition key = chunk.chunk->definition;
 
                             //check if chunk contains inclusion
                             if ((key.componentTypes & required.componentTypes) != required.componentTypes)
