@@ -742,8 +742,7 @@ namespace Worlds
                         this.references[i] = new Entity(world, references[i]);
                     }
 
-                    Chunk chunk = world.GetChunk(value);
-                    definition = chunk.Definition;
+                    definition = world.GetDefinition(value);
 
                     //collect all component, array, tag types, and their objects
                     Span<int> typesBuffer = stackalloc int[BitMask.Capacity];

@@ -251,21 +251,21 @@ namespace Worlds
             Clear();
 
             Span<Slot> slots = world->slots.AsSpan();
+            Span<Arrays> arrays = world->arrays.AsSpan();
             for (int e = 1; e < slots.Length; e++)
             {
                 Slot slot = slots[e];
                 if (slot.ContainsArrays)
                 {
+                    Arrays arraySlot = arrays[e];
                     for (int a = 0; a < BitMask.Capacity; a++)
                     {
-                        Values array = slot.arrays[a];
+                        Values array = arraySlot[a];
                         if (array != default)
                         {
                             array.Dispose();
                         }
                     }
-
-                    slot.arrays.Dispose();
                 }
             }
 
@@ -688,7 +688,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            return world->slots[entity].Definition.CopyComponentTypesTo(destination);
+            return world->slots[entity].chunk.chunk->definition.CopyComponentTypesTo(destination);
         }
 
         /// <summary>
@@ -846,6 +846,7 @@ namespace Worlds
             {
                 entity = (uint)world->slots.Count;
                 world->slots.AddDefault();
+                world->arrays.AddDefault();
             }
 
             ref Slot slot = ref world->slots[entity];
@@ -869,6 +870,7 @@ namespace Worlds
             {
                 entity = (uint)world->slots.Count;
                 world->slots.AddDefault();
+                world->arrays.AddDefault();
             }
 
             Definition definition = new(componentTypes, default, tagTypes);
@@ -893,6 +895,7 @@ namespace Worlds
             {
                 entity = (uint)world->slots.Count;
                 world->slots.AddDefault();
+                world->arrays.AddDefault();
             }
 
             ref Slot slot = ref world->slots[entity];
@@ -903,8 +906,7 @@ namespace Worlds
             BitMask arrayTypes = definition.arrayTypes;
             if (!arrayTypes.IsEmpty)
             {
-                ref Array<Values> arrays = ref slot.arrays;
-                arrays = new(BitMask.Capacity);
+                ref Arrays arrays = ref world->arrays[entity];
                 for (int a = 0; a < BitMask.Capacity; a++)
                 {
                     if (arrayTypes.Contains(a))
@@ -935,6 +937,7 @@ namespace Worlds
             {
                 entity = (uint)world->slots.Count;
                 world->slots.AddDefault();
+                world->arrays.AddDefault();
             }
 
             ref Slot slot = ref world->slots[entity];
@@ -945,8 +948,7 @@ namespace Worlds
             BitMask arrayTypes = definition.arrayTypes;
             if (!arrayTypes.IsEmpty)
             {
-                ref Array<Values> arrays = ref slot.arrays;
-                arrays = new(BitMask.Capacity);
+                ref Arrays arrays = ref world->arrays[entity];
                 for (int a = 0; a < BitMask.Capacity; a++)
                 {
                     if (arrayTypes.Contains(a))
@@ -979,6 +981,7 @@ namespace Worlds
             {
                 entity = (uint)world->slots.Count;
                 world->slots.AddDefault();
+                world->arrays.AddDefault();
             }
 
             Definition definition = new(componentTypes, default, tagTypes);
@@ -1035,7 +1038,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            Definition currentDefinition = world->slots[entity].Definition;
+            Definition currentDefinition = world->slots[entity].chunk.chunk->definition;
             for (int i = 0; i < BitMask.Capacity; i++)
             {
                 if (definition.ContainsComponent(i) && !currentDefinition.ContainsComponent(i))
@@ -1064,7 +1067,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            Definition currentDefinition = world->slots[entity].Definition;
+            Definition currentDefinition = world->slots[entity].chunk.chunk->definition;
             for (int i = 0; i < BitMask.Capacity; i++)
             {
                 if (archetype.ContainsComponent(i) && !currentDefinition.ContainsComponent(i))
@@ -1097,6 +1100,7 @@ namespace Worlds
             if (newEntities > 0)
             {
                 world->slots.AddDefault(newEntities);
+                world->arrays.AddDefault(newEntities);
             }
 
             Chunk defaultChunk = world->chunks.chunkMap->defaultChunk;
@@ -1553,7 +1557,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
 
             int tagType = world->schema.GetTagType<T>();
-            return world->slots[entity].Definition.tagTypes.Contains(tagType);
+            return world->slots[entity].chunk.chunk->definition.tagTypes.Contains(tagType);
         }
 
         /// <summary>
@@ -1564,7 +1568,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            return world->slots[entity].Definition.tagTypes.Contains(tagType);
+            return world->slots[entity].chunk.chunk->definition.tagTypes.Contains(tagType);
         }
 
         /// <summary>
@@ -1678,7 +1682,7 @@ namespace Worlds
         {
             ThrowIfEntityIsMissing(entity);
 
-            return world->slots[entity].Definition.arrayTypes;
+            return world->slots[entity].chunk.chunk->definition.arrayTypes;
         }
 
         /// <summary>
@@ -1688,7 +1692,7 @@ namespace Worlds
         {
             ThrowIfEntityIsMissing(entity);
 
-            return world->slots[entity].Definition.tagTypes;
+            return world->slots[entity].chunk.chunk->definition.tagTypes;
         }
 
         /// <summary>
@@ -1703,23 +1707,23 @@ namespace Worlds
             Span<Slot> slots = world->slots.AsSpan();
             int stride = world->schema.GetArraySize(arrayType);
             ref Slot slot = ref slots[(int)entity];
+            ref Arrays arrays = ref world->arrays[entity];
 
             if (!slot.ContainsArrays)
             {
-                slot.arrays = new(BitMask.Capacity);
                 slot.flags |= Slot.Flags.ContainsArrays;
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
             }
             else if (slot.ArraysOutdated)
             {
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
-                for (int i = 0; i < slot.arrays.Length; i++)
+                for (int a = 0; a < BitMask.Capacity; a++)
                 {
-                    ref Values array = ref slot.arrays[i];
+                    Values array = arrays[a];
                     if (array != default)
                     {
                         array.Dispose();
-                        array = default;
+                        arrays[a] = default;
                     }
                 }
             }
@@ -1736,7 +1740,7 @@ namespace Worlds
             Chunk.MoveEntityAt(entity, ref slot.index, ref slot.chunk, destinationChunk);
             world->version++;
             Values newArray = new(length, stride);
-            slot.arrays[arrayType] = newArray;
+            arrays[arrayType] = newArray;
             NotifyArrayCreated(entity, arrayType);
             return newArray;
         }
@@ -1752,23 +1756,23 @@ namespace Worlds
 
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
+            ref Arrays arrays = ref world->arrays[entity];
 
             if (!slot.ContainsArrays)
             {
-                slot.arrays = new(BitMask.Capacity);
                 slot.flags |= Slot.Flags.ContainsArrays;
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
             }
             else if (slot.ArraysOutdated)
             {
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
-                for (int i = 0; i < slot.arrays.Length; i++)
+                for (int a = 0; a < BitMask.Capacity; a++)
                 {
-                    ref Values array = ref slot.arrays[i];
+                    Values array = arrays[a];
                     if (array != default)
                     {
                         array.Dispose();
-                        array = default;
+                        arrays[a] = default;
                     }
                 }
             }
@@ -1785,7 +1789,7 @@ namespace Worlds
             Chunk.MoveEntityAt(entity, ref slot.index, ref slot.chunk, destinationChunk);
             world->version++;
             Values newArray = new(length, stride);
-            slot.arrays[arrayType] = newArray;
+            arrays[arrayType] = newArray;
             NotifyArrayCreated(entity, arrayType);
             return newArray;
         }
@@ -1801,23 +1805,23 @@ namespace Worlds
 
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
+            ref Arrays arrays = ref world->arrays[entity];
 
             if (!slot.ContainsArrays)
             {
-                slot.arrays = new(BitMask.Capacity);
                 slot.flags |= Slot.Flags.ContainsArrays;
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
             }
             else if (slot.ArraysOutdated)
             {
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
-                for (int i = 0; i < slot.arrays.Length; i++)
+                for (int a = 0; a < BitMask.Capacity; a++)
                 {
-                    ref Values array = ref slot.arrays[i];
+                    Values array = arrays[a];
                     if (array != default)
                     {
                         array.Dispose();
-                        array = default;
+                        arrays[a] = default;
                     }
                 }
             }
@@ -1834,7 +1838,7 @@ namespace Worlds
             Chunk.MoveEntityAt(entity, ref slot.index, ref slot.chunk, destinationChunk);
             world->version++;
             Values newArray = new(length, dataType.size);
-            slot.arrays[dataType.index] = newArray;
+            arrays[dataType.index] = newArray;
             NotifyArrayCreated(entity, dataType.index);
             return newArray;
         }
@@ -1852,23 +1856,23 @@ namespace Worlds
 
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
+            ref Arrays arrays = ref world->arrays[entity];
 
             if (!slot.ContainsArrays)
             {
-                slot.arrays = new(BitMask.Capacity);
                 slot.flags |= Slot.Flags.ContainsArrays;
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
             }
             else if (slot.ArraysOutdated)
             {
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
-                for (int i = 0; i < slot.arrays.Length; i++)
+                for (int a = 0; a < BitMask.Capacity; a++)
                 {
-                    ref Values array = ref slot.arrays[i];
+                    Values array = arrays[a];
                     if (array != default)
                     {
                         array.Dispose();
-                        array = default;
+                        arrays[a] = default;
                     }
                 }
             }
@@ -1885,7 +1889,7 @@ namespace Worlds
             Chunk.MoveEntityAt(entity, ref slot.index, ref slot.chunk, destinationChunk);
             world->version++;
             Values<T> newArray = new(length);
-            slot.arrays[arrayType] = newArray;
+            arrays[arrayType] = newArray;
             NotifyArrayCreated(entity, arrayType);
             return newArray;
         }
@@ -1903,23 +1907,23 @@ namespace Worlds
 
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
+            ref Arrays arrays = ref world->arrays[entity];
 
             if (!slot.ContainsArrays)
             {
-                slot.arrays = new(BitMask.Capacity);
                 slot.flags |= Slot.Flags.ContainsArrays;
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
             }
             else if (slot.ArraysOutdated)
             {
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
-                for (int i = 0; i < slot.arrays.Length; i++)
+                for (int a = 0; a < BitMask.Capacity; a++)
                 {
-                    ref Values array = ref slot.arrays[i];
+                    Values array = arrays[a];
                     if (array != default)
                     {
                         array.Dispose();
-                        array = default;
+                        arrays[a] = default;
                     }
                 }
             }
@@ -1935,7 +1939,7 @@ namespace Worlds
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
             Chunk.MoveEntityAt(entity, ref slot.index, ref slot.chunk, destinationChunk);
             world->version++;
-            slot.arrays[arrayType] = new Values<T>(values);
+            arrays[arrayType] = new Values<T>(values);
             NotifyArrayCreated(entity, arrayType);
         }
 
@@ -1952,23 +1956,23 @@ namespace Worlds
 
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
+            ref Arrays arrays = ref world->arrays[entity];
 
             if (!slot.ContainsArrays)
             {
-                slot.arrays = new(BitMask.Capacity);
                 slot.flags |= Slot.Flags.ContainsArrays;
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
             }
             else if (slot.ArraysOutdated)
             {
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
-                for (int i = 0; i < slot.arrays.Length; i++)
+                for (int a = 0; a < BitMask.Capacity; a++)
                 {
-                    ref Values array = ref slot.arrays[i];
+                    Values array = arrays[a];
                     if (array != default)
                     {
                         array.Dispose();
-                        array = default;
+                        arrays[a] = default;
                     }
                 }
             }
@@ -1984,7 +1988,7 @@ namespace Worlds
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
             Chunk.MoveEntityAt(entity, ref slot.index, ref slot.chunk, destinationChunk);
             world->version++;
-            slot.arrays[arrayType] = new Values<T>(values);
+            arrays[arrayType] = new Values<T>(values);
             NotifyArrayCreated(entity, arrayType);
         }
 
@@ -1997,7 +2001,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
 
             int arrayType = world->schema.GetArrayType<T>();
-            return world->slots[entity].Definition.arrayTypes.Contains(arrayType);
+            return world->slots[entity].chunk.chunk->definition.arrayTypes.Contains(arrayType);
         }
 
         /// <summary>
@@ -2008,7 +2012,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            return world->slots[entity].Definition.arrayTypes.Contains(arrayType);
+            return world->slots[entity].chunk.chunk->definition.arrayTypes.Contains(arrayType);
         }
 
         /// <summary>
@@ -2022,7 +2026,7 @@ namespace Worlds
             int arrayType = world->schema.GetArrayType<T>();
             ThrowIfArrayIsMissing(entity, arrayType);
 
-            return new(world->slots[entity].arrays[arrayType].pointer);
+            return new(world->arrays[entity][arrayType].pointer);
         }
 
         /// <summary>
@@ -2033,14 +2037,8 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            Array<Values> arrays = world->slots[entity].arrays;
-            if (arrays == default)
-            {
-                return default;
-            }
-
             int arrayType = world->schema.GetArrayType<T>();
-            Collections.Pointers.ArrayPointer* pointer = arrays[arrayType].pointer;
+            Collections.Pointers.ArrayPointer* pointer = world->arrays[entity][arrayType].pointer;
             return pointer == default ? default : new(pointer->items.Pointer, pointer->length);
         }
 
@@ -2053,7 +2051,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfArrayIsMissing(entity, arrayType);
 
-            return new(world->slots[entity].arrays[arrayType].pointer);
+            return new(world->arrays[entity][arrayType].pointer);
         }
 
         /// <summary>
@@ -2064,13 +2062,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            Array<Values> arrays = world->slots[entity].arrays;
-            if (arrays == default)
-            {
-                return default;
-            }
-
-            Collections.Pointers.ArrayPointer* pointer = arrays[arrayType].pointer;
+            Collections.Pointers.ArrayPointer* pointer = world->arrays[entity][arrayType].pointer;
             return pointer == default ? default : new(pointer->items.Pointer, pointer->length);
         }
 
@@ -2083,7 +2075,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfArrayIsMissing(entity, arrayType);
 
-            return world->slots[entity].arrays[arrayType];
+            return world->arrays[entity][arrayType];
         }
 
         /// <summary>
@@ -2097,13 +2089,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            Array<Values> arrays = world->slots[entity].arrays;
-            if (arrays == default)
-            {
-                return default;
-            }
-
-            return arrays[arrayType];
+            return world->arrays[entity][arrayType];
         }
 
         /// <summary>
@@ -2115,10 +2101,9 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
 
             int arrayType = world->schema.GetArrayType<T>();
-            ref Slot slot = ref world->slots[entity];
-            if (slot.Definition.arrayTypes.Contains(arrayType))
+            if (world->slots[entity].chunk.chunk->definition.arrayTypes.Contains(arrayType))
             {
-                array = new(slot.arrays[arrayType].pointer);
+                array = new(world->arrays[entity][arrayType].pointer);
                 return true;
             }
             else
@@ -2138,7 +2123,7 @@ namespace Worlds
             int arrayType = world->schema.GetArrayType<T>();
             ThrowIfArrayIsMissing(entity, arrayType);
 
-            return ref world->slots[entity].arrays[arrayType].Get<T>(index);
+            return ref world->arrays[entity][arrayType].Get<T>(index);
         }
 
         /// <summary>
@@ -2151,7 +2136,7 @@ namespace Worlds
             int arrayType = world->schema.GetArrayType<T>();
             ThrowIfArrayIsMissing(entity, arrayType);
 
-            return world->slots[entity].arrays[arrayType].Length;
+            return world->arrays[entity][arrayType].Length;
         }
 
         /// <summary>
@@ -2162,7 +2147,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfArrayIsMissing(entity, arrayType);
 
-            return world->slots[entity].arrays[arrayType].Length;
+            return world->arrays[entity][arrayType].Length;
         }
 
         /// <summary>
@@ -2178,9 +2163,10 @@ namespace Worlds
 
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
-            ref Values array = ref slot.arrays[arrayType];
+            ref Arrays arrays = ref world->arrays[entity];
+            Values array = arrays[arrayType];
             array.Dispose();
-            array = default;
+            arrays[arrayType] = default;
 
             Definition newDefinition = slot.chunk.Definition;
             newDefinition.RemoveArrayType(arrayType);
@@ -2207,9 +2193,10 @@ namespace Worlds
 
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
-            ref Values array = ref slot.arrays[arrayType];
+            ref Arrays arrays = ref world->arrays[entity];
+            Values array = arrays[arrayType];
             array.Dispose();
-            array = default;
+            arrays[arrayType] = default;
 
             Definition newDefinition = slot.chunk.Definition;
             newDefinition.RemoveArrayType(arrayType);
@@ -2552,7 +2539,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
 
             int componentType = world->schema.GetComponentType<T>();
-            return world->slots[entity].Definition.componentTypes.Contains(componentType);
+            return world->slots[entity].chunk.chunk->definition.componentTypes.Contains(componentType);
         }
 
         /// <summary>
@@ -2563,7 +2550,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            return world->slots[entity].Definition.componentTypes.Contains(componentType);
+            return world->slots[entity].chunk.chunk->definition.componentTypes.Contains(componentType);
         }
 
         /// <summary>
@@ -2592,7 +2579,7 @@ namespace Worlds
 
             int componentType = world->schema.GetComponentType<T>();
             ref Slot slot = ref world->slots[entity];
-            if (slot.Definition.componentTypes.Contains(componentType))
+            if (world->slots[entity].chunk.chunk->definition.componentTypes.Contains(componentType))
             {
                 return slot.chunk.GetComponent<T>(slot.index, componentType);
             }
@@ -2828,6 +2815,33 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves the definition of the given <paramref name="entity"/>.
+        /// </summary>
+        public readonly Definition GetDefinition(uint entity)
+        {
+            MemoryAddress.ThrowIfDefault(world);
+            ThrowIfEntityIsMissing(entity);
+
+            return world->slots[entity].chunk.chunk->definition;
+        }
+
+        /// <summary>
+        /// Retrieves the definition of the given <paramref name="entity"/>.
+        /// </summary>
+        public readonly Definition GetDefinitionOrDefault(uint entity)
+        {
+            MemoryAddress.ThrowIfDefault(world);
+
+            ref Slot slot = ref world->slots[entity];
+            if (slot.state == Slot.State.Free)
+            {
+                return default;
+            }
+
+            return slot.chunk.chunk->definition;
+        }
+
+        /// <summary>
         /// Copies components from the source entity onto the destination.
         /// <para>Components will be added if the destination entity doesnt
         /// contain them. Existing component data will be overwritten.</para>
@@ -2841,10 +2855,10 @@ namespace Worlds
             Slot destinationSlot = destinationWorld.world->slots[(int)destinationEntity];
             for (int c = 0; c < BitMask.Capacity; c++)
             {
-                if (sourceSlot.Definition.componentTypes.Contains(c))
+                if (sourceSlot.chunk.chunk->definition.componentTypes.Contains(c))
                 {
                     Span<byte> destinationBytes;
-                    if (!destinationSlot.Definition.componentTypes.Contains(c))
+                    if (!destinationSlot.chunk.chunk->definition.componentTypes.Contains(c))
                     {
                         destinationBytes = destinationWorld.AddComponentBytes(destinationEntity, c);
                     }
@@ -2996,7 +3010,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfComponentMissing(uint entity, int componentType)
         {
-            BitMask componentTypes = world->slots[entity].Definition.componentTypes;
+            BitMask componentTypes = world->slots[entity].chunk.chunk->definition.componentTypes;
             if (!componentTypes.Contains(componentType))
             {
                 throw new ComponentIsMissingException(this, entity, componentType);
@@ -3006,7 +3020,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfComponentAlreadyPresent(uint entity, int componentType)
         {
-            BitMask componentTypes = world->slots[entity].Definition.componentTypes;
+            BitMask componentTypes = world->slots[entity].chunk.chunk->definition.componentTypes;
             if (componentTypes.Contains(componentType))
             {
                 throw new ComponentIsAlreadyPresentException(this, entity, componentType);
@@ -3016,7 +3030,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfTagAlreadyPresent(uint entity, int tagType)
         {
-            BitMask tagTypes = world->slots[entity].Definition.tagTypes;
+            BitMask tagTypes = world->slots[entity].chunk.chunk->definition.tagTypes;
             if (tagTypes.Contains(tagType))
             {
                 throw new TagIsAlreadyPresentException(this, entity, tagType);
@@ -3026,7 +3040,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfTagIsMissing(uint entity, int tagType)
         {
-            BitMask tagTypes = world->slots[entity].Definition.tagTypes;
+            BitMask tagTypes = world->slots[entity].chunk.chunk->definition.tagTypes;
             if (!tagTypes.Contains(tagType))
             {
                 throw new TagIsMissingException(this, entity, tagType);
@@ -3036,7 +3050,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfArrayIsMissing(uint entity, int arrayType)
         {
-            BitMask arrayTypes = world->slots[entity].Definition.arrayTypes;
+            BitMask arrayTypes = world->slots[entity].chunk.chunk->definition.arrayTypes;
             if (!arrayTypes.Contains(arrayType))
             {
                 throw new ArrayIsMissingException(this, entity, arrayType);
@@ -3046,7 +3060,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfArrayIsAlreadyPresent(uint entity, int arrayType)
         {
-            BitMask arrayTypes = world->slots[entity].Definition.arrayTypes;
+            BitMask arrayTypes = world->slots[entity].chunk.chunk->definition.arrayTypes;
             if (arrayTypes.Contains(arrayType))
             {
                 throw new ArrayIsAlreadyPresentException(this, entity, arrayType);

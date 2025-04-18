@@ -13,7 +13,7 @@ namespace Worlds
     [SkipLocalsInit]
     public unsafe struct Chunk : IDisposable, IEquatable<Chunk>
     {
-        private ChunkPointer* chunk;
+        internal ChunkPointer* chunk;
 
         /// <summary>
         /// Checks if this chunk is disposed.
