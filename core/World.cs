@@ -585,8 +585,7 @@ namespace Worlds
         /// <summary>
         /// Adds a function that listens to whenever an entity is either created, or destroyed.
         /// </summary>
-        public readonly void ListenToEntityCreationOrDestruction(EntityCreatedOrDestroyed function,
-            ulong userData = default)
+        public readonly void ListenToEntityCreationOrDestruction(EntityCreatedOrDestroyed function, ulong userData = default)
         {
             MemoryAddress.ThrowIfDefault(world);
 
