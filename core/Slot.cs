@@ -41,26 +41,6 @@ namespace Worlds
         public int referenceCount;
 
         /// <summary>
-        /// Checks if this slot contains arrays.
-        /// </summary>
-        public readonly bool ContainsArrays => (flags & Flags.ContainsArrays) != 0;
-
-        /// <summary>
-        /// Checks if this slot contains children.
-        /// </summary>
-        public readonly bool ContainsChildren => (flags & Flags.ContainsChildren) != 0;
-
-        /// <summary>
-        /// Checks if this slot has outdated arrays.
-        /// </summary>
-        public readonly bool ArraysOutdated => (flags & Flags.ArraysOutdated) != 0;
-
-        /// <summary>
-        /// Checks if this slot has outdated children.
-        /// </summary>
-        public readonly bool ChildrenOutdated => (flags & Flags.ChildrenOutdated) != 0;
-
-        /// <summary>
         /// All possible states of an entity.
         /// </summary>
         public enum State : byte

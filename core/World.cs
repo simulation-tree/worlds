@@ -11,6 +11,7 @@ namespace Worlds
     /// <summary>
     /// Contains arbitrary data sorted into groups of entities for processing.
     /// </summary>
+    [SkipLocalsInit]
     public unsafe struct World : IDisposable, IEquatable<World>, ISerializable
     {
 #if DEBUG
@@ -255,7 +256,7 @@ namespace Worlds
             for (int e = 1; e < slots.Length; e++)
             {
                 Slot slot = slots[e];
-                if (slot.ContainsArrays)
+                if ((slot.flags & Slot.Flags.ContainsArrays) != 0)
                 {
                     Arrays arraySlot = arrays[e];
                     for (int a = 0; a < BitMask.Capacity; a++)
@@ -773,7 +774,7 @@ namespace Worlds
             }
 
             //modify descendants
-            if (entitySlot.ContainsChildren)
+            if ((entitySlot.flags & Slot.Flags.ContainsChildren) != 0)
             {
                 //todo: this temporary allocation can be avoided by tracking how large the tree is
                 //and then using stackalloc
@@ -819,7 +820,7 @@ namespace Worlds
                     }
 
                     //check through children
-                    if (currentSlot.ContainsChildren && !currentSlot.ChildrenOutdated)
+                    if ((currentSlot.flags & Slot.Flags.ContainsChildren) != 0 && (currentSlot.flags & Slot.Flags.ChildrenOutdated) == 0)
                     {
                         PushChildrenToStack(this, stack, currentEntity);
                     }
@@ -1188,13 +1189,13 @@ namespace Worlds
                 slots[(int)oldParent].childrenCount--; //old parent can be 0, which is ok
 
                 ref Slot newParentSlot = ref slots[(int)newParent];
-                if (!newParentSlot.ContainsChildren)
+                if ((newParentSlot.flags & Slot.Flags.ContainsChildren) == 0)
                 {
                     newParentSlot.childrenCount = 0;
                     newParentSlot.flags |= Slot.Flags.ContainsChildren;
                     newParentSlot.flags &= ~Slot.Flags.ChildrenOutdated;
                 }
-                else if (newParentSlot.ChildrenOutdated)
+                else if ((newParentSlot.flags & Slot.Flags.ChildrenOutdated) != 0)
                 {
                     newParentSlot.childrenCount = 0;
                     newParentSlot.flags &= ~Slot.Flags.ChildrenOutdated;
@@ -1709,12 +1710,12 @@ namespace Worlds
             ref Slot slot = ref slots[(int)entity];
             ref Arrays arrays = ref world->arrays[entity];
 
-            if (!slot.ContainsArrays)
+            if ((slot.flags & Slot.Flags.ContainsArrays) == 0)
             {
                 slot.flags |= Slot.Flags.ContainsArrays;
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
             }
-            else if (slot.ArraysOutdated)
+            else if ((slot.flags & Slot.Flags.ArraysOutdated) != 0)
             {
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
                 for (int a = 0; a < BitMask.Capacity; a++)
@@ -1758,12 +1759,12 @@ namespace Worlds
             ref Slot slot = ref slots[(int)entity];
             ref Arrays arrays = ref world->arrays[entity];
 
-            if (!slot.ContainsArrays)
+            if ((slot.flags & Slot.Flags.ContainsArrays) == 0)
             {
                 slot.flags |= Slot.Flags.ContainsArrays;
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
             }
-            else if (slot.ArraysOutdated)
+            else if ((slot.flags & Slot.Flags.ArraysOutdated) != 0)
             {
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
                 for (int a = 0; a < BitMask.Capacity; a++)
@@ -1807,12 +1808,12 @@ namespace Worlds
             ref Slot slot = ref slots[(int)entity];
             ref Arrays arrays = ref world->arrays[entity];
 
-            if (!slot.ContainsArrays)
+            if ((slot.flags & Slot.Flags.ContainsArrays) == 0)
             {
                 slot.flags |= Slot.Flags.ContainsArrays;
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
             }
-            else if (slot.ArraysOutdated)
+            else if ((slot.flags & Slot.Flags.ArraysOutdated) != 0)
             {
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
                 for (int a = 0; a < BitMask.Capacity; a++)
@@ -1858,12 +1859,12 @@ namespace Worlds
             ref Slot slot = ref slots[(int)entity];
             ref Arrays arrays = ref world->arrays[entity];
 
-            if (!slot.ContainsArrays)
+            if ((slot.flags & Slot.Flags.ContainsArrays) == 0)
             {
                 slot.flags |= Slot.Flags.ContainsArrays;
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
             }
-            else if (slot.ArraysOutdated)
+            else if ((slot.flags & Slot.Flags.ArraysOutdated) != 0)
             {
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
                 for (int a = 0; a < BitMask.Capacity; a++)
@@ -1909,12 +1910,12 @@ namespace Worlds
             ref Slot slot = ref slots[(int)entity];
             ref Arrays arrays = ref world->arrays[entity];
 
-            if (!slot.ContainsArrays)
+            if ((slot.flags & Slot.Flags.ContainsArrays) == 0)
             {
                 slot.flags |= Slot.Flags.ContainsArrays;
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
             }
-            else if (slot.ArraysOutdated)
+            else if ((slot.flags & Slot.Flags.ArraysOutdated) != 0)
             {
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
                 for (int a = 0; a < BitMask.Capacity; a++)
@@ -1958,12 +1959,12 @@ namespace Worlds
             ref Slot slot = ref slots[(int)entity];
             ref Arrays arrays = ref world->arrays[entity];
 
-            if (!slot.ContainsArrays)
+            if ((slot.flags & Slot.Flags.ContainsArrays) == 0)
             {
                 slot.flags |= Slot.Flags.ContainsArrays;
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
             }
-            else if (slot.ArraysOutdated)
+            else if ((slot.flags & Slot.Flags.ArraysOutdated) != 0)
             {
                 slot.flags &= ~Slot.Flags.ArraysOutdated;
                 for (int a = 0; a < BitMask.Capacity; a++)
@@ -3214,7 +3215,7 @@ namespace Worlds
                 if (parent != default)
                 {
                     ref Slot parentSlot = ref value.world->slots[(int)parent];
-                    if (!parentSlot.ContainsChildren)
+                    if ((parentSlot.flags & Slot.Flags.ContainsChildren) == 0)
                     {
                         parentSlot.flags |= Slot.Flags.ContainsChildren;
                     }
