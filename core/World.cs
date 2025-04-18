@@ -657,7 +657,7 @@ namespace Worlds
             slot.state = Slot.State.Free;
             slot.referenceCount = default;
 
-            ref Slot lastSlot = ref slots[(int)slot.chunk.LastEntity];
+            ref Slot lastSlot = ref slots[(int)slot.chunk.chunk->lastEntity];
             lastSlot.index = slot.index;
 
             //remove from parents children list
@@ -763,9 +763,9 @@ namespace Worlds
                     newDefinition.AddTagType(Schema.DisabledTagType);
                 }
 
-                if (entity != entitySlot.chunk.LastEntity)
+                if (entity != entitySlot.chunk.chunk->lastEntity)
                 {
-                    slots[(int)entitySlot.chunk.LastEntity].index = entitySlot.index;
+                    slots[(int)entitySlot.chunk.chunk->lastEntity].index = entitySlot.index;
                 }
 
                 Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -809,9 +809,9 @@ namespace Worlds
                             newDefinition.AddTagType(Schema.DisabledTagType);
                         }
 
-                        if (currentEntity != currentSlot.chunk.LastEntity)
+                        if (currentEntity != currentSlot.chunk.chunk->lastEntity)
                         {
-                            slots[(int)currentSlot.chunk.LastEntity].index = currentSlot.index;
+                            slots[(int)currentSlot.chunk.chunk->lastEntity].index = currentSlot.index;
                         }
 
                         Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1229,9 +1229,9 @@ namespace Worlds
                         newDefinition.AddTagType(Schema.DisabledTagType);
                     }
 
-                    if (entity != entitySlot.chunk.LastEntity)
+                    if (entity != entitySlot.chunk.chunk->lastEntity)
                     {
-                        slots[(int)entitySlot.chunk.LastEntity].index = entitySlot.index;
+                        slots[(int)entitySlot.chunk.chunk->lastEntity].index = entitySlot.index;
                     }
 
                     Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1587,9 +1587,9 @@ namespace Worlds
             Definition newDefinition = slot.chunk.Definition;
             newDefinition.AddTagType(tagType);
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1612,9 +1612,9 @@ namespace Worlds
             Definition newDefinition = slot.chunk.Definition;
             newDefinition.AddTagType(tagType);
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1639,9 +1639,9 @@ namespace Worlds
             Definition newDefinition = slot.chunk.Definition;
             newDefinition.RemoveTagType(tagType);
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1664,9 +1664,9 @@ namespace Worlds
             Definition newDefinition = slot.chunk.Definition;
             newDefinition.RemoveTagType(tagType);
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1731,9 +1731,9 @@ namespace Worlds
             Definition newDefinition = slot.chunk.Definition;
             newDefinition.AddArrayType(arrayType);
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1780,9 +1780,9 @@ namespace Worlds
             Definition newDefinition = slot.chunk.Definition;
             newDefinition.AddArrayType(arrayType);
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1829,9 +1829,9 @@ namespace Worlds
             Definition newDefinition = slot.chunk.Definition;
             newDefinition.AddArrayType(dataType.index);
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1880,9 +1880,9 @@ namespace Worlds
             Definition newDefinition = slot.chunk.Definition;
             newDefinition.AddArrayType(arrayType);
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1931,9 +1931,9 @@ namespace Worlds
             Definition newDefinition = slot.chunk.Definition;
             newDefinition.AddArrayType(arrayType);
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -1980,9 +1980,9 @@ namespace Worlds
             Definition newDefinition = slot.chunk.Definition;
             newDefinition.AddArrayType(arrayType);
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -2171,9 +2171,9 @@ namespace Worlds
             Definition newDefinition = slot.chunk.Definition;
             newDefinition.RemoveArrayType(arrayType);
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -2201,9 +2201,9 @@ namespace Worlds
             Definition newDefinition = slot.chunk.Definition;
             newDefinition.RemoveArrayType(arrayType);
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
@@ -2226,9 +2226,9 @@ namespace Worlds
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Definition definition = slot.chunk.Definition;
@@ -2252,9 +2252,9 @@ namespace Worlds
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Definition definition = slot.chunk.Definition;
@@ -2281,9 +2281,9 @@ namespace Worlds
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Definition definition = slot.chunk.Definition;
@@ -2310,9 +2310,9 @@ namespace Worlds
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Definition definition = slot.chunk.Definition;
@@ -2336,9 +2336,9 @@ namespace Worlds
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Definition definition = slot.chunk.Definition;
@@ -2361,9 +2361,9 @@ namespace Worlds
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Definition definition = slot.chunk.Definition;
@@ -2387,9 +2387,9 @@ namespace Worlds
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Definition definition = slot.chunk.Definition;
@@ -2414,9 +2414,9 @@ namespace Worlds
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Definition definition = slot.chunk.Definition;
@@ -2444,9 +2444,9 @@ namespace Worlds
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Definition definition = slot.chunk.Definition;
@@ -2471,9 +2471,9 @@ namespace Worlds
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Definition definition = slot.chunk.Definition;
@@ -2496,9 +2496,9 @@ namespace Worlds
             Span<Slot> slots = world->slots.AsSpan();
             ref Slot slot = ref slots[(int)entity];
 
-            if (entity != slot.chunk.LastEntity)
+            if (entity != slot.chunk.chunk->lastEntity)
             {
-                slots[(int)slot.chunk.LastEntity].index = slot.index;
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
             }
 
             Definition definition = slot.chunk.Definition;

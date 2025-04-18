@@ -735,7 +735,7 @@ namespace Worlds
                 }
             }
 
-            internal Enumerator(ComponentQuery<{{GenericTypeArguments}}> query)
+            internal unsafe Enumerator(ComponentQuery<{{GenericTypeArguments}}> query)
             {
                 this.query = query;
                 this.version = query.world.Version;
@@ -746,7 +746,7 @@ namespace Worlds
                 {
                     if (chunk.Count > 0)
                     {
-                        Definition key = chunk.Definition;
+                        Definition key = chunk.chunk->definition;
 
                         //check if chunk contains inclusion
                         if (!key.componentTypes.ContainsAll(query.required.componentTypes))
@@ -832,11 +832,11 @@ namespace Worlds
                 }
             }
 
-            private void UpdateChunkFields(ref Chunk chunk)
+            private unsafe void UpdateChunkFields(ref Chunk chunk)
             {
-                entities = chunk.EntitiesList;
-                entityCount = chunk.Count;
-                components = chunk.Components;
+                entities = new(chunk.chunk->entities.Items.Pointer, chunk.chunk->count + 1);
+                entityCount = chunk.chunk->count;
+                components = chunk.chunk->components;
                 {{AssignComponentOffsets}}
             }
 

@@ -50,7 +50,7 @@ namespace Worlds
 
             return this;
         }
-
+        
         /// <summary>
         /// Makes the given array types required.
         /// </summary>
@@ -763,7 +763,7 @@ namespace Worlds
                 }
             }
 
-            internal Enumerator(ComponentQuery<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10> query)
+            internal unsafe Enumerator(ComponentQuery<C1, C2, C3, C4, C5, C6, C7, C8, C9, C10> query)
             {
                 this.query = query;
                 this.version = query.world.Version;
@@ -774,7 +774,7 @@ namespace Worlds
                 {
                     if (chunk.Count > 0)
                     {
-                        Definition key = chunk.Definition;
+                        Definition key = chunk.chunk->definition;
 
                         //check if chunk contains inclusion
                         if (!key.componentTypes.ContainsAll(query.required.componentTypes))
@@ -833,7 +833,7 @@ namespace Worlds
             }
 
             [Conditional("DEBUG")]
-            private readonly void ThrowIfVersionIsDifferent()
+            private readonly void ThrowIfVersionIsDifferent() 
             {
                 if (version != query.world.Version)
                 {
@@ -869,11 +869,11 @@ namespace Worlds
                 }
             }
 
-            private void UpdateChunkFields(ref Chunk chunk)
+            private unsafe void UpdateChunkFields(ref Chunk chunk)
             {
-                entities = chunk.EntitiesList;
-                entityCount = chunk.Count;
-                components = chunk.Components;
+                entities = new(chunk.chunk->entities.Items.Pointer, chunk.chunk->count + 1);
+                entityCount = chunk.chunk->count;
+                components = chunk.chunk->components;
                 componentOffset1 = chunk.GetComponentOffset(componentType1);
                 componentOffset2 = chunk.GetComponentOffset(componentType2);
                 componentOffset3 = chunk.GetComponentOffset(componentType3);

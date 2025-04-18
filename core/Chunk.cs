@@ -1,5 +1,4 @@
-﻿using Collections;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Unmanaged;
@@ -38,8 +37,6 @@ namespace Worlds
             }
         }
 
-        internal readonly List Components => chunk->components;
-        internal readonly uint LastEntity => chunk->lastEntity;
         internal readonly Span<uint> EntitiesList => new(chunk->entities.Items.Pointer, chunk->count + 1);
 
         /// <summary>
