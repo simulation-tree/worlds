@@ -147,11 +147,11 @@ namespace Worlds
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Collapsed)]
-        private readonly Types.Type[] Components
+        private readonly TypeMetadata[] Components
         {
             get
             {
-                Types.Type[] buffer = new Types.Type[schema->componentCount];
+                TypeMetadata[] buffer = new TypeMetadata[schema->componentCount];
                 uint count = 0;
                 for (int c = 0; c < BitMask.Capacity; c++)
                 {
@@ -166,11 +166,11 @@ namespace Worlds
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Collapsed)]
-        private readonly Types.Type[] Arrays
+        private readonly TypeMetadata[] Arrays
         {
             get
             {
-                Types.Type[] buffer = new Types.Type[schema->arraysCount];
+                TypeMetadata[] buffer = new TypeMetadata[schema->arraysCount];
                 uint count = 0;
                 for (int a = 0; a < BitMask.Capacity; a++)
                 {
@@ -185,11 +185,11 @@ namespace Worlds
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Collapsed)]
-        private readonly Types.Type[] Tags
+        private readonly TypeMetadata[] Tags
         {
             get
             {
-                Types.Type[] buffer = new Types.Type[schema->tagsCount];
+                TypeMetadata[] buffer = new TypeMetadata[schema->tagsCount];
                 uint count = 0;
                 for (int t = 0; t < BitMask.Capacity; t++)
                 {
@@ -335,46 +335,44 @@ namespace Worlds
         /// <summary>
         /// Retrieves the type layout for the given <paramref name="componentType"/>.
         /// </summary>
-        public readonly Types.Type GetComponentLayout(int componentType)
+        public readonly TypeMetadata GetComponentLayout(int componentType)
         {
             MemoryAddress.ThrowIfDefault(schema);
             ThrowIfComponentTypeIsMissing(componentType);
 
             Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
             long hash = componentTypeHashes[componentType];
-            return MetadataRegistry.GetType(hash);
+            return new(hash);
         }
 
         /// <summary>
         /// Retrieves the type layout for the given <paramref name="arrayType"/>.
         /// </summary>
-        public readonly Types.Type GetArrayLayout(int arrayType)
+        public readonly TypeMetadata GetArrayLayout(int arrayType)
         {
             MemoryAddress.ThrowIfDefault(schema);
             ThrowIfArrayTypeIsMissing(arrayType);
 
-            Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-            long hash = arrayTypeHashes[arrayType];
-            return MetadataRegistry.GetType(hash);
+            Span<TypeMetadata> arrayTypeHashes = schema->typeHashes.AsSpan<TypeMetadata>(BitMask.Capacity, BitMask.Capacity);
+            return arrayTypeHashes[arrayType];
         }
 
         /// <summary>
         /// Retrieves the type layout for the given <paramref name="tagType"/>.
         /// </summary>
-        public readonly Types.Type GetTagLayout(int tagType)
+        public readonly TypeMetadata GetTagLayout(int tagType)
         {
             MemoryAddress.ThrowIfDefault(schema);
             ThrowIfTagIsMissing(tagType);
 
-            Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
-            long hash = tagTypeHashes[tagType];
-            return MetadataRegistry.GetType(hash);
+            Span<TypeMetadata> tagTypeHashes = schema->typeHashes.AsSpan<TypeMetadata>(BitMask.Capacity * 2, BitMask.Capacity);
+            return tagTypeHashes[tagType];
         }
 
         /// <summary>
         /// Retrieves the type metadata for the component of type <typeparamref name="T"/>.
         /// </summary>
-        public readonly Types.Type GetComponentLayout<T>() where T : unmanaged
+        public readonly TypeMetadata GetComponentLayout<T>() where T : unmanaged
         {
             return GetComponentLayout(GetComponentType<T>());
         }
@@ -394,7 +392,7 @@ namespace Worlds
         /// Registers <paramref name="type"/> as a component and
         /// retrieves its index in the schema.
         /// </summary>
-        public readonly int RegisterComponent(Types.Type type)
+        public readonly int RegisterComponent(TypeMetadata type)
         {
             if (TryGetComponentType(type, out int componentType))
             {
@@ -405,10 +403,10 @@ namespace Worlds
 
             componentType = schema->componentCount;
             schema->componentOffsets.WriteElement(componentType, schema->componentRowSize);
-            schema->sizes.WriteElement(componentType, (int)type.size);
-            schema->typeHashes.WriteElement(componentType, type.Hash);
+            schema->sizes.WriteElement(componentType, (int)type.Size);
+            schema->typeHashes.WriteElement(componentType, type);
             schema->componentCount++;
-            schema->componentRowSize += type.size;
+            schema->componentRowSize += type.Size;
             schema->definitionMask.AddComponentType(componentType);
             return componentType;
         }
@@ -428,7 +426,7 @@ namespace Worlds
         /// Registers <paramref name="type"/> as an array and
         /// retrieves its index in the schema.
         /// </summary>
-        public readonly int RegisterArray(Types.Type type)
+        public readonly int RegisterArray(TypeMetadata type)
         {
             if (TryGetArrayType(type, out int arrayType))
             {
@@ -439,9 +437,9 @@ namespace Worlds
 
             arrayType = schema->arraysCount;
             Span<int> arraySizes = schema->sizes.AsSpan<int>(BitMask.Capacity, BitMask.Capacity);
-            Span<long> arrayHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-            arraySizes[schema->arraysCount] = type.size;
-            arrayHashes[schema->arraysCount] = type.Hash;
+            Span<TypeMetadata> arrayHashes = schema->typeHashes.AsSpan<TypeMetadata>(BitMask.Capacity, BitMask.Capacity);
+            arraySizes[schema->arraysCount] = type.Size;
+            arrayHashes[schema->arraysCount] = type;
             schema->arraysCount++;
             schema->definitionMask.AddArrayType(arrayType);
             return arrayType;
@@ -462,7 +460,7 @@ namespace Worlds
         /// Registers <paramref name="type"/> as a tag and
         /// retrieves its index in the schema.
         /// </summary>
-        public readonly int RegisterTag(Types.Type type)
+        public readonly int RegisterTag(TypeMetadata type)
         {
             if (TryGetTagType(type, out int tagType))
             {
@@ -472,8 +470,8 @@ namespace Worlds
             ThrowIfTooManyTags();
 
             tagType = schema->tagsCount;
-            Span<long> tagHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
-            tagHashes[tagType] = type.Hash;
+            Span<TypeMetadata> tagHashes = schema->typeHashes.AsSpan<TypeMetadata>(BitMask.Capacity * 2, BitMask.Capacity);
+            tagHashes[tagType] = type;
             schema->definitionMask.AddTagType(tagType);
             schema->tagsCount++;
             return tagType;
@@ -523,23 +521,23 @@ namespace Worlds
         /// <summary>
         /// Checks if <paramref name="type"/> is a registered component.
         /// </summary>
-        public readonly bool ContainsComponentType(Types.Type type)
+        public readonly bool ContainsComponentType(TypeMetadata type)
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
-            return componentTypeHashes.Contains(type.Hash);
+            Span<TypeMetadata> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
+            return componentTypeHashes.Contains(type);
         }
 
         /// <summary>
         /// Tries to retrieve the index of the component type <paramref name="type"/>.
         /// </summary>
-        public readonly bool TryGetComponentType(Types.Type type, out int componentType)
+        public readonly bool TryGetComponentType(TypeMetadata type, out int componentType)
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
-            return componentTypeHashes.TryIndexOf(type.Hash, out componentType);
+            Span<TypeMetadata> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
+            return componentTypeHashes.TryIndexOf(type, out componentType);
         }
 
         /// <summary>
@@ -567,23 +565,23 @@ namespace Worlds
         /// <summary>
         /// Checks if <paramref name="type"/> is a registered array.
         /// </summary>
-        public readonly bool ContainsArrayType(Types.Type type)
+        public readonly bool ContainsArrayType(TypeMetadata type)
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-            return arrayTypeHashes.Contains(type.Hash);
+            Span<TypeMetadata> arrayTypeHashes = schema->typeHashes.AsSpan<TypeMetadata>(BitMask.Capacity, BitMask.Capacity);
+            return arrayTypeHashes.Contains(type);
         }
 
         /// <summary>
         /// Tries to retrieve the index of the array type <paramref name="type"/>.
         /// </summary>
-        public readonly bool TryGetArrayType(Types.Type type, out int arrayType)
+        public readonly bool TryGetArrayType(TypeMetadata type, out int arrayType)
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-            return arrayTypeHashes.TryIndexOf(type.Hash, out arrayType);
+            Span<TypeMetadata> arrayTypeHashes = schema->typeHashes.AsSpan<TypeMetadata>(BitMask.Capacity, BitMask.Capacity);
+            return arrayTypeHashes.TryIndexOf(type, out arrayType);
         }
 
         /// <summary>
@@ -611,23 +609,23 @@ namespace Worlds
         /// <summary>
         /// Checks if <paramref name="type"/> is a registered tag.
         /// </summary>
-        public readonly bool ContainsTagType(Types.Type type)
+        public readonly bool ContainsTagType(TypeMetadata type)
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
-            return tagTypeHashes.Contains(type.Hash);
+            Span<TypeMetadata> tagTypeHashes = schema->typeHashes.AsSpan<TypeMetadata>(BitMask.Capacity * 2, BitMask.Capacity);
+            return tagTypeHashes.Contains(type);
         }
 
         /// <summary>
         /// Tries to retrieve the index of the tag type <paramref name="type"/>.
         /// </summary>
-        public readonly bool TryGetTagType(Types.Type type, out int tagType)
+        public readonly bool TryGetTagType(TypeMetadata type, out int tagType)
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
-            return tagTypeHashes.TryIndexOf(type.Hash, out tagType);
+            Span<TypeMetadata> tagTypeHashes = schema->typeHashes.AsSpan<TypeMetadata>(BitMask.Capacity * 2, BitMask.Capacity);
+            return tagTypeHashes.TryIndexOf(type, out tagType);
         }
 
         /// <summary>
@@ -641,8 +639,8 @@ namespace Worlds
                 return false;
             }
 
-            Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
-            return componentTypeHashes.Contains(TypeHashes<T>.value);
+            Span<TypeMetadata> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
+            return componentTypeHashes.Contains(TypeMetadata.Get<T>());
         }
 
         /// <summary>
@@ -668,13 +666,13 @@ namespace Worlds
         /// <summary>
         /// Retrieves the type information for component of <paramref name="type"/>.
         /// </summary>
-        public readonly DataType GetComponentDataType(Types.Type type)
+        public readonly DataType GetComponentDataType(TypeMetadata type)
         {
             ThrowIfComponentTypeIsMissing(type);
 
             Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
-            int componentType = componentTypeHashes.IndexOf(type.Hash);
-            return new(componentType, DataType.Kind.Component, type.size);
+            int componentType = componentTypeHashes.IndexOf(type.hash);
+            return new(componentType, DataType.Kind.Component, type.Size);
         }
 
         /// <summary>
@@ -687,8 +685,8 @@ namespace Worlds
                 return false;
             }
 
-            Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-            return arrayTypeHashes.Contains(TypeHashes<T>.value);
+            Span<TypeMetadata> arrayTypeHashes = schema->typeHashes.AsSpan<TypeMetadata>(BitMask.Capacity, BitMask.Capacity);
+            return arrayTypeHashes.Contains(TypeMetadata.Get<T>());
         }
 
         /// <summary>
@@ -714,13 +712,13 @@ namespace Worlds
         /// <summary>
         /// Retrieves the type information for array of <paramref name="type"/>.
         /// </summary>
-        public readonly DataType GetArrayDataType(Types.Type type)
+        public readonly DataType GetArrayDataType(TypeMetadata type)
         {
             ThrowIfArrayTypeIsMissing(type);
 
             Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-            int arrayType = arrayTypeHashes.IndexOf(type.Hash);
-            return new(arrayType, DataType.Kind.Array, type.size);
+            int arrayType = arrayTypeHashes.IndexOf(type.hash);
+            return new(arrayType, DataType.Kind.Array, type.Size);
         }
 
         /// <summary>
@@ -754,8 +752,8 @@ namespace Worlds
                 return false;
             }
 
-            Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
-            return tagTypeHashes.Contains(TypeHashes<T>.value);
+            Span<TypeMetadata> tagTypeHashes = schema->typeHashes.AsSpan<TypeMetadata>(BitMask.Capacity * 2, BitMask.Capacity);
+            return tagTypeHashes.Contains(TypeMetadata.Get<T>());
         }
 
         /// <summary>
@@ -1466,7 +1464,7 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfComponentTypeIsMissing(Types.Type componentType)
+        private readonly void ThrowIfComponentTypeIsMissing(TypeMetadata componentType)
         {
             if (!ContainsComponentType(componentType))
             {
@@ -1493,7 +1491,7 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfArrayTypeIsMissing(Types.Type arrayType)
+        private readonly void ThrowIfArrayTypeIsMissing(TypeMetadata arrayType)
         {
             if (!ContainsArrayType(arrayType))
             {
@@ -1606,11 +1604,6 @@ namespace Worlds
             return !(left == right);
         }
 
-        private static class TypeHashes<T> where T : unmanaged
-        {
-            public static readonly long value = MetadataRegistry.GetType<T>().Hash;
-        }
-
         /// <summary>
         /// Cache of types per <see cref="Schema"/>.
         /// </summary>
@@ -1679,8 +1672,8 @@ namespace Worlds
                     componentCapacity = schemaIndex + 1;
                     Array.Resize(ref components, componentCapacity);
 
-                    Span<long> componentTypeHashes = new(schema.schema->typeHashes.Pointer, BitMask.Capacity);
-                    int componentType = componentTypeHashes.IndexOf(TypeHashes<T>.value);
+                    Span<TypeMetadata> componentTypes = new(schema.schema->typeHashes.Pointer, BitMask.Capacity);
+                    int componentType = componentTypes.IndexOf(TypeMetadata.Get<T>());
                     components[schemaIndex] = componentType;
                     return componentType;
                 }
@@ -1698,8 +1691,8 @@ namespace Worlds
                     arrayCapacity = schemaIndex + 1;
                     Array.Resize(ref arrays, arrayCapacity);
 
-                    Span<long> arrayTypeHashes = new(schema.schema->typeHashes.Pointer + BitMask.Capacity * sizeof(long), BitMask.Capacity);
-                    int arrayType = arrayTypeHashes.IndexOf(TypeHashes<T>.value);
+                    Span<TypeMetadata> arrayTypes = new(schema.schema->typeHashes.Pointer + BitMask.Capacity * sizeof(long), BitMask.Capacity);
+                    int arrayType = arrayTypes.IndexOf(TypeMetadata.Get<T>());
                     arrays[schemaIndex] = arrayType;
                     return arrayType;
                 }
@@ -1717,8 +1710,8 @@ namespace Worlds
                     tagCapacity = schemaIndex + 1;
                     Array.Resize(ref tags, tagCapacity);
 
-                    Span<long> tagTypeHashes = new(schema.schema->typeHashes.Pointer + BitMask.Capacity * sizeof(long) * 2, BitMask.Capacity);
-                    int tagType = tagTypeHashes.IndexOf(TypeHashes<T>.value);
+                    Span<TypeMetadata> tagTypes = new(schema.schema->typeHashes.Pointer + BitMask.Capacity * sizeof(long) * 2, BitMask.Capacity);
+                    int tagType = tagTypes.IndexOf(TypeMetadata.Get<T>());
                     tags[schemaIndex] = tagType;
                     return tagType;
                 }

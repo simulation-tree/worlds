@@ -1,4 +1,5 @@
 ﻿using System;
+using Types;
 
 namespace Worlds.Functions
 {
@@ -9,18 +10,18 @@ namespace Worlds.Functions
     public unsafe readonly struct ProcessSchema : IEquatable<ProcessSchema>
     {
 #if NET
-        private readonly delegate* unmanaged<Input, Types.Type> function;
+        private readonly delegate* unmanaged<Input, TypeMetadata> function;
 
         /// <inheritdoc/>
-        public ProcessSchema(delegate* unmanaged<Input, Types.Type> function)
+        public ProcessSchema(delegate* unmanaged<Input, TypeMetadata> function)
         {
             this.function = function;
         }
 #else
-        private readonly delegate*<Input, Types.Type> function;
+        private readonly delegate*<Input, TypeMetadata> function;
         
         /// <inheritdoc/>
-        public ProcessSchema(delegate*<Input, Types.Type> function)
+        public ProcessSchema(delegate*<Input, TypeMetadata> function)
         {
             this.function = function;
         }
@@ -45,14 +46,13 @@ namespace Worlds.Functions
         }
 
         /// <inheritdoc/>
-        public readonly void Invoke(ref Types.Type type, DataType.Kind dataType)
+        public readonly void Invoke(ref TypeMetadata type, DataType.Kind dataType)
         {
-            Types.Type newType = function(new Input(type, dataType));
-            type = newType;
+            type = function(new Input(type, dataType));
         }
 
         /// <inheritdoc/>
-        public readonly Types.Type Invoke(Types.Type type, DataType.Kind dataType)
+        public readonly TypeMetadata Invoke(TypeMetadata type, DataType.Kind dataType)
         {
             return function(new Input(type, dataType));
         }
@@ -77,7 +77,7 @@ namespace Worlds.Functions
             /// <summary>
             /// The type being deserialized.
             /// </summary>
-            public readonly Types.Type type;
+            public readonly TypeMetadata type;
 
             /// <summary>
             /// The kind of data type that <see cref="type"/> is describing.
@@ -85,7 +85,7 @@ namespace Worlds.Functions
             public readonly DataType.Kind dataType;
 
             /// <inheritdoc/>
-            public Input(Types.Type type, DataType.Kind dataType)
+            public Input(TypeMetadata type, DataType.Kind dataType)
             {
                 this.type = type;
                 this.dataType = dataType;

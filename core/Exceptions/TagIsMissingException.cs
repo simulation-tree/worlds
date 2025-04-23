@@ -1,4 +1,5 @@
 ﻿using System;
+using Types;
 
 namespace Worlds
 {
@@ -14,7 +15,7 @@ namespace Worlds
 
         private unsafe static string GetMessage(World world, uint entity, int tagType)
         {
-            Types.Type type = world.world->schema.GetTagLayout(tagType);
+            TypeMetadata type = world.world->schema.GetTagLayout(tagType);
             return $"Entity `{entity}` is missing tag `{type}`";
         }
     }

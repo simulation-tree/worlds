@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Types;
 using Unmanaged;
 using Worlds.Functions;
 using Worlds.Pointers;
@@ -2651,7 +2652,7 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(world);
 
-            Types.Type layout = world->schema.GetComponentLayout(componentType);
+            TypeMetadata layout = world->schema.GetComponentLayout(componentType);
             Span<byte> bytes = GetComponentBytes(entity, componentType);
             return layout.CreateInstance(bytes);
         }
@@ -2663,13 +2664,13 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(world);
 
-            Types.Type layout = world->schema.GetArrayLayout(arrayType);
+            TypeMetadata layout = world->schema.GetArrayLayout(arrayType);
             Values array = GetArray(entity, arrayType);
             object[] arrayObject = new object[array.Length];
             for (int i = 0; i < array.Length; i++)
             {
                 MemoryAddress allocation = array[i];
-                arrayObject[i] = layout.CreateInstance(new(allocation.Pointer, layout.size));
+                arrayObject[i] = layout.CreateInstance(new(allocation.Pointer, layout.Size));
             }
 
             return arrayObject;
@@ -3096,7 +3097,7 @@ namespace Worlds
         /// Deserializes a world from the given <paramref name="reader"/>
         /// with a custom schema processor.
         /// </summary>
-        public static World Deserialize(ByteReader reader, Func<Types.Type, DataType.Kind, Types.Type>? process)
+        public static World Deserialize(ByteReader reader, Func<TypeMetadata, DataType.Kind, TypeMetadata>? process)
         {
             Signature signature = reader.ReadValue<Signature>();
             if (signature.Version != DataVersion)
@@ -3112,21 +3113,21 @@ namespace Worlds
                 using Schema loadedSchema = reader.ReadObject<Schema>();
                 foreach (int componentType in loadedSchema.ComponentTypes)
                 {
-                    Types.Type typeLayout = loadedSchema.GetComponentLayout(componentType);
+                    TypeMetadata typeLayout = loadedSchema.GetComponentLayout(componentType);
                     typeLayout = process.Invoke(typeLayout, DataType.Kind.Component);
                     schema.RegisterComponent(typeLayout);
                 }
 
                 foreach (int arrayType in loadedSchema.ArrayTypes)
                 {
-                    Types.Type typeLayout = loadedSchema.GetArrayLayout(arrayType);
+                    TypeMetadata typeLayout = loadedSchema.GetArrayLayout(arrayType);
                     typeLayout = process.Invoke(typeLayout, DataType.Kind.Array);
                     schema.RegisterArray(typeLayout);
                 }
 
                 foreach (int tagType in loadedSchema.TagTypes)
                 {
-                    Types.Type typeLayout = loadedSchema.GetTagLayout(tagType);
+                    TypeMetadata typeLayout = loadedSchema.GetTagLayout(tagType);
                     typeLayout = process.Invoke(typeLayout, DataType.Kind.Tag);
                     schema.RegisterTag(typeLayout);
                 }
