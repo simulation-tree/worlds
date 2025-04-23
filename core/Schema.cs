@@ -543,6 +543,17 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Tries to retrieve the index of the component type with the given <paramref name="fullTypeName"/>.
+        /// </summary>
+        public readonly bool TryGetComponentType(ReadOnlySpan<char> fullTypeName, out int componentType)
+        {
+            MemoryAddress.ThrowIfDefault(schema);
+
+            Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
+            return componentTypeHashes.TryIndexOf(fullTypeName.GetLongHashCode(), out componentType);
+        }
+
+        /// <summary>
         /// Checks if an array with <paramref name="fullTypeName"/> has been registered.
         /// </summary>
         public readonly bool ContainsArrayType(ASCIIText256 fullTypeName)
@@ -569,8 +580,21 @@ namespace Worlds
         /// </summary>
         public readonly bool TryGetArrayType(Types.Type type, out int arrayType)
         {
+            MemoryAddress.ThrowIfDefault(schema);
+
             Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
             return arrayTypeHashes.TryIndexOf(type.Hash, out arrayType);
+        }
+
+        /// <summary>
+        /// Tries to retrieve the index of the array type with the given <paramref name="fullTypeName"/>.
+        /// </summary>
+        public readonly bool TryGetArrayType(ReadOnlySpan<char> fullTypeName, out int arrayType)
+        {
+            MemoryAddress.ThrowIfDefault(schema);
+
+            Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
+            return arrayTypeHashes.TryIndexOf(fullTypeName.GetLongHashCode(), out arrayType);
         }
 
         /// <summary>
@@ -578,6 +602,8 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsTagType(ASCIIText256 fullTypeName)
         {
+            MemoryAddress.ThrowIfDefault(schema);
+
             Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
             return tagTypeHashes.Contains(fullTypeName.GetLongHashCode());
         }
@@ -587,6 +613,8 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsTagType(Types.Type type)
         {
+            MemoryAddress.ThrowIfDefault(schema);
+
             Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
             return tagTypeHashes.Contains(type.Hash);
         }
@@ -596,6 +624,8 @@ namespace Worlds
         /// </summary>
         public readonly bool TryGetTagType(Types.Type type, out int tagType)
         {
+            MemoryAddress.ThrowIfDefault(schema);
+
             Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
             return tagTypeHashes.TryIndexOf(type.Hash, out tagType);
         }
@@ -612,7 +642,7 @@ namespace Worlds
             }
 
             Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
-            return componentTypeHashes.Contains(TypeLayoutHashCodeCache<T>.value);
+            return componentTypeHashes.Contains(TypeHashes<T>.value);
         }
 
         /// <summary>
@@ -658,7 +688,7 @@ namespace Worlds
             }
 
             Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-            return arrayTypeHashes.Contains(TypeLayoutHashCodeCache<T>.value);
+            return arrayTypeHashes.Contains(TypeHashes<T>.value);
         }
 
         /// <summary>
@@ -725,7 +755,7 @@ namespace Worlds
             }
 
             Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
-            return tagTypeHashes.Contains(TypeLayoutHashCodeCache<T>.value);
+            return tagTypeHashes.Contains(TypeHashes<T>.value);
         }
 
         /// <summary>
@@ -1576,7 +1606,7 @@ namespace Worlds
             return !(left == right);
         }
 
-        private static class TypeLayoutHashCodeCache<T> where T : unmanaged
+        private static class TypeHashes<T> where T : unmanaged
         {
             public static readonly long value = MetadataRegistry.GetType<T>().Hash;
         }
@@ -1650,7 +1680,7 @@ namespace Worlds
                     Array.Resize(ref components, componentCapacity);
 
                     Span<long> componentTypeHashes = new(schema.schema->typeHashes.Pointer, BitMask.Capacity);
-                    int componentType = componentTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
+                    int componentType = componentTypeHashes.IndexOf(TypeHashes<T>.value);
                     components[schemaIndex] = componentType;
                     return componentType;
                 }
@@ -1669,7 +1699,7 @@ namespace Worlds
                     Array.Resize(ref arrays, arrayCapacity);
 
                     Span<long> arrayTypeHashes = new(schema.schema->typeHashes.Pointer + BitMask.Capacity * sizeof(long), BitMask.Capacity);
-                    int arrayType = arrayTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
+                    int arrayType = arrayTypeHashes.IndexOf(TypeHashes<T>.value);
                     arrays[schemaIndex] = arrayType;
                     return arrayType;
                 }
@@ -1688,7 +1718,7 @@ namespace Worlds
                     Array.Resize(ref tags, tagCapacity);
 
                     Span<long> tagTypeHashes = new(schema.schema->typeHashes.Pointer + BitMask.Capacity * sizeof(long) * 2, BitMask.Capacity);
-                    int tagType = tagTypeHashes.IndexOf(TypeLayoutHashCodeCache<T>.value);
+                    int tagType = tagTypeHashes.IndexOf(TypeHashes<T>.value);
                     tags[schemaIndex] = tagType;
                     return tagType;
                 }
