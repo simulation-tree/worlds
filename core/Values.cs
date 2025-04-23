@@ -426,12 +426,31 @@ namespace Worlds
             }
         }
 
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfSizeMismatch<T>() where T : unmanaged
+        {
+            if (sizeof(T) != pointer->stride)
+            {
+                throw new InvalidOperationException($"Size of {sizeof(T)} does not match {pointer->stride}");
+            }
+        }
+
         /// <summary>
         /// Retrieves this entire array as a span of bytes.
         /// </summary>
         public readonly Span<byte> AsSpan()
         {
             return new(pointer->items.Pointer, pointer->length * pointer->stride);
+        }
+
+        /// <summary>
+        /// Retrieves this entire array as a span of <typeparamref name="T"/>.
+        /// </summary>
+        public readonly Span<T> AsSpan<T>() where T : unmanaged
+        {
+            ThrowIfSizeMismatch<T>();
+
+            return new(pointer->items.Pointer, pointer->length);
         }
 
         /// <summary>
