@@ -1,4 +1,5 @@
 ﻿using System;
+using Types;
 
 namespace Worlds
 {
@@ -11,9 +12,10 @@ namespace Worlds
         public TagIsMissingException(World world, uint entity, int tagType) : base(GetMessage(world, entity, tagType))
         {
         }
-        private static string GetMessage(World world, uint entity, int tagType)
+
+        private unsafe static string GetMessage(World world, uint entity, int tagType)
         {
-            Types.Type type = world.Schema.GetTagLayout(tagType);
+            TypeMetadata type = world.world->schema.GetTagLayout(tagType);
             return $"Entity `{entity}` is missing tag `{type}`";
         }
     }

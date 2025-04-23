@@ -8,6 +8,11 @@ namespace Worlds
     public struct BitMask : IEquatable<BitMask>
     {
         /// <summary>
+        /// An empty bitmask.
+        /// </summary>
+        public static readonly BitMask Default = new BitMask();
+
+        /// <summary>
         /// Maximum amount of bits that can be stored.
         /// </summary>
         public const int Capacity = 256;

@@ -8,6 +8,11 @@ namespace Worlds
     public struct Definition : IEquatable<Definition>
     {
         /// <summary>
+        /// An empty definition.
+        /// </summary>
+        public static readonly Definition Default = new Definition();
+
+        /// <summary>
         /// The mask of component types present.
         /// </summary>
         public BitMask componentTypes;
@@ -21,16 +26,6 @@ namespace Worlds
         /// The mask of tag types present.
         /// </summary>
         public BitMask tagTypes;
-
-        /// <summary>
-        /// Does this definition include disabled entities?
-        /// </summary>
-        public readonly bool IsDisabled => tagTypes.Contains(Schema.DisabledTagType);
-
-        /// <summary>
-        /// Checks if this definition is empty.
-        /// </summary>
-        public readonly bool IsEmpty => componentTypes.IsEmpty && arrayTypes.IsEmpty && tagTypes.IsEmpty;
 
         /// <summary>
         /// Creates a new definition with the exact component and array <see cref="BitMask"/> values.
@@ -90,7 +85,7 @@ namespace Worlds
                 length -= 2;
             }
 
-            if (IsDisabled)
+            if (tagTypes.Contains(Schema.DisabledTagType))
             {
                 const string Keyword = "Disabled";
                 if (length > 0)

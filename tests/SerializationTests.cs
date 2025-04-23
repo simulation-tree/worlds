@@ -169,7 +169,7 @@ namespace Worlds.Tests
 
             Schema loadedSchema = loadedWorld.Schema;
 
-            static Types.Type Process(Types.Type type, DataType.Kind dataType)
+            static TypeMetadata Process(TypeMetadata type, DataType.Kind dataType)
             {
                 if (type.Is<Fruit>())
                 {

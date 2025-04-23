@@ -1,5 +1,4 @@
-﻿using Collections.Generic;
-using System;
+﻿using System;
 
 namespace Worlds
 {
@@ -29,7 +28,7 @@ namespace Worlds
         public Chunk chunk;
 
         /// <summary>
-        /// The index of the entity in this slot within the <see cref="chunk"/>.
+        /// The index of the entity in this slot inside its own chunk.
         /// </summary>
         public int index;
 
@@ -40,51 +39,6 @@ namespace Worlds
 
         public int referenceStart;
         public int referenceCount;
-
-        /// <summary>
-        /// All arrays stored in the entity.
-        /// </summary>
-        public Array<Values> arrays;
-
-        /// <summary>
-        /// The definition of the <see cref="chunk"/>.
-        /// </summary>
-        public readonly Definition Definition => chunk.Definition;
-
-        /// <summary>
-        /// Checks if this slot contains arrays.
-        /// </summary>
-        public readonly bool ContainsArrays => (flags & Flags.ContainsArrays) != 0;
-
-        /// <summary>
-        /// Checks if this slot contains children.
-        /// </summary>
-        public readonly bool ContainsChildren => (flags & Flags.ContainsChildren) != 0;
-
-        /// <summary>
-        /// Checks if this slot has outdated arrays.
-        /// </summary>
-        public readonly bool ArraysOutdated => (flags & Flags.ArraysOutdated) != 0;
-
-        /// <summary>
-        /// Checks if this slot has outdated children.
-        /// </summary>
-        public readonly bool ChildrenOutdated => (flags & Flags.ChildrenOutdated) != 0;
-
-        public static Slot CreateDefault()
-        {
-            Slot slot = default;
-            slot.parent = 0;
-            slot.state = State.Free;
-            slot.flags = Flags.None;
-            slot.chunk = default;
-            slot.index = default;
-            slot.childrenCount = default;
-            slot.referenceStart = default;
-            slot.referenceCount = default;
-            slot.arrays = default;
-            return slot;
-        }
 
         /// <summary>
         /// All possible states of an entity.

@@ -75,18 +75,18 @@ namespace Worlds
             operation->count++;
         }
 
-        private readonly void WriteTypeLayout(Types.Type type)
+        private readonly void WriteTypeLayout(TypeMetadata type)
         {
             MemoryAddress.ThrowIfDefault(operation);
 
-            int newLength = operation->bytesLength + sizeof(long);
+            int newLength = operation->bytesLength + sizeof(TypeMetadata);
             if (operation->bytesCapacity < newLength)
             {
                 operation->bytesCapacity = newLength.GetNextPowerOf2();
                 MemoryAddress.Resize(ref operation->buffer, operation->bytesCapacity);
             }
 
-            operation->buffer.Write(operation->bytesLength, type.Hash);
+            operation->buffer.Write(operation->bytesLength, type);
             operation->bytesLength = newLength;
         }
 
@@ -146,13 +146,13 @@ namespace Worlds
             return type;
         }
 
-        private readonly Types.Type ReadTypeLayout(ref int bytePosition)
+        private readonly TypeMetadata ReadTypeLayout(ref int bytePosition)
         {
             MemoryAddress.ThrowIfDefault(operation);
 
-            long hash = operation->buffer.Read<long>(bytePosition);
-            bytePosition += sizeof(long);
-            return MetadataRegistry.GetType(hash);
+            TypeMetadata type = operation->buffer.Read<TypeMetadata>(bytePosition);
+            bytePosition += sizeof(TypeMetadata);
+            return type;
         }
 
         private readonly T Read<T>(ref int bytePosition) where T : unmanaged
@@ -659,8 +659,8 @@ namespace Worlds
 
             private void AddComponent()
             {
-                Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
-                DataType dataType = world.Schema.GetComponentDataType(layout);
+                TypeMetadata layout = operation.ReadTypeLayout(ref bytePosition);
+                DataType dataType = world.world->schema.GetComponentDataType(layout);
                 int componentType = dataType.index;
                 ReadOnlySpan<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
                 ReadOnlySpan<uint> selection = this.selection.AsSpan();
@@ -672,8 +672,8 @@ namespace Worlds
 
             private void SetComponent()
             {
-                Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
-                DataType dataType = world.Schema.GetComponentDataType(layout);
+                TypeMetadata layout = operation.ReadTypeLayout(ref bytePosition);
+                DataType dataType = world.world->schema.GetComponentDataType(layout);
                 int componentType = dataType.index;
                 ReadOnlySpan<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
                 ReadOnlySpan<uint> selection = this.selection.AsSpan();
@@ -685,8 +685,8 @@ namespace Worlds
 
             private void AddOrSetComponent()
             {
-                Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
-                DataType dataType = world.Schema.GetComponentDataType(layout);
+                TypeMetadata layout = operation.ReadTypeLayout(ref bytePosition);
+                DataType dataType = world.world->schema.GetComponentDataType(layout);
                 int componentType = dataType.index;
                 ReadOnlySpan<byte> component = operation.ReadBytes(dataType.size, ref bytePosition);
                 ReadOnlySpan<uint> selection = this.selection.AsSpan();
@@ -706,8 +706,8 @@ namespace Worlds
 
             private void RemoveComponent()
             {
-                Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
-                DataType dataType = world.Schema.GetComponentDataType(layout);
+                TypeMetadata layout = operation.ReadTypeLayout(ref bytePosition);
+                DataType dataType = world.world->schema.GetComponentDataType(layout);
                 int componentType = dataType.index;
                 ReadOnlySpan<uint> selection = this.selection.AsSpan();
                 for (int i = 0; i < selection.Length; i++)
@@ -728,8 +728,8 @@ namespace Worlds
 
             private void CreateArray()
             {
-                Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
-                DataType dataType = world.Schema.GetArrayDataType(layout);
+                TypeMetadata layout = operation.ReadTypeLayout(ref bytePosition);
+                DataType dataType = world.world->schema.GetArrayDataType(layout);
                 int arrayType = dataType.index;
                 int arrayLength = operation.Read<int>(ref bytePosition);
                 ReadOnlySpan<uint> selection = this.selection.AsSpan();
@@ -741,8 +741,8 @@ namespace Worlds
 
             private void CreateAndInitializeArray()
             {
-                Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
-                DataType dataType = world.Schema.GetArrayDataType(layout);
+                TypeMetadata layout = operation.ReadTypeLayout(ref bytePosition);
+                DataType dataType = world.world->schema.GetArrayDataType(layout);
                 int arrayType = dataType.index;
                 ReadOnlySpan<uint> selection = this.selection.AsSpan();
                 int length = operation.Read<int>(ref bytePosition);
@@ -766,8 +766,8 @@ namespace Worlds
 
             private void ResizeArray()
             {
-                Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
-                DataType dataType = world.Schema.GetArrayDataType(layout);
+                TypeMetadata layout = operation.ReadTypeLayout(ref bytePosition);
+                DataType dataType = world.world->schema.GetArrayDataType(layout);
                 int arrayType = dataType.index;
                 int length = operation.Read<int>(ref bytePosition);
                 ReadOnlySpan<uint> selection = this.selection.AsSpan();
@@ -781,9 +781,9 @@ namespace Worlds
             private void SetArrayElements()
             {
                 int index = operation.Read<int>(ref bytePosition);
-                Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
+                TypeMetadata layout = operation.ReadTypeLayout(ref bytePosition);
                 int length = operation.Read<int>(ref bytePosition);
-                DataType dataType = world.Schema.GetArrayDataType(layout);
+                DataType dataType = world.world->schema.GetArrayDataType(layout);
                 int arrayType = dataType.index;
                 int stride = dataType.size;
                 ReadOnlySpan<byte> bytes = operation.ReadBytes(stride * length, ref bytePosition);
@@ -798,8 +798,8 @@ namespace Worlds
 
             private void SetArray()
             {
-                Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
-                DataType dataType = world.Schema.GetArrayDataType(layout);
+                TypeMetadata layout = operation.ReadTypeLayout(ref bytePosition);
+                DataType dataType = world.world->schema.GetArrayDataType(layout);
                 int arrayType = dataType.index;
                 int length = operation.Read<int>(ref bytePosition);
                 ReadOnlySpan<byte> bytes = operation.ReadBytes(dataType.size * length, ref bytePosition);
@@ -814,8 +814,8 @@ namespace Worlds
 
             private void CreateOrSetArray()
             {
-                Types.Type layout = operation.ReadTypeLayout(ref bytePosition);
-                DataType dataType = world.Schema.GetArrayDataType(layout);
+                TypeMetadata layout = operation.ReadTypeLayout(ref bytePosition);
+                DataType dataType = world.world->schema.GetArrayDataType(layout);
                 int arrayType = dataType.index;
                 int length = operation.Read<int>(ref bytePosition);
                 ReadOnlySpan<byte> bytes = operation.ReadBytes(dataType.size * length, ref bytePosition);

@@ -1,4 +1,5 @@
 ﻿using System;
+using Types;
 
 namespace Worlds
 {
@@ -12,9 +13,9 @@ namespace Worlds
         {
         }
 
-        private static string GetMessage(World world, uint entity, int tagType)
+        private unsafe static string GetMessage(World world, uint entity, int tagType)
         {
-            Types.Type type = world.Schema.GetTagLayout(tagType);
+            TypeMetadata type = world.world->schema.GetTagLayout(tagType);
             return $"Entity `{entity}` already has tag `{type}`";
         }
     }

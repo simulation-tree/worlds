@@ -8,6 +8,7 @@ namespace Worlds.Pointers
         public int version;
         public Schema schema;
         public List<Slot> slots;
+        public List<Arrays> arrays;
         public Stack<uint> freeEntities;
         public ChunkMap chunks;
         public List<(EntityCreatedOrDestroyed, ulong)> entityCreatedOrDestroyed;
