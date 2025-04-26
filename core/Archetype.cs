@@ -16,14 +16,13 @@ namespace Worlds
         /// </summary>
         public readonly Schema schema;
 
-        private Definition definition;
-        private unsafe fixed ushort componentSizes[(int)BitMask.Capacity];
-        private unsafe fixed ushort arrayElementSizes[(int)BitMask.Capacity];
-
         /// <summary>
         /// The definition containg all components, array and tag types.
         /// </summary>
-        public readonly Definition Definition => definition;
+        public Definition definition;
+
+        private SizesBuffer componentSizes;
+        private SizesBuffer arrayElementSizes;
 
         /// <summary>
         /// Component types stored.
@@ -49,7 +48,7 @@ namespace Worlds
         }
 #endif
         /// <summary>
-        /// Creates a new archetype for building a <see cref="Definition"/>.
+        /// Creates a new archetype for building a <see cref="definition"/>.
         /// </summary>
         public Archetype(Schema schema)
         {
@@ -60,7 +59,7 @@ namespace Worlds
         /// <summary>
         /// Initializes a new archetype from an existing <paramref name="definition"/>.
         /// </summary>
-        public unsafe Archetype(Definition definition, Schema schema)
+        public Archetype(Definition definition, Schema schema)
         {
             this.definition = definition;
             this.schema = schema;
@@ -93,7 +92,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the size of <paramref name="componentType"/> in bytes.
         /// </summary>
-        public unsafe readonly int GetComponentSize(int componentType)
+        public readonly int GetComponentSize(int componentType)
         {
             ThrowIfComponentTypeIsMissing(componentType);
 
@@ -103,7 +102,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the size of <paramref name="arrayType"/> elements in bytes.
         /// </summary>
-        public unsafe readonly int GetArraySize(int arrayType)
+        public readonly int GetArraySize(int arrayType)
         {
             ThrowIfArrayTypeIsMissing(arrayType);
 
@@ -113,7 +112,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the size of the component of type <typeparamref name="T"/> in bytes.
         /// </summary>
-        public unsafe readonly int GetComponentSize<T>() where T : unmanaged
+        public readonly int GetComponentSize<T>() where T : unmanaged
         {
             int componentType = schema.GetComponentType<T>();
             ThrowIfComponentTypeIsMissing(componentType);
@@ -124,7 +123,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the size of each element in an array of type <typeparamref name="T"/>.
         /// </summary>
-        public unsafe readonly int GetArrayElementSize<T>() where T : unmanaged
+        public readonly int GetArrayElementSize<T>() where T : unmanaged
         {
             int arrayType = schema.GetArrayType<T>();
             ThrowIfArrayTypeIsMissing(arrayType);
@@ -209,7 +208,7 @@ namespace Worlds
         /// <summary>
         /// Adds <paramref name="componentType"/> to the definition.
         /// </summary>
-        public unsafe void AddComponentType(int componentType)
+        public void AddComponentType(int componentType)
         {
             ThrowIfComponentTypeIsPresent(componentType);
 
@@ -232,7 +231,7 @@ namespace Worlds
         /// <summary>
         /// Adds <paramref name="arrayType"/> to the definition.
         /// </summary>
-        public unsafe void AddArrayType(int arrayType)
+        public void AddArrayType(int arrayType)
         {
             ThrowIfArrayTypeIsPresent(arrayType);
 

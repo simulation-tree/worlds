@@ -27,10 +27,25 @@ namespace Worlds
         /// </summary>
         public const int MaxValue = 255;
 
-        private ulong a;
-        private ulong b;
-        private ulong c;
-        private ulong d;
+        /// <summary>
+        /// First 64 bits.
+        /// </summary>
+        public ulong a;
+
+        /// <summary>
+        /// Second 64 bits.
+        /// </summary>
+        public ulong b;
+
+        /// <summary>
+        /// Third 64 bits.
+        /// </summary>
+        public ulong c;
+
+        /// <summary>
+        /// Fourth 64 bits.
+        /// </summary>
+        public ulong d;
 
         /// <summary>
         /// Amount of bits set to 1.

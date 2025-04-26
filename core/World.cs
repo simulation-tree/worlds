@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Security.AccessControl;
 using Types;
 using Unmanaged;
 using Worlds.Functions;
@@ -1004,7 +1005,7 @@ namespace Worlds
         /// </summary>
         public readonly bool Is(uint entity, Archetype archetype)
         {
-            return Is(entity, archetype.Definition);
+            return Is(entity, archetype.definition);
         }
 
         /// <summary>
@@ -1040,19 +1041,22 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
 
             Definition currentDefinition = world->slots[entity].chunk.chunk->definition;
+            BitMask missingComponentTypes = definition.componentTypes & ~currentDefinition.componentTypes;
+            BitMask missingArrayTypes = definition.arrayTypes & ~currentDefinition.arrayTypes;
+            BitMask missingTagTypes = definition.tagTypes & ~currentDefinition.tagTypes;
             for (int i = 0; i < BitMask.Capacity; i++)
             {
-                if (definition.ContainsComponent(i) && !currentDefinition.ContainsComponent(i))
+                if (missingComponentTypes.Contains(i))
                 {
                     AddComponentType(entity, i);
                 }
 
-                if (definition.ContainsArray(i) && !currentDefinition.ContainsArray(i))
+                if (missingArrayTypes.Contains(i))
                 {
                     CreateArray(entity, i);
                 }
 
-                if (definition.ContainsTag(i) && !currentDefinition.ContainsTag(i))
+                if (missingTagTypes.Contains(i))
                 {
                     AddTag(entity, i);
                 }
@@ -1069,19 +1073,22 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
 
             Definition currentDefinition = world->slots[entity].chunk.chunk->definition;
+            BitMask missingComponentTypes = archetype.definition.componentTypes & ~currentDefinition.componentTypes;
+            BitMask missingArrayTypes = archetype.definition.arrayTypes & ~currentDefinition.arrayTypes;
+            BitMask missingTagTypes = archetype.definition.tagTypes & ~currentDefinition.tagTypes;
             for (int i = 0; i < BitMask.Capacity; i++)
             {
-                if (archetype.ContainsComponent(i) && !currentDefinition.ContainsComponent(i))
+                if (missingComponentTypes.Contains(i))
                 {
                     AddComponentType(entity, i);
                 }
 
-                if (archetype.ContainsArray(i) && !currentDefinition.ContainsArray(i))
+                if (missingArrayTypes.Contains(i))
                 {
                     CreateArray(entity, i);
                 }
 
-                if (archetype.ContainsTag(i) && !currentDefinition.ContainsTag(i))
+                if (missingTagTypes.Contains(i))
                 {
                     AddTag(entity, i);
                 }

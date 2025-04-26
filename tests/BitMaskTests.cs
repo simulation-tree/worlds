@@ -88,14 +88,25 @@
         }
 
         [Test]
-        public void CheckIfContainsNothing()
+        public void CheckIfSomethingContainsNothing()
         {
             BitMask a = new();
             a.Set(5);
 
             BitMask b = new();
 
-            Assert.That(a | b, Is.EqualTo(a));
+            Assert.That(a.ContainsAll(b), Is.True);
+        }
+
+        [Test]
+        public void CheckIfNothingContainsSomething()
+        {
+            BitMask a = new();
+            a.Set(5);
+
+            BitMask b = new();
+
+            Assert.That(b.ContainsAll(a), Is.False);
         }
 
         public class ClassBitMask

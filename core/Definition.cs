@@ -669,7 +669,7 @@ namespace Worlds
         public static Definition Get<T>(Schema schema) where T : unmanaged, IEntity
         {
             Archetype archetype = Archetype.Get<T>(schema);
-            return archetype.Definition;
+            return archetype.definition;
         }
 
         /// <inheritdoc/>

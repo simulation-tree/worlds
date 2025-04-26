@@ -559,6 +559,8 @@ namespace Worlds.Generators
             SourceBuilder builder = new();
             builder.Indent(indent);
 
+            builder.Append("Definition currentDefinition;");
+            builder.AppendLine();
             builder.Append("Schema schema = world.Schema;");
             builder.AppendLine();
 
@@ -581,6 +583,8 @@ namespace Worlds.Generators
 
                 builder.Append(");");
                 builder.AppendLine();
+                builder.Append("BitMask currentComponentTypes;");
+                builder.AppendLine();
             }
 
             if (arrayTypes.Count > 0)
@@ -601,6 +605,8 @@ namespace Worlds.Generators
                 }
 
                 builder.Append(");");
+                builder.AppendLine();
+                builder.Append("BitMask currentArrayTypes;");
                 builder.AppendLine();
             }
 
@@ -623,24 +629,42 @@ namespace Worlds.Generators
 
                 builder.Append(");");
                 builder.AppendLine();
+                builder.Append("BitMask currentTagTypes;");
+                builder.AppendLine();
             }
-
-            builder.Append("Definition definition;");
-            builder.AppendLine();
 
             builder.Append("do");
             builder.AppendLine();
 
             builder.BeginGroup();
             {
-                builder.Append("definition = world.GetDefinition(value);");
+                builder.Append("currentDefinition = world.GetDefinition(value);");
                 builder.AppendLine();
+
+                if (componentTypes.Count > 0)
+                {
+                    builder.Append("currentComponentTypes = currentDefinition.componentTypes;");
+                    builder.AppendLine();
+                }
+
+                if (arrayTypes.Count > 0)
+                {
+                    builder.Append("currentArrayTypes = currentDefinition.arrayTypes;");
+                    builder.AppendLine();
+                }
+
+                if (tagTypes.Count > 0)
+                {
+                    builder.Append("currentTagTypes = currentDefinition.tagTypes;");
+                    builder.AppendLine();
+                }
+
                 builder.Append("if (");
 
                 bool buildingCondition = false;
                 if (componentTypes.Count > 0)
                 {
-                    builder.Append("componentTypes.ContainsAll(definition.componentTypes)");
+                    builder.Append("currentComponentTypes.ContainsAll(componentTypes)");
                     buildingCondition = true;
                 }
 
@@ -651,7 +675,7 @@ namespace Worlds.Generators
                         builder.Append(" && ");
                     }
 
-                    builder.Append("arrayTypes.ContainsAll(definition.arrayTypes)");
+                    builder.Append("currentArrayTypes.ContainsAll(arrayTypes)");
                     buildingCondition = true;
                 }
 
@@ -662,7 +686,7 @@ namespace Worlds.Generators
                         builder.Append(" && ");
                     }
 
-                    builder.Append("tagTypes.ContainsAll(definition.tagTypes)");
+                    builder.Append("currentTagTypes.ContainsAll(tagTypes)");
                     buildingCondition = true;
                 }
 
@@ -679,9 +703,11 @@ namespace Worlds.Generators
                 builder.AppendLine();
                 builder.Append("await Task.Yield();");
                 builder.AppendLine();
+                builder.Append("cancellationToken.ThrowIfCancellationRequested();");
+                builder.AppendLine();
             }
             builder.EndGroup();
-            builder.Append("while (!cancellationToken.IsCancellationRequested);");
+            builder.Append("while (true);");
             return builder.ToString();
         }
 
