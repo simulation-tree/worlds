@@ -1,13 +1,14 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 
 namespace Worlds.Generators
 {
     [Generator(LanguageNames.CSharp)]
-    public class InheritingEntityGenerator : IIncrementalGenerator
+    internal class InheritingEntityGenerator : IIncrementalGenerator
     {
         void IIncrementalGenerator.Initialize(IncrementalGeneratorInitializationContext context)
         {
@@ -89,17 +90,22 @@ namespace Worlds.Generators
             int complianceIndent = GetIndentation(source, "{{ComplianceChecks}}");
             int bodyIndent = GetIndentation(source, "{{DisposeMethod}}");
 
+            IReadOnlyList<DataType> requiredTypes = GetComplianceRequirements(type, compilation);
             string interfaces = GetInterfaces(type);
             string typeName = type.typeSymbol.Name;
-            string complianceChecks = GetComplianceChecks(type, complianceIndent, compilation);
+            string? complianceChecks = GetComplianceChecks(type, complianceIndent, requiredTypes);
             string disposeMethod = GetDisposeMethod(type, bodyIndent);
             string equalityMethods = GetEqualityMethods(type, bodyIndent);
+            string untilCompliant = GetUntilCompliantMethod(bodyIndent + 4, requiredTypes);
+            string? staticDefinitionGetter = GetStaticDefinitionGetter(bodyIndent, requiredTypes);
             source = source.Replace("{{EntityInterfaces}}", interfaces);
             source = source.Replace("{{DisposeMethod}}", disposeMethod);
             source = source.Replace("{{EqualityMethods}}", equalityMethods);
             source = source.Replace("{{Accessors}}", accessors);
             source = source.Replace("{{ComplianceChecks}}", complianceChecks);
             source = source.Replace("{{TypeName}}", typeName);
+            source = source.Replace("{{UntilCompliant}}", untilCompliant);
+            source = source.Replace("{{StaticDefinitionGetter}}", staticDefinitionGetter);
             string[] lines = source.Split('\n');
             for (int i = 0; i < lines.Length; i++)
             {
@@ -153,7 +159,7 @@ namespace Worlds.Generators
             return indentation;
         }
 
-        private static string GetComplianceChecks(EntityType type, int indent, Compilation compilation)
+        private static IReadOnlyList<DataType> GetComplianceRequirements(EntityType type, Compilation compilation)
         {
             IMethodSymbol? describeMethod = null;
             foreach (IMethodSymbol method in type.typeSymbol.GetMethods())
@@ -200,30 +206,28 @@ namespace Worlds.Generators
 
                     if (invocations.Count > 0)
                     {
-                        SourceBuilder builder = new();
-                        builder.Indent(indent);
-                        List<(DataType dataType, string typeName)> dataTypes = new();
+                        List<DataType> requiredTypes = new();
                         foreach (MemberAccessExpressionSyntax invocation in invocations)
                         {
                             foreach (SyntaxNode child in invocation.ChildNodes())
                             {
                                 if (child is GenericNameSyntax genericNameSyntax)
                                 {
-                                    DataType dataType = default;
+                                    DataKind dataKind = default;
                                     if (genericNameSyntax.Identifier.ToString() == "AddComponentType")
                                     {
-                                        dataType = DataType.Component;
+                                        dataKind = DataKind.Component;
                                     }
                                     else if (genericNameSyntax.Identifier.ToString() == "AddArrayType")
                                     {
-                                        dataType = DataType.Array;
+                                        dataKind = DataKind.Array;
                                     }
                                     else if (genericNameSyntax.Identifier.ToString() == "AddTagType")
                                     {
-                                        dataType = DataType.Tag;
+                                        dataKind = DataKind.Tag;
                                     }
 
-                                    if (dataType != default)
+                                    if (dataKind != default)
                                     {
                                         foreach (SyntaxNode grandChild in child.ChildNodes())
                                         {
@@ -232,10 +236,10 @@ namespace Worlds.Generators
                                                 foreach (TypeSyntax typeArgument in typeArguments.Arguments)
                                                 {
                                                     TypeInfo foundTypeInfo = semanticModel.GetTypeInfo(typeArgument);
-                                                    string typeName;
+                                                    string fullTypeName;
                                                     if (foundTypeInfo.Type is not null)
                                                     {
-                                                        typeName = foundTypeInfo.Type.GetFullTypeName();
+                                                        fullTypeName = foundTypeInfo.Type.GetFullTypeName();
                                                     }
                                                     else
                                                     {
@@ -243,10 +247,10 @@ namespace Worlds.Generators
                                                         //todo: emit a diagnostic asking for full type
                                                         //but then once a full type name is given, how does this
                                                         //generator know its a full type name?
-                                                        typeName = typeArgument.ToFullString();
+                                                        fullTypeName = typeArgument.ToFullString();
                                                     }
 
-                                                    dataTypes.Add((dataType, typeName));
+                                                    requiredTypes.Add(new(dataKind, fullTypeName));
                                                 }
                                             }
                                         }
@@ -255,44 +259,47 @@ namespace Worlds.Generators
                             }
                         }
 
-                        if (dataTypes.Count > 0)
-                        {
-                            foreach ((DataType dataType, string typeName) in dataTypes)
-                            {
-                                builder.Append("if (!Contains");
-                                if (dataType == DataType.Component)
-                                {
-                                    builder.Append("Component");
-                                }
-                                else if (dataType == DataType.Array)
-                                {
-                                    builder.Append("Array");
-                                }
-                                else if (dataType == DataType.Tag)
-                                {
-                                    builder.Append("Tag");
-                                }
-
-                                builder.Append('<');
-                                builder.Append(typeName);
-                                builder.Append(">())");
-                                builder.AppendLine();
-                                builder.BeginGroup();
-                                {
-                                    builder.AppendLine("return false;");
-                                }
-                                builder.EndGroup();
-                                builder.AppendLine();
-                            }
-
-                            builder.Length -= 2;
-                            return builder.ToString();
-                        }
+                        return requiredTypes;
                     }
                 }
             }
 
-            return string.Empty;
+            return Array.Empty<DataType>();
+        }
+
+        private static string? GetComplianceChecks(EntityType type, int indent, IReadOnlyList<DataType> requiredTypes)
+        {
+            if (requiredTypes.Count > 0)
+            {
+                SourceBuilder builder = new();
+                builder.Indent(indent);
+                builder.Append("Schema schema = world.Schema;");
+                builder.AppendLine();
+                builder.Append("Definition definition = world.GetDefinition(value);");
+                builder.AppendLine();
+                foreach (DataType dataType in requiredTypes)
+                {
+                    builder.Append("if (!definition.Contains");
+                    builder.Append(dataType.kind.ToString());
+                    builder.Append('<');
+                    builder.Append(dataType.fullTypeName);
+                    builder.Append(">(schema))");
+                    builder.AppendLine();
+                    builder.BeginGroup();
+                    {
+                        builder.AppendLine("return false;");
+                    }
+                    builder.EndGroup();
+                    builder.AppendLine();
+                }
+
+                builder.Length -= 2;
+                return builder.ToString();
+            }
+            else
+            {
+                return null;
+            }
         }
 
         private static string GetDisposeMethod(EntityType type, int indent)
@@ -422,6 +429,219 @@ namespace Worlds.Generators
             return builder.ToString();
         }
 
+        public static string? GetStaticDefinitionGetter(int indent, IReadOnlyList<DataType> requiredTypes)
+        {
+            if (requiredTypes.Count > 0)
+            {
+                List<DataType> componentTypes = new();
+                List<DataType> arrayTypes = new();
+                List<DataType> tagTypes = new();
+                for (int i = 0; i < requiredTypes.Count; i++)
+                {
+                    DataType requiredType = requiredTypes[i];
+                    if (requiredType.kind == DataKind.Component)
+                    {
+                        componentTypes.Add(requiredType);
+                    }
+                    else if (requiredType.kind == DataKind.Array)
+                    {
+                        arrayTypes.Add(requiredType);
+                    }
+                    else if (requiredType.kind == DataKind.Tag)
+                    {
+                        tagTypes.Add(requiredType);
+                    }
+                }
+
+                SourceBuilder builder = new();
+                builder.Indent(indent);
+
+                builder.AppendLine();
+                builder.Append("/// <summary>");
+                builder.AppendLine();
+                builder.Append("/// Retrieves the definition that this entity argues in order for it to be compliant.");
+                builder.AppendLine();
+                builder.Append("/// </summary>");
+                builder.AppendLine();
+                builder.Append("public static Definition GetDescribedDefinition(World world)");
+                builder.AppendLine();
+                builder.BeginGroup();
+                {
+                    builder.Append("Schema schema = world.Schema;");
+                    builder.AppendLine();
+                    builder.Append("BitMask componentTypes = new(");
+                    for (int i = 0; i < componentTypes.Count; i++)
+                    {
+                        DataType requiredType = componentTypes[i];
+                        builder.Append("schema.GetComponentType<");
+                        builder.Append(requiredType.fullTypeName);
+                        builder.Append(">()");
+                        if (i != componentTypes.Count - 1)
+                        {
+                            builder.Append(',');
+                            builder.Append(' ');
+                        }
+                    }
+
+                    builder.Append(");");
+                    builder.AppendLine();
+                    builder.Append("BitMask arrayTypes = new(");
+                    for (int i = 0; i < arrayTypes.Count; i++)
+                    {
+                        DataType requiredType = arrayTypes[i];
+                        builder.Append("schema.GetArrayType<");
+                        builder.Append(requiredType.fullTypeName);
+                        builder.Append(">()");
+                        if (i != arrayTypes.Count - 1)
+                        {
+                            builder.Append(',');
+                            builder.Append(' ');
+                        }
+                    }
+
+                    builder.Append(");");
+                    builder.AppendLine();
+                    builder.Append("BitMask tagTypes = new(");
+                    for (int i = 0; i < tagTypes.Count; i++)
+                    {
+                        DataType requiredType = tagTypes[i];
+                        builder.Append("schema.GetTagType<");
+                        builder.Append(requiredType.fullTypeName);
+                        builder.Append(">()");
+                        if (i != tagTypes.Count - 1)
+                        {
+                            builder.Append(',');
+                            builder.Append(' ');
+                        }
+                    }
+
+                    builder.Append(");");
+                    builder.AppendLine();
+                    builder.Append("return new(componentTypes, arrayTypes, tagTypes);");
+                    builder.AppendLine();
+                }
+                builder.EndGroup();
+                return builder.ToString();
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public static string GetUntilCompliantMethod(int indent, IReadOnlyList<DataType> requiredTypes)
+        {
+            List<DataType> componentTypes = new();
+            List<DataType> arrayTypes = new();
+            List<DataType> tagTypes = new();
+            for (int i = 0; i < requiredTypes.Count; i++)
+            {
+                DataType requiredType = requiredTypes[i];
+                if (requiredType.kind == DataKind.Component)
+                {
+                    componentTypes.Add(requiredType);
+                }
+                else if (requiredType.kind == DataKind.Array)
+                {
+                    arrayTypes.Add(requiredType);
+                }
+                else if (requiredType.kind == DataKind.Tag)
+                {
+                    tagTypes.Add(requiredType);
+                }
+            }
+
+            SourceBuilder builder = new();
+            builder.Indent(indent);
+
+            builder.Append("Schema schema = world.Schema;");
+            builder.AppendLine();
+            
+            builder.Append("BitMask componentTypes = new(");
+            for (int i = 0; i < componentTypes.Count; i++)
+            {
+                DataType componentType = componentTypes[i];
+                builder.Append("schema.GetComponentType<");
+                builder.Append(componentType.fullTypeName);
+                builder.Append(">()");
+
+                if (i != componentTypes.Count - 1)
+                {
+                    builder.Append(',');
+                    builder.Append(' ');
+                }
+            }
+
+            builder.Append(");");
+            builder.AppendLine();
+            builder.Append("BitMask arrayTypes = new(");
+            for (int i = 0; i < arrayTypes.Count; i++)
+            {
+                DataType requiredType = arrayTypes[i];
+                builder.Append("schema.GetArrayType<");
+                builder.Append(requiredType.fullTypeName);
+                builder.Append(">()");
+
+                if (i != arrayTypes.Count - 1)
+                {
+                    builder.Append(',');
+                    builder.Append(' ');
+                }
+            }
+
+            builder.Append(");");
+            builder.AppendLine();
+            builder.Append("BitMask tagTypes = new(");
+            for (int i = 0; i < tagTypes.Count; i++)
+            {
+                DataType requiredType = tagTypes[i];
+                builder.Append("schema.GetTagType<");
+                builder.Append(requiredType.fullTypeName);
+                builder.Append(">()");
+
+                if (i != tagTypes.Count - 1)
+                {
+                    builder.Append(',');
+                    builder.Append(' ');
+                }
+            }
+
+            builder.Append(");");
+            builder.AppendLine();
+
+            builder.Append("Definition definition;");
+            builder.AppendLine();
+
+            builder.Append("do");
+            builder.AppendLine();
+
+            builder.BeginGroup();
+            {
+                builder.Append("definition = world.GetDefinition(value);");
+                builder.AppendLine();
+                builder.Append("if (");
+                builder.Append("definition.componentTypes.ContainsAll(componentTypes) && ");
+                builder.Append("definition.arrayTypes.ContainsAll(arrayTypes) && ");
+                builder.Append("definition.tagTypes.ContainsAll(tagTypes)");
+                builder.Append(')');
+                builder.AppendLine();
+                builder.BeginGroup();
+                {
+                    builder.Append("return;");
+                    builder.AppendLine();
+                }
+                builder.EndGroup();
+                builder.AppendLine();
+                builder.Append("update();");
+                builder.AppendLine();
+                builder.Append("await Task.Yield();");
+                builder.AppendLine();
+            }
+            builder.EndGroup();
+            builder.Append("while (!cancellationToken.IsCancellationRequested);");
+            return builder.ToString();
+        }
+
         private static bool Predicate(SyntaxNode node, CancellationToken token)
         {
             return node.IsKind(SyntaxKind.StructDeclaration);
@@ -462,14 +682,6 @@ namespace Worlds.Generators
             }
 
             return default;
-        }
-
-        public enum DataType : byte
-        {
-            Unknown = 0,
-            Component = 1,
-            Array = 2,
-            Tag = 3
         }
     }
 }

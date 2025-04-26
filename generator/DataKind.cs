@@ -1,6 +1,6 @@
 ﻿namespace Worlds
 {
-    internal enum DataKind
+    internal enum DataKind : byte
     {
         Unknown,
         Component,

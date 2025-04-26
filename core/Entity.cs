@@ -148,6 +148,14 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves the definition of this entity.
+        /// </summary>
+        public readonly Definition GetDefinition()
+        {
+            return world.GetDefinition(value);
+        }
+
+        /// <summary>
         /// Checks if this entity complies with another entity of type <typeparamref name="T"/>
         /// </summary>
         public unsafe readonly bool Is<T>() where T : unmanaged, IEntity

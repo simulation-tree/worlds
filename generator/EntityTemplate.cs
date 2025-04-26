@@ -126,6 +126,14 @@
     }
 
     /// <summary>
+    /// Retrieves the definition of this entity.
+    /// </summary>
+    public readonly Definition GetDefinition()
+    {
+        return world.GetDefinition(value);
+    }
+
+    /// <summary>
     /// Checks if this entity complies with another entity of type <typeparamref name=""T""/>
     /// </summary>
     public readonly bool Is<T>() where T : unmanaged, IEntity
@@ -153,13 +161,9 @@
     /// <summary>
     /// Waits until the entity becomes compliant with its own type.
     /// </summary>
-    public readonly async Task UntilCompliant(Update update, CancellationToken cancellationToken = default)
+    public readonly async Task UntilCompliant(Action update, CancellationToken cancellationToken = default)
     {
-        while (!IsCompliant)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            await update(world, cancellationToken);
-        }
+        {{UntilCompliant}}
     }
 
     /// <summary>
@@ -667,6 +671,7 @@
         world.RemoveTag<T>(value);
     }
     {{EqualityMethods}}
+    {{StaticDefinitionGetter}}
     /// <summary>
     /// Converts <paramref name=""entity""/> to an <see cref=""Entity""/> instance.
     /// </summary>

@@ -7,6 +7,20 @@ namespace Worlds
         public readonly DataKind kind;
         public readonly string fullTypeName;
 
+        public readonly string Name
+        {
+            get
+            {
+                int index = fullTypeName.LastIndexOf('.');
+                if (index == -1)
+                {
+                    return fullTypeName;
+                }
+
+                return fullTypeName.Substring(index + 1);
+            }
+        }
+
         public DataType(DataKind kind, string fullTypeName)
         {
             this.kind = kind;

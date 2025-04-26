@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Worlds.Tests
 {
@@ -68,6 +70,22 @@ namespace Worlds.Tests
             entity.Become<AnotherEntity>();
             Assert.That(entity.ContainsComponent<Another>(), Is.True);
             Assert.That(entity.Is<AnotherEntity>(), Is.True);
+        }
+
+        [Test, CancelAfter(1000)]
+        public async Task WaitingForEntityCompliance(CancellationToken cancellationToken)
+        {
+            using World world = CreateWorld();
+            Entity entity = new(world);
+            Assert.That(entity.Is<AnotherEntity>(), Is.False);
+            AnotherEntity anotherEntity = entity.As<AnotherEntity>();
+            Assert.That(anotherEntity.IsCompliant, Is.False);
+            await anotherEntity.UntilCompliant(() =>
+            {
+                entity.AddComponent(new Another(1337));
+                entity.CreateArray<Byte>();
+            }, cancellationToken);
+            Assert.That(anotherEntity.IsCompliant, Is.True);
         }
     }
 }
