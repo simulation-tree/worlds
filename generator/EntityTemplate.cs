@@ -73,6 +73,11 @@
         }
     }
 
+    /// <summary>
+    /// Retrieves the current definition this entity possesses.
+    /// </summary>
+    public readonly Definition Definition => world.GetDefinition(value);
+
 #if NET
     /// <inheritdoc/>
     [Obsolete(""Default constructor not supported"", true)]
@@ -123,14 +128,6 @@
     public readonly int CopyChildrenTo(Span<uint> destination)
     {
         return world.CopyChildrenTo(value, destination);
-    }
-
-    /// <summary>
-    /// Retrieves the definition of this entity.
-    /// </summary>
-    public readonly Definition GetDefinition()
-    {
-        return world.GetDefinition(value);
     }
 
     /// <summary>

@@ -531,6 +531,11 @@ namespace Worlds.Generators
 
         public static string GetUntilCompliantMethod(int indent, IReadOnlyList<DataType> requiredTypes)
         {
+            if (requiredTypes.Count == 0)
+            {
+                return "await Task.CompletedTask;";
+            }
+
             List<DataType> componentTypes = new();
             List<DataType> arrayTypes = new();
             List<DataType> tagTypes = new();
@@ -556,58 +561,69 @@ namespace Worlds.Generators
 
             builder.Append("Schema schema = world.Schema;");
             builder.AppendLine();
-            
-            builder.Append("BitMask componentTypes = new(");
-            for (int i = 0; i < componentTypes.Count; i++)
-            {
-                DataType componentType = componentTypes[i];
-                builder.Append("schema.GetComponentType<");
-                builder.Append(componentType.fullTypeName);
-                builder.Append(">()");
 
-                if (i != componentTypes.Count - 1)
+            if (componentTypes.Count > 0)
+            {
+                builder.Append("BitMask componentTypes = new(");
+                for (int i = 0; i < componentTypes.Count; i++)
                 {
-                    builder.Append(',');
-                    builder.Append(' ');
+                    DataType componentType = componentTypes[i];
+                    builder.Append("schema.GetComponentType<");
+                    builder.Append(componentType.fullTypeName);
+                    builder.Append(">()");
+
+                    if (i != componentTypes.Count - 1)
+                    {
+                        builder.Append(',');
+                        builder.Append(' ');
+                    }
                 }
+
+                builder.Append(");");
+                builder.AppendLine();
             }
 
-            builder.Append(");");
-            builder.AppendLine();
-            builder.Append("BitMask arrayTypes = new(");
-            for (int i = 0; i < arrayTypes.Count; i++)
+            if (arrayTypes.Count > 0)
             {
-                DataType requiredType = arrayTypes[i];
-                builder.Append("schema.GetArrayType<");
-                builder.Append(requiredType.fullTypeName);
-                builder.Append(">()");
-
-                if (i != arrayTypes.Count - 1)
+                builder.Append("BitMask arrayTypes = new(");
+                for (int i = 0; i < arrayTypes.Count; i++)
                 {
-                    builder.Append(',');
-                    builder.Append(' ');
+                    DataType requiredType = arrayTypes[i];
+                    builder.Append("schema.GetArrayType<");
+                    builder.Append(requiredType.fullTypeName);
+                    builder.Append(">()");
+
+                    if (i != arrayTypes.Count - 1)
+                    {
+                        builder.Append(',');
+                        builder.Append(' ');
+                    }
                 }
+
+                builder.Append(");");
+                builder.AppendLine();
             }
 
-            builder.Append(");");
-            builder.AppendLine();
-            builder.Append("BitMask tagTypes = new(");
-            for (int i = 0; i < tagTypes.Count; i++)
+            if (tagTypes.Count > 0)
             {
-                DataType requiredType = tagTypes[i];
-                builder.Append("schema.GetTagType<");
-                builder.Append(requiredType.fullTypeName);
-                builder.Append(">()");
-
-                if (i != tagTypes.Count - 1)
+                builder.Append("BitMask tagTypes = new(");
+                for (int i = 0; i < tagTypes.Count; i++)
                 {
-                    builder.Append(',');
-                    builder.Append(' ');
-                }
-            }
+                    DataType requiredType = tagTypes[i];
+                    builder.Append("schema.GetTagType<");
+                    builder.Append(requiredType.fullTypeName);
+                    builder.Append(">()");
 
-            builder.Append(");");
-            builder.AppendLine();
+                    if (i != tagTypes.Count - 1)
+                    {
+                        builder.Append(',');
+                        builder.Append(' ');
+                    }
+                }
+
+                builder.Append(");");
+                builder.AppendLine();
+            }
 
             builder.Append("Definition definition;");
             builder.AppendLine();
@@ -620,9 +636,36 @@ namespace Worlds.Generators
                 builder.Append("definition = world.GetDefinition(value);");
                 builder.AppendLine();
                 builder.Append("if (");
-                builder.Append("definition.componentTypes.ContainsAll(componentTypes) && ");
-                builder.Append("definition.arrayTypes.ContainsAll(arrayTypes) && ");
-                builder.Append("definition.tagTypes.ContainsAll(tagTypes)");
+
+                bool buildingCondition = false;
+                if (componentTypes.Count > 0)
+                {
+                    builder.Append("componentTypes.ContainsAll(definition.componentTypes)");
+                    buildingCondition = true;
+                }
+
+                if (arrayTypes.Count > 0)
+                {
+                    if (buildingCondition)
+                    {
+                        builder.Append(" && ");
+                    }
+
+                    builder.Append("arrayTypes.ContainsAll(definition.arrayTypes)");
+                    buildingCondition = true;
+                }
+
+                if (tagTypes.Count > 0)
+                {
+                    if (buildingCondition)
+                    {
+                        builder.Append(" && ");
+                    }
+
+                    builder.Append("tagTypes.ContainsAll(definition.tagTypes)");
+                    buildingCondition = true;
+                }
+
                 builder.Append(')');
                 builder.AppendLine();
                 builder.BeginGroup();
