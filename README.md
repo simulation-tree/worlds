@@ -210,7 +210,7 @@ entity.AddComponent(new Fruit(1337));
 ref Fruit component = ref entity.GetComponent<Fruit>();
 component.value *= 2;
 
-Values<char> many = entity.CreateArray<char>("Hello world".AsSpan());
+Span<char> text = entity.CreateArray<char>("Hello world".AsSpan());
 ```
 
 ### Forming entity types
@@ -250,22 +250,19 @@ These types can then be used to transform or interpret existing entities:
 ```cs
 //creating an entity, and making it into a player
 Entity supposedPlayer = new(world);
+Assert.That(supposedPlayer.Is<Player>(), Is.False);
 supposedPlayer.Become<Player>();
-
-if (!supposedPlayer.Is<Player>())
-{
-    throw new InvalidOperationException($"Entity `{supposedPlayer}` was expected to be a player");
-}
+Assert.That(supposedPlayer.Is<Player>(), Is.True);
 
 Player player = supposedPlayer.As<Player>();
+Assert.That(player.IsCompliant, Is.True);
 player.Name = "New name";
 ```
 
-The custom `IEntity` types can be implicitly casted to `Entity`, and back:
+These entity types can be implicitly casted to `Entity`, and explicitly back:
 ```cs
 Player player = new(world, "unnamed");
 Entity entity = player;
-
 player = entity.As<Player>();
 ```
 
@@ -295,7 +292,7 @@ anotherWorld.Append(loadedWorld);
 When worlds are serialized, they contain the original schema that was used. Storing
 the original `TypeLayout` values for describing each component/array/tag type.
 Allowing for them to be processed when loaded in a different executable, and rerouting types
-to other available ones if the original type isn't:
+to other types if the original isn't:
 ```cs
 using World loadedWorld = World.Deserialize(reader, Process);
 
@@ -303,7 +300,7 @@ static TypeLayout Process(TypeLayout type, DataType.Kind dataType)
 {
     if (type.Name.SequenceEquals("Fruit") && type.Size == sizeof(uint))
     {
-        //change the type to uint
+        //Fruit type not in this project, change to uint
         return MetadataRegistry.GetType<uint>();
     }
     else
