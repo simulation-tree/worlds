@@ -12,7 +12,7 @@ namespace Worlds.Tests
             using World world = CreateWorld();
             using Operation operation = new();
             Assert.That(operation.Count, Is.EqualTo(0));
-            operation.CreateEntity();
+            operation.CreateEntityAndSelect();
             operation.AddComponent(new TestComponent(1337));
             operation.Perform(world);
             uint entity = world[0];
@@ -52,7 +52,7 @@ namespace Worlds.Tests
         {
             using World world = CreateWorld();
             using Operation operation = new();
-            operation.CreateEntities(40);
+            operation.CreateEntitiesAndSelect(40);
             operation.AddComponent(new TestComponent(2));
             operation.Perform(world);
             using List<uint> createdEntities = new();
@@ -70,15 +70,15 @@ namespace Worlds.Tests
         {
             using Schema schema = CreateSchema();
             using Operation operation = new();
-            operation.CreateEntity();
+            operation.CreateEntityAndSelect();
             operation.AddComponent(new TestComponent(4));
             operation.ClearSelection();
 
-            operation.CreateEntity();
+            operation.CreateEntityAndSelect();
             operation.AddComponent(new TestComponent(5));
             operation.ClearSelection();
 
-            operation.CreateEntity();
+            operation.CreateEntityAndSelect();
             operation.SetParentToPreviouslyCreatedEntity(2);
             operation.AddComponent(new TestComponent(6));
             operation.CreateArray<Character>(3);
@@ -122,7 +122,7 @@ namespace Worlds.Tests
         {
             string testString = "this is not an abacus";
             using Operation operation = new();
-            operation.CreateEntity();
+            operation.CreateEntityAndSelect();
             operation.CreateArray<Character>(testString.Length);
             operation.SetArrayElements(0, testString.AsSpan().As<char, Character>());
 
@@ -138,7 +138,7 @@ namespace Worlds.Tests
         public void ModifyArrayMultipleTimes()
         {
             Operation operation = new();
-            operation.CreateEntity();
+            operation.CreateEntityAndSelect();
             operation.CreateArray<Character>(4);
             operation.SetArrayElement(0, (Character)'a');
 
@@ -173,7 +173,7 @@ namespace Worlds.Tests
         public void ClearingInstructions()
         {
             using Operation operation = new();
-            operation.CreateEntity();
+            operation.CreateEntityAndSelect();
             operation.AddComponent(new TestComponent(1));
 
             Assert.That(operation.Count, Is.EqualTo(2));
@@ -187,7 +187,7 @@ namespace Worlds.Tests
         public void ResizeExistingArray()
         {
             using Operation operation = new();
-            operation.CreateEntity();
+            operation.CreateEntityAndSelect();
             operation.CreateArray("abcd".AsSpan().As<char, Character>());
 
             using World world = CreateWorld();
@@ -210,7 +210,7 @@ namespace Worlds.Tests
         public void AddOneComponentToSelectedEntity()
         {
             using Operation operation = new();
-            operation.CreateEntity();
+            operation.CreateEntityAndSelect();
             operation.AddComponent(new TestComponent(1));
 
             Assert.That(operation.Count, Is.EqualTo(2));
@@ -222,7 +222,7 @@ namespace Worlds.Tests
             using Operation operation = new();
             for (uint i = 0; i < 5; i++)
             {
-                operation.CreateEntity(false);
+                operation.CreateEntity();
             }
 
             Assert.That(operation.Count, Is.EqualTo(5));

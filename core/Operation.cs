@@ -196,25 +196,44 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Creates a new entity and optionally appends it to the selection.
+        /// Creates a new entity without selecting it.
         /// </summary>
-        public readonly void CreateEntity(bool select = true)
+        public readonly void CreateEntity()
         {
             WriteInstructionType(InstructionType.CreateEntities);
             WriteValue(1u);
-            WriteValue(select);
         }
 
         /// <summary>
-        /// Creates multiple entities and optionally appends them to the selection.
+        /// Creates a new entity and appends it to the selection.
         /// </summary>
-        public readonly void CreateEntities(int count, bool select = true)
+        public readonly void CreateEntityAndSelect()
+        {
+            WriteInstructionType(InstructionType.CreateEntitiesAndSelect);
+            WriteValue(1u);
+        }
+
+        /// <summary>
+        /// Creates multiple entities without selecting them.
+        /// </summary>
+        public readonly void CreateEntities(int count)
         {
             if (count > 0)
             {
                 WriteInstructionType(InstructionType.CreateEntities);
                 WriteValue(count);
-                WriteValue(select);
+            }
+        }
+
+        /// <summary>
+        /// Creates multiple entities and appends them to the selection.
+        /// </summary>
+        public readonly void CreateEntitiesAndSelect(int count)
+        {
+            if (count > 0)
+            {
+                WriteInstructionType(InstructionType.CreateEntitiesAndSelect);
+                WriteValue(count);
             }
         }
 
@@ -585,22 +604,21 @@ namespace Worlds
             private void CreateEntities()
             {
                 int count = operation.Read<int>(ref bytePosition);
-                if (operation.Read<bool>(ref bytePosition))
+                for (int i = 0; i < count; i++)
                 {
-                    for (int i = 0; i < count; i++)
-                    {
-                        uint entity = world.CreateEntity();
-                        history.Add(entity);
-                        selection.Add(entity);
-                    }
+                    uint entity = world.CreateEntity();
+                    history.Add(entity);
                 }
-                else
+            }
+
+            private void CreateEntitiesAndSelect()
+            {
+                int count = operation.Read<int>(ref bytePosition);
+                for (int i = 0; i < count; i++)
                 {
-                    for (int i = 0; i < count; i++)
-                    {
-                        uint entity = world.CreateEntity();
-                        history.Add(entity);
-                    }
+                    uint entity = world.CreateEntity();
+                    history.Add(entity);
+                    selection.Add(entity);
                 }
             }
 
@@ -874,6 +892,9 @@ namespace Worlds
                     {
                         case InstructionType.CreateEntities:
                             CreateEntities();
+                            break;
+                        case InstructionType.CreateEntitiesAndSelect:
+                            CreateEntitiesAndSelect();
                             break;
                         case InstructionType.DestroySelectedEntities:
                             DestroySelectedEntities();

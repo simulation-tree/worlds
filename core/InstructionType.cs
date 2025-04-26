@@ -11,6 +11,11 @@
         CreateEntities,
 
         /// <summary> 
+        /// Creates entities and selects them. 
+        /// </summary>
+        CreateEntitiesAndSelect,
+
+        /// <summary> 
         /// Destroys selected entities. 
         /// </summary>
         DestroySelectedEntities,
