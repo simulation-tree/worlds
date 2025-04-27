@@ -23,7 +23,7 @@ namespace Worlds
         public readonly bool IsDisposed => operation is null;
 
         /// <summary>
-        /// Counts how many instructions there are.
+        /// Count of how many instructions are written to be performed.
         /// </summary>
         public readonly int Count
         {
@@ -185,9 +185,9 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Clears the operation of all instructions.
+        /// Resets the operation and makes it empty.
         /// </summary>
-        public readonly void Clear()
+        public readonly void Reset()
         {
             MemoryAddress.ThrowIfDefault(operation);
 
@@ -549,8 +549,8 @@ namespace Worlds
 
             if (operation->count > 0)
             {
-                using List<uint> history = new(4);
-                using List<uint> selection = new(4);
+                using List<uint> history = new(operation->count);
+                using List<uint> selection = new(operation->count);
                 Performing performing = new(this, world, history, selection);
                 performing.Do();
             }

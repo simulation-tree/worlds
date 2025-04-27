@@ -155,7 +155,7 @@ namespace Worlds.Tests
             Assert.That((char)list[3], Is.EqualTo('\0'));
             Assert.That(world.GetArrayLength<Character>(entity), Is.EqualTo(4));
 
-            operation.Clear();
+            operation.Reset();
             operation.SelectEntity(entity);
             operation.SetArrayElements<Character>(1, ['b', 'c']);
 
@@ -178,7 +178,7 @@ namespace Worlds.Tests
 
             Assert.That(operation.Count, Is.EqualTo(2));
 
-            operation.Clear();
+            operation.Reset();
 
             Assert.That(operation.Count, Is.EqualTo(0));
         }
@@ -197,7 +197,7 @@ namespace Worlds.Tests
             Assert.That(world.ContainsArray<Character>(entity), Is.True);
             Assert.That(world.GetArrayLength<Character>(entity), Is.EqualTo(4));
 
-            operation.Clear();
+            operation.Reset();
             operation.SelectEntity(entity);
             operation.ResizeArray<Character>(8);
 
@@ -243,7 +243,7 @@ namespace Worlds.Tests
                 Assert.That(world.ContainsComponent<SimpleComponent>(i), Is.True);
             }
 
-            operation.Clear();
+            operation.Reset();
             for (uint i = 1; i <= 5; i++)
             {
                 operation.SelectEntity(i);
@@ -259,7 +259,7 @@ namespace Worlds.Tests
                 Assert.That(world.ContainsComponent<SimpleComponent>(i), Is.True);
             }
 
-            operation.Clear();
+            operation.Reset();
             for (uint i = 1; i <= 5; i++)
             {
                 operation.SelectEntity(i);
@@ -297,7 +297,7 @@ namespace Worlds.Tests
                 Assert.That(world.ContainsComponent<SimpleComponent>(entities[i]), Is.True);
             }
 
-            operation.Clear();
+            operation.Reset();
             operation.SelectEntities(entities);
             operation.RemoveComponent<TestComponent>();
             operation.RemoveComponent<SimpleComponent>();
