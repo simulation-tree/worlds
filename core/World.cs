@@ -1135,6 +1135,51 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Creates entities to fill the given <paramref name="destination"/>,
+        /// with the given <paramref name="definition"/>.
+        /// </summary>
+        public readonly void CreateEntities(Span<uint> destination, Definition definition)
+        {
+            MemoryAddress.ThrowIfDefault(world);
+
+            int freeEntities = world->freeEntities.Count;
+            int newEntities = destination.Length - freeEntities;
+            int startIndex = world->slots.Count;
+            if (newEntities > 0)
+            {
+                world->slots.AddDefault(newEntities);
+                world->arrays.AddDefault(newEntities);
+            }
+
+            Chunk chunk = world->chunks.GetOrCreate(definition);
+            int created = 0;
+            Span<Slot> slots = world->slots.AsSpan();
+            for (int i = 0; i < freeEntities; i++)
+            {
+                uint entity = world->freeEntities.Pop();
+                ref Slot slot = ref slots[(int)entity];
+                slot.state = Slot.State.Enabled;
+                slot.chunk = chunk;
+                slot.chunk.AddEntity(entity, ref slot.index);
+                TraceCreation(entity);
+                NotifyCreation(entity);
+                destination[created++] = entity;
+            }
+
+            for (int i = 0; i < newEntities; i++)
+            {
+                uint entity = (uint)(i + startIndex);
+                ref Slot slot = ref slots[(int)entity];
+                slot.state = Slot.State.Enabled;
+                slot.chunk = chunk;
+                slot.chunk.AddEntity(entity, ref slot.index);
+                TraceCreation(entity);
+                NotifyCreation(entity);
+                destination[created++] = entity;
+            }
+        }
+
+        /// <summary>
         /// Checks if the given <paramref name="entity"/> exists and is valid in this world.
         /// </summary>
         public readonly bool ContainsEntity(uint entity)
@@ -2351,6 +2396,33 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Adds a <typeparamref name="T"/> component with <see langword="default"/> memory to <paramref name="entity"/>.
+        /// </summary>
+        public readonly void AddComponentType<T>(uint entity) where T : unmanaged
+        {
+            MemoryAddress.ThrowIfDefault(world);
+            ThrowIfEntityIsMissing(entity);
+
+            int componentType = world->schema.GetComponentType<T>();
+            ThrowIfComponentAlreadyPresent(entity, componentType);
+
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
+
+            if (entity != slot.chunk.chunk->lastEntity)
+            {
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
+            }
+
+            Definition definition = slot.chunk.chunk->definition;
+            definition.AddComponentType(componentType);
+            Chunk destinationChunk = world->chunks.GetOrCreate(definition);
+            Chunk.MoveEntityAt(entity, ref slot.index, ref slot.chunk, destinationChunk);
+            world->version++;
+            NotifyComponentAdded(entity, componentType);
+        }
+
+        /// <summary>
         /// Adds <see langword="default"/> instances of the given <paramref name="componentTypes"/>.
         /// </summary>
         public readonly void AddComponentTypes(uint entity, BitMask componentTypes)
@@ -2912,6 +2984,19 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
 
             int componentType = world->schema.GetComponentType<T>();
+            ThrowIfComponentMissing(entity, componentType);
+
+            ref Slot slot = ref world->slots[entity];
+            slot.chunk.SetComponent(slot.index, componentType, component);
+        }
+
+        /// <summary>
+        /// Assigns the given <paramref name="component"/> to the given <paramref name="entity"/>.
+        /// </summary>
+        public readonly void SetComponent<T>(uint entity, int componentType, T component) where T : unmanaged
+        {
+            MemoryAddress.ThrowIfDefault(world);
+            ThrowIfEntityIsMissing(entity);
             ThrowIfComponentMissing(entity, componentType);
 
             ref Slot slot = ref world->slots[entity];
