@@ -53,17 +53,17 @@ namespace Worlds
             occupied = new(chunkMap->occupied.Pointer, newCapacity);
             hashCodes = new(chunkMap->hashCodes.Pointer, newCapacity);
             values = new(chunkMap->keys.Pointer, newCapacity);
-
+            newCapacity--;
             for (int i = 0; i < oldCapacity; i++)
             {
                 if (oldOccupiedSpan[i])
                 {
                     ChunkKey value = oldValuesSpan[i];
                     long hashCode = value.definition.GetLongHashCode();
-                    int index = unchecked((int)(((uint)hashCode) % (uint)newCapacity));
+                    int index = unchecked((int)(((uint)hashCode) & (uint)newCapacity));
                     while (occupied[index])
                     {
-                        index = (index + 1) % newCapacity;
+                        index = (index + 1) & newCapacity;
                     }
 
                     occupied[index] = true;
@@ -91,36 +91,51 @@ namespace Worlds
 
             int capacity = chunkMap->capacity;
             long hashCode = definition.GetLongHashCode();
-            int index = unchecked((int)(((uint)hashCode) % (uint)capacity));
-            int startIndex = index;
             Span<bool> occupied = new(chunkMap->occupied.Pointer, capacity);
             Span<ChunkKey> values = new(chunkMap->keys.Pointer, capacity);
             Span<long> hashCodes = new(chunkMap->hashCodes.Pointer, capacity);
+            capacity--;
+            int index = unchecked((int)(((uint)hashCode) & (uint)capacity));
+            int startIndex = index;
             while (occupied[index])
             {
                 if (hashCodes[index] == hashCode)
                 {
                     ChunkKey key = values[index];
-                    if (key.definition.componentTypes == definition.componentTypes && key.definition.arrayTypes == definition.arrayTypes && key.definition.tagTypes == definition.tagTypes)
+                    if (key.definition.componentTypes.a == definition.componentTypes.a &&
+                           key.definition.componentTypes.b == definition.componentTypes.b &&
+                           key.definition.componentTypes.c == definition.componentTypes.c &&
+                           key.definition.componentTypes.d == definition.componentTypes.d &&
+                           key.definition.arrayTypes.a == definition.arrayTypes.a &&
+                           key.definition.arrayTypes.b == definition.arrayTypes.b &&
+                           key.definition.arrayTypes.c == definition.arrayTypes.c &&
+                           key.definition.arrayTypes.d == definition.arrayTypes.d &&
+                           key.definition.tagTypes.a == definition.tagTypes.a &&
+                           key.definition.tagTypes.b == definition.tagTypes.b &&
+                           key.definition.tagTypes.c == definition.tagTypes.c &&
+                           key.definition.tagTypes.d == definition.tagTypes.d)
                     {
                         return key.chunk;
                     }
                 }
 
-                index = (index + 1) % capacity;
+                index = (index + 1) & capacity;
                 if (index == startIndex)
                 {
                     break;
                 }
             }
 
+            //resize if necessary
             int newCount = chunkMap->count + 1;
-            if (newCount > capacity)
+            if (newCount >= capacity)
             {
+                capacity++;
                 capacity *= 4;
                 Resize(capacity, ref occupied, ref values, ref hashCodes);
             }
 
+            //create new chunk here
             chunkMap->count = newCount;
             Chunk newChunk = new(chunkMap->schema, definition);
             occupied[index] = true;
@@ -134,11 +149,12 @@ namespace Worlds
         {
             int capacity = chunkMap->capacity;
             long hashCode = default(Definition).GetLongHashCode();
-            int index = unchecked((int)(((uint)hashCode) % (uint)capacity));
             Span<bool> occupied = new(chunkMap->occupied.Pointer, capacity);
             Span<ChunkKey> values = new(chunkMap->keys.Pointer, capacity);
             Span<long> hashCodes = new(chunkMap->hashCodes.Pointer, capacity);
             Chunk newDefaultChunk = new(chunkMap->schema);
+            capacity--;
+            int index = unchecked((int)(((uint)hashCode) & (uint)capacity));
             occupied[index] = true;
             hashCodes[index] = hashCode;
             values[index] = new(newDefaultChunk);

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace Worlds
 {
@@ -232,7 +233,18 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly bool Equals(Definition other)
         {
-            return other.arrayTypes == arrayTypes && other.componentTypes == componentTypes && other.tagTypes == tagTypes;
+            return componentTypes.a == other.componentTypes.a &&
+                   componentTypes.b == other.componentTypes.b &&
+                   componentTypes.c == other.componentTypes.c &&
+                   componentTypes.d == other.componentTypes.d &&
+                   arrayTypes.a == other.arrayTypes.a &&
+                   arrayTypes.b == other.arrayTypes.b &&
+                   arrayTypes.c == other.arrayTypes.c &&
+                   arrayTypes.d == other.arrayTypes.d &&
+                   tagTypes.a == other.tagTypes.a &&
+                   tagTypes.b == other.tagTypes.b &&
+                   tagTypes.c == other.tagTypes.c &&
+                   tagTypes.d == other.tagTypes.d;
         }
 
         /// <summary>

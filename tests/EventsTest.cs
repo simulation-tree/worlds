@@ -62,7 +62,7 @@ namespace Worlds.Tests
             Assert.That(events[0].added, Is.True);
             events.Clear();
 
-            world.RemoveComponent<Another>(d);
+            world.RemoveComponentType<Another>(d);
 
             Assert.That(events.Count, Is.EqualTo(1));
             Assert.That(events[0].entity, Is.EqualTo(d));

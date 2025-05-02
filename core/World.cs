@@ -2392,6 +2392,47 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Adds <see langword="default"/> instances of the given <paramref name="componentTypes"/>.
+        /// </summary>
+        public readonly void AddComponentTypes(uint entity, BitMask componentTypes, out Chunk.Row newRow)
+        {
+            MemoryAddress.ThrowIfDefault(world);
+            ThrowIfEntityIsMissing(entity);
+            ThrowIfComponentsAlreadyPresent(entity, componentTypes);
+
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
+
+            if (entity != slot.chunk.chunk->lastEntity)
+            {
+                slots[(int)slot.chunk.chunk->lastEntity].index = slot.index;
+            }
+
+            Definition definition = slot.chunk.chunk->definition;
+            definition.componentTypes |= componentTypes;
+            Chunk destinationChunk = world->chunks.GetOrCreate(definition);
+            Chunk.MoveEntityAt(entity, ref slot.index, ref slot.chunk, destinationChunk, out newRow);
+            world->version++;
+
+            int count = world->entityDataChangedCount;
+            if (count > 0)
+            {
+                for (int c = 0; c < BitMask.Capacity; c++)
+                {
+                    if (componentTypes.Contains(c))
+                    {
+                        DataType type = world->schema.GetComponentDataType(c);
+                        for (int i = 0; i < count; i++)
+                        {
+                            (EntityDataChanged callback, ulong userData) = world->entityDataChanged[i];
+                            callback.Invoke(this, entity, type, true, userData);
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Adds a new <see langword="default"/> component of type <paramref name="componentType"/>.
         /// </summary>
         public readonly void AddComponent(uint entity, int componentType, out MemoryAddress component)
@@ -2502,7 +2543,7 @@ namespace Worlds
         /// <summary>
         /// Removes the component of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
         /// </summary>
-        public readonly void RemoveComponent<T>(uint entity) where T : unmanaged
+        public readonly void RemoveComponentType<T>(uint entity) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
@@ -2529,7 +2570,7 @@ namespace Worlds
         /// <summary>
         /// Removes the component of the given <paramref name="componentType"/> from the given <paramref name="entity"/>.
         /// </summary>
-        public readonly void RemoveComponent(uint entity, int componentType)
+        public readonly void RemoveComponentType(uint entity, int componentType)
         {
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
@@ -2554,7 +2595,7 @@ namespace Worlds
         /// <summary>
         /// Removes the components of the given <paramref name="componentTypes"/> from the given <paramref name="entity"/>.
         /// </summary>
-        public readonly void RemoveComponents(uint entity, BitMask componentTypes)
+        public readonly void RemoveComponentTypes(uint entity, BitMask componentTypes)
         {
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);

@@ -369,9 +369,25 @@
     /// <summary>
     /// Removes the <paramref name=""componentType""/> from this entity.
     /// </summary>
-    public readonly void RemoveComponent(int componentType)
+    public readonly void RemoveComponentType(int componentType)
     {
-        world.RemoveComponent(value, componentType);
+        world.RemoveComponentType(value, componentType);
+    }
+
+    /// <summary>
+    /// Adds the given <paramref name=""componentTypes""/> to this entity.
+    /// </summary>
+    public readonly void AddComponentTypes(BitMask componentTypes)
+    {
+        world.AddComponentTypes(value, componentTypes);
+    }
+
+    /// <summary>
+    /// Removes the <paramref name=""componentTypes""/> from this entity.
+    /// </summary>
+    public readonly void RemoveComponentTypes(BitMask componentTypes)
+    {
+        world.RemoveComponentTypes(value, componentTypes);
     }
 
     /// <summary>
@@ -531,11 +547,371 @@
     }
 
     /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponents<T1, T2>(T1 component1, T2 component2) where T1 : unmanaged where T2 : unmanaged
+    {
+        world.AddComponents(value, component1, component2);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponents<T1, T2, T3>(T1 component1, T2 component2, T3 component3) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+    {
+        world.AddComponents(value, component1, component2, component3);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponents<T1, T2, T3, T4>(T1 component1, T2 component2, T3 component3, T4 component4) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+    {
+        world.AddComponents(value, component1, component2, component3, component4);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponents<T1, T2, T3, T4, T5>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
+    {
+        world.AddComponents(value, component1, component2, component3, component4, component5);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponents<T1, T2, T3, T4, T5, T6>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
+    {
+        world.AddComponents(value, component1, component2, component3, component4, component5, component6);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponents<T1, T2, T3, T4, T5, T6, T7>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
+    {
+        world.AddComponents(value, component1, component2, component3, component4, component5, component6, component7);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponents<T1, T2, T3, T4, T5, T6, T7, T8>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
+    {
+        world.AddComponents(value, component1, component2, component3, component4, component5, component6, component7, component8);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
+    {
+        world.AddComponents(value, component1, component2, component3, component4, component5, component6, component7, component8, component9);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
+    {
+        world.AddComponents(value, component1, component2, component3, component4, component5, component6, component7, component8, component9, component10);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
+    {
+        world.AddComponents(value, component1, component2, component3, component4, component5, component6, component7, component8, component9, component10, component11);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
+    {
+        world.AddComponents(value, component1, component2, component3, component4, component5, component6, component7, component8, component9, component10, component11, component12);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged
+    {
+        world.AddComponents(value, component1, component2, component3, component4, component5, component6, component7, component8, component9, component10, component11, component12, component13);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13, T14 component14) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged
+    {
+        world.AddComponents(value, component1, component2, component3, component4, component5, component6, component7, component8, component9, component10, component11, component12, component13, component14);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13, T14 component14, T15 component15) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged
+    {
+        world.AddComponents(value, component1, component2, component3, component4, component5, component6, component7, component8, component9, component10, component11, component12, component13, component14, component15);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13, T14 component14, T15 component15, T16 component16) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged
+    {
+        world.AddComponents(value, component1, component2, component3, component4, component5, component6, component7, component8, component9, component10, component11, component12, component13, component14, component15, component16);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponentTypes<T1, T2>() where T1 : unmanaged where T2 : unmanaged
+    {
+        world.AddComponentTypes<T1, T2>(value);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponentTypes<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+    {
+        world.AddComponentTypes<T1, T2, T3>(value);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponentTypes<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+    {
+        world.AddComponentTypes<T1, T2, T3, T4>(value);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponentTypes<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
+    {
+        world.AddComponentTypes<T1, T2, T3, T4, T5>(value);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponentTypes<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
+    {
+        world.AddComponentTypes<T1, T2, T3, T4, T5, T6>(value);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponentTypes<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
+    {
+        world.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7>(value);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
+    {
+        world.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>(value);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
+    {
+        world.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(value);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
+    {
+        world.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(value);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
+    {
+        world.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(value);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
+    {
+        world.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(value);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged
+    {
+        world.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(value);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged
+    {
+        world.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(value);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged
+    {
+        world.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(value);
+    }
+
+    /// <summary>
+    /// Adds the given components to this entity.
+    /// </summary>
+    public readonly void AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged
+    {
+        world.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(value);
+    }
+
+    /// <summary>
     /// Removes the component of type <typeparamref name=""T""/> from this entity.
     /// </summary>
-    public readonly void RemoveComponent<T>() where T : unmanaged
+    public readonly void RemoveComponentType<T>() where T : unmanaged
     {
-        world.RemoveComponent<T>(value);
+        world.RemoveComponentType<T>(value);
+    }
+
+    /// <summary>
+    /// Removes components from this entity.
+    /// </summary>
+    public readonly void RemoveComponentTypes<T1, T2>() where T1 : unmanaged where T2 : unmanaged
+    {
+        world.RemoveComponentTypes<T1, T2>(value);
+    }
+
+    /// <summary>
+    /// Removes components from this entity.
+    /// </summary>
+    public readonly void RemoveComponentTypes<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+    {
+        world.RemoveComponentTypes<T1, T2, T3>(value);
+    }
+
+    /// <summary>
+    /// Removes components from this entity.
+    /// </summary>
+    public readonly void RemoveComponentTypes<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+    {
+        world.RemoveComponentTypes<T1, T2, T3, T4>(value);
+    }
+
+    /// <summary>
+    /// Removes components from this entity.
+    /// </summary>
+    public readonly void RemoveComponentTypes<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
+    {
+        world.RemoveComponentTypes<T1, T2, T3, T4, T5>(value);
+    }
+
+    /// <summary>
+    /// Removes components from this entity.
+    /// </summary>
+    public readonly void RemoveComponentTypes<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
+    {
+        world.RemoveComponentTypes<T1, T2, T3, T4, T5, T6>(value);
+    }
+
+    /// <summary>
+    /// Removes components from this entity.
+    /// </summary>
+    public readonly void RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
+    {
+        world.RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7>(value);
+    }
+
+    /// <summary>
+    /// Removes components from this entity.
+    /// </summary>
+    public readonly void RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
+    {
+        world.RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>(value);
+    }
+
+    /// <summary>
+    /// Removes components from this entity.
+    /// </summary>
+    public readonly void RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
+    {
+        world.RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(value);
+    }
+
+    /// <summary>
+    /// Removes components from this entity.
+    /// </summary>
+    public readonly void RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
+    {
+        world.RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(value);
+    }
+
+    /// <summary>
+    /// Removes components from this entity.
+    /// </summary>
+    public readonly void RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
+    {
+        world.RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(value);
+    }
+
+    /// <summary>
+    /// Removes components from this entity.
+    /// </summary>
+    public readonly void RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
+    {
+        world.RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(value);
+    }
+
+    /// <summary>
+    /// Removes components from this entity.
+    /// </summary>
+    public readonly void RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged
+    {
+        world.RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(value);
+    }
+
+    /// <summary>
+    /// Removes components from this entity.
+    /// </summary>
+    public readonly void RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged
+    {
+        world.RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(value);
+    }
+
+    /// <summary>
+    /// Removes components from this entity.
+    /// </summary>
+    public readonly void RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged
+    {
+        world.RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(value);
+    }
+
+    /// <summary>
+    /// Removes components from this entity.
+    /// </summary>
+    public readonly void RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged
+    {
+        world.RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(value);
     }
 
     /// <summary>

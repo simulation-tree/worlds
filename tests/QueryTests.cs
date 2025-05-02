@@ -28,7 +28,7 @@ namespace Worlds.Tests
             }
 
             Assert.That(foundApples, Is.EqualTo(2));
-            world.RemoveComponent<Apple>(a);
+            world.RemoveComponentType<Apple>(a);
             foundApples = 0;
             foreach (var r in appleQuery)
             {

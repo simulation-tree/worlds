@@ -730,7 +730,7 @@ namespace Worlds
                 ReadOnlySpan<uint> selection = this.selection.AsSpan();
                 for (int i = 0; i < selection.Length; i++)
                 {
-                    world.RemoveComponent(selection[i], componentType);
+                    world.RemoveComponentType(selection[i], componentType);
                 }
             }
 

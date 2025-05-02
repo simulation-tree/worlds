@@ -398,7 +398,7 @@ namespace Worlds
         /// </summary>
         public readonly void RemoveComponent(int componentType)
         {
-            world.RemoveComponent(value, componentType);
+            world.RemoveComponentType(value, componentType);
         }
 
         /// <summary>
@@ -510,7 +510,7 @@ namespace Worlds
         /// </summary>
         public readonly void RemoveComponent<T>() where T : unmanaged
         {
-            world.RemoveComponent<T>(value);
+            world.RemoveComponentType<T>(value);
         }
 
         /// <summary>

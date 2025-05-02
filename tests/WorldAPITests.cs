@@ -191,7 +191,7 @@ namespace Worlds.Tests
             world.AddComponent(entity, component);
 
             Assert.That(world.GetComponent<SimpleComponent>(entity), Is.EqualTo(component));
-            world.RemoveComponent<SimpleComponent>(entity);
+            world.RemoveComponentType<SimpleComponent>(entity);
             Assert.That(world.ContainsComponent<SimpleComponent>(entity), Is.False);
             Assert.That(world.ContainsAnyComponent<SimpleComponent>(), Is.False);
             world.AddComponent(entity, component);
@@ -229,7 +229,7 @@ namespace Worlds.Tests
             world.AddComponent(entity, component2);
             Assert.That(world.GetComponent<SimpleComponent>(entity).data.ToString(), Is.EqualTo(component1.data.ToString()));
             Assert.That(world.GetComponent<Another>(entity).data, Is.EqualTo(component2.data));
-            world.RemoveComponent<SimpleComponent>(entity);
+            world.RemoveComponentType<SimpleComponent>(entity);
             Assert.Throws<ComponentIsMissingException>(() => world.GetComponent<SimpleComponent>(entity));
             Assert.That(world.GetComponent<Another>(entity).data, Is.EqualTo(component2.data));
         }
@@ -272,7 +272,7 @@ namespace Worlds.Tests
             Assert.That(world.ContainsComponent<Another>(c), Is.True);
             Assert.That(world.GetComponent<SimpleComponent>(b), Is.EqualTo(world.GetComponent<SimpleComponent>(c)));
             Assert.That(world.GetComponent<Another>(b), Is.EqualTo(world.GetComponent<Another>(c)));
-            world.RemoveComponent<SimpleComponent>(b);
+            world.RemoveComponentType<SimpleComponent>(b);
             Assert.That(world.ContainsComponent<SimpleComponent>(b), Is.False);
             Assert.That(world.GetComponent<Another>(a).data, Is.EqualTo(4));
             Assert.That(world.GetFirstComponent<Another>(out uint found).data, Is.EqualTo(4));
@@ -294,7 +294,7 @@ namespace Worlds.Tests
             Assert.That(world.ContainsComponent<SimpleComponent>(a), Is.True);
             Assert.That(world.GetComponent<Another>(a).data, Is.EqualTo(0));
             Assert.That(world.GetComponent<SimpleComponent>(a).data.ToString(), Is.EqualTo(string.Empty));
-            world.RemoveComponents(a, new BitMask(anotherType, simpleType));
+            world.RemoveComponentTypes(a, new BitMask(anotherType, simpleType));
             Assert.That(world.ContainsComponent<Another>(a), Is.False);
             Assert.That(world.ContainsComponent<SimpleComponent>(a), Is.False);
         }
