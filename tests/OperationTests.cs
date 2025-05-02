@@ -249,7 +249,7 @@ namespace Worlds.Tests
                 operation.SelectEntity(i);
             }
 
-            operation.RemoveComponent<TestComponent>();
+            operation.RemoveComponentType<TestComponent>();
 
             operation.Perform(world);
 
@@ -265,7 +265,7 @@ namespace Worlds.Tests
                 operation.SelectEntity(i);
             }
 
-            operation.RemoveComponent<SimpleComponent>();
+            operation.RemoveComponentType<SimpleComponent>();
 
             operation.Perform(world);
 
@@ -299,8 +299,8 @@ namespace Worlds.Tests
 
             operation.Reset();
             operation.SelectEntities(entities);
-            operation.RemoveComponent<TestComponent>();
-            operation.RemoveComponent<SimpleComponent>();
+            operation.RemoveComponentType<TestComponent>();
+            operation.RemoveComponentType<SimpleComponent>();
 
             operation.Perform(world);
             for (int i = 0; i < entities.Length; i++)

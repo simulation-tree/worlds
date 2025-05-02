@@ -58,12 +58,17 @@
         /// <summary> 
         /// Add a component to selected entities. 
         /// </summary>
+        AddComponentType,
+
+        /// <summary> 
+        /// Add a component to selected entities. 
+        /// </summary>
         AddComponent,
 
         /// <summary> 
         /// Removes a component to selected entities. 
         /// </summary>
-        RemoveComponent,
+        RemoveComponentType,
 
         /// <summary> 
         /// Sets a component on selected entities. 

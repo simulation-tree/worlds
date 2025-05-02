@@ -655,6 +655,17 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves the index for component of <paramref name="type"/>.
+        /// </summary>
+        public readonly int GetComponentType(TypeMetadata type)
+        {
+            ThrowIfComponentTypeIsMissing(type);
+
+            Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
+            return componentTypeHashes.IndexOf(type.hash);
+        }
+
+        /// <summary>
         /// Retrieves the type information for component of type <typeparamref name="T"/>.
         /// </summary>
         public readonly DataType GetComponentDataType<T>() where T : unmanaged
@@ -698,6 +709,17 @@ namespace Worlds
             ThrowIfArrayTypeIsMissing<T>();
 
             return SchemaTypeCache<T>.GetOrSetArrayType(this);
+        }
+
+        /// <summary>
+        /// Retrieves the index for the given <paramref name="arrayType"/>.
+        /// </summary>
+        public readonly int GetArrayType(TypeMetadata arrayType)
+        {
+            ThrowIfArrayTypeIsMissing(arrayType);
+
+            Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
+            return arrayTypeHashes.IndexOf(arrayType.hash);
         }
 
         /// <summary>

@@ -300,11 +300,10 @@ namespace Worlds
         /// <summary>
         /// Adds a <see langword="default"/> component of type <typeparamref name="T"/> to the selected entities.
         /// </summary>
-        public readonly void AddComponent<T>() where T : unmanaged
+        public readonly void AddComponentType<T>() where T : unmanaged
         {
-            WriteInstructionType(InstructionType.AddComponent);
+            WriteInstructionType(InstructionType.AddComponentType);
             WriteTypeLayout(MetadataRegistry.GetType<T>());
-            WriteValue(default(T));
         }
 
         /// <summary>
@@ -330,9 +329,9 @@ namespace Worlds
         /// <summary>
         /// Removes the component of type <typeparamref name="T"/> from the selected entities.
         /// </summary>
-        public readonly void RemoveComponent<T>() where T : unmanaged
+        public readonly void RemoveComponentType<T>() where T : unmanaged
         {
-            WriteInstructionType(InstructionType.RemoveComponent);
+            WriteInstructionType(InstructionType.RemoveComponentType);
             WriteTypeLayout(MetadataRegistry.GetType<T>());
         }
 
@@ -688,6 +687,17 @@ namespace Worlds
                 }
             }
 
+            private void AddComponentType()
+            {
+                TypeMetadata layout = operation.ReadTypeLayout(ref bytePosition);
+                int componentType = world.world->schema.GetComponentType(layout);
+                ReadOnlySpan<uint> selection = this.selection.AsSpan();
+                for (int i = 0; i < selection.Length; i++)
+                {
+                    world.AddComponentType(selection[i], componentType);
+                }
+            }
+
             private void SetComponent()
             {
                 TypeMetadata layout = operation.ReadTypeLayout(ref bytePosition);
@@ -722,11 +732,10 @@ namespace Worlds
                 }
             }
 
-            private void RemoveComponent()
+            private void RemoveComponentType()
             {
                 TypeMetadata layout = operation.ReadTypeLayout(ref bytePosition);
-                DataType dataType = world.world->schema.GetComponentDataType(layout);
-                int componentType = dataType.index;
+                int componentType = world.world->schema.GetComponentType(layout);
                 ReadOnlySpan<uint> selection = this.selection.AsSpan();
                 for (int i = 0; i < selection.Length; i++)
                 {
@@ -785,8 +794,7 @@ namespace Worlds
             private void ResizeArray()
             {
                 TypeMetadata layout = operation.ReadTypeLayout(ref bytePosition);
-                DataType dataType = world.world->schema.GetArrayDataType(layout);
-                int arrayType = dataType.index;
+                int arrayType = world.world->schema.GetArrayType(layout);
                 int length = operation.Read<int>(ref bytePosition);
                 ReadOnlySpan<uint> selection = this.selection.AsSpan();
                 for (int i = 0; i < selection.Length; i++)
@@ -803,13 +811,12 @@ namespace Worlds
                 int length = operation.Read<int>(ref bytePosition);
                 DataType dataType = world.world->schema.GetArrayDataType(layout);
                 int arrayType = dataType.index;
-                int stride = dataType.size;
-                ReadOnlySpan<byte> bytes = operation.ReadBytes(stride * length, ref bytePosition);
+                ReadOnlySpan<byte> bytes = operation.ReadBytes(dataType.size * length, ref bytePosition);
                 ReadOnlySpan<uint> selection = this.selection.AsSpan();
                 for (int i = 0; i < selection.Length; i++)
                 {
                     Values array = world.GetArray(selection[i], arrayType);
-                    MemoryAddress memory = array.Read(index * stride);
+                    MemoryAddress memory = array.Read(index * dataType.size);
                     memory.CopyFrom(bytes);
                 }
             }
@@ -914,6 +921,9 @@ namespace Worlds
                         case InstructionType.Disable:
                             DisableEntities();
                             break;
+                        case InstructionType.AddComponentType:
+                            AddComponentType();
+                            break;
                         case InstructionType.AddComponent:
                             AddComponent();
                             break;
@@ -923,8 +933,8 @@ namespace Worlds
                         case InstructionType.AddOrSetComponent:
                             AddOrSetComponent();
                             break;
-                        case InstructionType.RemoveComponent:
-                            RemoveComponent();
+                        case InstructionType.RemoveComponentType:
+                            RemoveComponentType();
                             break;
                         case InstructionType.RemoveReference:
                             RemoveReference();
