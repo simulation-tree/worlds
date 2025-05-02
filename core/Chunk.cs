@@ -278,7 +278,7 @@ namespace Worlds
             /// </summary>
             public readonly MemoryAddress GetComponent(int componentType)
             {
-                return row.Read(schema.schema->componentOffsets.ReadElement<int>(componentType));
+                return row.Read(schema.schema->componentOffsets[componentType]);
             }
 
             /// <summary>
@@ -286,7 +286,7 @@ namespace Worlds
             /// </summary>
             public readonly ref T GetComponent<T>(int componentType) where T : unmanaged
             {
-                return ref row.Read<T>(schema.schema->componentOffsets.ReadElement<int>(componentType));
+                return ref row.Read<T>(schema.schema->componentOffsets[componentType]);
             }
 
             /// <summary>
@@ -294,7 +294,7 @@ namespace Worlds
             /// </summary>
             public readonly void SetComponent<T>(int componentType, T value) where T : unmanaged
             {
-                row.Write(schema.schema->componentOffsets.ReadElement<int>(componentType), value);
+                row.Write(schema.schema->componentOffsets[componentType], value);
             }
 
             /// <summary>
@@ -302,7 +302,7 @@ namespace Worlds
             /// </summary>
             public readonly Span<byte> GetSpan(int componentType)
             {
-                return row.AsSpan(schema.schema->componentOffsets.ReadElement<int>(componentType), schema.schema->sizes.ReadElement<int>(componentType));
+                return row.AsSpan(schema.schema->componentOffsets[componentType], schema.schema->sizes[componentType]);
             }
         }
 

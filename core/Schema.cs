@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Types;
 using Unmanaged;
 using Worlds.Pointers;
@@ -44,7 +45,7 @@ namespace Worlds
         /// <summary>
         /// How many component types have been registered in the schema.
         /// </summary>
-        public readonly byte ComponentCount
+        public readonly int ComponentCount
         {
             get
             {
@@ -57,7 +58,7 @@ namespace Worlds
         /// <summary>
         /// How many array types have been registered.
         /// </summary>
-        public readonly byte ArrayCount
+        public readonly int ArrayCount
         {
             get
             {
@@ -70,7 +71,7 @@ namespace Worlds
         /// <summary>
         /// How many tag types have been registered.
         /// </summary>
-        public readonly byte TagCount
+        public readonly int TagCount
         {
             get
             {
@@ -216,9 +217,9 @@ namespace Worlds
             schema->tagsCount = 0;
             schema->componentRowSize = 0;
             schema->definitionMask = Definition.Default;
-            schema->componentOffsets = MemoryAddress.AllocateZeroed(OffsetsLengthInBytes);
-            schema->sizes = MemoryAddress.AllocateZeroed(SizesLengthInBytes);
-            schema->typeHashes = MemoryAddress.AllocateZeroed(TypeHashesLengthInBytes);
+            schema->componentOffsets = (int*)MemoryAddress.AllocateZeroed(OffsetsLengthInBytes).Pointer;
+            schema->sizes = (int*)MemoryAddress.AllocateZeroed(SizesLengthInBytes).Pointer;
+            schema->typeHashes = (long*)MemoryAddress.AllocateZeroed(TypeHashesLengthInBytes).Pointer;
             schema->schemaIndex = createdSchemas;
             createdSchemas++;
         }
@@ -237,9 +238,9 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            schema->componentOffsets.Dispose();
-            schema->sizes.Dispose();
-            schema->typeHashes.Dispose();
+            MemoryAddress.Free(ref schema->componentOffsets);
+            MemoryAddress.Free(ref schema->sizes);
+            MemoryAddress.Free(ref schema->typeHashes);
             MemoryAddress.Free(ref schema);
         }
 
@@ -250,9 +251,9 @@ namespace Worlds
             schema->tagsCount = source.schema->tagsCount;
             schema->definitionMask = source.schema->definitionMask;
             schema->componentRowSize = source.schema->componentRowSize;
-            schema->componentOffsets.CopyFrom(source.schema->componentOffsets, OffsetsLengthInBytes);
-            source.schema->sizes.CopyTo(schema->sizes, SizesLengthInBytes);
-            source.schema->typeHashes.CopyTo(schema->typeHashes, TypeHashesLengthInBytes);
+            NativeMemory.Copy(source.schema->componentOffsets, schema->componentOffsets, OffsetsLengthInBytes);
+            NativeMemory.Copy(source.schema->sizes, schema->sizes, SizesLengthInBytes);
+            NativeMemory.Copy(source.schema->typeHashes, schema->typeHashes, TypeHashesLengthInBytes);
         }
 
         /// <summary>
@@ -260,7 +261,7 @@ namespace Worlds
         /// </summary>
         public readonly int GetComponentSize(int componentType)
         {
-            return schema->sizes.ReadElement<int>(componentType);
+            return schema->sizes[componentType];
         }
 
         /// <summary>
@@ -268,7 +269,7 @@ namespace Worlds
         /// </summary>
         public readonly int GetArraySize(int arrayType)
         {
-            return schema->sizes.ReadElement<int>(BitMask.Capacity + arrayType);
+            return schema->sizes[BitMask.Capacity + arrayType];
         }
 
         /// <summary>
@@ -279,7 +280,7 @@ namespace Worlds
         {
             ThrowIfComponentTypeIsMissing<T>();
 
-            return schema->componentOffsets.ReadElement<int>(GetComponentType<T>());
+            return schema->componentOffsets[GetComponentType<T>()];
         }
 
         /// <summary>
@@ -288,7 +289,7 @@ namespace Worlds
         /// </summary>
         public readonly int GetComponentOffset(int componentType)
         {
-            return schema->componentOffsets.ReadElement<int>(componentType);
+            return schema->componentOffsets[componentType];
         }
 
         /// <summary>
@@ -341,7 +342,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(schema);
             ThrowIfComponentTypeIsMissing(componentType);
 
-            Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
+            Span<long> componentTypeHashes = new(schema->typeHashes, BitMask.Capacity);
             long hash = componentTypeHashes[componentType];
             return new(hash);
         }
@@ -354,8 +355,8 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(schema);
             ThrowIfArrayTypeIsMissing(arrayType);
 
-            Span<TypeMetadata> arrayTypeHashes = schema->typeHashes.AsSpan<TypeMetadata>(BitMask.Capacity, BitMask.Capacity);
-            return arrayTypeHashes[arrayType];
+            Span<TypeMetadata> arrayTypeHashes = new(schema->typeHashes, BitMask.Capacity * 3);
+            return arrayTypeHashes[arrayType + BitMask.Capacity];
         }
 
         /// <summary>
@@ -366,8 +367,8 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(schema);
             ThrowIfTagIsMissing(tagType);
 
-            Span<TypeMetadata> tagTypeHashes = schema->typeHashes.AsSpan<TypeMetadata>(BitMask.Capacity * 2, BitMask.Capacity);
-            return tagTypeHashes[tagType];
+            Span<TypeMetadata> tagTypeHashes = new(schema->typeHashes, BitMask.Capacity * 3);
+            return tagTypeHashes[tagType + BitMask.Capacity * 2];
         }
 
         /// <summary>
@@ -403,10 +404,10 @@ namespace Worlds
             ThrowIfTooManyComponents();
 
             componentType = schema->componentCount;
-            schema->componentOffsets.WriteElement(componentType, schema->componentRowSize);
-            schema->sizes.WriteElement(componentType, (int)type.Size);
-            schema->typeHashes.WriteElement(componentType, type);
-            schema->componentCount++;
+            schema->componentOffsets[componentType] = schema->componentRowSize;
+            schema->sizes[componentType] = type.Size;
+            schema->typeHashes[componentType] = type.hash;
+            schema->componentCount = componentType + 1;
             schema->componentRowSize += type.Size;
             schema->definitionMask.AddComponentType(componentType);
             return componentType;
@@ -437,11 +438,9 @@ namespace Worlds
             ThrowIfTooManyArrays();
 
             arrayType = schema->arraysCount;
-            Span<int> arraySizes = schema->sizes.AsSpan<int>(BitMask.Capacity, BitMask.Capacity);
-            Span<TypeMetadata> arrayHashes = schema->typeHashes.AsSpan<TypeMetadata>(BitMask.Capacity, BitMask.Capacity);
-            arraySizes[schema->arraysCount] = type.Size;
-            arrayHashes[schema->arraysCount] = type;
-            schema->arraysCount++;
+            schema->sizes[schema->arraysCount + BitMask.Capacity] = type.Size;
+            schema->typeHashes[schema->arraysCount + BitMask.Capacity] = type.hash;
+            schema->arraysCount = arrayType + 1;
             schema->definitionMask.AddArrayType(arrayType);
             return arrayType;
         }
@@ -471,10 +470,9 @@ namespace Worlds
             ThrowIfTooManyTags();
 
             tagType = schema->tagsCount;
-            Span<TypeMetadata> tagHashes = schema->typeHashes.AsSpan<TypeMetadata>(BitMask.Capacity * 2, BitMask.Capacity);
-            tagHashes[tagType] = type;
+            schema->typeHashes[tagType + BitMask.Capacity * 2] = type.hash;
             schema->definitionMask.AddTagType(tagType);
-            schema->tagsCount++;
+            schema->tagsCount = tagType + 1;
             return tagType;
         }
 
@@ -515,7 +513,7 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
+            Span<long> componentTypeHashes = new(schema->typeHashes, BitMask.Capacity);
             return componentTypeHashes.Contains(fullTypeName.GetLongHashCode());
         }
 
@@ -526,7 +524,7 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            Span<TypeMetadata> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
+            Span<TypeMetadata> componentTypeHashes = new(schema->typeHashes, BitMask.Capacity);
             return componentTypeHashes.Contains(type);
         }
 
@@ -537,7 +535,7 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            Span<TypeMetadata> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
+            Span<TypeMetadata> componentTypeHashes = new(schema->typeHashes, BitMask.Capacity);
             return componentTypeHashes.TryIndexOf(type, out componentType);
         }
 
@@ -548,7 +546,7 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
+            Span<long> componentTypeHashes = new(schema->typeHashes, BitMask.Capacity);
             return componentTypeHashes.TryIndexOf(fullTypeName.GetLongHashCode(), out componentType);
         }
 
@@ -559,8 +557,8 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-            return arrayTypeHashes.Contains(fullTypeName.GetLongHashCode());
+            Span<long> arrayTypeHashes = new(schema->typeHashes, BitMask.Capacity * 2);
+            return arrayTypeHashes.Slice(BitMask.Capacity).Contains(fullTypeName.GetLongHashCode());
         }
 
         /// <summary>
@@ -570,8 +568,8 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            Span<TypeMetadata> arrayTypeHashes = schema->typeHashes.AsSpan<TypeMetadata>(BitMask.Capacity, BitMask.Capacity);
-            return arrayTypeHashes.Contains(type);
+            Span<TypeMetadata> arrayTypeHashes = new(schema->typeHashes, BitMask.Capacity * 2);
+            return arrayTypeHashes.Slice(BitMask.Capacity).Contains(type);
         }
 
         /// <summary>
@@ -581,8 +579,8 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            Span<TypeMetadata> arrayTypeHashes = schema->typeHashes.AsSpan<TypeMetadata>(BitMask.Capacity, BitMask.Capacity);
-            return arrayTypeHashes.TryIndexOf(type, out arrayType);
+            Span<TypeMetadata> arrayTypeHashes = new(schema->typeHashes, BitMask.Capacity * 2);
+            return arrayTypeHashes.Slice(BitMask.Capacity).TryIndexOf(type, out arrayType);
         }
 
         /// <summary>
@@ -592,8 +590,8 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-            return arrayTypeHashes.TryIndexOf(fullTypeName.GetLongHashCode(), out arrayType);
+            Span<long> arrayTypeHashes = new(schema->typeHashes, BitMask.Capacity * 2);
+            return arrayTypeHashes.Slice(BitMask.Capacity).TryIndexOf(fullTypeName.GetLongHashCode(), out arrayType);
         }
 
         /// <summary>
@@ -603,8 +601,8 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
-            return tagTypeHashes.Contains(fullTypeName.GetLongHashCode());
+            Span<long> tagTypeHashes = new(schema->typeHashes, BitMask.Capacity * 3);
+            return tagTypeHashes.Slice(BitMask.Capacity * 2).Contains(fullTypeName.GetLongHashCode());
         }
 
         /// <summary>
@@ -614,8 +612,8 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            Span<TypeMetadata> tagTypeHashes = schema->typeHashes.AsSpan<TypeMetadata>(BitMask.Capacity * 2, BitMask.Capacity);
-            return tagTypeHashes.Contains(type);
+            Span<TypeMetadata> tagTypeHashes = new(schema->typeHashes, BitMask.Capacity * 3);
+            return tagTypeHashes.Slice(BitMask.Capacity * 2).Contains(type);
         }
 
         /// <summary>
@@ -625,8 +623,8 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(schema);
 
-            Span<TypeMetadata> tagTypeHashes = schema->typeHashes.AsSpan<TypeMetadata>(BitMask.Capacity * 2, BitMask.Capacity);
-            return tagTypeHashes.TryIndexOf(type, out tagType);
+            Span<TypeMetadata> tagTypeHashes = new(schema->typeHashes, BitMask.Capacity * 3);
+            return tagTypeHashes.Slice(BitMask.Capacity * 2).TryIndexOf(type, out tagType);
         }
 
         /// <summary>
@@ -640,7 +638,7 @@ namespace Worlds
                 return false;
             }
 
-            Span<TypeMetadata> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
+            Span<TypeMetadata> componentTypeHashes = new(schema->typeHashes, BitMask.Capacity);
             return componentTypeHashes.Contains(TypeMetadata.Get<T>());
         }
 
@@ -661,7 +659,7 @@ namespace Worlds
         {
             ThrowIfComponentTypeIsMissing(type);
 
-            Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
+            Span<long> componentTypeHashes = new(schema->typeHashes, BitMask.Capacity);
             return componentTypeHashes.IndexOf(type.hash);
         }
 
@@ -682,7 +680,7 @@ namespace Worlds
         {
             ThrowIfComponentTypeIsMissing(type);
 
-            Span<long> componentTypeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity);
+            Span<long> componentTypeHashes = new(schema->typeHashes, BitMask.Capacity);
             int componentType = componentTypeHashes.IndexOf(type.hash);
             return new(componentType, DataType.Kind.Component, type.Size);
         }
@@ -697,8 +695,8 @@ namespace Worlds
                 return false;
             }
 
-            Span<TypeMetadata> arrayTypeHashes = schema->typeHashes.AsSpan<TypeMetadata>(BitMask.Capacity, BitMask.Capacity);
-            return arrayTypeHashes.Contains(TypeMetadata.Get<T>());
+            Span<TypeMetadata> arrayTypeHashes = new(schema->typeHashes, BitMask.Capacity * 2);
+            return arrayTypeHashes.Slice(BitMask.Capacity).Contains(TypeMetadata.Get<T>());
         }
 
         /// <summary>
@@ -718,8 +716,8 @@ namespace Worlds
         {
             ThrowIfArrayTypeIsMissing(arrayType);
 
-            Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-            return arrayTypeHashes.IndexOf(arrayType.hash);
+            Span<long> arrayTypeHashes = new(schema->typeHashes, BitMask.Capacity * 2);
+            return arrayTypeHashes.Slice(BitMask.Capacity).IndexOf(arrayType.hash);
         }
 
         /// <summary>
@@ -739,8 +737,8 @@ namespace Worlds
         {
             ThrowIfArrayTypeIsMissing(type);
 
-            Span<long> arrayTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity, BitMask.Capacity);
-            int arrayType = arrayTypeHashes.IndexOf(type.hash);
+            Span<long> arrayTypeHashes = new(schema->typeHashes, BitMask.Capacity * 2);
+            int arrayType = arrayTypeHashes.Slice(BitMask.Capacity).IndexOf(type.hash);
             return new(arrayType, DataType.Kind.Array, type.Size);
         }
 
@@ -761,8 +759,8 @@ namespace Worlds
         {
             ThrowIfTagIsMissing(tagType);
 
-            Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
-            return tagTypeHashes.IndexOf(tagType.hash);
+            Span<long> tagTypeHashes = new(schema->typeHashes, BitMask.Capacity * 3);
+            return tagTypeHashes.Slice(BitMask.Capacity * 2).IndexOf(tagType.hash);
         }
 
         /// <summary>
@@ -786,8 +784,8 @@ namespace Worlds
                 return false;
             }
 
-            Span<TypeMetadata> tagTypeHashes = schema->typeHashes.AsSpan<TypeMetadata>(BitMask.Capacity * 2, BitMask.Capacity);
-            return tagTypeHashes.Contains(TypeMetadata.Get<T>());
+            Span<TypeMetadata> tagTypeHashes = new(schema->typeHashes, BitMask.Capacity * 3);
+            return tagTypeHashes.Slice(BitMask.Capacity * 2).Contains(TypeMetadata.Get<T>());
         }
 
         /// <summary>
@@ -1361,9 +1359,9 @@ namespace Worlds
             schema->tagsCount = 0;
             schema->componentRowSize = 0;
             schema->definitionMask = Definition.Default;
-            schema->componentOffsets = MemoryAddress.AllocateZeroed(OffsetsLengthInBytes);
-            schema->sizes = MemoryAddress.AllocateZeroed(SizesLengthInBytes);
-            schema->typeHashes = MemoryAddress.AllocateZeroed(TypeHashesLengthInBytes);
+            schema->componentOffsets = (int*)MemoryAddress.AllocateZeroed(OffsetsLengthInBytes).Pointer;
+            schema->sizes = (int*)MemoryAddress.AllocateZeroed(SizesLengthInBytes).Pointer;
+            schema->typeHashes = (long*)MemoryAddress.AllocateZeroed(TypeHashesLengthInBytes).Pointer;
             schema->schemaIndex = createdSchemas;
             createdSchemas++;
             return new Schema(schema);
@@ -1497,14 +1495,14 @@ namespace Worlds
 
         readonly void ISerializable.Write(ByteWriter writer)
         {
-            writer.WriteValue(schema->componentCount);
-            writer.WriteValue(schema->arraysCount);
-            writer.WriteValue(schema->tagsCount);
+            writer.WriteValue((byte)schema->componentCount);
+            writer.WriteValue((byte)schema->arraysCount);
+            writer.WriteValue((byte)schema->tagsCount);
             writer.WriteValue(schema->componentRowSize);
             writer.WriteValue(schema->definitionMask);
-            Span<int> offsets = new(schema->componentOffsets.Pointer, BitMask.Capacity);
-            Span<int> sizes = new(schema->sizes.Pointer, BitMask.Capacity * 2);
-            Span<long> typeHashes = new(schema->typeHashes.Pointer, BitMask.Capacity * 3);
+            Span<int> offsets = new(schema->componentOffsets, BitMask.Capacity);
+            Span<int> sizes = new(schema->sizes, BitMask.Capacity * 2);
+            Span<long> typeHashes = new(schema->typeHashes, BitMask.Capacity * 3);
             writer.WriteSpan(offsets);
             writer.WriteSpan(sizes);
             writer.WriteSpan(typeHashes);
@@ -1513,17 +1511,17 @@ namespace Worlds
         void ISerializable.Read(ByteReader reader)
         {
             schema = MemoryAddress.AllocatePointer<SchemaPointer>();
-            schema->componentOffsets = MemoryAddress.AllocateZeroed(OffsetsLengthInBytes);
-            schema->sizes = MemoryAddress.AllocateZeroed(SizesLengthInBytes);
-            schema->typeHashes = MemoryAddress.AllocateZeroed(TypeHashesLengthInBytes);
+            schema->componentOffsets = (int*)MemoryAddress.AllocateZeroed(OffsetsLengthInBytes).Pointer;
+            schema->sizes = (int*)MemoryAddress.AllocateZeroed(SizesLengthInBytes).Pointer;
+            schema->typeHashes = (long*)MemoryAddress.AllocateZeroed(TypeHashesLengthInBytes).Pointer;
             schema->componentCount = reader.ReadValue<byte>();
             schema->arraysCount = reader.ReadValue<byte>();
             schema->tagsCount = reader.ReadValue<byte>();
             schema->componentRowSize = reader.ReadValue<int>();
             schema->definitionMask = reader.ReadValue<Definition>();
-            schema->componentOffsets.CopyFrom(reader.ReadSpan<int>(BitMask.Capacity));
-            schema->sizes.CopyFrom(reader.ReadSpan<int>(BitMask.Capacity * 2));
-            schema->typeHashes.CopyFrom(reader.ReadSpan<long>(BitMask.Capacity * 3));
+            reader.ReadSpan<int>(BitMask.Capacity).CopyTo(new Span<int>(schema->componentOffsets, BitMask.Capacity));
+            reader.ReadSpan<int>(BitMask.Capacity * 2).CopyTo(new Span<int>(schema->sizes, BitMask.Capacity * 2));
+            reader.ReadSpan<long>(BitMask.Capacity * 3).CopyTo(new Span<long>(schema->typeHashes, BitMask.Capacity * 3));
             schema->schemaIndex = createdSchemas;
             createdSchemas++;
         }
@@ -1538,9 +1536,9 @@ namespace Worlds
             schema->tagsCount = 0;
             schema->componentRowSize = 0;
             schema->definitionMask = Definition.Default;
-            schema->componentOffsets.Clear(OffsetsLengthInBytes);
-            schema->sizes.Clear(SizesLengthInBytes);
-            schema->typeHashes.Clear(TypeHashesLengthInBytes);
+            NativeMemory.Clear(schema->componentOffsets, OffsetsLengthInBytes);
+            NativeMemory.Clear(schema->sizes, SizesLengthInBytes);
+            NativeMemory.Clear(schema->typeHashes, TypeHashesLengthInBytes);
         }
 
         /// <inheritdoc/>
@@ -1623,7 +1621,7 @@ namespace Worlds
                     componentCapacity = schemaIndex + 1;
                     Array.Resize(ref components, componentCapacity);
 
-                    Span<TypeMetadata> componentTypes = new(schema.schema->typeHashes.Pointer, BitMask.Capacity);
+                    Span<TypeMetadata> componentTypes = new(schema.schema->typeHashes, BitMask.Capacity);
                     int componentType = componentTypes.IndexOf(TypeMetadata.Get<T>());
                     components[schemaIndex] = componentType;
                     return componentType;
@@ -1642,8 +1640,8 @@ namespace Worlds
                     arrayCapacity = schemaIndex + 1;
                     Array.Resize(ref arrays, arrayCapacity);
 
-                    Span<TypeMetadata> arrayTypes = new(schema.schema->typeHashes.Pointer + BitMask.Capacity * sizeof(long), BitMask.Capacity);
-                    int arrayType = arrayTypes.IndexOf(TypeMetadata.Get<T>());
+                    Span<TypeMetadata> arrayTypes = new(schema.schema->typeHashes, BitMask.Capacity * 2);
+                    int arrayType = arrayTypes.Slice(BitMask.Capacity).IndexOf(TypeMetadata.Get<T>());
                     arrays[schemaIndex] = arrayType;
                     return arrayType;
                 }
@@ -1661,8 +1659,8 @@ namespace Worlds
                     tagCapacity = schemaIndex + 1;
                     Array.Resize(ref tags, tagCapacity);
 
-                    Span<TypeMetadata> tagTypes = new(schema.schema->typeHashes.Pointer + BitMask.Capacity * sizeof(long) * 2, BitMask.Capacity);
-                    int tagType = tagTypes.IndexOf(TypeMetadata.Get<T>());
+                    Span<TypeMetadata> tagTypes = new(schema.schema->typeHashes, BitMask.Capacity * 3);
+                    int tagType = tagTypes.Slice(BitMask.Capacity * 2).IndexOf(TypeMetadata.Get<T>());
                     tags[schemaIndex] = tagType;
                     return tagType;
                 }

@@ -310,6 +310,10 @@ namespace Worlds.Tests
             Assert.That(world.GetComponent<Another>(a).data, Is.EqualTo(4));
             Assert.That(world.GetFirstComponent<Another>(out uint found).data, Is.EqualTo(4));
             Assert.That(found, Is.EqualTo(a));
+            world.AddComponent(b, new SimpleComponent("Hello World"));
+            Assert.That(world.GetComponent<SimpleComponent>(b).data.ToString(), Is.EqualTo("Hello World"));
+            world.SetComponent(b, new SimpleComponent("Goodbye World"));
+            Assert.That(world.GetComponent<SimpleComponent>(b).data.ToString(), Is.EqualTo("Goodbye World"));
         }
 
         [Test]

@@ -236,11 +236,31 @@ namespace Worlds.Tests
         [Test]
         public void AddOneComponentToSelectedEntity()
         {
+            using World world = CreateWorld();
             using Operation operation = new();
             operation.CreateEntityAndSelect();
             operation.AddComponent(new TestComponent(1));
-
             Assert.That(operation.Count, Is.EqualTo(2));
+            operation.AddOrSetComponent(new TestComponent(5));
+            Assert.That(operation.Count, Is.EqualTo(3));
+            operation.Perform(world);
+            operation.Reset();
+            Assert.That(operation.Count, Is.EqualTo(0));
+            Assert.That(world.Count, Is.EqualTo(1));
+            uint firstEntity = world[0];
+            Assert.That(world.ContainsComponent<TestComponent>(firstEntity), Is.True);
+            Assert.That(world.GetComponent<TestComponent>(firstEntity).value, Is.EqualTo(5));
+            world.SetComponent(firstEntity, new TestComponent(25));
+            Assert.That(world.ContainsComponent<TestComponent>(firstEntity), Is.True);
+            Assert.That(world.GetComponent<TestComponent>(firstEntity).value, Is.EqualTo(25));
+
+            operation.SelectEntity(firstEntity);
+            operation.AddOrSetComponent(new Another(231));
+            operation.Perform(world);
+            Assert.That(world.ContainsComponent<Another>(firstEntity), Is.True);
+            Assert.That(world.GetComponent<Another>(firstEntity).data, Is.EqualTo(231));
+            Assert.That(world.ContainsComponent<TestComponent>(firstEntity), Is.True);
+            Assert.That(world.GetComponent<TestComponent>(firstEntity).value, Is.EqualTo(25));
         }
 
         [Test]

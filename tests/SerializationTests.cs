@@ -123,7 +123,7 @@ namespace Worlds.Tests
         }
 
         [Test]
-        public unsafe void CheckSchemaOfLoadedWorld()
+        public void CheckSchemaOfLoadedWorld()
         {
             World prefabWorld = CreateWorld();
             int fruitType = prefabWorld.Schema.GetComponentType<Fruit>();
@@ -149,7 +149,7 @@ namespace Worlds.Tests
         }
 
         [Test]
-        public unsafe void ProcessSchema()
+        public void ProcessSchema()
         {
             Schema prefabSchema = new();
             prefabSchema.RegisterComponent<Fruit>();
@@ -186,6 +186,7 @@ namespace Worlds.Tests
             Assert.That(loadedSchema.ContainsComponentType<Fruit>(), Is.False);
             Assert.That(loadedSchema.ContainsComponentType<Cherry>(), Is.True);
             Assert.That(loadedSchema.ContainsTagType<IsPrefab>(), Is.True);
+            Assert.That(loadedSchema.GetTagType<IsPrefab>(), Is.EqualTo(0));
             Assert.That(loadedWorld.ContainsEntity(a), Is.True);
             Assert.That(loadedWorld.GetComponent<Another>(a).data, Is.EqualTo(42));
             Assert.That(loadedWorld.GetComponent<Cherry>(a).stones.ToString(), Is.EqualTo("Hello, World!"));
