@@ -755,6 +755,17 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves the index for the given <paramref name="tagType"/>.
+        /// </summary>
+        public readonly int GetTagType(TypeMetadata tagType)
+        {
+            ThrowIfTagIsMissing(tagType);
+
+            Span<long> tagTypeHashes = schema->typeHashes.AsSpan<long>(BitMask.Capacity * 2, BitMask.Capacity);
+            return tagTypeHashes.IndexOf(tagType.hash);
+        }
+
+        /// <summary>
         /// Retrieves the type information for tag of type <typeparamref name="T"/>.
         /// </summary>
         public readonly DataType GetTagDataType<T>() where T : unmanaged
@@ -1441,6 +1452,15 @@ namespace Worlds
 
         [Conditional("DEBUG")]
         private readonly void ThrowIfTagIsMissing(int tagType)
+        {
+            if (!ContainsTagType(tagType))
+            {
+                throw new Exception($"Tag `{tagType}` is missing from schema");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfTagIsMissing(TypeMetadata tagType)
         {
             if (!ContainsTagType(tagType))
             {

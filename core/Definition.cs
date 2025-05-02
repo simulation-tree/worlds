@@ -34,6 +34,16 @@ namespace Worlds
         public readonly bool IsDisabled => (tagTypes.d & 1UL << 63) != 0;
 
         /// <summary>
+        /// Creates a new definition with the exact component <see cref="BitMask"/>.
+        /// </summary>
+        public Definition(BitMask componentTypes)
+        {
+            this.componentTypes = componentTypes;
+            this.arrayTypes = BitMask.Default;
+            this.tagTypes = BitMask.Default;
+        }
+
+        /// <summary>
         /// Creates a new definition with the exact component and array <see cref="BitMask"/> values.
         /// </summary>
         public Definition(BitMask componentTypes, BitMask arrayTypes, BitMask tagTypes)

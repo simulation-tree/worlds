@@ -464,6 +464,24 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Adds a tag of type <typeparamref name="T"/> to selected entities.
+        /// </summary>
+        public readonly void AddTag<T>() where T : unmanaged
+        {
+            WriteInstructionType(InstructionType.AddTag);
+            WriteTypeLayout(MetadataRegistry.GetType<T>());
+        }
+
+        /// <summary>
+        /// Removes the tag of type <typeparamref name="T"/> from the selected entities.
+        /// </summary>
+        public readonly void RemoveTag<T>() where T : unmanaged
+        {
+            WriteInstructionType(InstructionType.RemoveTag);
+            WriteTypeLayout(MetadataRegistry.GetType<T>());
+        }
+
+        /// <summary>
         /// Adds the given <paramref name="entity"/> to the selection.
         /// </summary>
         public readonly void SelectEntity(uint entity)
@@ -862,6 +880,28 @@ namespace Worlds
                 }
             }
 
+            private void AddTag()
+            {
+                TypeMetadata layout = operation.ReadTypeLayout(ref bytePosition);
+                int tagType = world.world->schema.GetTagType(layout);
+                ReadOnlySpan<uint> selection = this.selection.AsSpan();
+                for (int i = 0; i < selection.Length; i++)
+                {
+                    world.AddTag(selection[i], tagType);
+                }
+            }
+
+            private void RemoveTag()
+            {
+                TypeMetadata layout = operation.ReadTypeLayout(ref bytePosition);
+                int tagType = world.world->schema.GetTagType(layout);
+                ReadOnlySpan<uint> selection = this.selection.AsSpan();
+                for (int i = 0; i < selection.Length; i++)
+                {
+                    world.RemoveTag(selection[i], tagType);
+                }
+            }
+
             private void SetParentToPreviouslyCreatedEntity()
             {
                 int entitiesAgo = operation.Read<int>(ref bytePosition);
@@ -956,6 +996,12 @@ namespace Worlds
                             break;
                         case InstructionType.CreateOrSetArray:
                             CreateOrSetArray();
+                            break;
+                        case InstructionType.AddTag:
+                            AddTag();
+                            break;
+                        case InstructionType.RemoveTag:
+                            RemoveTag();
                             break;
                         case InstructionType.SetParentToPreviouslyCreatedEntity:
                             SetParentToPreviouslyCreatedEntity();
