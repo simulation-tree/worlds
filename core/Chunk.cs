@@ -65,9 +65,18 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Access the entity at the given <paramref name="index"/>.
+        /// Retrieves the components for the entity in the row at the given <paramref name="index"/>.
         /// </summary>
-        public readonly uint this[int index] => Entities[index];
+        public readonly Row this[int index]
+        {
+            get
+            {
+                MemoryAddress.ThrowIfDefault(chunk);
+
+                MemoryAddress row = chunk->components[index];
+                return new Row(chunk->schema, row);
+            }
+        }
 
 #if NET
         /// <inheritdoc/>
@@ -189,6 +198,21 @@ namespace Worlds
             chunk->lastEntity = entity;
             chunk->components.AddDefault();
             chunk->count = index;
+        }
+
+        /// <summary>
+        /// Adds the given <paramref name="entity"/> into this chunk and returns its referable index.
+        /// </summary>
+        public readonly void AddEntity(uint entity, ref int index, out Row row)
+        {
+            MemoryAddress.ThrowIfDefault(chunk);
+
+            index = chunk->count + 1;
+            chunk->entities.Add(entity);
+            chunk->lastEntity = entity;
+            chunk->components.AddDefault(out MemoryAddress newItem);
+            chunk->count = index;
+            row = new(chunk->schema, newItem);
         }
 
         /// <summary>
@@ -327,6 +351,27 @@ namespace Worlds
             current = destination;
         }
 
+        /// <summary>
+        /// Moves the entity at <paramref name="index"/> and all of its components to the <paramref name="destination"/> chunk,
+        /// and modifies it to match the new index.
+        /// </summary>
+        public static void MoveEntityAt(uint entity, ref int index, ref Chunk current, Chunk destination, out Row newRow)
+        {
+            MemoryAddress.ThrowIfDefault(current.chunk);
+            MemoryAddress.ThrowIfDefault(destination.chunk);
+
+            current.chunk->entities.RemoveAtBySwapping(index);
+            current.chunk->lastEntity = current.chunk->entities[--current.chunk->count];
+            current.chunk->components.RemoveAtBySwappingAndAdd(index, destination.chunk->components, out MemoryAddress newItem);
+
+            index = destination.chunk->count + 1;
+            destination.chunk->entities.Add(entity);
+            destination.chunk->lastEntity = entity;
+            destination.chunk->count = index;
+            current = destination;
+            newRow = new(destination.chunk->schema, newItem);
+        }
+
         /// <inheritdoc/>
         public static bool operator ==(Chunk left, Chunk right)
         {
@@ -337,6 +382,62 @@ namespace Worlds
         public static bool operator !=(Chunk left, Chunk right)
         {
             return !(left == right);
+        }
+
+        /// <summary>
+        /// A single row in the chunk, where each column is a component.
+        /// </summary>
+        public readonly struct Row
+        {
+            private readonly Schema schema;
+            private readonly MemoryAddress row;
+
+            internal Row(Schema schema, MemoryAddress row)
+            {
+                this.schema = schema;
+                this.row = row;
+            }
+
+            /// <summary>
+            /// Retrieves the component with the given <paramref name="componentType"/>.
+            /// </summary>
+            public readonly MemoryAddress GetComponent(int componentType)
+            {
+                return row.Read(schema.schema->componentOffsets.ReadElement<int>(componentType));
+            }
+
+            /// <summary>
+            /// Retrieves the component of type <typeparamref name="T"/>.
+            /// </summary>
+            public readonly ref T GetComponent<T>(int componentType) where T : unmanaged
+            {
+                return ref row.Read<T>(schema.schema->componentOffsets.ReadElement<int>(componentType));
+            }
+
+            /// <summary>
+            /// Assigns the component of type <typeparamref name="T"/> to <paramref name="value"/>.
+            /// </summary>
+            public readonly void SetComponent<T>(int componentType, T value) where T : unmanaged
+            {
+                row.Write(schema.schema->componentOffsets.ReadElement<int>(componentType), value);
+            }
+
+            /// <summary>
+            /// Retrieves all bytes for the given <paramref name="componentType"/>.
+            /// </summary>
+            public readonly Span<byte> GetSpan(int componentType)
+            {
+                return row.AsSpan(schema.schema->componentOffsets.ReadElement<int>(componentType), schema.schema->sizes.ReadElement<int>(componentType));
+            }
+
+            /// <summary>
+            /// Retrieves all bytes for the given <paramref name="componentType"/>.
+            /// </summary>
+            public readonly Span<byte> GetSpan(int componentType, out int componentSize)
+            {
+                componentSize = schema.schema->sizes.ReadElement<int>(componentType);
+                return row.AsSpan(schema.schema->componentOffsets.ReadElement<int>(componentType), componentSize);
+            }
         }
 
         /// <inheritdoc/>

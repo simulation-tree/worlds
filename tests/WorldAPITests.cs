@@ -280,6 +280,26 @@ namespace Worlds.Tests
         }
 
         [Test]
+        public void AddingMultipleComponents()
+        {
+            using World world = CreateWorld();
+            int anotherType = world.Schema.GetComponentType<Another>();
+            int simpleType = world.Schema.GetComponentType<SimpleComponent>();
+            uint a = world.CreateEntity();
+            Assert.That(world.ContainsEntity(a), Is.True);
+            Assert.That(world.ContainsComponent<Another>(a), Is.False);
+            Assert.That(world.ContainsComponent<SimpleComponent>(a), Is.False);
+            world.AddComponentTypes(a, new BitMask(anotherType, simpleType));
+            Assert.That(world.ContainsComponent<Another>(a), Is.True);
+            Assert.That(world.ContainsComponent<SimpleComponent>(a), Is.True);
+            Assert.That(world.GetComponent<Another>(a).data, Is.EqualTo(0));
+            Assert.That(world.GetComponent<SimpleComponent>(a).data.ToString(), Is.EqualTo(string.Empty));
+            world.RemoveComponents(a, new BitMask(anotherType, simpleType));
+            Assert.That(world.ContainsComponent<Another>(a), Is.False);
+            Assert.That(world.ContainsComponent<SimpleComponent>(a), Is.False);
+        }
+
+        [Test]
         public void DestroyEntityTwice()
         {
             using World world = CreateWorld();

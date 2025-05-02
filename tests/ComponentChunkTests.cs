@@ -101,7 +101,7 @@ namespace Worlds.Tests
             Assert.That(intComponents[0], Is.EqualTo((Integer)42));
 
             Definition definitionC = new();
-            definitionC.AddComponentTypes(floatType, integerType);
+            definitionC.AddComponentTypes(new BitMask(floatType, integerType));
             Chunk chunkC = new(schema, definitionC);
             Chunk.MoveEntityAt(entity, ref index, ref currentChunk, chunkC);
             ref Float floatComponent = ref chunkC.GetComponent<Float>(index, floatType);

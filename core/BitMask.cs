@@ -10,7 +10,7 @@ namespace Worlds
         /// <summary>
         /// An empty bitmask.
         /// </summary>
-        public static readonly BitMask Default = new BitMask();
+        public static readonly BitMask Default = default;
 
         /// <summary>
         /// Maximum amount of bits that can be stored.

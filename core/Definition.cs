@@ -10,7 +10,7 @@ namespace Worlds
         /// <summary>
         /// An empty definition.
         /// </summary>
-        public static readonly Definition Default = new Definition();
+        public static readonly Definition Default = default;
 
         /// <summary>
         /// The mask of component types present.
@@ -26,6 +26,11 @@ namespace Worlds
         /// The mask of tag types present.
         /// </summary>
         public BitMask tagTypes;
+
+        /// <summary>
+        /// Checks if this definition describes a disabled entity.
+        /// </summary>
+        public readonly bool IsDisabled => (tagTypes.d & 1UL << 63) != 0;
 
         /// <summary>
         /// Creates a new definition with the exact component and array <see cref="BitMask"/> values.
@@ -85,7 +90,7 @@ namespace Worlds
                 length -= 2;
             }
 
-            if (tagTypes.Contains(Schema.DisabledTagType))
+            if (IsDisabled)
             {
                 const string Keyword = "Disabled";
                 if (length > 0)
@@ -310,20 +315,19 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Adds the specified component types to the definition.
-        /// </summary>
-        public void AddComponentTypes(int componentType1, int componentType2)
-        {
-            componentTypes.Set(componentType1);
-            componentTypes.Set(componentType2);
-        }
-
-        /// <summary>
         /// Removes the <paramref name="componentType"/> from the definition.
         /// </summary>
         public void RemoveComponentType(int componentType)
         {
             componentTypes.Clear(componentType);
+        }
+
+        /// <summary>
+        /// Removes the <paramref name="componentTypes"/> from the definition.
+        /// </summary>
+        public void RemoveComponentTypes(BitMask componentTypes)
+        {
+            this.componentTypes &= ~componentTypes;
         }
 
         /// <summary>

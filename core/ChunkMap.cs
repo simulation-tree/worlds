@@ -59,8 +59,8 @@ namespace Worlds
                 if (oldOccupiedSpan[i])
                 {
                     ChunkKey value = oldValuesSpan[i];
-                    long hashCode = value.GetLongHashCode();
-                    int index = GetIndex(hashCode, newCapacity);
+                    long hashCode = value.definition.GetLongHashCode();
+                    int index = unchecked((int)(((uint)hashCode) % (uint)newCapacity));
                     while (occupied[index])
                     {
                         index = (index + 1) % newCapacity;
@@ -91,7 +91,7 @@ namespace Worlds
 
             int capacity = chunkMap->capacity;
             long hashCode = definition.GetLongHashCode();
-            int index = GetIndex(hashCode, capacity);
+            int index = unchecked((int)(((uint)hashCode) % (uint)capacity));
             int startIndex = index;
             Span<bool> occupied = new(chunkMap->occupied.Pointer, capacity);
             Span<ChunkKey> values = new(chunkMap->keys.Pointer, capacity);
@@ -101,7 +101,7 @@ namespace Worlds
                 if (hashCodes[index] == hashCode)
                 {
                     ChunkKey key = values[index];
-                    if (key.Equals(definition))
+                    if (key.definition.componentTypes == definition.componentTypes && key.definition.arrayTypes == definition.arrayTypes && key.definition.tagTypes == definition.tagTypes)
                     {
                         return key.chunk;
                     }
@@ -122,11 +122,6 @@ namespace Worlds
             }
 
             chunkMap->count = newCount;
-            while (occupied[index])
-            {
-                index = (index + 1) % capacity;
-            }
-
             Chunk newChunk = new(chunkMap->schema, definition);
             occupied[index] = true;
             hashCodes[index] = hashCode;
@@ -139,7 +134,7 @@ namespace Worlds
         {
             int capacity = chunkMap->capacity;
             long hashCode = default(Definition).GetLongHashCode();
-            int index = GetIndex(hashCode, capacity);
+            int index = unchecked((int)(((uint)hashCode) % (uint)capacity));
             Span<bool> occupied = new(chunkMap->occupied.Pointer, capacity);
             Span<ChunkKey> values = new(chunkMap->keys.Pointer, capacity);
             Span<long> hashCodes = new(chunkMap->hashCodes.Pointer, capacity);
@@ -168,14 +163,6 @@ namespace Worlds
             chunkMap->occupied.Clear(chunkMap->capacity);
             chunkMap->occupied.WriteElement(0, true);
             chunkMap->count = 1;
-        }
-
-        private static int GetIndex(long hashCode, int capacity)
-        {
-            unchecked
-            {
-                return (int)(((uint)hashCode) % (uint)capacity);
-            }
         }
     }
 }

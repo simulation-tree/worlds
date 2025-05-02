@@ -15,6 +15,7 @@ namespace Worlds
         /// <summary>
         /// The reserved tag to describe disabled entities.
         /// </summary>
+        //todo: checking if a bitmask has this tag set more cheaply than Contains
         public const int DisabledTagType = BitMask.MaxValue;
 
         internal const int OffsetsLengthInBytes = sizeof(int) * BitMask.Capacity;
@@ -214,7 +215,7 @@ namespace Worlds
             schema->arraysCount = 0;
             schema->tagsCount = 0;
             schema->componentRowSize = 0;
-            schema->definitionMask = default;
+            schema->definitionMask = Definition.Default;
             schema->componentOffsets = MemoryAddress.AllocateZeroed(OffsetsLengthInBytes);
             schema->sizes = MemoryAddress.AllocateZeroed(SizesLengthInBytes);
             schema->typeHashes = MemoryAddress.AllocateZeroed(TypeHashesLengthInBytes);
@@ -761,9 +762,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetComponentTypes<T1>() where T1 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetComponentType<T1>());
-            return bitMask;
+            return new(GetComponentType<T1>());
         }
 
         /// <summary>
@@ -771,10 +770,16 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetComponentTypes<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetComponentType<T1>());
-            bitMask.Set(GetComponentType<T2>());
-            return bitMask;
+            return new(GetComponentType<T1>(), GetComponentType<T2>());
+        }
+
+        /// <summary>
+        /// Retrieves the specified component types.
+        /// </summary>
+        public readonly void GetComponentTypes<T1, T2>(out int c1, out int c2) where T1 : unmanaged where T2 : unmanaged
+        {
+            c1 = GetComponentType<T1>();
+            c2 = GetComponentType<T2>();
         }
 
         /// <summary>
@@ -782,11 +787,17 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetComponentTypes<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetComponentType<T1>());
-            bitMask.Set(GetComponentType<T2>());
-            bitMask.Set(GetComponentType<T3>());
-            return bitMask;
+            return new(GetComponentType<T1>(), GetComponentType<T2>(), GetComponentType<T3>());
+        }
+
+        /// <summary>
+        /// Retrieves the specified component types.
+        /// </summary>
+        public readonly void GetComponentTypes<T1, T2, T3>(out int c1, out int c2, out int c3) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+        {
+            c1 = GetComponentType<T1>();
+            c2 = GetComponentType<T2>();
+            c3 = GetComponentType<T3>();
         }
 
         /// <summary>
@@ -794,12 +805,18 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetComponentType<T1>());
-            bitMask.Set(GetComponentType<T2>());
-            bitMask.Set(GetComponentType<T3>());
-            bitMask.Set(GetComponentType<T4>());
-            return bitMask;
+            return new(GetComponentType<T1>(), GetComponentType<T2>(), GetComponentType<T3>(), GetComponentType<T4>());
+        }
+
+        /// <summary>
+        /// Retrieves the specified component types.
+        /// </summary>
+        public readonly void GetComponentTypes<T1, T2, T3, T4>(out int c1, out int c2, out int c3, out int c4) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+        {
+            c1 = GetComponentType<T1>();
+            c2 = GetComponentType<T2>();
+            c3 = GetComponentType<T3>();
+            c4 = GetComponentType<T4>();
         }
 
         /// <summary>
@@ -807,13 +824,19 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetComponentType<T1>());
-            bitMask.Set(GetComponentType<T2>());
-            bitMask.Set(GetComponentType<T3>());
-            bitMask.Set(GetComponentType<T4>());
-            bitMask.Set(GetComponentType<T5>());
-            return bitMask;
+            return new(GetComponentType<T1>(), GetComponentType<T2>(), GetComponentType<T3>(), GetComponentType<T4>(), GetComponentType<T5>());
+        }
+
+        /// <summary>
+        /// Retrieves the specified component types.
+        /// </summary>
+        public readonly void GetComponentTypes<T1, T2, T3, T4, T5>(out int c1, out int c2, out int c3, out int c4, out int c5) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
+        {
+            c1 = GetComponentType<T1>();
+            c2 = GetComponentType<T2>();
+            c3 = GetComponentType<T3>();
+            c4 = GetComponentType<T4>();
+            c5 = GetComponentType<T5>();
         }
 
         /// <summary>
@@ -821,14 +844,20 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetComponentType<T1>());
-            bitMask.Set(GetComponentType<T2>());
-            bitMask.Set(GetComponentType<T3>());
-            bitMask.Set(GetComponentType<T4>());
-            bitMask.Set(GetComponentType<T5>());
-            bitMask.Set(GetComponentType<T6>());
-            return bitMask;
+            return new(GetComponentType<T1>(), GetComponentType<T2>(), GetComponentType<T3>(), GetComponentType<T4>(), GetComponentType<T5>(), GetComponentType<T6>());
+        }
+
+        /// <summary>
+        /// Retrieves the specified component types.
+        /// </summary>
+        public readonly void GetComponentTypes<T1, T2, T3, T4, T5, T6>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
+        {
+            c1 = GetComponentType<T1>();
+            c2 = GetComponentType<T2>();
+            c3 = GetComponentType<T3>();
+            c4 = GetComponentType<T4>();
+            c5 = GetComponentType<T5>();
+            c6 = GetComponentType<T6>();
         }
 
         /// <summary>
@@ -836,15 +865,21 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetComponentType<T1>());
-            bitMask.Set(GetComponentType<T2>());
-            bitMask.Set(GetComponentType<T3>());
-            bitMask.Set(GetComponentType<T4>());
-            bitMask.Set(GetComponentType<T5>());
-            bitMask.Set(GetComponentType<T6>());
-            bitMask.Set(GetComponentType<T7>());
-            return bitMask;
+            return new(GetComponentType<T1>(), GetComponentType<T2>(), GetComponentType<T3>(), GetComponentType<T4>(), GetComponentType<T5>(), GetComponentType<T6>(), GetComponentType<T7>());
+        }
+
+        /// <summary>
+        /// Retrieves the specified component types.
+        /// </summary>
+        public readonly void GetComponentTypes<T1, T2, T3, T4, T5, T6, T7>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
+        {
+            c1 = GetComponentType<T1>();
+            c2 = GetComponentType<T2>();
+            c3 = GetComponentType<T3>();
+            c4 = GetComponentType<T4>();
+            c5 = GetComponentType<T5>();
+            c6 = GetComponentType<T6>();
+            c7 = GetComponentType<T7>();
         }
 
         /// <summary>
@@ -852,16 +887,22 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetComponentType<T1>());
-            bitMask.Set(GetComponentType<T2>());
-            bitMask.Set(GetComponentType<T3>());
-            bitMask.Set(GetComponentType<T4>());
-            bitMask.Set(GetComponentType<T5>());
-            bitMask.Set(GetComponentType<T6>());
-            bitMask.Set(GetComponentType<T7>());
-            bitMask.Set(GetComponentType<T8>());
-            return bitMask;
+            return new(GetComponentType<T1>(), GetComponentType<T2>(), GetComponentType<T3>(), GetComponentType<T4>(), GetComponentType<T5>(), GetComponentType<T6>(), GetComponentType<T7>(), GetComponentType<T8>());
+        }
+
+        /// <summary>
+        /// Retrieves the specified component types.
+        /// </summary>
+        public readonly void GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
+        {
+            c1 = GetComponentType<T1>();
+            c2 = GetComponentType<T2>();
+            c3 = GetComponentType<T3>();
+            c4 = GetComponentType<T4>();
+            c5 = GetComponentType<T5>();
+            c6 = GetComponentType<T6>();
+            c7 = GetComponentType<T7>();
+            c8 = GetComponentType<T8>();
         }
 
         /// <summary>
@@ -869,17 +910,23 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetComponentType<T1>());
-            bitMask.Set(GetComponentType<T2>());
-            bitMask.Set(GetComponentType<T3>());
-            bitMask.Set(GetComponentType<T4>());
-            bitMask.Set(GetComponentType<T5>());
-            bitMask.Set(GetComponentType<T6>());
-            bitMask.Set(GetComponentType<T7>());
-            bitMask.Set(GetComponentType<T8>());
-            bitMask.Set(GetComponentType<T9>());
-            return bitMask;
+            return new(GetComponentType<T1>(), GetComponentType<T2>(), GetComponentType<T3>(), GetComponentType<T4>(), GetComponentType<T5>(), GetComponentType<T6>(), GetComponentType<T7>(), GetComponentType<T8>(), GetComponentType<T9>());
+        }
+
+        /// <summary>
+        /// Retrieves the specified component types.
+        /// </summary>
+        public readonly void GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
+        {
+            c1 = GetComponentType<T1>();
+            c2 = GetComponentType<T2>();
+            c3 = GetComponentType<T3>();
+            c4 = GetComponentType<T4>();
+            c5 = GetComponentType<T5>();
+            c6 = GetComponentType<T6>();
+            c7 = GetComponentType<T7>();
+            c8 = GetComponentType<T8>();
+            c9 = GetComponentType<T9>();
         }
 
         /// <summary>
@@ -887,18 +934,24 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetComponentType<T1>());
-            bitMask.Set(GetComponentType<T2>());
-            bitMask.Set(GetComponentType<T3>());
-            bitMask.Set(GetComponentType<T4>());
-            bitMask.Set(GetComponentType<T5>());
-            bitMask.Set(GetComponentType<T6>());
-            bitMask.Set(GetComponentType<T7>());
-            bitMask.Set(GetComponentType<T8>());
-            bitMask.Set(GetComponentType<T9>());
-            bitMask.Set(GetComponentType<T10>());
-            return bitMask;
+            return new(GetComponentType<T1>(), GetComponentType<T2>(), GetComponentType<T3>(), GetComponentType<T4>(), GetComponentType<T5>(), GetComponentType<T6>(), GetComponentType<T7>(), GetComponentType<T8>(), GetComponentType<T9>(), GetComponentType<T10>());
+        }
+
+        /// <summary>
+        /// Retrieves the specified component types.
+        /// </summary>
+        public readonly void GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
+        {
+            c1 = GetComponentType<T1>();
+            c2 = GetComponentType<T2>();
+            c3 = GetComponentType<T3>();
+            c4 = GetComponentType<T4>();
+            c5 = GetComponentType<T5>();
+            c6 = GetComponentType<T6>();
+            c7 = GetComponentType<T7>();
+            c8 = GetComponentType<T8>();
+            c9 = GetComponentType<T9>();
+            c10 = GetComponentType<T10>();
         }
 
         /// <summary>
@@ -906,19 +959,25 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetComponentType<T1>());
-            bitMask.Set(GetComponentType<T2>());
-            bitMask.Set(GetComponentType<T3>());
-            bitMask.Set(GetComponentType<T4>());
-            bitMask.Set(GetComponentType<T5>());
-            bitMask.Set(GetComponentType<T6>());
-            bitMask.Set(GetComponentType<T7>());
-            bitMask.Set(GetComponentType<T8>());
-            bitMask.Set(GetComponentType<T9>());
-            bitMask.Set(GetComponentType<T10>());
-            bitMask.Set(GetComponentType<T11>());
-            return bitMask;
+            return new(GetComponentType<T1>(), GetComponentType<T2>(), GetComponentType<T3>(), GetComponentType<T4>(), GetComponentType<T5>(), GetComponentType<T6>(), GetComponentType<T7>(), GetComponentType<T8>(), GetComponentType<T9>(), GetComponentType<T10>(), GetComponentType<T11>());
+        }
+
+        /// <summary>
+        /// Retrieves the specified component types.
+        /// </summary>
+        public readonly void GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
+        {
+            c1 = GetComponentType<T1>();
+            c2 = GetComponentType<T2>();
+            c3 = GetComponentType<T3>();
+            c4 = GetComponentType<T4>();
+            c5 = GetComponentType<T5>();
+            c6 = GetComponentType<T6>();
+            c7 = GetComponentType<T7>();
+            c8 = GetComponentType<T8>();
+            c9 = GetComponentType<T9>();
+            c10 = GetComponentType<T10>();
+            c11 = GetComponentType<T11>();
         }
 
         /// <summary>
@@ -926,20 +985,26 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetComponentType<T1>());
-            bitMask.Set(GetComponentType<T2>());
-            bitMask.Set(GetComponentType<T3>());
-            bitMask.Set(GetComponentType<T4>());
-            bitMask.Set(GetComponentType<T5>());
-            bitMask.Set(GetComponentType<T6>());
-            bitMask.Set(GetComponentType<T7>());
-            bitMask.Set(GetComponentType<T8>());
-            bitMask.Set(GetComponentType<T9>());
-            bitMask.Set(GetComponentType<T10>());
-            bitMask.Set(GetComponentType<T11>());
-            bitMask.Set(GetComponentType<T12>());
-            return bitMask;
+            return new(GetComponentType<T1>(), GetComponentType<T2>(), GetComponentType<T3>(), GetComponentType<T4>(), GetComponentType<T5>(), GetComponentType<T6>(), GetComponentType<T7>(), GetComponentType<T8>(), GetComponentType<T9>(), GetComponentType<T10>(), GetComponentType<T11>(), GetComponentType<T12>());
+        }
+
+        /// <summary>
+        /// Retrieves the specified component types.
+        /// </summary>
+        public readonly void GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
+        {
+            c1 = GetComponentType<T1>();
+            c2 = GetComponentType<T2>();
+            c3 = GetComponentType<T3>();
+            c4 = GetComponentType<T4>();
+            c5 = GetComponentType<T5>();
+            c6 = GetComponentType<T6>();
+            c7 = GetComponentType<T7>();
+            c8 = GetComponentType<T8>();
+            c9 = GetComponentType<T9>();
+            c10 = GetComponentType<T10>();
+            c11 = GetComponentType<T11>();
+            c12 = GetComponentType<T12>();
         }
 
         /// <summary>
@@ -947,21 +1012,27 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetComponentType<T1>());
-            bitMask.Set(GetComponentType<T2>());
-            bitMask.Set(GetComponentType<T3>());
-            bitMask.Set(GetComponentType<T4>());
-            bitMask.Set(GetComponentType<T5>());
-            bitMask.Set(GetComponentType<T6>());
-            bitMask.Set(GetComponentType<T7>());
-            bitMask.Set(GetComponentType<T8>());
-            bitMask.Set(GetComponentType<T9>());
-            bitMask.Set(GetComponentType<T10>());
-            bitMask.Set(GetComponentType<T11>());
-            bitMask.Set(GetComponentType<T12>());
-            bitMask.Set(GetComponentType<T13>());
-            return bitMask;
+            return new(GetComponentType<T1>(), GetComponentType<T2>(), GetComponentType<T3>(), GetComponentType<T4>(), GetComponentType<T5>(), GetComponentType<T6>(), GetComponentType<T7>(), GetComponentType<T8>(), GetComponentType<T9>(), GetComponentType<T10>(), GetComponentType<T11>(), GetComponentType<T12>(), GetComponentType<T13>());
+        }
+
+        /// <summary>
+        /// Retrieves the specified component types.
+        /// </summary>
+        public readonly void GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12, out int c13) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged
+        {
+            c1 = GetComponentType<T1>();
+            c2 = GetComponentType<T2>();
+            c3 = GetComponentType<T3>();
+            c4 = GetComponentType<T4>();
+            c5 = GetComponentType<T5>();
+            c6 = GetComponentType<T6>();
+            c7 = GetComponentType<T7>();
+            c8 = GetComponentType<T8>();
+            c9 = GetComponentType<T9>();
+            c10 = GetComponentType<T10>();
+            c11 = GetComponentType<T11>();
+            c12 = GetComponentType<T12>();
+            c13 = GetComponentType<T13>();
         }
 
         /// <summary>
@@ -969,22 +1040,28 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetComponentType<T1>());
-            bitMask.Set(GetComponentType<T2>());
-            bitMask.Set(GetComponentType<T3>());
-            bitMask.Set(GetComponentType<T4>());
-            bitMask.Set(GetComponentType<T5>());
-            bitMask.Set(GetComponentType<T6>());
-            bitMask.Set(GetComponentType<T7>());
-            bitMask.Set(GetComponentType<T8>());
-            bitMask.Set(GetComponentType<T9>());
-            bitMask.Set(GetComponentType<T10>());
-            bitMask.Set(GetComponentType<T11>());
-            bitMask.Set(GetComponentType<T12>());
-            bitMask.Set(GetComponentType<T13>());
-            bitMask.Set(GetComponentType<T14>());
-            return bitMask;
+            return new(GetComponentType<T1>(), GetComponentType<T2>(), GetComponentType<T3>(), GetComponentType<T4>(), GetComponentType<T5>(), GetComponentType<T6>(), GetComponentType<T7>(), GetComponentType<T8>(), GetComponentType<T9>(), GetComponentType<T10>(), GetComponentType<T11>(), GetComponentType<T12>(), GetComponentType<T13>(), GetComponentType<T14>());
+        }
+
+        /// <summary>
+        /// Retrieves the specified component types.
+        /// </summary>
+        public readonly void GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12, out int c13, out int c14) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged
+        {
+            c1 = GetComponentType<T1>();
+            c2 = GetComponentType<T2>();
+            c3 = GetComponentType<T3>();
+            c4 = GetComponentType<T4>();
+            c5 = GetComponentType<T5>();
+            c6 = GetComponentType<T6>();
+            c7 = GetComponentType<T7>();
+            c8 = GetComponentType<T8>();
+            c9 = GetComponentType<T9>();
+            c10 = GetComponentType<T10>();
+            c11 = GetComponentType<T11>();
+            c12 = GetComponentType<T12>();
+            c13 = GetComponentType<T13>();
+            c14 = GetComponentType<T14>();
         }
 
         /// <summary>
@@ -992,23 +1069,29 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetComponentType<T1>());
-            bitMask.Set(GetComponentType<T2>());
-            bitMask.Set(GetComponentType<T3>());
-            bitMask.Set(GetComponentType<T4>());
-            bitMask.Set(GetComponentType<T5>());
-            bitMask.Set(GetComponentType<T6>());
-            bitMask.Set(GetComponentType<T7>());
-            bitMask.Set(GetComponentType<T8>());
-            bitMask.Set(GetComponentType<T9>());
-            bitMask.Set(GetComponentType<T10>());
-            bitMask.Set(GetComponentType<T11>());
-            bitMask.Set(GetComponentType<T12>());
-            bitMask.Set(GetComponentType<T13>());
-            bitMask.Set(GetComponentType<T14>());
-            bitMask.Set(GetComponentType<T15>());
-            return bitMask;
+            return new(GetComponentType<T1>(), GetComponentType<T2>(), GetComponentType<T3>(), GetComponentType<T4>(), GetComponentType<T5>(), GetComponentType<T6>(), GetComponentType<T7>(), GetComponentType<T8>(), GetComponentType<T9>(), GetComponentType<T10>(), GetComponentType<T11>(), GetComponentType<T12>(), GetComponentType<T13>(), GetComponentType<T14>(), GetComponentType<T15>());
+        }
+
+        /// <summary>
+        /// Retrieves the specified component types.
+        /// </summary>
+        public readonly void GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12, out int c13, out int c14, out int c15) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged
+        {
+            c1 = GetComponentType<T1>();
+            c2 = GetComponentType<T2>();
+            c3 = GetComponentType<T3>();
+            c4 = GetComponentType<T4>();
+            c5 = GetComponentType<T5>();
+            c6 = GetComponentType<T6>();
+            c7 = GetComponentType<T7>();
+            c8 = GetComponentType<T8>();
+            c9 = GetComponentType<T9>();
+            c10 = GetComponentType<T10>();
+            c11 = GetComponentType<T11>();
+            c12 = GetComponentType<T12>();
+            c13 = GetComponentType<T13>();
+            c14 = GetComponentType<T14>();
+            c15 = GetComponentType<T15>();
         }
 
         /// <summary>
@@ -1016,24 +1099,30 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetComponentType<T1>());
-            bitMask.Set(GetComponentType<T2>());
-            bitMask.Set(GetComponentType<T3>());
-            bitMask.Set(GetComponentType<T4>());
-            bitMask.Set(GetComponentType<T5>());
-            bitMask.Set(GetComponentType<T6>());
-            bitMask.Set(GetComponentType<T7>());
-            bitMask.Set(GetComponentType<T8>());
-            bitMask.Set(GetComponentType<T9>());
-            bitMask.Set(GetComponentType<T10>());
-            bitMask.Set(GetComponentType<T11>());
-            bitMask.Set(GetComponentType<T12>());
-            bitMask.Set(GetComponentType<T13>());
-            bitMask.Set(GetComponentType<T14>());
-            bitMask.Set(GetComponentType<T15>());
-            bitMask.Set(GetComponentType<T16>());
-            return bitMask;
+            return new(GetComponentType<T1>(), GetComponentType<T2>(), GetComponentType<T3>(), GetComponentType<T4>(), GetComponentType<T5>(), GetComponentType<T6>(), GetComponentType<T7>(), GetComponentType<T8>(), GetComponentType<T9>(), GetComponentType<T10>(), GetComponentType<T11>(), GetComponentType<T12>(), GetComponentType<T13>(), GetComponentType<T14>(), GetComponentType<T15>(), GetComponentType<T16>());
+        }
+
+        /// <summary>
+        /// Retrieves the specified component types.
+        /// </summary>
+        public readonly void GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12, out int c13, out int c14, out int c15, out int c16) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged
+        {
+            c1 = GetComponentType<T1>();
+            c2 = GetComponentType<T2>();
+            c3 = GetComponentType<T3>();
+            c4 = GetComponentType<T4>();
+            c5 = GetComponentType<T5>();
+            c6 = GetComponentType<T6>();
+            c7 = GetComponentType<T7>();
+            c8 = GetComponentType<T8>();
+            c9 = GetComponentType<T9>();
+            c10 = GetComponentType<T10>();
+            c11 = GetComponentType<T11>();
+            c12 = GetComponentType<T12>();
+            c13 = GetComponentType<T13>();
+            c14 = GetComponentType<T14>();
+            c15 = GetComponentType<T15>();
+            c16 = GetComponentType<T16>();
         }
 
         /// <summary>
@@ -1041,9 +1130,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetArrayTypes<T1>() where T1 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetArrayType<T1>());
-            return bitMask;
+            return new(GetArrayType<T1>());
         }
 
         /// <summary>
@@ -1051,10 +1138,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetArrayTypes<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetArrayType<T1>());
-            bitMask.Set(GetArrayType<T2>());
-            return bitMask;
+            return new(GetArrayType<T1>(), GetArrayType<T2>());
         }
 
         /// <summary>
@@ -1062,11 +1146,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetArrayTypes<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetArrayType<T1>());
-            bitMask.Set(GetArrayType<T2>());
-            bitMask.Set(GetArrayType<T3>());
-            return bitMask;
+            return new(GetArrayType<T1>(), GetArrayType<T2>(), GetArrayType<T3>());
         }
 
         /// <summary>
@@ -1074,12 +1154,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetArrayTypes<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetArrayType<T1>());
-            bitMask.Set(GetArrayType<T2>());
-            bitMask.Set(GetArrayType<T3>());
-            bitMask.Set(GetArrayType<T4>());
-            return bitMask;
+            return new(GetArrayType<T1>(), GetArrayType<T2>(), GetArrayType<T3>(), GetArrayType<T4>());
         }
 
         /// <summary>
@@ -1087,13 +1162,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetArrayTypes<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetArrayType<T1>());
-            bitMask.Set(GetArrayType<T2>());
-            bitMask.Set(GetArrayType<T3>());
-            bitMask.Set(GetArrayType<T4>());
-            bitMask.Set(GetArrayType<T5>());
-            return bitMask;
+            return new(GetArrayType<T1>(), GetArrayType<T2>(), GetArrayType<T3>(), GetArrayType<T4>(), GetArrayType<T5>());
         }
 
         /// <summary>
@@ -1101,14 +1170,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetArrayTypes<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetArrayType<T1>());
-            bitMask.Set(GetArrayType<T2>());
-            bitMask.Set(GetArrayType<T3>());
-            bitMask.Set(GetArrayType<T4>());
-            bitMask.Set(GetArrayType<T5>());
-            bitMask.Set(GetArrayType<T6>());
-            return bitMask;
+            return new(GetArrayType<T1>(), GetArrayType<T2>(), GetArrayType<T3>(), GetArrayType<T4>(), GetArrayType<T5>(), GetArrayType<T6>());
         }
 
         /// <summary>
@@ -1116,15 +1178,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetArrayTypes<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetArrayType<T1>());
-            bitMask.Set(GetArrayType<T2>());
-            bitMask.Set(GetArrayType<T3>());
-            bitMask.Set(GetArrayType<T4>());
-            bitMask.Set(GetArrayType<T5>());
-            bitMask.Set(GetArrayType<T6>());
-            bitMask.Set(GetArrayType<T7>());
-            return bitMask;
+            return new(GetArrayType<T1>(), GetArrayType<T2>(), GetArrayType<T3>(), GetArrayType<T4>(), GetArrayType<T5>(), GetArrayType<T6>(), GetArrayType<T7>());
         }
 
         /// <summary>
@@ -1132,16 +1186,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetArrayType<T1>());
-            bitMask.Set(GetArrayType<T2>());
-            bitMask.Set(GetArrayType<T3>());
-            bitMask.Set(GetArrayType<T4>());
-            bitMask.Set(GetArrayType<T5>());
-            bitMask.Set(GetArrayType<T6>());
-            bitMask.Set(GetArrayType<T7>());
-            bitMask.Set(GetArrayType<T8>());
-            return bitMask;
+            return new(GetArrayType<T1>(), GetArrayType<T2>(), GetArrayType<T3>(), GetArrayType<T4>(), GetArrayType<T5>(), GetArrayType<T6>(), GetArrayType<T7>(), GetArrayType<T8>());
         }
 
         /// <summary>
@@ -1149,17 +1194,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetArrayType<T1>());
-            bitMask.Set(GetArrayType<T2>());
-            bitMask.Set(GetArrayType<T3>());
-            bitMask.Set(GetArrayType<T4>());
-            bitMask.Set(GetArrayType<T5>());
-            bitMask.Set(GetArrayType<T6>());
-            bitMask.Set(GetArrayType<T7>());
-            bitMask.Set(GetArrayType<T8>());
-            bitMask.Set(GetArrayType<T9>());
-            return bitMask;
+            return new(GetArrayType<T1>(), GetArrayType<T2>(), GetArrayType<T3>(), GetArrayType<T4>(), GetArrayType<T5>(), GetArrayType<T6>(), GetArrayType<T7>(), GetArrayType<T8>(), GetArrayType<T9>());
         }
 
         /// <summary>
@@ -1167,18 +1202,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetArrayType<T1>());
-            bitMask.Set(GetArrayType<T2>());
-            bitMask.Set(GetArrayType<T3>());
-            bitMask.Set(GetArrayType<T4>());
-            bitMask.Set(GetArrayType<T5>());
-            bitMask.Set(GetArrayType<T6>());
-            bitMask.Set(GetArrayType<T7>());
-            bitMask.Set(GetArrayType<T8>());
-            bitMask.Set(GetArrayType<T9>());
-            bitMask.Set(GetArrayType<T10>());
-            return bitMask;
+            return new(GetArrayType<T1>(), GetArrayType<T2>(), GetArrayType<T3>(), GetArrayType<T4>(), GetArrayType<T5>(), GetArrayType<T6>(), GetArrayType<T7>(), GetArrayType<T8>(), GetArrayType<T9>(), GetArrayType<T10>());
         }
 
         /// <summary>
@@ -1186,19 +1210,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetArrayType<T1>());
-            bitMask.Set(GetArrayType<T2>());
-            bitMask.Set(GetArrayType<T3>());
-            bitMask.Set(GetArrayType<T4>());
-            bitMask.Set(GetArrayType<T5>());
-            bitMask.Set(GetArrayType<T6>());
-            bitMask.Set(GetArrayType<T7>());
-            bitMask.Set(GetArrayType<T8>());
-            bitMask.Set(GetArrayType<T9>());
-            bitMask.Set(GetArrayType<T10>());
-            bitMask.Set(GetArrayType<T11>());
-            return bitMask;
+            return new(GetArrayType<T1>(), GetArrayType<T2>(), GetArrayType<T3>(), GetArrayType<T4>(), GetArrayType<T5>(), GetArrayType<T6>(), GetArrayType<T7>(), GetArrayType<T8>(), GetArrayType<T9>(), GetArrayType<T10>(), GetArrayType<T11>());
         }
 
         /// <summary>
@@ -1206,20 +1218,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetArrayType<T1>());
-            bitMask.Set(GetArrayType<T2>());
-            bitMask.Set(GetArrayType<T3>());
-            bitMask.Set(GetArrayType<T4>());
-            bitMask.Set(GetArrayType<T5>());
-            bitMask.Set(GetArrayType<T6>());
-            bitMask.Set(GetArrayType<T7>());
-            bitMask.Set(GetArrayType<T8>());
-            bitMask.Set(GetArrayType<T9>());
-            bitMask.Set(GetArrayType<T10>());
-            bitMask.Set(GetArrayType<T11>());
-            bitMask.Set(GetArrayType<T12>());
-            return bitMask;
+            return new(GetArrayType<T1>(), GetArrayType<T2>(), GetArrayType<T3>(), GetArrayType<T4>(), GetArrayType<T5>(), GetArrayType<T6>(), GetArrayType<T7>(), GetArrayType<T8>(), GetArrayType<T9>(), GetArrayType<T10>(), GetArrayType<T11>(), GetArrayType<T12>());
         }
 
         /// <summary>
@@ -1227,9 +1226,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetTagTypes<T1>() where T1 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetTagType<T1>());
-            return bitMask;
+            return new(GetTagType<T1>());
         }
 
         /// <summary>
@@ -1237,10 +1234,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetTagTypes<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetTagType<T1>());
-            bitMask.Set(GetTagType<T2>());
-            return bitMask;
+            return new(GetTagType<T1>(), GetTagType<T2>());
         }
 
         /// <summary>
@@ -1248,11 +1242,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetTagTypes<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetTagType<T1>());
-            bitMask.Set(GetTagType<T2>());
-            bitMask.Set(GetTagType<T3>());
-            return bitMask;
+            return new(GetTagType<T1>(), GetTagType<T2>(), GetTagType<T3>());
         }
 
         /// <summary>
@@ -1260,12 +1250,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetTagTypes<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetTagType<T1>());
-            bitMask.Set(GetTagType<T2>());
-            bitMask.Set(GetTagType<T3>());
-            bitMask.Set(GetTagType<T4>());
-            return bitMask;
+            return new(GetTagType<T1>(), GetTagType<T2>(), GetTagType<T3>(), GetTagType<T4>());
         }
 
         /// <summary>
@@ -1273,13 +1258,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetTagType<T1>());
-            bitMask.Set(GetTagType<T2>());
-            bitMask.Set(GetTagType<T3>());
-            bitMask.Set(GetTagType<T4>());
-            bitMask.Set(GetTagType<T5>());
-            return bitMask;
+            return new(GetTagType<T1>(), GetTagType<T2>(), GetTagType<T3>(), GetTagType<T4>(), GetTagType<T5>());
         }
 
         /// <summary>
@@ -1287,14 +1266,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetTagType<T1>());
-            bitMask.Set(GetTagType<T2>());
-            bitMask.Set(GetTagType<T3>());
-            bitMask.Set(GetTagType<T4>());
-            bitMask.Set(GetTagType<T5>());
-            bitMask.Set(GetTagType<T6>());
-            return bitMask;
+            return new(GetTagType<T1>(), GetTagType<T2>(), GetTagType<T3>(), GetTagType<T4>(), GetTagType<T5>(), GetTagType<T6>());
         }
 
         /// <summary>
@@ -1302,15 +1274,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetTagType<T1>());
-            bitMask.Set(GetTagType<T2>());
-            bitMask.Set(GetTagType<T3>());
-            bitMask.Set(GetTagType<T4>());
-            bitMask.Set(GetTagType<T5>());
-            bitMask.Set(GetTagType<T6>());
-            bitMask.Set(GetTagType<T7>());
-            return bitMask;
+            return new(GetTagType<T1>(), GetTagType<T2>(), GetTagType<T3>(), GetTagType<T4>(), GetTagType<T5>(), GetTagType<T6>(), GetTagType<T7>());
         }
 
         /// <summary>
@@ -1318,16 +1282,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetTagType<T1>());
-            bitMask.Set(GetTagType<T2>());
-            bitMask.Set(GetTagType<T3>());
-            bitMask.Set(GetTagType<T4>());
-            bitMask.Set(GetTagType<T5>());
-            bitMask.Set(GetTagType<T6>());
-            bitMask.Set(GetTagType<T7>());
-            bitMask.Set(GetTagType<T8>());
-            return bitMask;
+            return new(GetTagType<T1>(), GetTagType<T2>(), GetTagType<T3>(), GetTagType<T4>(), GetTagType<T5>(), GetTagType<T6>(), GetTagType<T7>(), GetTagType<T8>());
         }
 
         /// <summary>
@@ -1335,17 +1290,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetTagType<T1>());
-            bitMask.Set(GetTagType<T2>());
-            bitMask.Set(GetTagType<T3>());
-            bitMask.Set(GetTagType<T4>());
-            bitMask.Set(GetTagType<T5>());
-            bitMask.Set(GetTagType<T6>());
-            bitMask.Set(GetTagType<T7>());
-            bitMask.Set(GetTagType<T8>());
-            bitMask.Set(GetTagType<T9>());
-            return bitMask;
+            return new(GetTagType<T1>(), GetTagType<T2>(), GetTagType<T3>(), GetTagType<T4>(), GetTagType<T5>(), GetTagType<T6>(), GetTagType<T7>(), GetTagType<T8>(), GetTagType<T9>());
         }
 
         /// <summary>
@@ -1353,18 +1298,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetTagType<T1>());
-            bitMask.Set(GetTagType<T2>());
-            bitMask.Set(GetTagType<T3>());
-            bitMask.Set(GetTagType<T4>());
-            bitMask.Set(GetTagType<T5>());
-            bitMask.Set(GetTagType<T6>());
-            bitMask.Set(GetTagType<T7>());
-            bitMask.Set(GetTagType<T8>());
-            bitMask.Set(GetTagType<T9>());
-            bitMask.Set(GetTagType<T10>());
-            return bitMask;
+            return new(GetTagType<T1>(), GetTagType<T2>(), GetTagType<T3>(), GetTagType<T4>(), GetTagType<T5>(), GetTagType<T6>(), GetTagType<T7>(), GetTagType<T8>(), GetTagType<T9>(), GetTagType<T10>());
         }
 
         /// <summary>
@@ -1372,19 +1306,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetTagType<T1>());
-            bitMask.Set(GetTagType<T2>());
-            bitMask.Set(GetTagType<T3>());
-            bitMask.Set(GetTagType<T4>());
-            bitMask.Set(GetTagType<T5>());
-            bitMask.Set(GetTagType<T6>());
-            bitMask.Set(GetTagType<T7>());
-            bitMask.Set(GetTagType<T8>());
-            bitMask.Set(GetTagType<T9>());
-            bitMask.Set(GetTagType<T10>());
-            bitMask.Set(GetTagType<T11>());
-            return bitMask;
+            return new(GetTagType<T1>(), GetTagType<T2>(), GetTagType<T3>(), GetTagType<T4>(), GetTagType<T5>(), GetTagType<T6>(), GetTagType<T7>(), GetTagType<T8>(), GetTagType<T9>(), GetTagType<T10>(), GetTagType<T11>());
         }
 
         /// <summary>
@@ -1392,20 +1314,7 @@ namespace Worlds
         /// </summary>
         public readonly BitMask GetTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
-            BitMask bitMask = default;
-            bitMask.Set(GetTagType<T1>());
-            bitMask.Set(GetTagType<T2>());
-            bitMask.Set(GetTagType<T3>());
-            bitMask.Set(GetTagType<T4>());
-            bitMask.Set(GetTagType<T5>());
-            bitMask.Set(GetTagType<T6>());
-            bitMask.Set(GetTagType<T7>());
-            bitMask.Set(GetTagType<T8>());
-            bitMask.Set(GetTagType<T9>());
-            bitMask.Set(GetTagType<T10>());
-            bitMask.Set(GetTagType<T11>());
-            bitMask.Set(GetTagType<T12>());
-            return bitMask;
+            return new(GetTagType<T1>(), GetTagType<T2>(), GetTagType<T3>(), GetTagType<T4>(), GetTagType<T5>(), GetTagType<T6>(), GetTagType<T7>(), GetTagType<T8>(), GetTagType<T9>(), GetTagType<T10>(), GetTagType<T11>(), GetTagType<T12>());
         }
 
         /// <summary>
@@ -1418,7 +1327,7 @@ namespace Worlds
             schema->arraysCount = 0;
             schema->tagsCount = 0;
             schema->componentRowSize = 0;
-            schema->definitionMask = default;
+            schema->definitionMask = Definition.Default;
             schema->componentOffsets = MemoryAddress.AllocateZeroed(OffsetsLengthInBytes);
             schema->sizes = MemoryAddress.AllocateZeroed(SizesLengthInBytes);
             schema->typeHashes = MemoryAddress.AllocateZeroed(TypeHashesLengthInBytes);
@@ -1586,7 +1495,7 @@ namespace Worlds
             schema->arraysCount = 0;
             schema->tagsCount = 0;
             schema->componentRowSize = 0;
-            schema->definitionMask = default;
+            schema->definitionMask = Definition.Default;
             schema->componentOffsets.Clear(OffsetsLengthInBytes);
             schema->sizes.Clear(SizesLengthInBytes);
             schema->typeHashes.Clear(TypeHashesLengthInBytes);

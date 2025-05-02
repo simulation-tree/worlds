@@ -461,7 +461,7 @@
     /// </summary>
     public readonly bool TryGetComponent<T>(int componentType, out T component) where T : unmanaged
     {
-        return world.TryGetComponent(value, componentType, out component);
+        return world.TryGetComponent<T>(value, componentType, out component);
     }
 
     /// <summary>
@@ -469,7 +469,7 @@
     /// </summary>
     public readonly bool TryGetComponent<T>(out T component) where T : unmanaged
     {
-        return world.TryGetComponent(value, out component);
+        return world.TryGetComponent<T>(value, out component);
     }
 
     /// <summary>
@@ -493,7 +493,7 @@
     /// </summary>
     public readonly void SetComponent<T>(T component) where T : unmanaged
     {
-        world.SetComponent(value, component);
+        world.SetComponent<T>(value, component);
     }
 
     /// <summary>
@@ -510,7 +510,7 @@
     /// </summary>
     public readonly void AddComponent<T>(int componentType, T component) where T : unmanaged
     {
-        world.AddComponent(value, componentType, component);
+        world.AddComponent<T>(value, componentType, component);
     }
 
     /// <summary>
@@ -527,7 +527,7 @@
     /// </summary>
     public readonly void AddComponent<T>(T component) where T : unmanaged
     {
-        world.AddComponent(value, component);
+        world.AddComponent<T>(value, component);
     }
 
     /// <summary>
