@@ -1,4 +1,5 @@
 ﻿using System;
+using Unmanaged;
 
 namespace Worlds
 {
@@ -33,11 +34,23 @@ namespace Worlds
         public int index;
 
         /// <summary>
+        /// The row within the chunk that contains all of the components.
+        /// </summary>
+        public MemoryAddress row;
+
+        /// <summary>
         /// Amount of children the entity in this slot has.
         /// </summary>
         public int childrenCount;
 
+        /// <summary>
+        /// Where references start.
+        /// </summary>
         public int referenceStart;
+
+        /// <summary>
+        /// Length of references.
+        /// </summary>
         public int referenceCount;
 
         /// <summary>

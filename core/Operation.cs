@@ -1,5 +1,6 @@
 ﻿using Collections.Generic;
 using System;
+using System.Runtime.CompilerServices;
 using Types;
 using Unmanaged;
 
@@ -8,6 +9,7 @@ namespace Worlds
     /// <summary>
     /// Represents a collection of instructions for a world to perform.
     /// </summary>
+    [SkipLocalsInit]
     public unsafe struct Operation : IDisposable, ISerializable
     {
         private Implementation* operation;
@@ -200,8 +202,7 @@ namespace Worlds
         /// </summary>
         public readonly void CreateEntity()
         {
-            WriteInstructionType(InstructionType.CreateEntities);
-            WriteValue(1u);
+            WriteInstructionType(InstructionType.CreateSingleEntity);
         }
 
         /// <summary>
@@ -209,8 +210,7 @@ namespace Worlds
         /// </summary>
         public readonly void CreateEntityAndSelect()
         {
-            WriteInstructionType(InstructionType.CreateEntitiesAndSelect);
-            WriteValue(1u);
+            WriteInstructionType(InstructionType.CreateSingleEntityAndSelect);
         }
 
         /// <summary>
@@ -618,25 +618,33 @@ namespace Worlds
                 bytePosition = 0;
             }
 
+            private void CreateSingleEntity()
+            {
+                history.Add(world.CreateEntity());
+            }
+
+            private void CreateSingleEntityAndSelect()
+            {
+                uint entity = world.CreateEntity();
+                history.Add(entity);
+                selection.Add(entity);
+            }
+
             private void CreateEntities()
             {
                 int count = operation.Read<int>(ref bytePosition);
-                for (int i = 0; i < count; i++)
-                {
-                    uint entity = world.CreateEntity();
-                    history.Add(entity);
-                }
+                Span<uint> entities = stackalloc uint[count];
+                world.CreateEntities(entities);
+                history.AddRange(entities);
             }
 
             private void CreateEntitiesAndSelect()
             {
                 int count = operation.Read<int>(ref bytePosition);
-                for (int i = 0; i < count; i++)
-                {
-                    uint entity = world.CreateEntity();
-                    history.Add(entity);
-                    selection.Add(entity);
-                }
+                Span<uint> entities = stackalloc uint[count];
+                world.CreateEntities(entities);
+                history.AddRange(entities);
+                selection.AddRange(entities);
             }
 
             private readonly void DestroySelectedEntities()
@@ -937,6 +945,12 @@ namespace Worlds
                     InstructionType type = operation.ReadInstructionType(ref bytePosition);
                     switch (type)
                     {
+                        case InstructionType.CreateSingleEntity:
+                            CreateSingleEntity();
+                            break;
+                        case InstructionType.CreateSingleEntityAndSelect:
+                            CreateSingleEntityAndSelect();
+                            break;
                         case InstructionType.CreateEntities:
                             CreateEntities();
                             break;

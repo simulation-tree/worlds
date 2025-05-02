@@ -48,21 +48,48 @@ namespace Worlds.Tests
         }
 
         [Test]
-        public void CreateManyWithData()
+        public void CreateComponentFromBytes()
+        {
+            using World world = CreateWorld();
+            uint a = world.CreateEntity();
+            uint b = world.CreateEntity();
+            int componentType = world.Schema.GetComponentType<TestComponent>();
+            world.AddComponentBytes(a, componentType, [2, 0, 0, 0]);
+            world.AddComponentBytes(b, componentType, [3, 0, 0, 0]);
+            Assert.That(world.ContainsComponent<TestComponent>(a), Is.True);
+            Assert.That(world.GetComponent<TestComponent>(a).value, Is.EqualTo(2));
+            Assert.That(world.ContainsComponent<TestComponent>(b), Is.True);
+            Assert.That(world.GetComponent<TestComponent>(b).value, Is.EqualTo(3));
+        }
+
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        [TestCase(4)]
+        [TestCase(5)]
+        [TestCase(8)]
+        [TestCase(10)]
+        [TestCase(12)]
+        [TestCase(40)]
+        public void CreateManyWithData(int creationCount)
         {
             using World world = CreateWorld();
             using Operation operation = new();
-            operation.CreateEntitiesAndSelect(40);
+            for (int i = 0; i < creationCount; i++)
+            {
+                operation.CreateEntityAndSelect();
+            }
+
             operation.AddComponent(new TestComponent(2));
             operation.Perform(world);
+            Assert.That(world.Count, Is.EqualTo(creationCount));
             using List<uint> createdEntities = new();
             foreach (uint entity in world.Entities)
             {
                 createdEntities.Add(entity);
-                Assert.That(world.GetComponent<TestComponent>(entity).value, Is.EqualTo(2));
+                Assert.That(world.ContainsComponent<TestComponent>(entity), Is.True);
+                Assert.That(world.GetComponent<TestComponent>(entity).value, Is.EqualTo(2), $"Entity {entity} was expected to have a value of 2");
             }
-
-            Assert.That(createdEntities.Count, Is.EqualTo(40));
         }
 
         [Test]

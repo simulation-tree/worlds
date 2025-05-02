@@ -6,12 +6,22 @@
     public enum InstructionType : byte
     {
         /// <summary> 
-        /// Creates entities. 
+        /// Creates one entity. 
+        /// </summary>
+        CreateSingleEntity,
+
+        /// <summary> 
+        /// Creates one entity and select it. 
+        /// </summary>
+        CreateSingleEntityAndSelect,
+
+        /// <summary> 
+        /// Creates multiple entities. 
         /// </summary>
         CreateEntities,
 
         /// <summary> 
-        /// Creates entities and selects them. 
+        /// Creates multiple entities and selects them. 
         /// </summary>
         CreateEntitiesAndSelect,
 

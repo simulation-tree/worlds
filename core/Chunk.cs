@@ -189,45 +189,15 @@ namespace Worlds
         /// <summary>
         /// Adds the given <paramref name="entity"/> into this chunk and returns its referable index.
         /// </summary>
-        public readonly void AddEntity(uint entity, ref int index)
+        internal readonly void AddEntity(uint entity, ref Slot slot)
         {
             MemoryAddress.ThrowIfDefault(chunk);
 
-            index = chunk->count + 1;
+            slot.index = chunk->count + 1;
             chunk->entities.Add(entity);
             chunk->lastEntity = entity;
-            chunk->components.AddDefault();
-            chunk->count = index;
-        }
-
-        /// <summary>
-        /// Adds the given <paramref name="entity"/> into this chunk and returns its referable index.
-        /// </summary>
-        public readonly void AddEntity(uint entity, ref int index, out Row row)
-        {
-            MemoryAddress.ThrowIfDefault(chunk);
-
-            index = chunk->count + 1;
-            chunk->entities.Add(entity);
-            chunk->lastEntity = entity;
-            chunk->components.AddDefault(out MemoryAddress newItem);
-            chunk->count = index;
-            row = new(chunk->schema, newItem);
-        }
-
-        /// <summary>
-        /// Adds the given <paramref name="entity"/> into this chunk and returns its referable index.
-        /// </summary>
-        public readonly int AddEntity(uint entity)
-        {
-            MemoryAddress.ThrowIfDefault(chunk);
-
-            int index = chunk->count + 1;
-            chunk->entities.Add(entity);
-            chunk->lastEntity = entity;
-            chunk->components.AddDefault();
-            chunk->count = index;
-            return index;
+            chunk->components.AddDefault(out slot.row);
+            chunk->count = slot.index;
         }
 
         /// <summary>
@@ -265,60 +235,6 @@ namespace Worlds
             return ref chunk->components[index].Read<T>(componentOffset);
         }
 
-        /// <summary>
-        /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> at <paramref name="index"/>.
-        /// </summary>
-        public readonly MemoryAddress GetComponent(int index, int componentType)
-        {
-            MemoryAddress.ThrowIfDefault(chunk);
-            ThrowIfIndexIsOutOfRange(index);
-            ThrowIfComponentTypeIsMissing(componentType);
-
-            int componentOffset = chunk->schema.GetComponentOffset(componentType);
-            return chunk->components[index].Read(componentOffset);
-        }
-
-        /// <summary>
-        /// Retrieves the pointer for the specific component of the type <paramref name="componentType"/> at <paramref name="index"/>.
-        /// </summary>
-        public readonly MemoryAddress GetComponent(int index, int componentType, out int componentSize)
-        {
-            MemoryAddress.ThrowIfDefault(chunk);
-            ThrowIfIndexIsOutOfRange(index);
-            ThrowIfComponentTypeIsMissing(componentType);
-
-            int componentOffset = chunk->schema.GetComponentOffset(componentType);
-            componentSize = chunk->schema.GetComponentSize(componentType);
-            return chunk->components[index].Read(componentOffset);
-        }
-
-        /// <summary>
-        /// Retrieves the bytes for the specific component of the type <paramref name="componentType"/> at <paramref name="index"/>.
-        /// </summary>
-        public readonly Span<byte> GetComponentBytes(int index, int componentType)
-        {
-            MemoryAddress.ThrowIfDefault(chunk);
-            ThrowIfIndexIsOutOfRange(index);
-            ThrowIfComponentTypeIsMissing(componentType);
-
-            int componentOffset = chunk->schema.GetComponentOffset(componentType);
-            int componentSize = chunk->schema.GetComponentSize(componentType);
-            return chunk->components[index].AsSpan(componentOffset, componentSize);
-        }
-
-        /// <summary>
-        /// Assigns the component for entity at <paramref name="index"/> to <paramref name="value"/>.
-        /// </summary>
-        public readonly void SetComponent<T>(int index, int componentType, T value) where T : unmanaged
-        {
-            MemoryAddress.ThrowIfDefault(chunk);
-            ThrowIfIndexIsOutOfRange(index);
-            ThrowIfComponentTypeIsMissing(componentType);
-
-            int componentOffset = chunk->schema.GetComponentOffset(componentType);
-            chunk->components[index].Write(componentOffset, value);
-        }
-
         /// <inheritdoc/>
         public readonly override bool Equals(object? obj)
         {
@@ -329,47 +245,6 @@ namespace Worlds
         public readonly bool Equals(Chunk other)
         {
             return (nint)chunk == (nint)other.chunk;
-        }
-
-        /// <summary>
-        /// Moves the entity at <paramref name="index"/> and all of its components to the <paramref name="destination"/> chunk,
-        /// and modifies it to match the new index.
-        /// </summary>
-        public static void MoveEntityAt(uint entity, ref int index, ref Chunk current, Chunk destination)
-        {
-            MemoryAddress.ThrowIfDefault(current.chunk);
-            MemoryAddress.ThrowIfDefault(destination.chunk);
-
-            current.chunk->entities.RemoveAtBySwapping(index);
-            current.chunk->lastEntity = current.chunk->entities[--current.chunk->count];
-            current.chunk->components.RemoveAtBySwappingAndAdd(index, destination.chunk->components);
-
-            index = destination.chunk->count + 1;
-            destination.chunk->entities.Add(entity);
-            destination.chunk->lastEntity = entity;
-            destination.chunk->count = index;
-            current = destination;
-        }
-
-        /// <summary>
-        /// Moves the entity at <paramref name="index"/> and all of its components to the <paramref name="destination"/> chunk,
-        /// and modifies it to match the new index.
-        /// </summary>
-        public static void MoveEntityAt(uint entity, ref int index, ref Chunk current, Chunk destination, out Row newRow)
-        {
-            MemoryAddress.ThrowIfDefault(current.chunk);
-            MemoryAddress.ThrowIfDefault(destination.chunk);
-
-            current.chunk->entities.RemoveAtBySwapping(index);
-            current.chunk->lastEntity = current.chunk->entities[--current.chunk->count];
-            current.chunk->components.RemoveAtBySwappingAndAdd(index, destination.chunk->components, out MemoryAddress newItem);
-
-            index = destination.chunk->count + 1;
-            destination.chunk->entities.Add(entity);
-            destination.chunk->lastEntity = entity;
-            destination.chunk->count = index;
-            current = destination;
-            newRow = new(destination.chunk->schema, newItem);
         }
 
         /// <inheritdoc/>
@@ -390,7 +265,7 @@ namespace Worlds
         public readonly struct Row
         {
             private readonly Schema schema;
-            private readonly MemoryAddress row;
+            internal readonly MemoryAddress row;
 
             internal Row(Schema schema, MemoryAddress row)
             {
@@ -428,15 +303,6 @@ namespace Worlds
             public readonly Span<byte> GetSpan(int componentType)
             {
                 return row.AsSpan(schema.schema->componentOffsets.ReadElement<int>(componentType), schema.schema->sizes.ReadElement<int>(componentType));
-            }
-
-            /// <summary>
-            /// Retrieves all bytes for the given <paramref name="componentType"/>.
-            /// </summary>
-            public readonly Span<byte> GetSpan(int componentType, out int componentSize)
-            {
-                componentSize = schema.schema->sizes.ReadElement<int>(componentType);
-                return row.AsSpan(schema.schema->componentOffsets.ReadElement<int>(componentType), componentSize);
             }
         }
 

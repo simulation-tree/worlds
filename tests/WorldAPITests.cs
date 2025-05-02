@@ -28,14 +28,17 @@ namespace Worlds.Tests
         }
 #endif
 
-        [Test]
-        public void MaxEntityIDIsValid()
+        [TestCase(3)]
+        [TestCase(9)]
+        [TestCase(10)]
+        [TestCase(30)]
+        [TestCase(100)]
+        public void MaxEntityIDIsValid(int creationCount)
         {
-            const int EntitiesToCreate = 9;
             using World world = CreateWorld();
-            Span<uint> entities = stackalloc uint[EntitiesToCreate];
+            Span<uint> entities = stackalloc uint[creationCount];
             world.CreateEntities(entities);
-            Assert.That(world.MaxEntityValue, Is.EqualTo(entities[EntitiesToCreate - 1]));
+            Assert.That(world.MaxEntityValue, Is.EqualTo(entities[creationCount - 1]));
             Assert.That(world.MaxEntityValue, Is.EqualTo(entities.Length));
 
             using Array<bool> buffer = new(world.MaxEntityValue + 1);
@@ -112,6 +115,36 @@ namespace Worlds.Tests
             Assert.That(entities[4], Is.EqualTo(9));
             Assert.That(entities[5], Is.EqualTo(10));
             Assert.That(entities[6], Is.EqualTo(11));
+        }
+
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(5)]
+        [TestCase(10)]
+        [TestCase(100)]
+        public void CreateBulkEntitiesWithComponents(int creationCount)
+        {
+            using World world = CreateWorld();
+            Span<uint> entities = stackalloc uint[creationCount];
+            int component1 = world.Schema.GetComponentType<SimpleComponent>();
+            int component2 = world.Schema.GetComponentType<TestComponent>();
+            int component3 = world.Schema.GetComponentType<Another>();
+            Definition definition = new(new BitMask(component1, component2, component3));
+            world.CreateEntities(entities, definition);
+            Assert.That(world.Count, Is.EqualTo(creationCount));
+            for (int i = 0; i < entities.Length; i++)
+            {
+                uint entity = entities[i];
+                Assert.That(world.ContainsEntity(entity), Is.True);
+                Assert.That(world.GetDefinition(entity) == definition, Is.True);
+                Chunk.Row row = world.GetChunkRow(entity);
+                row.SetComponent(component1, new SimpleComponent("aa"));
+                row.SetComponent(component2, new TestComponent(i));
+                row.SetComponent(component3, new Another(32));
+                Assert.That(world.GetComponent<SimpleComponent>(entity).data.ToString(), Is.EqualTo("aa"));
+                Assert.That(world.GetComponent<TestComponent>(entity).value, Is.EqualTo(i));
+                Assert.That(world.GetComponent<Another>(entity).data, Is.EqualTo(32));
+            }
         }
 
         [Test]
@@ -203,7 +236,7 @@ namespace Worlds.Tests
 
 #if DEBUG
         [Test]
-        public void CreateAndDestroyEntity()
+        public void ThrowIfEntityIsMissing()
         {
             using World world = CreateWorld();
             uint a = world.CreateEntity();
@@ -219,7 +252,7 @@ namespace Worlds.Tests
         }
 
         [Test]
-        public void AddingTwoComponents()
+        public void ThrowIfComponentIsMissing()
         {
             using World world = CreateWorld();
             uint entity = world.CreateEntity();
