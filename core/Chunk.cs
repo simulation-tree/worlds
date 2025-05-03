@@ -78,6 +78,19 @@ namespace Worlds
             }
         }
 
+        /// <summary>
+        /// Version of the chunk that increments when entities are added and removed.
+        /// </summary>
+        public readonly int Version
+        {
+            get
+            {
+                MemoryAddress.ThrowIfDefault(chunk);
+
+                return chunk->version;
+            }
+        }
+
 #if NET
         /// <inheritdoc/>
         [Obsolete("Default constructor not supported", true)]
@@ -95,6 +108,7 @@ namespace Worlds
             chunk = MemoryAddress.AllocatePointer<ChunkPointer>();
             chunk->lastEntity = 0;
             chunk->count = 0;
+            chunk->version = 0;
             chunk->entities = new(4);
             chunk->entities.AddDefault(); //reserved
             chunk->components = new(4, schema.schema->componentRowSize);
@@ -184,33 +198,6 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(chunk);
 
             return chunk->schema.GetComponentOffset(componentType);
-        }
-
-        /// <summary>
-        /// Adds the given <paramref name="entity"/> into this chunk and returns its referable index.
-        /// </summary>
-        internal readonly void AddEntity(uint entity, ref Slot slot)
-        {
-            MemoryAddress.ThrowIfDefault(chunk);
-
-            slot.index = chunk->count + 1;
-            chunk->entities.Add(entity);
-            chunk->lastEntity = entity;
-            chunk->components.AddDefault(out slot.row);
-            chunk->count = slot.index;
-        }
-
-        /// <summary>
-        /// Removes the entity at the given <paramref name="index"/>.
-        /// </summary>
-        public readonly void RemoveEntityAt(int index)
-        {
-            MemoryAddress.ThrowIfDefault(chunk);
-            ThrowIfIndexIsOutOfRange(index);
-
-            chunk->entities.RemoveAtBySwapping(index);
-            chunk->components.RemoveAtBySwapping(index);
-            chunk->lastEntity = chunk->entities[--chunk->count];
         }
 
         /// <summary>

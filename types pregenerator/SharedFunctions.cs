@@ -1,3 +1,4 @@
+using System;
 using System.Text;
 
 public static class SharedFunctions
@@ -231,14 +232,17 @@ public static class SharedFunctions
     public static string AssignComponentOffsets(uint count, int indent)
     {
         StringBuilder builder = new();
+        builder.Append("Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);");
+        builder.Append('\n');
+        builder.Append(new string(' ', indent));
         for (uint i = 1; i <= count + 1; i++)
         {
             builder.Append(ComponentOffsetFieldName);
             builder.Append(i);
-            builder.Append(" = chunk.GetComponentOffset(");
+            builder.Append(" = componentOffsets[");
             builder.Append(ComponentTypeFieldName);
             builder.Append(i);
-            builder.Append(");");
+            builder.Append("];");
 
             if (i < count + 1)
             {

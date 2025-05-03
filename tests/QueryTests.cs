@@ -492,7 +492,7 @@ namespace Worlds.Tests
             world.AddComponent(a, new Apple());
             world.AddComponent(b, new Apple());
             ComponentQuery<Apple> appleQuery = new(world);
-            Assert.Throws<Exception>(() =>
+            Assert.Throws<ChunkModifiedWhileIteratingException>(() =>
             {
                 foreach (var r in appleQuery)
                 {

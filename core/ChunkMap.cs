@@ -23,9 +23,10 @@ namespace Worlds
 
         public void Dispose()
         {
-            for (int i = 0; i < chunkMap->chunks.Count; i++)
+            Span<Chunk> chunks = chunkMap->chunks.AsSpan();
+            for (int i = 0; i < chunks.Length; i++)
             {
-                chunkMap->chunks[i].Dispose();
+                chunks[i].Dispose();
             }
 
             chunkMap->keys.Dispose();
@@ -33,7 +34,6 @@ namespace Worlds
             chunkMap->occupied.Dispose();
             chunkMap->chunks.Dispose();
             MemoryAddress.Free(ref chunkMap);
-            chunkMap = default;
         }
 
         private readonly void Resize(int newCapacity, ref Span<bool> occupied, ref Span<ChunkKey> values, ref Span<long> hashCodes)

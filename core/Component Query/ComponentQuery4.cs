@@ -710,9 +710,7 @@ namespace Worlds
         /// <inheritdoc/>
         public ref struct Enumerator
         {
-            private readonly MemoryAddress chunks;
-            private readonly int chunkCount;
-            private readonly int version;
+            private readonly ReadOnlySpan<Chunk> chunks;
             private readonly ComponentQuery<C1, C2, C3, C4> query;
             private readonly int componentType1;
             private int componentOffset1;
@@ -722,6 +720,7 @@ namespace Worlds
             private int componentOffset3;
             private readonly int componentType4;
             private int componentOffset4;
+            private int version;
             private int entityIndex;
             private int entityCount;
             private int chunkIndex;
@@ -748,8 +747,7 @@ namespace Worlds
             internal unsafe Enumerator(ComponentQuery<C1, C2, C3, C4> query)
             {
                 this.query = query;
-                this.version = query.world.Version;
-                chunkCount = 0;
+                int chunkCount = 0;
                 ReadOnlySpan<Chunk> allChunks = query.world.Chunks;
                 Span<Chunk> chunksBuffer = stackalloc Chunk[allChunks.Length];
                 foreach (Chunk chunk in allChunks)
@@ -803,17 +801,32 @@ namespace Worlds
                 componentType4 = schema.GetComponentType<C4>();
                 if (chunkCount > 0)
                 {
-                    chunks = MemoryAddress.Allocate(chunksBuffer.Slice(0, chunkCount));
-                    UpdateChunkFields(ref chunksBuffer[0]);
+                    MemoryAddress chunksMemory = MemoryAddress.Allocate(chunksBuffer.Slice(0, chunkCount));
+                    chunks = chunksMemory.GetSpan<Chunk>(chunkCount);
+                    Chunk chunk = chunks[0];
+                    version = chunk.chunk->version;
+                    entities = new(chunk.chunk->entities.Items.Pointer, chunk.chunk->count + 1);
+                    entityCount = chunk.chunk->count;
+                    components = chunk.chunk->components;
+                    Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+                    componentOffset1 = componentOffsets[componentType1];
+                    componentOffset2 = componentOffsets[componentType2];
+                    componentOffset3 = componentOffsets[componentType3];
+                    componentOffset4 = componentOffsets[componentType4];
+                }
+                else
+                {
+                    entities = default;
                 }
             }
 
             [Conditional("DEBUG")]
             private readonly void ThrowIfVersionIsDifferent() 
             {
-                if (version != query.world.Version)
+                Chunk chunk = chunks[chunkIndex];
+                if (version != chunk.Version)
                 {
-                    throw new($"Data in the world has changed while the component query has enumerated");
+                    throw new ChunkModifiedWhileIteratingException(chunk);
                 }
             }
 
@@ -822,19 +835,23 @@ namespace Worlds
             /// </summary>
             public bool MoveNext()
             {
-                ThrowIfVersionIsDifferent();
-
                 if (entityIndex < entityCount)
                 {
+                    ThrowIfVersionIsDifferent();
+
                     entityIndex++;
                     return true;
                 }
                 else
                 {
                     chunkIndex++;
-                    if (chunkIndex < chunkCount)
+                    if (chunkIndex < chunks.Length)
                     {
-                        UpdateChunkFields(ref chunks.ReadElement<Chunk>(chunkIndex));
+                        Chunk chunk = chunks[chunkIndex];
+                        version = chunk.chunk->version;
+                        entities = new(chunk.chunk->entities.Items.Pointer, chunk.chunk->count + 1);
+                        entityCount = chunk.chunk->count;
+                        components = chunk.chunk->components;
                         entityIndex = 1;
                         return true;
                     }
@@ -845,23 +862,13 @@ namespace Worlds
                 }
             }
 
-            private unsafe void UpdateChunkFields(ref Chunk chunk)
-            {
-                entities = new(chunk.chunk->entities.Items.Pointer, chunk.chunk->count + 1);
-                entityCount = chunk.chunk->count;
-                components = chunk.chunk->components;
-                componentOffset1 = chunk.GetComponentOffset(componentType1);
-                componentOffset2 = chunk.GetComponentOffset(componentType2);
-                componentOffset3 = chunk.GetComponentOffset(componentType3);
-                componentOffset4 = chunk.GetComponentOffset(componentType4);
-            }
-
             /// <inheritdoc/>
             public readonly void Dispose()
             {
-                if (chunkCount > 0)
+                if (chunks.Length > 0)
                 {
-                    chunks.Dispose();
+                    void* pointer = chunks.GetPointer();
+                    MemoryAddress.Free(ref pointer);
                 }
             }
         }

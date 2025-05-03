@@ -7,6 +7,7 @@ namespace Worlds.Pointers
     {
         public uint lastEntity;
         public int count;
+        public int version;
         public Definition definition;
         public Schema schema;
         public List<uint> entities;
