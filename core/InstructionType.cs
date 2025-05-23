@@ -36,6 +36,16 @@
         ClearSelection,
 
         /// <summary> 
+        /// Selects a single entity. 
+        /// </summary>
+        SelectEntity,
+
+        /// <summary> 
+        /// Clears selection and selects a single entity. 
+        /// </summary>
+        SetSelectedEntity,
+
+        /// <summary> 
         /// Selects entities. 
         /// </summary>
         SelectEntities,

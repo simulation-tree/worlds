@@ -486,8 +486,7 @@ namespace Worlds
         /// </summary>
         public readonly void SelectEntity(uint entity)
         {
-            WriteInstructionType(InstructionType.SelectEntities);
-            WriteValue(1);
+            WriteInstructionType(InstructionType.SelectEntity);
             WriteValue(entity);
         }
 
@@ -496,7 +495,26 @@ namespace Worlds
         /// </summary>
         public readonly void SelectEntity<T>(T entity) where T : unmanaged, IEntity
         {
-            SelectEntity(entity.GetEntityValue());
+            WriteInstructionType(InstructionType.SelectEntity);
+            WriteValue(entity.GetEntityValue());
+        }
+
+        /// <summary>
+        /// Sets <paramref name="entity"/> as the only selected entity.
+        /// </summary>
+        public readonly void SetSelectedEntity(uint entity)
+        {
+            WriteInstructionType(InstructionType.SetSelectedEntity);
+            WriteValue(entity);
+        }
+
+        /// <summary>
+        /// Sets <paramref name="entity"/> as the only selected entity.
+        /// </summary>
+        public readonly void SetSelectedEntity<T>(T entity) where T : unmanaged, IEntity
+        {
+            WriteInstructionType(InstructionType.SetSelectedEntity);
+            WriteValue(entity.GetEntityValue());
         }
 
         /// <summary>
@@ -665,6 +683,19 @@ namespace Worlds
                 int count = operation.Read<int>(ref bytePosition);
                 ReadOnlySpan<uint> entities = operation.ReadSpan<uint>(count, ref bytePosition);
                 selection.AddRange(entities);
+            }
+
+            private void SelectEntity()
+            {
+                uint entity = operation.Read<uint>(ref bytePosition);
+                selection.Add(entity);
+            }
+
+            private void SetSelectedEntity()
+            {
+                uint entity = operation.Read<uint>(ref bytePosition);
+                selection.Clear();
+                selection.Add(entity);
             }
 
             private readonly void ClearSelection()
@@ -962,6 +993,12 @@ namespace Worlds
                             break;
                         case InstructionType.SelectEntities:
                             SelectEntities();
+                            break;
+                        case InstructionType.SetSelectedEntity:
+                            SetSelectedEntity();
+                            break;
+                        case InstructionType.SelectEntity:
+                            SelectEntity();
                             break;
                         case InstructionType.ClearSelection:
                             ClearSelection();
