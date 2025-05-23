@@ -1,5 +1,6 @@
 ﻿using Collections.Generic;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Types;
@@ -2247,7 +2248,11 @@ namespace Worlds
             definition.AddComponentType(componentType);
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             MoveEntityTo(slots, entity, ref slot, destinationChunk);
-            slot.row.Write(world->schema.schema->componentOffsets[componentType], component);
+            unchecked
+            {
+                *(T*)(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]) = component;
+            }
+
             NotifyComponentAdded(entity, componentType);
         }
 
@@ -2266,7 +2271,11 @@ namespace Worlds
             definition.AddComponentType(componentType);
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             MoveEntityTo(slots, entity, ref slot, destinationChunk);
-            slot.row.Write(world->schema.schema->componentOffsets[componentType], component);
+            unchecked
+            {
+                *(T*)(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]) = component;
+            }
+
             NotifyComponentAdded(entity, componentType);
         }
 
@@ -2289,7 +2298,10 @@ namespace Worlds
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             MoveEntityTo(slots, entity, ref slot, destinationChunk);
             NotifyComponentAdded(entity, componentType);
-            return ref slot.row.Read<T>(world->schema.schema->componentOffsets[componentType]);
+            unchecked
+            {
+                return ref *(T*)(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+            }
         }
 
         /// <summary>
@@ -2309,7 +2321,10 @@ namespace Worlds
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             MoveEntityTo(slots, entity, ref slot, destinationChunk);
             NotifyComponentAdded(entity, componentType);
-            return ref slot.row.Read<T>(world->schema.schema->componentOffsets[componentType]);
+            unchecked
+            {
+                return ref *(T*)(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+            }
         }
 
         /// <summary>
@@ -2454,7 +2469,10 @@ namespace Worlds
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             MoveEntityTo(slots, entity, ref slot, destinationChunk);
             NotifyComponentAdded(entity, componentType);
-            component = slot.row.Read(world->schema.schema->componentOffsets[componentType]);
+            unchecked
+            {
+                component = new(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+            }
         }
 
         /// <summary>
@@ -2473,8 +2491,11 @@ namespace Worlds
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             MoveEntityTo(slots, entity, ref slot, destinationChunk);
             NotifyComponentAdded(entity, componentType);
-            componentSize = world->schema.schema->sizes[componentType];
-            return slot.row.Read(world->schema.schema->componentOffsets[componentType]);
+            unchecked
+            {
+                componentSize = world->schema.schema->sizes[(uint)componentType];
+                return new(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+            }
         }
 
         /// <summary>
@@ -2493,7 +2514,12 @@ namespace Worlds
             definition.AddComponentType(componentType);
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             MoveEntityTo(slots, entity, ref slot, destinationChunk);
-            slot.row.Write(world->schema.schema->componentOffsets[componentType], componentBytes);
+            NotifyComponentAdded(entity, componentType);
+            unchecked
+            {
+                Span<byte> component = new(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
+                componentBytes.CopyTo(component);
+            }
         }
 
         /// <summary>
@@ -2512,7 +2538,11 @@ namespace Worlds
             definition.AddComponentType(componentType);
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             MoveEntityTo(slots, entity, ref slot, destinationChunk);
-            return slot.row.AsSpan(world->schema.schema->componentOffsets[componentType], world->schema.schema->sizes[componentType]);
+            NotifyComponentAdded(entity, componentType);
+            unchecked
+            {
+                return new(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType], world->schema.schema->sizes[(uint)componentType]);
+            }
         }
 
         /// <summary>
@@ -2641,8 +2671,10 @@ namespace Worlds
 
             int componentType = world->schema.GetComponentType<T>();
             ThrowIfComponentMissing(entity, componentType);
-
-            return ref world->slots[entity].row.Read<T>(world->schema.schema->componentOffsets[componentType]);
+            unchecked
+            {
+                return ref *(T*)(world->slots[entity].row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+            }
         }
 
         /// <summary>
@@ -2658,7 +2690,10 @@ namespace Worlds
             ref Slot slot = ref world->slots[entity];
             if (slot.chunk.chunk->definition.componentTypes.Contains(componentType))
             {
-                return slot.row.Read<T>(world->schema.schema->componentOffsets[componentType]);
+                unchecked
+                {
+                    return *(T*)(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+                }
             }
             else
             {
@@ -2675,7 +2710,10 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentMissing(entity, componentType);
 
-            return ref world->slots[entity].row.Read<T>(world->schema.schema->componentOffsets[componentType]);
+            unchecked
+            {
+                return ref *(T*)(world->slots[entity].row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+            }
         }
 
         /// <summary>
@@ -2690,7 +2728,10 @@ namespace Worlds
             ref Slot slot = ref world->slots[entity];
             if (slot.chunk.chunk->definition.componentTypes.Contains(componentType))
             {
-                return slot.row.Read<T>(world->schema.schema->componentOffsets[componentType]);
+                unchecked
+                {
+                    return *(T*)(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+                }
             }
             else
             {
@@ -2708,7 +2749,10 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentMissing(entity, componentType);
 
-            return world->slots[entity].row.Read(world->schema.schema->componentOffsets[componentType]);
+            unchecked
+            {
+                return new(world->slots[entity].row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+            }
         }
 
         /// <summary>
@@ -2721,8 +2765,11 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentMissing(entity, componentType);
 
-            componentSize = world->schema.schema->sizes[componentType];
-            return world->slots[entity].row.Read(world->schema.schema->componentOffsets[componentType]);
+            unchecked
+            {
+                componentSize = world->schema.schema->sizes[(uint)componentType];
+                return new(world->slots[entity].row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+            }
         }
 
         /// <summary>
@@ -2734,9 +2781,10 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentMissing(entity, componentType);
 
-            int componentSize = world->schema.schema->sizes[componentType];
-            MemoryAddress component = world->slots[entity].row.Read(world->schema.schema->componentOffsets[componentType]);
-            return new(component.Pointer, componentSize);
+            unchecked
+            {
+                return new(world->slots[entity].row.Pointer + world->schema.schema->componentOffsets[(uint)componentType], world->schema.schema->sizes[(uint)componentType]);
+            }
         }
 
         /// <summary>
@@ -2782,7 +2830,10 @@ namespace Worlds
             contains = slot.chunk.chunk->definition.componentTypes.Contains(componentType);
             if (contains)
             {
-                return ref slot.row.Read<T>(world->schema.schema->componentOffsets[componentType]);
+                unchecked
+                {
+                    return ref *(T*)(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+                }
             }
             else
             {
@@ -2803,7 +2854,10 @@ namespace Worlds
             contains = slot.chunk.chunk->definition.componentTypes.Contains(componentType);
             if (contains)
             {
-                return ref slot.row.Read<T>(world->schema.schema->componentOffsets[componentType]);
+                unchecked
+                {
+                    return ref *(T*)(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+                }
             }
             else
             {
@@ -2822,7 +2876,11 @@ namespace Worlds
             ref Slot slot = ref world->slots[entity];
             if (slot.chunk.chunk->definition.componentTypes.Contains(componentType))
             {
-                component = slot.row.Read<T>(world->schema.schema->componentOffsets[componentType]);
+                unchecked
+                {
+                    component = *(T*)(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+                }
+
                 return true;
             }
             else
@@ -2844,7 +2902,11 @@ namespace Worlds
             ref Slot slot = ref world->slots[entity];
             if (slot.chunk.chunk->definition.componentTypes.Contains(componentType))
             {
-                component = slot.row.Read<T>(world->schema.schema->componentOffsets[componentType]);
+                unchecked
+                {
+                    component = *(T*)(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+                }
+
                 return true;
             }
             else
@@ -2865,7 +2927,10 @@ namespace Worlds
             int componentType = world->schema.GetComponentType<T>();
             ThrowIfComponentMissing(entity, componentType);
 
-            world->slots[entity].row.Write<T>(world->schema.schema->componentOffsets[componentType], component);
+            unchecked
+            {
+                *(T*)(world->slots[entity].row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]) = component;
+            }
         }
 
         /// <summary>
@@ -2877,7 +2942,10 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentMissing(entity, componentType);
 
-            world->slots[entity].row.Write<T>(world->schema.schema->componentOffsets[componentType], component);
+            unchecked
+            {
+                *(T*)(world->slots[entity].row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]) = component;
+            }
         }
 
         /// <summary>
@@ -2889,8 +2957,11 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentMissing(entity, componentType);
 
-            MemoryAddress component = world->slots[entity].row.Read(world->schema.schema->componentOffsets[componentType]);
-            component.CopyFrom(componentBytes.Slice(0, world->schema.schema->sizes[componentType]));
+            unchecked
+            {
+                Span<byte> component = new(world->slots[entity].row.Pointer + world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
+                componentBytes.CopyTo(component);
+            }
         }
 
         /// <summary>
@@ -2953,21 +3024,24 @@ namespace Worlds
             ThrowIfEntityIsMissing(sourceEntity);
             destinationWorld.ThrowIfEntityIsMissing(destinationEntity);
 
-            Slot sourceSlot = world->slots[(int)sourceEntity];
-            ref Slot destinationSlot = ref destinationWorld.world->slots[(int)destinationEntity];
-            for (int c = 0; c < BitMask.Capacity; c++)
+            unchecked
             {
-                if (sourceSlot.chunk.chunk->definition.componentTypes.Contains(c))
+                Slot sourceSlot = world->slots[(int)sourceEntity];
+                ref Slot destinationSlot = ref destinationWorld.world->slots[(int)destinationEntity];
+                for (int c = 0; c < BitMask.Capacity; c++)
                 {
-                    int sourceComponentSize = world->schema.schema->sizes[c];
-                    int sourceComponentOffset = world->schema.schema->componentOffsets[c];
-                    int destinationComponentOffset = destinationWorld.world->schema.schema->componentOffsets[c];
-                    if (!destinationSlot.chunk.chunk->definition.componentTypes.Contains(c))
+                    if (sourceSlot.chunk.chunk->definition.componentTypes.Contains(c))
                     {
-                        destinationWorld.AddComponentType(destinationEntity, c);
-                    }
+                        int sourceComponentSize = world->schema.schema->sizes[(uint)c];
+                        int sourceComponentOffset = world->schema.schema->componentOffsets[(uint)c];
+                        int destinationComponentOffset = destinationWorld.world->schema.schema->componentOffsets[(uint)c];
+                        if (!destinationSlot.chunk.chunk->definition.componentTypes.Contains(c))
+                        {
+                            destinationWorld.AddComponentType(destinationEntity, c);
+                        }
 
-                    destinationSlot.row.Write(destinationComponentOffset, sourceComponentSize, sourceSlot.row.Read(sourceComponentOffset));
+                        destinationSlot.row.Write(destinationComponentOffset, sourceComponentSize, sourceSlot.row.Read(sourceComponentOffset));
+                    }
                 }
             }
         }

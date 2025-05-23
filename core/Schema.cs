@@ -16,7 +16,6 @@ namespace Worlds
         /// <summary>
         /// The reserved tag to describe disabled entities.
         /// </summary>
-        //todo: checking if a bitmask has this tag set more cheaply than Contains
         public const int DisabledTagType = BitMask.MaxValue;
 
         internal const int OffsetsLengthInBytes = sizeof(int) * BitMask.Capacity;
@@ -261,7 +260,10 @@ namespace Worlds
         /// </summary>
         public readonly int GetComponentSize(int componentType)
         {
-            return schema->sizes[componentType];
+            unchecked
+            {
+                return schema->sizes[(uint)componentType];
+            }
         }
 
         /// <summary>
@@ -269,7 +271,10 @@ namespace Worlds
         /// </summary>
         public readonly int GetArraySize(int arrayType)
         {
-            return schema->sizes[BitMask.Capacity + arrayType];
+            unchecked
+            {
+                return schema->sizes[(uint)(BitMask.Capacity + arrayType)];
+            }
         }
 
         /// <summary>
@@ -280,7 +285,10 @@ namespace Worlds
         {
             ThrowIfComponentTypeIsMissing<T>();
 
-            return schema->componentOffsets[GetComponentType<T>()];
+            unchecked
+            {
+                return schema->componentOffsets[(uint)GetComponentType<T>()];
+            }
         }
 
         /// <summary>
@@ -289,7 +297,10 @@ namespace Worlds
         /// </summary>
         public readonly int GetComponentOffset(int componentType)
         {
-            return schema->componentOffsets[componentType];
+            unchecked
+            {
+                return schema->componentOffsets[(uint)componentType];
+            }
         }
 
         /// <summary>
