@@ -458,6 +458,14 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Tries to retrieve an existing copy of a <typeparamref name="T"/> component.
+        /// </summary>
+        public readonly bool TryGetComponent<T>(int componentType, out T component) where T : unmanaged
+        {
+            return world.TryGetComponent(value, componentType, out component);
+        }
+
+        /// <summary>
         /// Tries to retrieve the reference to the component of type <typeparamref name="T"/>.
         /// </summary>
         public readonly ref T TryGetComponent<T>(out bool contains) where T : unmanaged
@@ -535,6 +543,14 @@ namespace Worlds
         public readonly ref T GetArrayElement<T>(int index) where T : unmanaged
         {
             return ref world.GetArrayElement<T>(value, index);
+        }
+
+        /// <summary>
+        /// Retrieves a reference to the <typeparamref name="T"/> array element at <paramref name="index"/>.
+        /// </summary>
+        public readonly ref T GetArrayElement<T>(int arrayType, int index) where T : unmanaged
+        {
+            return ref world.GetArrayElement<T>(value, arrayType, index);
         }
 
         /// <summary>

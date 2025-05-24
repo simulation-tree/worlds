@@ -58,6 +58,8 @@ namespace Worlds
         /// <inheritdoc/>
         public void Dispose()
         {
+            MemoryAddress.ThrowIfDefault(operation);
+
             Implementation.Free(ref operation);
         }
 
@@ -1089,8 +1091,6 @@ namespace Worlds
 
             public static void Free(ref Implementation* operation)
             {
-                MemoryAddress.ThrowIfDefault(operation);
-
                 operation->buffer.Dispose();
                 MemoryAddress.Free(ref operation);
             }

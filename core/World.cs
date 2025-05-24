@@ -2160,6 +2160,17 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves the element at the index from an existing array on this entity.
+        /// </summary>
+        public readonly ref T GetArrayElement<T>(uint entity, int arrayType, int index) where T : unmanaged
+        {
+            ThrowIfEntityIsMissing(entity);
+            ThrowIfArrayIsMissing(entity, arrayType);
+
+            return ref world->arrays[entity][arrayType].Get<T>(index);
+        }
+
+        /// <summary>
         /// Retrieves the length of an existing array on this entity.
         /// </summary>
         public readonly int GetArrayLength<T>(uint entity) where T : unmanaged
