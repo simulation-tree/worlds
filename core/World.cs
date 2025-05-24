@@ -2147,6 +2147,26 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Attempts to retrieve an array of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
+        /// </summary>
+        public readonly bool TryGetArray<T>(uint entity, int arrayType, out Values<T> array) where T : unmanaged
+        {
+            MemoryAddress.ThrowIfDefault(world);
+            ThrowIfEntityIsMissing(entity);
+
+            if (world->slots[entity].chunk.chunk->definition.arrayTypes.Contains(arrayType))
+            {
+                array = new(world->arrays[entity][arrayType].pointer);
+                return true;
+            }
+            else
+            {
+                array = default;
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Retrieves the element at the index from an existing array on this entity.
         /// </summary>
         public readonly ref T GetArrayElement<T>(uint entity, int index) where T : unmanaged
