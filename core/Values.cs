@@ -120,7 +120,7 @@ namespace Worlds
         /// </summary>
         public readonly Span<T> AsSpan(int start)
         {
-            return pointer->items.AsSpan<T>(start, pointer->length - start);
+            return pointer->items.AsSpan<T>(start * sizeof(T), pointer->length - start);
         }
 
         /// <summary>
@@ -128,7 +128,7 @@ namespace Worlds
         /// </summary>
         public readonly Span<T> AsSpan(int start, int length)
         {
-            return pointer->items.AsSpan<T>(start, length);
+            return pointer->items.AsSpan<T>(start * sizeof(T), length);
         }
 
         /// <summary>
@@ -138,7 +138,7 @@ namespace Worlds
         {
             ThrowIfSizeMismatch<X>();
 
-            return pointer->items.AsSpan<X>(start, pointer->length - start);
+            return pointer->items.AsSpan<X>(start * sizeof(X), pointer->length - start);
         }
 
         /// <summary>
@@ -148,7 +148,7 @@ namespace Worlds
         {
             ThrowIfSizeMismatch<X>();
 
-            return pointer->items.AsSpan<X>(start, length);
+            return pointer->items.AsSpan<X>(start * sizeof(X), length);
         }
 
         /// <summary>
