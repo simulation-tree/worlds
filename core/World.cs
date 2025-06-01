@@ -1,6 +1,5 @@
 ﻿using Collections.Generic;
 using System;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Types;
@@ -19,6 +18,8 @@ namespace Worlds
 #if DEBUG
         internal static readonly System.Collections.Generic.Dictionary<Entity, StackTrace> createStackTraces = new();
 #endif
+        private const int InitialCapacity = 32;
+
         /// <summary>
         /// The version of the binary format used to serialize the world.
         /// </summary>
@@ -56,6 +57,19 @@ namespace Worlds
                 MemoryAddress.ThrowIfDefault(world);
 
                 return world->slots.Count - 1;
+            }
+        }
+
+        /// <summary>
+        /// The maximum most depth of the entity hierarchy.
+        /// </summary>
+        public readonly int MaxDepth
+        {
+            get
+            {
+                MemoryAddress.ThrowIfDefault(world);
+
+                return world->maxDepth;
             }
         }
 
@@ -179,15 +193,16 @@ namespace Worlds
         {
             Schema schema = new();
             world = MemoryAddress.AllocatePointer<WorldPointer>();
+            world->maxDepth = 0;
             world->schema = schema;
-            world->slots = new(4);
-            world->arrays = new(4);
-            world->freeEntities = new(4);
+            world->slots = new(InitialCapacity);
+            world->arrays = new(InitialCapacity);
+            world->freeEntities = new(InitialCapacity);
             world->chunks = new(schema);
             world->entityCreatedOrDestroyed = new(4);
             world->entityParentChanged = new(4);
             world->entityDataChanged = new(4);
-            world->references = new(4);
+            world->references = new(InitialCapacity);
             world->entityCreatedOrDestroyedCount = 0;
             world->entityParentChangedCount = 0;
             world->entityDataChangedCount = 0;
@@ -204,15 +219,16 @@ namespace Worlds
         public World(Schema schema)
         {
             world = MemoryAddress.AllocatePointer<WorldPointer>();
+            world->maxDepth = 0;
             world->schema = schema;
-            world->slots = new(4);
-            world->arrays = new(4);
-            world->freeEntities = new(4);
+            world->slots = new(InitialCapacity);
+            world->arrays = new(InitialCapacity);
+            world->freeEntities = new(InitialCapacity);
             world->chunks = new(schema);
             world->entityCreatedOrDestroyed = new(4);
             world->entityParentChanged = new(4);
             world->entityDataChanged = new(4);
-            world->references = new(4);
+            world->references = new(InitialCapacity);
             world->entityCreatedOrDestroyedCount = 0;
             world->entityParentChangedCount = 0;
             world->entityDataChangedCount = 0;
@@ -278,6 +294,7 @@ namespace Worlds
 
             world->chunks.Clear();
             world->references.Clear();
+            world->maxDepth = 0;
 
             Span<Slot> slots = world->slots.AsSpan();
             for (uint e = 1; e < slots.Length; e++)
@@ -298,6 +315,27 @@ namespace Worlds
                 slot.state = Slot.State.Free;
                 world->freeEntities.Push(e);
             }
+        }
+
+        /// <summary>
+        /// Copies all existing entities to the <paramref name="destination"/> span.
+        /// </summary>
+        /// <returns>Amount of entities copied.</returns>
+        public readonly int CopyEntitiesTo(Span<uint> destination)
+        {
+            MemoryAddress.ThrowIfDefault(world);
+
+            int count = 0;
+            Span<Slot> slots = world->slots.AsSpan();
+            for (uint e = 1; e < slots.Length; e++)
+            {
+                if (slots[(int)e].state != Slot.State.Free)
+                {
+                    destination[count++] = e;
+                }
+            }
+
+            return count;
         }
 
         /// <summary>
@@ -617,25 +655,27 @@ namespace Worlds
             ref Slot slot = ref slots[(int)entity];
             if (slot.childrenCount > 0)
             {
-                Span<uint> children = stackalloc uint[slot.childrenCount];
-                CopyChildrenTo(entity, children);
                 if (destroyChildren)
                 {
                     //destroy children
-                    for (int i = 0; i < children.Length; i++)
+                    for (uint childEntity = 1; childEntity < slots.Length; childEntity++)
                     {
-                        uint child = children[i];
-                        DestroyEntity(child, destroyChildren); //recusive
+                        if (slots[(int)childEntity].parent == entity)
+                        {
+                            DestroyEntity(childEntity, destroyChildren); //recusive
+                        }
                     }
                 }
                 else
                 {
                     //unparent children
-                    for (int i = 0; i < children.Length; i++)
+                    for (uint childEntity = 1; childEntity < slots.Length; childEntity++)
                     {
-                        uint child = children[i];
-                        ref Slot childSlot = ref slots[(int)child];
-                        childSlot.parent = default;
+                        ref Slot childSlot = ref slots[(int)childEntity];
+                        if (childSlot.parent == entity)
+                        {
+                            childSlot.parent = default;
+                        }
                     }
                 }
             }
@@ -643,6 +683,7 @@ namespace Worlds
             slot.flags |= Slot.Flags.Outdated;
             slot.state = Slot.State.Free;
             slot.referenceCount = default;
+            slot.depth = 0;
 
             ref Slot lastSlot = ref slots[(int)slot.chunk.chunk->lastEntity];
             lastSlot.index = slot.index;
@@ -657,6 +698,19 @@ namespace Worlds
             slot.row = default;
             slot.parent = default;
             world->freeEntities.Push(entity);
+
+            //calculate the max depth of the world
+            int maxDepth = 0;
+            for (uint e = 1; e < slots.Length; e++)
+            {
+                ref Slot currentSlot = ref slots[(int)e];
+                if (currentSlot.state != Slot.State.Free && currentSlot.depth > maxDepth)
+                {
+                    maxDepth = currentSlot.depth;
+                }
+            }
+
+            world->maxDepth = maxDepth;
 
             int count = world->entityCreatedOrDestroyedCount;
             if (count > 0)
@@ -804,7 +858,7 @@ namespace Worlds
                 //todo: this temporary allocation can be avoided by tracking how large the tree is
                 //and then using stackalloc
                 using Stack<uint> stack = new(4);
-                PushChildrenToStack(this, slots, stack, entity);
+                PushChildrenToStack(slots, stack, entity);
 
                 while (stack.Count > 0)
                 {
@@ -849,18 +903,40 @@ namespace Worlds
                     //check through children
                     if ((currentSlot.flags & Slot.Flags.ContainsChildren) != 0 && (currentSlot.flags & Slot.Flags.ChildrenOutdated) == 0)
                     {
-                        PushChildrenToStack(this, slots, stack, currentEntity);
+                        PushChildrenToStack(slots, stack, currentEntity);
                     }
                 }
 
-                static void PushChildrenToStack(World world, Span<Slot> slots, Stack<uint> stack, uint entity)
+                static void PushChildrenToStack(Span<Slot> slots, Stack<uint> stack, uint entity)
                 {
-                    Slot slot = slots[(int)entity];
-                    Span<uint> children = stackalloc uint[slot.childrenCount];
-                    world.CopyChildrenTo(entity, children);
-                    stack.PushRange(children);
+                    for (uint childEntity = 1; childEntity < slots.Length; childEntity++)
+                    {
+                        ref Slot childSlot = ref slots[(int)childEntity];
+                        if (childSlot.parent == entity)
+                        {
+                            stack.Push(childEntity);
+                        }
+                    }
                 }
             }
+        }
+
+        /// <summary>
+        /// Retrieves the entity that would be created next.
+        /// </summary>
+        public readonly uint GetNextCreatedEntity(int fastForward = 0)
+        {
+            MemoryAddress.ThrowIfDefault(world);
+
+            ReadOnlySpan<uint> freeEntities = world->freeEntities.AsSpan();
+            if (freeEntities.Length > fastForward)
+            {
+                return freeEntities[freeEntities.Length - 1 - fastForward];
+            }
+
+            fastForward -= freeEntities.Length;
+            Span<Slot> slots = world->slots.AsSpan();
+            return (uint)(slots.Length + fastForward);
         }
 
         /// <summary>
@@ -892,7 +968,7 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Creates a new entity.
+        /// Creates a new entity with the given <paramref name="componentTypes"/>.
         /// </summary>
         public readonly uint CreateEntity(BitMask componentTypes, BitMask tagTypes = default)
         {
@@ -1277,6 +1353,17 @@ namespace Worlds
         }
 
         /// <summary>
+        /// How deep the given <paramref name="entity"/> is in the hierarchy.
+        /// </summary>
+        public readonly int GetDepth(uint entity)
+        {
+            MemoryAddress.ThrowIfDefault(world);
+            ThrowIfEntityIsMissing(entity);
+
+            return world->slots[entity].depth;
+        }
+
+        /// <summary>
         /// Assigns the given <paramref name="newParent"/> to the given <paramref name="entity"/>.
         /// <para>
         /// If the given <paramref name="newParent"/> isn't valid, it will be set to <see langword="default"/>.
@@ -1320,6 +1407,10 @@ namespace Worlds
 
                 newParentSlot.childrenCount++;
 
+                //assign the depth to this entity, and its descendants
+                entitySlot.depth = newParentSlot.depth + 1;
+                UpdateDepthOfChildren(entity, slots, entitySlot.depth);
+
                 //update state if parent is disabled
                 if (entitySlot.state == Slot.State.Enabled)
                 {
@@ -1350,10 +1441,38 @@ namespace Worlds
                     MoveEntityTo(slots, entity, ref entitySlot, destinationChunk);
                 }
 
+                //calculate the max depth of the world
+                int maxDepth = 0;
+                for (uint e = 1; e < slots.Length; e++)
+                {
+                    ref Slot currentSlot = ref slots[(int)e];
+                    if (currentSlot.state != Slot.State.Free && currentSlot.depth > maxDepth)
+                    {
+                        maxDepth = currentSlot.depth;
+                    }
+                }
+
+                world->maxDepth = maxDepth;
                 NotifyParentChange(entity, oldParent, newParent);
             }
 
             return parentChanged;
+        }
+
+        private static void UpdateDepthOfChildren(uint entity, Span<Slot> slots, int depth)
+        {
+            for (uint childEntity = 1; childEntity < slots.Length; childEntity++)
+            {
+                ref Slot childSlot = ref slots[(int)childEntity];
+                if (childSlot.parent == entity)
+                {
+                    childSlot.depth = depth + 1;
+                    if ((childSlot.flags & Slot.Flags.ContainsChildren) != 0 && (childSlot.flags & Slot.Flags.ChildrenOutdated) == 0)
+                    {
+                        UpdateDepthOfChildren(childEntity, slots, depth + 1);
+                    }
+                }
+            }
         }
 
         /// <summary>

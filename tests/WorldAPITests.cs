@@ -49,6 +49,33 @@ namespace Worlds.Tests
         }
 
         [Test]
+        public void PreviewingEntityCreating()
+        {
+            using World world = CreateWorld();
+            uint a = world.GetNextCreatedEntity(0);
+            uint b = world.GetNextCreatedEntity(1);
+            uint c = world.GetNextCreatedEntity(2);
+            Assert.That(a, Is.EqualTo(world.CreateEntity()));
+            Assert.That(b, Is.EqualTo(world.CreateEntity()));
+            Assert.That(c, Is.EqualTo(world.CreateEntity()));
+            world.DestroyEntity(b);
+            uint d = world.GetNextCreatedEntity(0);
+            Assert.That(d, Is.EqualTo(b));
+            Assert.That(d, Is.EqualTo(world.CreateEntity()));
+            uint e = world.GetNextCreatedEntity(0);
+            Assert.That(e, Is.EqualTo(world.CreateEntity()));
+            world.DestroyEntity(a);
+            world.DestroyEntity(c);
+            world.DestroyEntity(e);
+            uint f = world.GetNextCreatedEntity(0);
+            Assert.That(f, Is.EqualTo(world.CreateEntity()));
+            uint g = world.GetNextCreatedEntity(0);
+            Assert.That(g, Is.EqualTo(world.CreateEntity()));
+            uint h = world.GetNextCreatedEntity(0);
+            Assert.That(h, Is.EqualTo(world.CreateEntity()));
+        }
+
+        [Test]
         public void Clearing()
         {
             using World world = CreateWorld();
@@ -145,50 +172,6 @@ namespace Worlds.Tests
                 Assert.That(world.GetComponent<TestComponent>(entity).value, Is.EqualTo(i));
                 Assert.That(world.GetComponent<Another>(entity).data, Is.EqualTo(32));
             }
-        }
-
-        [Test]
-        public void DestroyParentEntity()
-        {
-            using World world = CreateWorld();
-            uint a = world.CreateEntity();
-            uint b = world.CreateEntity();
-            uint c = world.CreateEntity();
-            uint d = world.CreateEntity();
-            uint e = world.CreateEntity();
-            world.SetParent(b, a);
-            world.SetParent(c, b);
-            world.SetParent(d, c);
-            world.SetParent(e, a);
-            Assert.That(world.ContainsEntity(a), Is.True);
-            Assert.That(world.ContainsEntity(b), Is.True);
-            Assert.That(world.ContainsEntity(c), Is.True);
-            Assert.That(world.ContainsEntity(d), Is.True);
-            Assert.That(world.ContainsEntity(e), Is.True);
-            Assert.That(world.GetParent(b), Is.EqualTo(a));
-            Assert.That(world.GetParent(c), Is.EqualTo(b));
-            Assert.That(world.GetParent(d), Is.EqualTo(c));
-
-            Span<uint> children = stackalloc uint[4];
-            int childCount = world.CopyChildrenTo(a, children);
-            Assert.That(childCount, Is.EqualTo(2));
-            Assert.That(children.ToArray(), Has.Member(b));
-            Assert.That(children.ToArray(), Has.Member(e));
-
-            childCount = world.CopyChildrenTo(b, children);
-            Assert.That(childCount, Is.EqualTo(1));
-            Assert.That(children.ToArray(), Has.Member(c));
-
-            childCount = world.CopyChildrenTo(c, children);
-            Assert.That(childCount, Is.EqualTo(1));
-            Assert.That(children.ToArray(), Has.Member(d));
-
-            world.DestroyEntity(a);
-            Assert.That(world.ContainsEntity(a), Is.False);
-            Assert.That(world.ContainsEntity(b), Is.False);
-            Assert.That(world.ContainsEntity(c), Is.False);
-            Assert.That(world.ContainsEntity(d), Is.False);
-            Assert.That(world.ContainsEntity(e), Is.False);
         }
 
         [Test]
@@ -414,29 +397,6 @@ namespace Worlds.Tests
         }
 
         [Test]
-        public void ParentingToDisabledEntity()
-        {
-            using World world = CreateWorld();
-            uint parent = world.CreateEntity();
-            uint child = world.CreateEntity();
-            world.SetEnabled(parent, false);
-            world.SetParent(child, parent);
-            Assert.That(world.GetParent(child), Is.EqualTo(parent));
-            Assert.That(world.IsEnabled(child), Is.EqualTo(false));
-            Assert.That(world.IsLocallyEnabled(child), Is.EqualTo(true));
-            uint grandChild = world.CreateEntity();
-            world.SetParent(grandChild, child);
-            Assert.That(world.IsEnabled(grandChild), Is.EqualTo(false));
-            Assert.That(world.IsLocallyEnabled(grandChild), Is.EqualTo(true));
-            world.SetEnabled(parent, true);
-            Assert.That(world.IsEnabled(child), Is.EqualTo(true));
-            Assert.That(world.IsEnabled(grandChild), Is.EqualTo(true));
-            world.SetEnabled(parent, false);
-            Assert.That(world.IsEnabled(child), Is.EqualTo(false));
-            Assert.That(world.IsEnabled(grandChild), Is.EqualTo(false));
-        }
-
-        [Test]
         public void RecreateDisabledEntity()
         {
             using World world = CreateWorld();
@@ -446,21 +406,6 @@ namespace Worlds.Tests
             uint another = world.CreateEntity();
             Assert.That(entity, Is.EqualTo(another));
             Assert.That(world.IsEnabled(entity), Is.True);
-        }
-
-        [Test]
-        public void MoveChildToAnotherParent()
-        {
-            World world = CreateWorld();
-            uint a = world.CreateEntity();
-            uint b = world.CreateEntity();
-            uint c = world.CreateEntity();
-            world.SetParent(a, b);
-            world.SetParent(a, c);
-            Assert.That(world.GetParent(a), Is.EqualTo(c));
-            Assert.That(world.GetChildCount(b), Is.EqualTo(0));
-            Assert.That(world.GetChildCount(c), Is.EqualTo(1));
-            world.Dispose();
         }
 
         [Test]

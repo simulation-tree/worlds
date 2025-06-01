@@ -14,6 +14,11 @@ namespace Worlds
         public uint parent;
 
         /// <summary>
+        /// How deep the entity is in the hierarchy.
+        /// </summary>
+        public int depth;
+
+        /// <summary>
         /// The state of this entity.
         /// </summary>
         public State state;
