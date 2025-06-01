@@ -18,12 +18,12 @@
         /// <summary> 
         /// Creates multiple entities. 
         /// </summary>
-        CreateEntities,
+        CreateMultipleEntities,
 
         /// <summary> 
         /// Creates multiple entities and selects them. 
         /// </summary>
-        CreateEntitiesAndSelect,
+        CreateMultipleEntitiesAndSelect,
 
         /// <summary> 
         /// Destroys selected entities. 
@@ -38,7 +38,7 @@
         /// <summary> 
         /// Selects a single entity. 
         /// </summary>
-        SelectEntity,
+        AppendEntityToSelection,
 
         /// <summary> 
         /// Clears selection and selects a single entity. 
@@ -48,12 +48,12 @@
         /// <summary> 
         /// Selects entities. 
         /// </summary>
-        SelectEntities,
+        AppendMultipleEntitiesToSelection,
 
         /// <summary> 
         /// Selects a previously created entity. 
         /// </summary>
-        SelectPreviouslyCreatedEntity,
+        AppendPreviouslyCreatedEntityToSelection,
 
         /// <summary> 
         /// Sets parent of selected entities to a previously created entity. 
@@ -68,12 +68,12 @@
         /// <summary> 
         /// Makes selected entities enabled
         /// </summary>
-        Enable,
+        EnableSelectedEntities,
 
         /// <summary> 
         /// Makes selected entities disabled
         /// </summary>
-        Disable,
+        DisableSelectedEntities,
 
         /// <summary> 
         /// Add a component to selected entities. 
@@ -139,6 +139,11 @@
         /// Resizes an existing array on selected entities. 
         /// </summary>
         ResizeArray,
+
+        /// <summary> 
+        /// Assigns a single element in an array on selected entities. 
+        /// </summary>
+        SetArrayElement,
 
         /// <summary> 
         /// Assigns an element in an array on selected entities. 
