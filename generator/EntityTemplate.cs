@@ -47,14 +47,7 @@
     /// May be <see langword=""default""/> if none is set.
     /// </para>
     /// </summary>
-    public readonly Entity Parent
-    {
-        get
-        {
-            uint parent = world.GetParent(value);
-            return parent == default ? default : new Entity(world, parent);
-        }
-    }
+    public readonly Entity Parent => new(world, world.GetParent(value));
         
     /// <summary>
     /// Retrieves how many children this entity has.
@@ -109,17 +102,16 @@
     public readonly bool TryGetParent(out Entity parent)
     {
         uint parentValue = world.GetParent(value);
-        bool hasParent = parentValue != default;
-        if (hasParent)
+        if (parentValue != default)
         {
-            parent = new Entity(world, parentValue);
+            parent = new(world, parentValue);
+            return true;
         }
         else
         {
             parent = default;
+            return false;
         }
-
-        return hasParent;
     }
 
     /// <summary>
@@ -171,7 +163,7 @@
     {
         Archetype archetype = Archetype.Get<T>(world.Schema);
         world.Become(value, archetype);
-        return As<T>();
+        return Worlds.EntityExtensions.As<T>(this);
     }
 
     /// <summary>
@@ -195,7 +187,7 @@
     /// </summary>
     public readonly T As<T>() where T : unmanaged, IEntity
     {
-        return new Entity(world, value).As<T>();
+        return Worlds.EntityExtensions.As<T>(this);
     }
 
     /// <summary>
@@ -339,7 +331,7 @@
     /// </summary>
     public readonly {{TypeName}} Clone()
     {
-        return new Entity(world, world.CloneEntity(value)).As<{{TypeName}}>();
+        return Entity.Get<{{TypeName}}>(world, world.CloneEntity(value));
     }
 
     /// <summary>

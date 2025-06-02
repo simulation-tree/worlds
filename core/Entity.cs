@@ -49,14 +49,7 @@ namespace Worlds
         /// May be <see langword="default"/> if none is set.
         /// </para>
         /// </summary>
-        public readonly Entity Parent
-        {
-            get
-            {
-                uint parent = world.GetParent(value);
-                return parent == default ? default : new Entity(world, parent);
-            }
-        }
+        public readonly Entity Parent => new(world, world.GetParent(value));
 
         /// <summary>
         /// Retrieves how many children this entity has.
@@ -77,9 +70,6 @@ namespace Worlds
         /// </summary>
         public Entity(World world, uint value)
         {
-            //todo: emit an error saying that "hey 0 is not allowed"
-            ThrowIfEntityIsMissing(world, value);
-
             this.world = world;
             this.value = value;
         }
@@ -187,7 +177,7 @@ namespace Worlds
         {
             Archetype archetype = Archetype.Get<T>(world.world->schema);
             world.Become(value, archetype);
-            return new Entity(world, value).As<T>();
+            return EntityExtensions.As<T>(this);
         }
 
         /// <summary>
@@ -671,11 +661,11 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Retrieves an existing entity of type <typeparamref name="T"/>.
+        /// Retrieves an existing entity as type <typeparamref name="T"/>.
         /// </summary>
         public static T Get<T>(World world, uint value) where T : unmanaged, IEntity
         {
-            return new Entity(world, value).As<T>();
+            return EntityExtensions.As<T>(new Entity(world, value));
         }
 
         /// <inheritdoc/>

@@ -736,14 +736,8 @@ namespace Worlds.Generators
                 {
                     string message = $"The type {typeSymbol.Name} must be partial when inheriting another type";
                     string title = "Missing partial keyword";
-                    Diagnostic diagnostic = Diagnostic.Create("T0002", "Inheritance", message, DiagnosticSeverity.Warning, DiagnosticSeverity.Warning, true, 1, false, title, location: node.GetLocation());
+                    Diagnostic diagnostic = Diagnostic.Create("W0003", "Inheritance", message, DiagnosticSeverity.Warning, DiagnosticSeverity.Warning, true, 1, false, title, location: node.GetLocation());
                     return (null, diagnostic);
-                }
-
-                if (typeSymbol.ContainingType is not null)
-                {
-                    //todo: check if containing type is also partial, and 
-                    //emit a diagnostic error if its not
                 }
 
                 string fullTypeName = typeSymbol.GetFullTypeName();

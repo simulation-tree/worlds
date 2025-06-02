@@ -17,7 +17,7 @@ namespace Worlds
         /// </summary>
         public unsafe static Entity AsEntity<T>(this T entity) where T : unmanaged, IEntity
         {
-            ThrowIfNotEntity<T>();
+            ThrowIfLayoutNotCompatible<T>();
 
             return *(Entity*)&entity;
         }
@@ -27,7 +27,7 @@ namespace Worlds
         /// </summary>
         public unsafe static T As<T>(Entity entity) where T : unmanaged, IEntity
         {
-            ThrowIfNotEntity<T>();
+            ThrowIfLayoutNotCompatible<T>();
 
             return *(T*)&entity;
         }
@@ -37,7 +37,7 @@ namespace Worlds
         /// </summary>
         public unsafe static World GetWorld<T>(this T entity) where T : unmanaged, IEntity
         {
-            ThrowIfNotEntity<T>();
+            ThrowIfLayoutNotCompatible<T>();
 
             return *(World*)&entity;
         }
@@ -47,18 +47,18 @@ namespace Worlds
         /// </summary>
         public unsafe static uint GetEntityValue<T>(this T entity) where T : unmanaged, IEntity
         {
-            ThrowIfNotEntity<T>();
+            ThrowIfLayoutNotCompatible<T>();
 
             return *(uint*)((byte*)&entity + sizeof(World));
         }
 
 #if DEBUG
         [Conditional("DEBUG")]
-        internal unsafe static void ThrowIfNotEntity<T>() where T : unmanaged, IEntity
+        internal unsafe static void ThrowIfLayoutNotCompatible<T>() where T : unmanaged, IEntity
         {
             if (!EntityTypeCache<T>.compatible)
             {
-                throw new InvalidCastException($"Cannot cast `{typeof(T)}` to Entity");
+                throw new InvalidCastException($"Cannot cast `{typeof(T)}` to {nameof(Entity)} because of its field layout");
             }
         }
 
@@ -136,7 +136,7 @@ namespace Worlds
         }
 #else
         [Conditional("DEBUG")]
-        internal static void ThrowIfNotEntity<T>() where T : unmanaged, IEntity
+        internal static void ThrowIfLayoutNotCompatible<T>() where T : unmanaged, IEntity
         {
         }
 #endif

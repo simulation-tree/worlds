@@ -395,7 +395,7 @@ namespace Worlds
         /// </summary>
         public static bool TryGetFirst<T>(this World world, out T entity) where T : unmanaged, IEntity
         {
-            EntityExtensions.ThrowIfNotEntity<T>();
+            EntityExtensions.ThrowIfLayoutNotCompatible<T>();
 
             Schema schema = world.world->schema;
             Definition definition = Definition.Get<T>(schema);
@@ -428,7 +428,7 @@ namespace Worlds
         /// </summary>
         public static bool TryGetFirst<T>(this World world, out T entity, bool onlyEnabled) where T : unmanaged, IEntity
         {
-            EntityExtensions.ThrowIfNotEntity<T>();
+            EntityExtensions.ThrowIfLayoutNotCompatible<T>();
 
             Schema schema = world.world->schema;
             Definition definition = Definition.Get<T>(schema);
@@ -624,7 +624,7 @@ namespace Worlds
         /// </summary>
         public static int CountEntities<T>(this World world) where T : unmanaged, IEntity
         {
-            EntityExtensions.ThrowIfNotEntity<T>();
+            EntityExtensions.ThrowIfLayoutNotCompatible<T>();
 
             Definition definition = Definition.Get<T>(world.world->schema);
             ReadOnlySpan<Chunk> chunks = world.Chunks;
@@ -653,7 +653,7 @@ namespace Worlds
         /// </summary>
         public static int CountEntities<T>(this World world, bool onlyEnabled) where T : unmanaged, IEntity
         {
-            EntityExtensions.ThrowIfNotEntity<T>();
+            EntityExtensions.ThrowIfLayoutNotCompatible<T>();
 
             Definition definition = Definition.Get<T>(world.world->schema);
             ReadOnlySpan<Chunk> chunks = world.Chunks;
