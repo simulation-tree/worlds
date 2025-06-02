@@ -6,7 +6,7 @@ namespace Worlds
     /// <summary>
     /// Describes an entity slot in a <see cref="World"/>.
     /// </summary>
-    internal struct Slot
+    public struct Slot
     {
         /// <summary>
         /// The entity that is the parent of the entity in this slot.

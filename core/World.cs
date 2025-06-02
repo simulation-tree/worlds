@@ -157,6 +157,19 @@ namespace Worlds
         }
 
         /// <summary>
+        /// The slots that describe every entity position, including free/destroyed entities.
+        /// </summary>
+        public readonly ReadOnlySpan<Slot> Slots
+        {
+            get
+            {
+                MemoryAddress.ThrowIfDefault(world);
+
+                return world->slots.AsSpan();
+            }
+        }
+
+        /// <summary>
         /// Indexer for accessing entities by their index.
         /// </summary>
         public readonly uint this[int index]
