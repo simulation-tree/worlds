@@ -42,8 +42,10 @@ namespace Worlds.Tests
             int foundCombos = 0;
             foreach (var r in comboQuery)
             {
-                Assert.That(r.component1.bites, Is.EqualTo(5).Or.EqualTo(4));
-                Assert.That(r.component2.hearts, Is.EqualTo(0));
+                ref Apple apple = ref r.component1;
+                ref Berry berry = ref r.component2;
+                Assert.That(apple.bites, Is.EqualTo(5).Or.EqualTo(4));
+                Assert.That(berry.hearts, Is.EqualTo(0));
                 foundCombos++;
             }
 
