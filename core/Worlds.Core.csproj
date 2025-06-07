@@ -1,44 +1,53 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
-		<ImplicitUsings>disable</ImplicitUsings>
-		<Nullable>enable</Nullable>
-		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-		<GenerateDocumentationFile>True</GenerateDocumentationFile>
-		<IsAotCompatible>True</IsAotCompatible>
-		<WarningLevel>8</WarningLevel>
-		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-		<Title>Worlds Core</Title>
-		<Authors>popcron</Authors>
-		<Company>simulation-tree</Company>
-		<Description>Native ECS library</Description>
-		<RepositoryUrl>https://github.com/simulation-tree/worlds</RepositoryUrl>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageTags>ecs;native</PackageTags>
-		<NoWarn>1701;1702;</NoWarn>
-		<NoStandardLib>true</NoStandardLib>
-		<RootNamespace>Worlds</RootNamespace>
-		<DebugType>Embedded</DebugType>
-		<EmbedAllSources>True</EmbedAllSources>
-		<PackageId />
-	</PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <IsAotCompatible>True</IsAotCompatible>
+    <WarningLevel>8</WarningLevel>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+    <Title>Worlds Core</Title>
+    <Authors>popcron</Authors>
+    <Company>simulation-tree</Company>
+    <Description>Native ECS library</Description>
+    <RepositoryUrl>https://github.com/simulation-tree/worlds</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>ecs;native</PackageTags>
+    <NoWarn>1701;1702;</NoWarn>
+    <NoStandardLib>true</NoStandardLib>
+    <RootNamespace>Worlds</RootNamespace>
+    <DebugType>Embedded</DebugType>
+    <EmbedAllSources>True</EmbedAllSources>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+  </PropertyGroup>
 
-	<ItemGroup>
-		<None Include="..\README.md">
-			<Pack>True</Pack>
-			<PackagePath>\</PackagePath>
-		</None>
-	</ItemGroup>
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
-	<ItemGroup>
-		<ProjectReference Include="..\..\collections\source\Collections.csproj" />
-		<ProjectReference Include="..\..\types\core\Types.Core.csproj" />
-		<ProjectReference Include="..\..\unmanaged\core\Unmanaged.Core.csproj" />
-		<ProjectReference Include="..\..\unmanaged\generator\Unmanaged.Generator.csproj">
-			<OutputItemType>Analyzer</OutputItemType>
-			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-		</ProjectReference>
-	</ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\collections\source\Collections.csproj"/>
+    <ProjectReference Include="..\..\types\core\Types.Core.csproj"/>
+    <ProjectReference Include="..\..\unmanaged\core\Unmanaged.Core.csproj"/>
+    <ProjectReference Include="..\..\unmanaged\generator\Unmanaged.Generator.csproj">
+      <OutputItemType>Analyzer</OutputItemType>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="bin/Debug/net9.0/Worlds.Core.dll" Pack="true" PackagePath="tools/debug/Worlds.Core.dll" Visible="false"/>
+    <Content Include="bin/Debug/net9.0/Worlds.Core.xml" Pack="true" PackagePath="tools/debug/Worlds.Core.xml" Visible="false"/>
+    <Content Include="bin/Release/net9.0/Worlds.Core.dll" Pack="true" PackagePath="tools/release/Worlds.Core.dll" Visible="false"/>
+    <Content Include="bin/Release/net9.0/Worlds.Core.xml" Pack="true" PackagePath="tools/release/Worlds.Core.xml" Visible="false"/>
+    <Content Include="build/Worlds.Core.targets" Pack="true" PackagePath="build/Worlds.Core.targets" Visible="false"/>
+  </ItemGroup>
 
 </Project>
