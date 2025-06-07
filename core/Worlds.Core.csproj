@@ -44,9 +44,9 @@
 
   <ItemGroup>
     <Content Include="bin/Debug/net9.0/Worlds.Core.dll" Pack="true" PackagePath="tools/debug/Worlds.Core.dll" Visible="false"/>
-    <Content Include="bin/Debug/net9.0/Worlds.Core.xml" Pack="true" PackagePath="tools/debug/Worlds.Core.xml" Visible="false"/>
+    <Content Include="bin/Debug/net9.0/Worlds.Core.xml" Pack="true" PackagePath="tools/debug/Worlds.Core.xml" Visible="false" Condition="Exists('bin/Debug/net9.0/Worlds.Core.xml')"/>
     <Content Include="bin/Release/net9.0/Worlds.Core.dll" Pack="true" PackagePath="tools/release/Worlds.Core.dll" Visible="false"/>
-    <Content Include="bin/Release/net9.0/Worlds.Core.xml" Pack="true" PackagePath="tools/release/Worlds.Core.xml" Visible="false"/>
+    <Content Include="bin/Release/net9.0/Worlds.Core.xml" Pack="true" PackagePath="tools/release/Worlds.Core.xml" Visible="false" Condition="Exists('bin/Release/net9.0/Worlds.Core.xml')"/>
     <Content Include="build/Worlds.Core.targets" Pack="true" PackagePath="build/Worlds.Core.targets" Visible="false"/>
   </ItemGroup>
 
