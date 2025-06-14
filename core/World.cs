@@ -3151,6 +3151,132 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Counts how many chunks exist to contain the given <paramref name="componentTypes"/>.
+        /// </summary>
+        public readonly int CountChunks(BitMask componentTypes)
+        {
+            MemoryAddress.ThrowIfDefault(world);
+
+            int count = 0;
+            Span<Chunk> chunks = world->chunks.chunkMap->chunks.AsSpan();
+            for (int i = 0; i < world->chunks.chunkMap->count; i++)
+            {
+                Definition chunkDefinition = chunks[i].chunk->definition;
+                if (chunkDefinition.componentTypes.ContainsAll(componentTypes))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// Counts how many chunks exist to contain the given <paramref name="componentTypes"/>,
+        /// <paramref name="arrayTypes"/>, and <paramref name="tagTypes"/>.
+        /// </summary>
+        public readonly int CountChunks(BitMask componentTypes, BitMask arrayTypes, BitMask tagTypes)
+        {
+            MemoryAddress.ThrowIfDefault(world);
+
+            int count = 0;
+            Span<Chunk> chunks = world->chunks.chunkMap->chunks.AsSpan();
+            for (int i = 0; i < world->chunks.chunkMap->count; i++)
+            {
+                Definition chunkDefinition = chunks[i].chunk->definition;
+                if (chunkDefinition.componentTypes.ContainsAll(componentTypes) && chunkDefinition.arrayTypes.ContainsAll(arrayTypes) && chunkDefinition.tagTypes.ContainsAll(tagTypes))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// Counts how many chunks exist to contain the components, arrays, and tags from
+        /// the given <paramref name="definition"/>.
+        /// </summary>
+        public readonly int CountChunks(Definition definition)
+        {
+            MemoryAddress.ThrowIfDefault(world);
+
+            int count = 0;
+            Span<Chunk> chunks = world->chunks.chunkMap->chunks.AsSpan();
+            for (int i = 0; i < world->chunks.chunkMap->count; i++)
+            {
+                Definition chunkDefinition = chunks[i].chunk->definition;
+                if (chunkDefinition.componentTypes.ContainsAll(definition.componentTypes) && chunkDefinition.arrayTypes.ContainsAll(definition.arrayTypes) && chunkDefinition.tagTypes.ContainsAll(definition.tagTypes))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// Counts how many chunks exist to contain the given <paramref name="componentType"/>.
+        /// </summary>
+        public readonly int CountChunksWithComponent(int componentType)
+        {
+            MemoryAddress.ThrowIfDefault(world);
+            
+            int count = 0;
+            Span<Chunk> chunks = world->chunks.chunkMap->chunks.AsSpan();
+            for (int i = 0; i < world->chunks.chunkMap->count; i++)
+            {
+                Definition chunkDefinition = chunks[i].chunk->definition;
+                if (chunkDefinition.componentTypes.Contains(componentType))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// Counts how many chunks exist to contain the given <paramref name="arrayType"/>.
+        /// </summary>
+        public readonly int CountChunksWithArray(int arrayType)
+        {
+            MemoryAddress.ThrowIfDefault(world);
+
+            int count = 0;
+            Span<Chunk> chunks = world->chunks.chunkMap->chunks.AsSpan();
+            for (int i = 0; i < world->chunks.chunkMap->count; i++)
+            {
+                Definition chunkDefinition = chunks[i].chunk->definition;
+                if (chunkDefinition.arrayTypes.Contains(arrayType))
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        /// <summary>
+        /// Counts how many chunks exist to contain the given <paramref name="tagType"/>.
+        /// </summary>
+        public readonly int CountChunksWithTag(int tagType)
+        {
+            MemoryAddress.ThrowIfDefault(world);
+            
+            int count = 0;
+            Span<Chunk> chunks = world->chunks.chunkMap->chunks.AsSpan();
+            for (int i = 0; i < world->chunks.chunkMap->count; i++)
+            {
+                Definition chunkDefinition = chunks[i].chunk->definition;
+                if (chunkDefinition.tagTypes.Contains(tagType))
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        /// <summary>
         /// Retrieves the definition of the given <paramref name="entity"/>.
         /// </summary>
         public readonly Definition GetDefinition(uint entity)
