@@ -12,12 +12,12 @@ namespace Worlds
     /// </summary>
     public unsafe readonly struct Values<T> where T : unmanaged
     {
-        private readonly ArrayPointer* pointer;
+        private readonly ArrayPointer* array;
 
         /// <summary>
         /// Length of the array.
         /// </summary>
-        public readonly int Length => pointer->length;
+        public readonly int Length => array->length;
 
         /// <summary>
         /// Access the reference to the element at <paramref name="index"/>.
@@ -28,7 +28,7 @@ namespace Worlds
             {
                 ThrowIfOutOfRange(index);
 
-                return ref pointer->items.ReadElement<T>(index);
+                return ref array->items.ReadElement<T>(index);
             }
         }
 
@@ -41,27 +41,27 @@ namespace Worlds
             {
                 ThrowIfOutOfRange(index);
 
-                return ref pointer->items.ReadElement<T>(index);
+                return ref array->items.ReadElement<T>(index);
             }
         }
 
         internal Values(int length)
         {
-            this.pointer = new Array<T>(length).Pointer;
+            this.array = new Array<T>(length).Pointer;
         }
 
         internal Values(ReadOnlySpan<T> values)
         {
-            this.pointer = new Array<T>(values).Pointer;
+            this.array = new Array<T>(values).Pointer;
         }
 
         internal Values(ArrayPointer* array)
         {
-            this.pointer = array;
+            this.array = array;
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfSizeMismatch<X>() where X : unmanaged
+        private static void ThrowIfSizeMismatch<X>() where X : unmanaged
         {
             if (sizeof(T) != sizeof(X))
             {
@@ -72,18 +72,18 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfOutOfRange(int index)
         {
-            if (index >= pointer->length || index < 0)
+            if (index >= array->length || index < 0)
             {
-                throw new InvalidOperationException($"Index {index} is out of range for values of length {pointer->length}");
+                throw new InvalidOperationException($"Index {index} is out of range for values of length {array->length}");
             }
         }
 
         [Conditional("DEBUG")]
         private readonly void ThrowIfOutOfRange(uint index)
         {
-            if (index >= pointer->length)
+            if (index >= array->length)
             {
-                throw new InvalidOperationException($"Index {index} is out of range for values of length {pointer->length}");
+                throw new InvalidOperationException($"Index {index} is out of range for values of length {array->length}");
             }
         }
 
@@ -94,7 +94,7 @@ namespace Worlds
         {
             ThrowIfSizeMismatch<X>();
 
-            return new(pointer);
+            return new(array);
         }
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace Worlds
         {
             ThrowIfSizeMismatch<X>();
 
-            return new(pointer->items.Pointer, pointer->length);
+            return new(array->items.Pointer, array->length);
         }
 
         /// <summary>
@@ -112,7 +112,7 @@ namespace Worlds
         /// </summary>
         public readonly Span<T> AsSpan()
         {
-            return new(pointer->items.Pointer, pointer->length);
+            return new(array->items.Pointer, array->length);
         }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace Worlds
         /// </summary>
         public readonly Span<T> AsSpan(int start)
         {
-            return pointer->items.AsSpan<T>(start * sizeof(T), pointer->length - start);
+            return array->items.AsSpan<T>(start * sizeof(T), array->length - start);
         }
 
         /// <summary>
@@ -128,7 +128,7 @@ namespace Worlds
         /// </summary>
         public readonly Span<T> AsSpan(int start, int length)
         {
-            return pointer->items.AsSpan<T>(start * sizeof(T), length);
+            return array->items.AsSpan<T>(start * sizeof(T), length);
         }
 
         /// <summary>
@@ -138,7 +138,7 @@ namespace Worlds
         {
             ThrowIfSizeMismatch<X>();
 
-            return pointer->items.AsSpan<X>(start * sizeof(X), pointer->length - start);
+            return array->items.AsSpan<X>(start * sizeof(X), array->length - start);
         }
 
         /// <summary>
@@ -148,7 +148,7 @@ namespace Worlds
         {
             ThrowIfSizeMismatch<X>();
 
-            return pointer->items.AsSpan<X>(start * sizeof(X), length);
+            return array->items.AsSpan<X>(start * sizeof(X), length);
         }
 
         /// <summary>
@@ -156,8 +156,8 @@ namespace Worlds
         /// </summary>
         public readonly void Clear()
         {
-            pointer->length = 0;
-            MemoryAddress.Resize(ref pointer->items, 0);
+            array->length = 0;
+            MemoryAddress.Resize(ref array->items, 0);
         }
 
         /// <summary>
@@ -168,8 +168,8 @@ namespace Worlds
         /// </summary>
         public readonly void Resize(int newLength)
         {
-            MemoryAddress.Resize(ref pointer->items, sizeof(T) * newLength);
-            pointer->length = newLength;
+            MemoryAddress.Resize(ref array->items, sizeof(T) * newLength);
+            array->length = newLength;
         }
 
         /// <summary>
@@ -180,14 +180,14 @@ namespace Worlds
         /// </summary>
         public readonly void Resize(int newLength, T defaultValue)
         {
-            MemoryAddress.Resize(ref pointer->items, sizeof(T) * newLength);
-            if (newLength > pointer->length)
+            MemoryAddress.Resize(ref array->items, sizeof(T) * newLength);
+            if (newLength > array->length)
             {
-                Span<T> span = new(pointer->items.Pointer + pointer->length * sizeof(T), newLength - pointer->length);
+                Span<T> span = new(array->items.Pointer + array->length * sizeof(T), newLength - array->length);
                 span.Fill(defaultValue);
             }
 
-            pointer->length = newLength;
+            array->length = newLength;
         }
 
         /// <summary>
@@ -195,10 +195,10 @@ namespace Worlds
         /// </summary>
         public readonly void Add(T item)
         {
-            int newLength = pointer->length + 1;
-            MemoryAddress.Resize(ref pointer->items, sizeof(T) * newLength);
-            pointer->items.WriteElement(pointer->length, item);
-            pointer->length = newLength;
+            int newLength = array->length + 1;
+            MemoryAddress.Resize(ref array->items, sizeof(T) * newLength);
+            array->items.WriteElement(array->length, item);
+            array->length = newLength;
         }
 
         /// <summary>
@@ -207,10 +207,10 @@ namespace Worlds
         /// </summary>
         public readonly ref T Add()
         {
-            int newLength = pointer->length + 1;
-            MemoryAddress.Resize(ref pointer->items, sizeof(T) * newLength);
-            pointer->length = newLength;
-            return ref pointer->items.ReadElement<T>(pointer->length - 1);
+            int newLength = array->length + 1;
+            MemoryAddress.Resize(ref array->items, sizeof(T) * newLength);
+            array->length = newLength;
+            return ref array->items.ReadElement<T>(array->length - 1);
         }
 
         /// <summary>
@@ -218,10 +218,10 @@ namespace Worlds
         /// </summary>
         public readonly void AddDefault()
         {
-            int newLength = pointer->length + 1;
-            MemoryAddress.Resize(ref pointer->items, sizeof(T) * newLength);
-            pointer->items.Clear(pointer->length * sizeof(T), sizeof(T));
-            pointer->length = newLength;
+            int newLength = array->length + 1;
+            MemoryAddress.Resize(ref array->items, sizeof(T) * newLength);
+            array->items.Clear(array->length * sizeof(T), sizeof(T));
+            array->length = newLength;
         }
 
         /// <summary>
@@ -229,10 +229,10 @@ namespace Worlds
         /// </summary>
         public readonly void AddDefault(int count)
         {
-            int newLength = pointer->length + count;
-            MemoryAddress.Resize(ref pointer->items, sizeof(T) * newLength);
-            pointer->items.Clear(pointer->length * sizeof(T), sizeof(T) * count);
-            pointer->length = newLength;
+            int newLength = array->length + count;
+            MemoryAddress.Resize(ref array->items, sizeof(T) * newLength);
+            array->items.Clear(array->length * sizeof(T), sizeof(T) * count);
+            array->length = newLength;
         }
 
         /// <summary>
@@ -240,10 +240,10 @@ namespace Worlds
         /// </summary>
         public readonly void AddRange(ReadOnlySpan<T> items)
         {
-            int newLength = pointer->length + items.Length;
-            MemoryAddress.Resize(ref pointer->items, sizeof(T) * newLength);
-            pointer->items.Write(pointer->length * sizeof(T), items);
-            pointer->length = newLength;
+            int newLength = array->length + items.Length;
+            MemoryAddress.Resize(ref array->items, sizeof(T) * newLength);
+            array->items.Write(array->length * sizeof(T), items);
+            array->length = newLength;
         }
 
         /// <summary>
@@ -254,10 +254,10 @@ namespace Worlds
         {
             ThrowIfOutOfRange(index);
 
-            int newLength = pointer->length - 1;
+            int newLength = array->length - 1;
             this[index] = this[newLength];
-            pointer->length = newLength;
-            MemoryAddress.Resize(ref pointer->items, sizeof(T) * pointer->length);
+            array->length = newLength;
+            MemoryAddress.Resize(ref array->items, sizeof(T) * array->length);
         }
 
         /// <summary>
@@ -268,7 +268,7 @@ namespace Worlds
         {
             ThrowIfOutOfRange(index);
 
-            int newLength = pointer->length - 1;
+            int newLength = array->length - 1;
             if (index == 0)
             {
                 AsSpan(1).CopyTo(AsSpan());
@@ -278,14 +278,14 @@ namespace Worlds
                 AsSpan(index + 1).CopyTo(AsSpan(index));
             }
 
-            pointer->length = newLength;
-            MemoryAddress.Resize(ref pointer->items, sizeof(T) * pointer->length);
+            array->length = newLength;
+            MemoryAddress.Resize(ref array->items, sizeof(T) * array->length);
         }
 
         /// <inheritdoc/>
         public readonly Span<T>.Enumerator GetEnumerator()
         {
-            return new Span<T>(pointer->items.Pointer, pointer->length).GetEnumerator();
+            return new Span<T>(array->items.Pointer, array->length).GetEnumerator();
         }
 
         /// <summary>
@@ -293,13 +293,13 @@ namespace Worlds
         /// </summary>
         public readonly void CopyFrom(Span<T> source)
         {
-            if (source.Length != pointer->length)
+            if (source.Length != array->length)
             {
-                pointer->length = source.Length;
-                MemoryAddress.Resize(ref pointer->items, sizeof(T) * pointer->length);
+                array->length = source.Length;
+                MemoryAddress.Resize(ref array->items, sizeof(T) * array->length);
             }
 
-            pointer->items.Write(source);
+            array->items.Write(source);
         }
 
         /// <summary>
@@ -307,13 +307,13 @@ namespace Worlds
         /// </summary>
         public readonly void CopyFrom(ReadOnlySpan<T> source)
         {
-            if (source.Length != pointer->length)
+            if (source.Length != array->length)
             {
-                pointer->length = source.Length;
-                MemoryAddress.Resize(ref pointer->items, sizeof(T) * pointer->length);
+                array->length = source.Length;
+                MemoryAddress.Resize(ref array->items, sizeof(T) * array->length);
             }
 
-            pointer->items.Write(source);
+            array->items.Write(source);
         }
 
         /// <summary>
@@ -323,25 +323,25 @@ namespace Worlds
         {
             ThrowIfOutOfRange(destination.Length - 1);
 
-            pointer->items.CopyTo(destination);
+            array->items.CopyTo(destination);
         }
 
         /// <inheritdoc/>
         public static implicit operator Values(Values<T> values)
         {
-            return new Values(values.pointer);
+            return new Values(values.array);
         }
 
         /// <inheritdoc/>
         public static implicit operator Span<T>(Values<T> values)
         {
-            return new Span<T>(values.pointer->items.Pointer, values.pointer->length);
+            return new Span<T>(values.array->items.Pointer, values.array->length);
         }
 
         /// <inheritdoc/>
         public static implicit operator ReadOnlySpan<T>(Values<T> values)
         {
-            return new Span<T>(values.pointer->items.Pointer, values.pointer->length);
+            return new Span<T>(values.array->items.Pointer, values.array->length);
         }
     }
 
@@ -350,21 +350,21 @@ namespace Worlds
     /// </summary>
     public unsafe readonly struct Values : IEquatable<Values>
     {
-        internal readonly ArrayPointer* pointer;
+        internal readonly ArrayPointer* array;
 
         /// <summary>
         /// Length of the array.
         /// </summary>
         public readonly int Length
         {
-            get => pointer->length;
+            get => array->length;
             set
             {
-                if (pointer->length != value)
+                if (array->length != value)
                 {
-                    int oldLength = pointer->length;
-                    MemoryAddress.Resize(ref pointer->items, pointer->stride * value);
-                    pointer->length = value;
+                    int oldLength = array->length;
+                    MemoryAddress.Resize(ref array->items, array->stride * value);
+                    array->length = value;
                 }
             }
         }
@@ -372,7 +372,7 @@ namespace Worlds
         /// <summary>
         /// The size of each element in the array.
         /// </summary>
-        public readonly int Stride => pointer->stride;
+        public readonly int Stride => array->stride;
 
         /// <summary>
         /// Access the memory address to the element at <paramref name="index"/>.
@@ -383,55 +383,54 @@ namespace Worlds
             {
                 ThrowIfOutOfRange(index);
 
-                return new(pointer->items.Pointer + pointer->stride * index);
+                return new(array->items.Pointer + array->stride * index);
             }
         }
 
         internal Values(int length, int stride)
         {
-            this.pointer = new Array(length, stride).Pointer;
+            this.array = new Array(length, stride).Pointer;
         }
 
         internal Values(ArrayPointer* array)
         {
-            this.pointer = array;
+            this.array = array;
         }
 
         internal Values(nint address)
         {
-            this.pointer = (ArrayPointer*)address;
+            this.array = (ArrayPointer*)address;
         }
 
         internal readonly void Dispose()
         {
-            Array array = new(pointer);
-            array.Dispose();
+            new Array(array).Dispose();
         }
 
         [Conditional("DEBUG")]
         private readonly void ThrowIfOutOfRange(int index)
         {
-            if (index >= pointer->length)
+            if (index >= array->length)
             {
-                throw new ArgumentOutOfRangeException($"Index {index} is out of range for {pointer->length} values");
+                throw new ArgumentOutOfRangeException($"Index {index} is out of range for {array->length} values");
             }
         }
 
         [Conditional("DEBUG")]
         private readonly void ThrowIfGreaterThanStride<T>() where T : unmanaged
         {
-            if (sizeof(T) > pointer->stride)
+            if (sizeof(T) > array->stride)
             {
-                throw new InvalidOperationException($"Size of {sizeof(T)} is greater than {pointer->stride}");
+                throw new InvalidOperationException($"Size of {sizeof(T)} is greater than {array->stride}");
             }
         }
 
         [Conditional("DEBUG")]
         private readonly void ThrowIfSizeMismatch<T>() where T : unmanaged
         {
-            if (sizeof(T) != pointer->stride)
+            if (sizeof(T) != array->stride)
             {
-                throw new InvalidOperationException($"Size of {sizeof(T)} does not match {pointer->stride}");
+                throw new InvalidOperationException($"Size of {sizeof(T)} does not match {array->stride}");
             }
         }
 
@@ -440,7 +439,7 @@ namespace Worlds
         /// </summary>
         public readonly Span<byte> AsSpan()
         {
-            return new(pointer->items.Pointer, pointer->length * pointer->stride);
+            return new(array->items.Pointer, array->length * array->stride);
         }
 
         /// <summary>
@@ -450,7 +449,7 @@ namespace Worlds
         {
             ThrowIfSizeMismatch<T>();
 
-            return new(pointer->items.Pointer, pointer->length);
+            return new(array->items.Pointer, array->length);
         }
 
         /// <summary>
@@ -458,7 +457,7 @@ namespace Worlds
         /// </summary>
         public readonly Span<byte> GetSpan(int byteLength)
         {
-            return new(pointer->items.Pointer, byteLength);
+            return new(array->items.Pointer, byteLength);
         }
 
         /// <summary>
@@ -467,7 +466,7 @@ namespace Worlds
         /// </summary>
         public readonly Span<byte> Slice(int bytePosition, int byteLength)
         {
-            return new(pointer->items.Pointer + bytePosition, byteLength);
+            return new(array->items.Pointer + bytePosition, byteLength);
         }
 
         /// <summary>
@@ -477,10 +476,10 @@ namespace Worlds
         {
             ThrowIfGreaterThanStride<T>();
 
-            int newLength = pointer->length + 1;
-            MemoryAddress.Resize(ref pointer->items, pointer->stride * newLength);
-            pointer->items.WriteElement(pointer->length, item);
-            pointer->length = newLength;
+            int newLength = array->length + 1;
+            MemoryAddress.Resize(ref array->items, array->stride * newLength);
+            array->items.WriteElement(array->length, item);
+            array->length = newLength;
         }
 
         /// <summary>
@@ -492,7 +491,7 @@ namespace Worlds
             ThrowIfOutOfRange(index);
             ThrowIfGreaterThanStride<T>();
 
-            return ref pointer->items.Read<T>(pointer->stride * index);
+            return ref array->items.Read<T>(array->stride * index);
         }
 
         /// <summary>
@@ -504,7 +503,7 @@ namespace Worlds
             ThrowIfOutOfRange(index);
             ThrowIfGreaterThanStride<T>();
 
-            pointer->items.Write(pointer->stride * index, value);
+            array->items.Write(array->stride * index, value);
         }
 
         /// <summary>
@@ -512,7 +511,7 @@ namespace Worlds
         /// </summary>
         public readonly MemoryAddress Read(int bytePosition)
         {
-            return pointer->items.Read(bytePosition);
+            return array->items.Read(bytePosition);
         }
 
         /// <summary>
@@ -520,7 +519,7 @@ namespace Worlds
         /// </summary>
         public readonly MemoryAddress Read(uint bytePosition)
         {
-            return pointer->items.Read(bytePosition);
+            return array->items.Read(bytePosition);
         }
 
         /// <summary>
@@ -528,14 +527,14 @@ namespace Worlds
         /// </summary>
         public readonly void CopyFrom(ReadOnlySpan<byte> bytes)
         {
-            int length = bytes.Length / pointer->stride;
-            if (pointer->length != length)
+            int length = bytes.Length / array->stride;
+            if (array->length != length)
             {
-                MemoryAddress.Resize(ref pointer->items, pointer->stride * length);
-                pointer->length = length;
+                MemoryAddress.Resize(ref array->items, array->stride * length);
+                array->length = length;
             }
 
-            pointer->items.Write(bytes);
+            array->items.Write(bytes);
         }
 
         /// <summary>
@@ -545,16 +544,16 @@ namespace Worlds
         {
             ThrowIfGreaterThanStride<T>();
 
-            if (pointer->length != values.Length)
+            if (array->length != values.Length)
             {
-                MemoryAddress.Resize(ref pointer->items, pointer->stride * values.Length);
-                pointer->length = values.Length;
+                MemoryAddress.Resize(ref array->items, array->stride * values.Length);
+                array->length = values.Length;
             }
 
-            pointer->items.Clear(pointer->stride * values.Length);
+            array->items.Clear(array->stride * values.Length);
             for (int i = 0; i < values.Length; i++)
             {
-                pointer->items.WriteElement(i * pointer->stride, values[i]);
+                array->items.WriteElement(i * array->stride, values[i]);
             }
         }
 
@@ -567,13 +566,13 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly bool Equals(Values other)
         {
-            return pointer == other.pointer;
+            return array == other.array;
         }
 
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return (int)pointer;
+            return (int)array;
         }
 
         /// <inheritdoc/>

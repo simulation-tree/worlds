@@ -2191,7 +2191,7 @@ namespace Worlds
             int arrayType = world->schema.GetArrayType<T>();
             ThrowIfArrayIsMissing(entity, arrayType);
 
-            return new(world->arrays[entity][arrayType].pointer);
+            return new(world->arrays[entity][arrayType].array);
         }
 
         /// <summary>
@@ -2203,7 +2203,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
 
             int arrayType = world->schema.GetArrayType<T>();
-            Collections.Pointers.ArrayPointer* pointer = world->arrays[entity][arrayType].pointer;
+            Collections.Pointers.ArrayPointer* pointer = world->arrays[entity][arrayType].array;
             return pointer == default ? default : new(pointer->items.Pointer, pointer->length);
         }
 
@@ -2216,7 +2216,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfArrayIsMissing(entity, arrayType);
 
-            return new(world->arrays[entity][arrayType].pointer);
+            return new(world->arrays[entity][arrayType].array);
         }
 
         /// <summary>
@@ -2227,7 +2227,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            Collections.Pointers.ArrayPointer* pointer = world->arrays[entity][arrayType].pointer;
+            Collections.Pointers.ArrayPointer* pointer = world->arrays[entity][arrayType].array;
             return pointer == default ? default : new(pointer->items.Pointer, pointer->length);
         }
 
@@ -2268,7 +2268,7 @@ namespace Worlds
             int arrayType = world->schema.GetArrayType<T>();
             if (world->slots[entity].chunk.chunk->definition.arrayTypes.Contains(arrayType))
             {
-                array = new(world->arrays[entity][arrayType].pointer);
+                array = new(world->arrays[entity][arrayType].array);
                 return true;
             }
             else
@@ -2288,7 +2288,7 @@ namespace Worlds
 
             if (world->slots[entity].chunk.chunk->definition.arrayTypes.Contains(arrayType))
             {
-                array = new(world->arrays[entity][arrayType].pointer);
+                array = new(world->arrays[entity][arrayType].array);
                 return true;
             }
             else
