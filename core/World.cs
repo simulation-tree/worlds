@@ -429,7 +429,7 @@ namespace Worlds
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private readonly void NotifyComponentAdded(uint entity, int componentType)
+        internal readonly void NotifyComponentAdded(uint entity, int componentType)
         {
             int count = world->entityDataChangedCount;
             if (count > 0)
@@ -444,7 +444,7 @@ namespace Worlds
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private readonly void NotifyComponentRemoved(uint entity, int componentType)
+        internal readonly void NotifyComponentRemoved(uint entity, int componentType)
         {
             int count = world->entityDataChangedCount;
             if (count > 0)
@@ -712,19 +712,6 @@ namespace Worlds
             slot.parent = default;
             world->freeEntities.Push(entity);
 
-            //calculate the max depth of the world
-            int maxDepth = 0;
-            for (uint e = 1; e < slots.Length; e++)
-            {
-                ref Slot currentSlot = ref slots[(int)e];
-                if (currentSlot.state != Slot.State.Free && currentSlot.depth > maxDepth)
-                {
-                    maxDepth = currentSlot.depth;
-                }
-            }
-
-            world->maxDepth = maxDepth;
-
             int count = world->entityCreatedOrDestroyedCount;
             if (count > 0)
             {
@@ -748,7 +735,7 @@ namespace Worlds
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void MoveEntityTo(Span<Slot> slots, uint entity, ref Slot currentSlot, Chunk destinationChunk)
+        internal static void MoveEntityTo(Span<Slot> slots, uint entity, ref Slot currentSlot, Chunk destinationChunk)
         {
             ref Chunk sourceChunk = ref currentSlot.chunk;
             if (entity != sourceChunk.chunk->lastEntity)
@@ -1455,17 +1442,11 @@ namespace Worlds
                 }
 
                 //calculate the max depth of the world
-                int maxDepth = 0;
-                for (uint e = 1; e < slots.Length; e++)
+                if (entitySlot.depth > world->maxDepth)
                 {
-                    ref Slot currentSlot = ref slots[(int)e];
-                    if (currentSlot.state != Slot.State.Free && currentSlot.depth > maxDepth)
-                    {
-                        maxDepth = currentSlot.depth;
-                    }
+                    world->maxDepth = entitySlot.depth;
                 }
 
-                world->maxDepth = maxDepth;
                 NotifyParentChange(entity, oldParent, newParent);
             }
 
@@ -3221,7 +3202,7 @@ namespace Worlds
         public readonly int CountChunksWithComponent(int componentType)
         {
             MemoryAddress.ThrowIfDefault(world);
-            
+
             int count = 0;
             Span<Chunk> chunks = world->chunks.chunkMap->chunks.AsSpan();
             for (int i = 0; i < world->chunks.chunkMap->count; i++)
@@ -3262,7 +3243,7 @@ namespace Worlds
         public readonly int CountChunksWithTag(int tagType)
         {
             MemoryAddress.ThrowIfDefault(world);
-            
+
             int count = 0;
             Span<Chunk> chunks = world->chunks.chunkMap->chunks.AsSpan();
             for (int i = 0; i < world->chunks.chunkMap->count; i++)
@@ -3322,8 +3303,8 @@ namespace Worlds
                     if (sourceSlot.chunk.chunk->definition.componentTypes.Contains(c))
                     {
                         int sourceComponentSize = world->schema.schema->sizes[(uint)c];
-                        int sourceComponentOffset = world->schema.schema->componentOffsets[(uint)c];
-                        int destinationComponentOffset = destinationWorld.world->schema.schema->componentOffsets[(uint)c];
+                        uint sourceComponentOffset = world->schema.schema->componentOffsets[(uint)c];
+                        uint destinationComponentOffset = destinationWorld.world->schema.schema->componentOffsets[(uint)c];
                         if (!destinationSlot.chunk.chunk->definition.componentTypes.Contains(c))
                         {
                             destinationWorld.AddComponentType(destinationEntity, c);
@@ -3420,7 +3401,7 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfEntityIsMissing(uint entity)
+        internal readonly void ThrowIfEntityIsMissing(uint entity)
         {
             if (entity == default)
             {

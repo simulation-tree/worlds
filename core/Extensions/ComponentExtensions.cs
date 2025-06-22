@@ -23,7 +23,7 @@ namespace Worlds
             Schema schema = world.world->schema;
             schema.GetComponentTypes<T1, T2>(out int c1, out int c2);
             BitMask componentTypes = new(c1, c2);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -45,7 +45,7 @@ namespace Worlds
             Schema schema = world.world->schema;
             schema.GetComponentTypes<T1, T2, T3>(out int c1, out int c2, out int c3);
             BitMask componentTypes = new(c1, c2, c3);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -68,7 +68,7 @@ namespace Worlds
             Schema schema = world.world->schema;
             schema.GetComponentTypes<T1, T2, T3, T4>(out int c1, out int c2, out int c3, out int c4);
             BitMask componentTypes = new(c1, c2, c3, c4);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -92,7 +92,7 @@ namespace Worlds
             Schema schema = world.world->schema;
             schema.GetComponentTypes<T1, T2, T3, T4, T5>(out int c1, out int c2, out int c3, out int c4, out int c5);
             BitMask componentTypes = new(c1, c2, c3, c4, c5);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -117,7 +117,7 @@ namespace Worlds
             Schema schema = world.world->schema;
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -143,7 +143,7 @@ namespace Worlds
             Schema schema = world.world->schema;
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6, c7);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -170,7 +170,7 @@ namespace Worlds
             Schema schema = world.world->schema;
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6, c7, c8);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -198,7 +198,7 @@ namespace Worlds
             Schema schema = world.world->schema;
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6, c7, c8, c9);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -227,7 +227,7 @@ namespace Worlds
             Schema schema = world.world->schema;
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -257,7 +257,7 @@ namespace Worlds
             Schema schema = world.world->schema;
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -288,7 +288,7 @@ namespace Worlds
             Schema schema = world.world->schema;
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -320,7 +320,7 @@ namespace Worlds
             Schema schema = world.world->schema;
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12, out int c13);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -353,7 +353,7 @@ namespace Worlds
             Schema schema = world.world->schema;
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12, out int c13, out int c14);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -387,7 +387,7 @@ namespace Worlds
             Schema schema = world.world->schema;
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12, out int c13, out int c14, out int c15);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -422,7 +422,7 @@ namespace Worlds
             Schema schema = world.world->schema;
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12, out int c13, out int c14, out int c15, out int c16);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);

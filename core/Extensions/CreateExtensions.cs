@@ -47,7 +47,7 @@ namespace Worlds
             Schema schema = world.world->schema;
             schema.GetComponentTypes<T1, T2>(out int c1, out int c2);
             uint entity = world.CreateEntity(new BitMask(c1, c2), out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;
@@ -65,7 +65,7 @@ namespace Worlds
         {
             Schema schema = world.world->schema;
             uint entity = world.CreateEntity(new BitMask(c1, c2), out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;
@@ -84,7 +84,7 @@ namespace Worlds
             Schema schema = world.world->schema;
             schema.GetComponentTypes<T1, T2, T3>(out int c1, out int c2, out int c3);
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3), out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;
@@ -103,7 +103,7 @@ namespace Worlds
         {
             Schema schema = world.world->schema;
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3), out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;
@@ -123,7 +123,7 @@ namespace Worlds
             Schema schema = world.world->schema;
             schema.GetComponentTypes<T1, T2, T3, T4>(out int c1, out int c2, out int c3, out int c4);
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3, c4), out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;
@@ -143,7 +143,7 @@ namespace Worlds
         {
             Schema schema = world.world->schema;
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3, c4), out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;
@@ -164,7 +164,7 @@ namespace Worlds
             Schema schema = world.world->schema;
             schema.GetComponentTypes<T1, T2, T3, T4, T5>(out int c1, out int c2, out int c3, out int c4, out int c5);
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3, c4, c5), out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;
@@ -185,7 +185,7 @@ namespace Worlds
         {
             Schema schema = world.world->schema;
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3, c4, c5), out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;
@@ -207,7 +207,7 @@ namespace Worlds
             Schema schema = world.world->schema;
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6);
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3, c4, c5, c6), out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;
@@ -229,7 +229,7 @@ namespace Worlds
         {
             Schema schema = world.world->schema;
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3, c4, c5, c6), out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;
@@ -252,7 +252,7 @@ namespace Worlds
             Schema schema = world.world->schema;
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7);
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3, c4, c5, c6, c7), out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;
@@ -275,7 +275,7 @@ namespace Worlds
         {
             Schema schema = world.world->schema;
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3, c4, c5, c6, c7), out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;
@@ -300,7 +300,7 @@ namespace Worlds
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8);
             BitMask componentTypesMask = new(c1, c2, c3, c4, c5, c6, c7, c8);
             uint entity = world.CreateEntity(componentTypesMask, out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;
@@ -324,7 +324,7 @@ namespace Worlds
         {
             Schema schema = world.world->schema;
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3, c4, c5, c6, c7, c8), out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;
@@ -350,7 +350,7 @@ namespace Worlds
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9);
             BitMask componentTypesMask = new(c1, c2, c3, c4, c5, c6, c7, c8, c9);
             uint entity = world.CreateEntity(componentTypesMask, out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;
@@ -377,7 +377,7 @@ namespace Worlds
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10);
             BitMask componentTypesMask = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10);
             uint entity = world.CreateEntity(componentTypesMask, out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;
@@ -405,7 +405,7 @@ namespace Worlds
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11);
             BitMask componentTypesMask = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11);
             uint entity = world.CreateEntity(componentTypesMask, out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;
@@ -434,7 +434,7 @@ namespace Worlds
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12);
             BitMask componentTypesMask = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12);
             uint entity = world.CreateEntity(componentTypesMask, out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;
@@ -464,7 +464,7 @@ namespace Worlds
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12, out int c13);
             BitMask componentTypesMask = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13);
             uint entity = world.CreateEntity(componentTypesMask, out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;
@@ -495,7 +495,7 @@ namespace Worlds
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12, out int c13, out int c14);
             BitMask componentTypesMask = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14);
             uint entity = world.CreateEntity(componentTypesMask, out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;
@@ -527,7 +527,7 @@ namespace Worlds
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12, out int c13, out int c14, out int c15);
             BitMask componentTypesMask = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15);
             uint entity = world.CreateEntity(componentTypesMask, out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;
@@ -560,7 +560,7 @@ namespace Worlds
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12, out int c13, out int c14, out int c15, out int c16);
             BitMask componentTypesMask = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16);
             uint entity = world.CreateEntity(componentTypesMask, out Chunk.Row newRow);
-            Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
                 byte* pointer = newRow.row.Pointer;

@@ -6,9 +6,9 @@
         public int componentCount;
         public int arraysCount;
         public int tagsCount;
-        public int componentRowSize;
+        public uint componentRowSize;
         public Definition definitionMask;
-        public int* componentOffsets;
+        public uint* componentOffsets;
         public int* sizes;
         public long* typeHashes;
     }

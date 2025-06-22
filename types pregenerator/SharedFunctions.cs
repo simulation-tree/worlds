@@ -7,6 +7,7 @@ public static class SharedFunctions
     private const string ComponentType = "int";
     private const string SpanType = "Span";
     private const string ComponentTypeFieldName = "componentType";
+    private const string ComponentOffsetType = "uint";
     private const string ComponentOffsetFieldName = "componentOffset";
     private const string ComponentVariableName = "component";
 
@@ -148,7 +149,9 @@ public static class SharedFunctions
             builder.Append('\n');
             builder.Append(new string(' ', indent));
 
-            builder.Append("private int ");
+            builder.Append("private readonly ");
+            builder.Append(ComponentOffsetType);
+            builder.Append(' ');
             builder.Append(ComponentOffsetFieldName);
             builder.Append(i);
             builder.Append(';');
@@ -232,7 +235,7 @@ public static class SharedFunctions
     public static string AssignComponentOffsets(uint count, int indent)
     {
         StringBuilder builder = new();
-        builder.Append("Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);");
+        builder.Append("Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);");
         builder.Append('\n');
         builder.Append(new string(' ', indent));
         for (uint i = 1; i <= count + 1; i++)

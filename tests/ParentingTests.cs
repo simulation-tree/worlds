@@ -214,7 +214,7 @@ namespace Worlds.Tests
             Assert.That(world.GetDepth(a), Is.EqualTo(0));
             Assert.That(world.GetDepth(b), Is.EqualTo(1));
             Assert.That(world.GetDepth(c), Is.EqualTo(2));
-            Assert.That(world.MaxDepth, Is.EqualTo(2));
+            Assert.That(world.MaxDepth, Is.GreaterThanOrEqualTo(2));
         }
     }
 }

@@ -102,6 +102,35 @@ namespace Worlds.Tests
         }
 
         [Test]
+        public void TryAddComponentTypes()
+        {
+            using World world = CreateWorld();
+            using Operation operation = new(world);
+            operation.CreateSingleEntityAndSelect();
+            operation.AddComponent(new TestComponent(1));
+            operation.AddComponent(new SimpleComponent("hello"));
+            operation.Perform();
+            uint entity = world[0];
+            Assert.That(world.ContainsComponent<TestComponent>(entity), Is.True);
+            Assert.That(world.GetComponent<TestComponent>(entity).value, Is.EqualTo(1));
+            Assert.That(world.ContainsComponent<SimpleComponent>(entity), Is.True);
+            Assert.That(world.GetComponent<SimpleComponent>(entity).data.ToString(), Is.EqualTo("hello"));
+            Assert.That(world.ContainsComponent<Another>(entity), Is.False);
+
+            operation.Reset();
+            operation.SetSelectedEntity(entity);
+            operation.TryAddComponentType<TestComponent>();
+            operation.TryAddComponentType<Another>();
+            operation.Perform();
+
+            Assert.That(world.ContainsComponent<TestComponent>(entity), Is.True);
+            Assert.That(world.GetComponent<TestComponent>(entity).value, Is.EqualTo(1));
+            Assert.That(world.ContainsComponent<SimpleComponent>(entity), Is.True);
+            Assert.That(world.GetComponent<SimpleComponent>(entity).data.ToString(), Is.EqualTo("hello"));
+            Assert.That(world.ContainsComponent<Another>(entity), Is.True);
+        }
+
+        [Test]
         public void CreateThreeObjects()
         {
             using World world = CreateWorld();
@@ -177,6 +206,8 @@ namespace Worlds.Tests
         {
             using World world = CreateWorld();
             using Operation operation = new(world);
+            world.CreateEntity();
+            world.CreateEntity();
 
             operation.AppendEntityToSelection(1);
             operation.AddComponent(new TestComponent(1));
@@ -381,7 +412,7 @@ namespace Worlds.Tests
             using World world = CreateWorld();
             using Operation operation = new(world);
             operation.CreateSingleEntityAndSelect();
-            operation.AddComponent(new TestComponent(1));
+            operation.AddOrSetComponent(new TestComponent(1));
             Assert.That(operation.Count, Is.EqualTo(2));
             operation.AddOrSetComponent(new TestComponent(5));
             Assert.That(operation.Count, Is.EqualTo(3));

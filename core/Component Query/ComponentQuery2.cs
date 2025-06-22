@@ -713,9 +713,9 @@ namespace Worlds
             private readonly ReadOnlySpan<Chunk> chunks;
             private readonly ComponentQuery<C1, C2> query;
             private readonly int componentType1;
-            private int componentOffset1;
+            private readonly uint componentOffset1;
             private readonly int componentType2;
-            private int componentOffset2;
+            private readonly uint componentOffset2;
             private int version;
             private int entityIndex;
             private int entityCount;
@@ -800,7 +800,7 @@ namespace Worlds
                     entities = new(chunk.chunk->entities.Items.Pointer, chunk.chunk->count + 1);
                     entityCount = chunk.chunk->count;
                     components = chunk.chunk->components;
-                    Span<int> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+                    Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
                     componentOffset1 = componentOffsets[componentType1];
                     componentOffset2 = componentOffsets[componentType2];
                 }

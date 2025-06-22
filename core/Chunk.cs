@@ -33,7 +33,7 @@ namespace Worlds
             {
                 MemoryAddress.ThrowIfDefault(chunk);
 
-                return new ReadOnlySpan<uint>(chunk->entities.Items.Pointer + sizeof(uint), chunk->count);
+                return new ReadOnlySpan<uint>(chunk->entities.Items.Pointer + 4u, chunk->count);
             }
         }
 
@@ -111,7 +111,7 @@ namespace Worlds
             chunk->version = 0;
             chunk->entities = new(4);
             chunk->entities.AddDefault(); //reserved
-            chunk->components = new(4, schema.schema->componentRowSize);
+            chunk->components = new(4, (int)schema.schema->componentRowSize);
             chunk->components.AddDefault(); //reserved
             chunk->schema = schema;
             chunk->definition = definition;
@@ -130,7 +130,7 @@ namespace Worlds
         internal readonly void UpdateStrideToMatchSchema()
         {
             chunk->components.Dispose();
-            chunk->components = new(4, chunk->schema.schema->componentRowSize);
+            chunk->components = new(4, (int)chunk->schema.schema->componentRowSize);
             chunk->components.AddDefault(); //reserved
         }
 
@@ -197,7 +197,10 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(chunk);
 
-            return chunk->schema.GetComponentOffset(componentType);
+            unchecked
+            {
+                return (int)chunk->schema.schema->componentOffsets[(uint)componentType];
+            }
         }
 
         /// <summary>
@@ -205,8 +208,11 @@ namespace Worlds
         /// </summary>
         public readonly ComponentEnumerator<T> GetComponents<T>(int componentType) where T : unmanaged
         {
-            int componentOffset = chunk->schema.GetComponentOffset(componentType);
-            return new(chunk->components, componentOffset);
+            unchecked
+            {
+                int componentOffset = (int)chunk->schema.schema->componentOffsets[(uint)componentType];
+                return new(chunk->components, componentOffset);
+            }
         }
 
         /// <summary>
@@ -218,8 +224,11 @@ namespace Worlds
             ThrowIfIndexIsOutOfRange(index);
             ThrowIfComponentTypeIsMissing(componentType);
 
-            int componentOffset = chunk->schema.GetComponentOffset(componentType);
-            return ref chunk->components[index].Read<T>(componentOffset);
+            unchecked
+            {
+                int componentOffset = (int)chunk->schema.schema->componentOffsets[(uint)componentType];
+                return ref chunk->components[index].Read<T>(componentOffset);
+            }
         }
 
         /// <inheritdoc/>

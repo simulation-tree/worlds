@@ -81,6 +81,11 @@
         AddComponentType,
 
         /// <summary> 
+        /// Adds a component type to the selected entities if possible. 
+        /// </summary>
+        TryAddComponentType,
+
+        /// <summary> 
         /// Add a component to selected entities. 
         /// </summary>
         AddComponent,

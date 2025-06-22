@@ -176,6 +176,9 @@ namespace Worlds
                     case InstructionType.AddComponentType:
                         bytePosition += 4;
                         break;
+                    case InstructionType.TryAddComponentType:
+                        bytePosition += 4;
+                        break;
                     case InstructionType.AddComponent:
                         {
                             bytePosition += 4;
@@ -541,6 +544,50 @@ namespace Worlds
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.AddComponentType);
+            operation->buffer.Write(byteLength + 1, componentType);
+            operation->byteLength = byteLength + 5;
+            operation->instructionCount++;
+        }
+
+        /// <summary>
+        /// Adds a <see langword="default"/> component of type <typeparamref name="T"/> to the selected entities
+        /// if not already present.
+        /// </summary>
+        public readonly void TryAddComponentType<T>() where T : unmanaged
+        {
+            MemoryAddress.ThrowIfDefault(operation);
+            ThrowIfSelectionIsEmpty();
+
+            int byteLength = operation->byteLength;
+            if (operation->byteCapacity <= byteLength + 5)
+            {
+                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
+                operation->byteCapacity *= 2;
+            }
+
+            operation->buffer.Write(byteLength, (byte)InstructionType.TryAddComponentType);
+            operation->buffer.Write(byteLength + 1, operation->world.world->schema.GetComponentType<T>());
+            operation->byteLength = byteLength + 5;
+            operation->instructionCount++;
+        }
+
+        /// <summary>
+        /// Adds a <see langword="default"/> <paramref name="componentType"/> to the selected entities
+        /// if not already present.
+        /// </summary>
+        public readonly void TryAddComponentType(int componentType)
+        {
+            MemoryAddress.ThrowIfDefault(operation);
+            ThrowIfSelectionIsEmpty();
+
+            int byteLength = operation->byteLength;
+            if (operation->byteCapacity <= byteLength + 5)
+            {
+                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
+                operation->byteCapacity *= 2;
+            }
+
+            operation->buffer.Write(byteLength, (byte)InstructionType.TryAddComponentType);
             operation->buffer.Write(byteLength + 1, componentType);
             operation->byteLength = byteLength + 5;
             operation->instructionCount++;
@@ -1288,6 +1335,7 @@ namespace Worlds
         public readonly void AppendEntityToSelection(uint entity)
         {
             MemoryAddress.ThrowIfDefault(operation);
+            operation->world.ThrowIfEntityIsMissing(entity);
 
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 5)
@@ -1317,6 +1365,7 @@ namespace Worlds
         public readonly void SetSelectedEntity(uint entity)
         {
             MemoryAddress.ThrowIfDefault(operation);
+            operation->world.ThrowIfEntityIsMissing(entity);
 
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 5)
@@ -1610,6 +1659,7 @@ namespace Worlds
 
             private void AddComponent()
             {
+                Span<Slot> slots = operation->world.world->slots.AsSpan();
                 int componentType = operation->buffer.Read<int>(bytePosition);
                 int componentSize = operation->buffer.Read<int>(bytePosition + 4);
                 bytePosition += 8;
@@ -1618,23 +1668,65 @@ namespace Worlds
                 ReadOnlySpan<uint> selection = operation->selection.AsSpan();
                 for (int i = 0; i < selection.Length; i++)
                 {
-                    operation->world.AddComponentBytes(selection[i], componentType, componentBytes);
+                    //same as World.AddComponentBytes
+                    uint entity = selection[i];
+                    ref Slot slot = ref slots[(int)entity];
+                    Definition definition = slot.chunk.chunk->definition;
+                    definition.AddComponentType(componentType);
+                    Chunk destinationChunk = operation->world.world->chunks.GetOrCreate(definition);
+                    World.MoveEntityTo(slots, entity, ref slot, destinationChunk);
+                    operation->world.NotifyComponentAdded(entity, componentType);
+                    unchecked
+                    {
+                        Span<byte> component = new(slot.row.Pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
+                        componentBytes.CopyTo(component);
+                    }
                 }
             }
 
             private void AddComponentType()
             {
+                Span<Slot> slots = operation->world.world->slots.AsSpan();
                 int componentType = operation->buffer.Read<int>(bytePosition);
                 bytePosition += 4;
                 ReadOnlySpan<uint> selection = operation->selection.AsSpan();
                 for (int i = 0; i < selection.Length; i++)
                 {
-                    operation->world.AddComponentType(selection[i], componentType);
+                    //same as World.AddComponentType
+                    uint entity = selection[i];
+                    ref Slot slot = ref slots[(int)entity];
+                    Definition definition = slot.chunk.chunk->definition;
+                    definition.AddComponentType(componentType);
+                    Chunk destinationChunk = operation->world.world->chunks.GetOrCreate(definition);
+                    World.MoveEntityTo(slots, entity, ref slot, destinationChunk);
+                    operation->world.NotifyComponentAdded(entity, componentType);
+                }
+            }
+
+            private void TryAddComponentType()
+            {
+                Span<Slot> slots = operation->world.world->slots.AsSpan();
+                int componentType = operation->buffer.Read<int>(bytePosition);
+                bytePosition += 4;
+                ReadOnlySpan<uint> selection = operation->selection.AsSpan();
+                for (int i = 0; i < selection.Length; i++)
+                {
+                    uint entity = selection[i];
+                    ref Slot slot = ref slots[(int)entity];
+                    Definition definition = slot.chunk.chunk->definition;
+                    if (!definition.componentTypes.Contains(componentType))
+                    {
+                        definition.AddComponentType(componentType);
+                        Chunk destinationChunk = operation->world.world->chunks.GetOrCreate(definition);
+                        World.MoveEntityTo(slots, entity, ref slot, destinationChunk);
+                        operation->world.NotifyComponentAdded(entity, componentType);
+                    }
                 }
             }
 
             private void SetComponent()
             {
+                Span<Slot> slots = operation->world.world->slots.AsSpan();
                 int componentType = operation->buffer.Read<int>(bytePosition);
                 int componentSize = operation->buffer.Read<int>(bytePosition + 4);
                 bytePosition += 8;
@@ -1643,12 +1735,19 @@ namespace Worlds
                 ReadOnlySpan<uint> selection = operation->selection.AsSpan();
                 for (int i = 0; i < selection.Length; i++)
                 {
-                    operation->world.SetComponentBytes(selection[i], componentType, componentBytes);
+                    //same as World.SetComponentBytes
+                    unchecked
+                    {
+                        uint entity = selection[i];
+                        Span<byte> component = new(slots[(int)entity].row.Pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
+                        componentBytes.CopyTo(component);
+                    }
                 }
             }
 
             private void AddOrSetComponent()
             {
+                Span<Slot> slots = operation->world.world->slots.AsSpan();
                 int componentType = operation->buffer.Read<int>(bytePosition);
                 int componentSize = operation->buffer.Read<int>(bytePosition + 4);
                 bytePosition += 8;
@@ -1658,25 +1757,49 @@ namespace Worlds
                 for (int i = 0; i < selection.Length; i++)
                 {
                     uint entity = selection[i];
-                    if (operation->world.ContainsComponent(entity, componentType))
+                    ref Slot slot = ref slots[(int)entity];
+                    if (slot.chunk.chunk->definition.componentTypes.Contains(componentType))
                     {
-                        operation->world.SetComponentBytes(entity, componentType, componentBytes);
+                        //same as World.SetComponentBytes
+                        unchecked
+                        {
+                            Span<byte> component = new(slots[(int)entity].row.Pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
+                            componentBytes.CopyTo(component);
+                        }
                     }
                     else
                     {
-                        operation->world.AddComponentBytes(entity, componentType, componentBytes);
+                        //same as World.AddComponentBytes
+                        Definition definition = slot.chunk.chunk->definition;
+                        definition.AddComponentType(componentType);
+                        Chunk destinationChunk = operation->world.world->chunks.GetOrCreate(definition);
+                        World.MoveEntityTo(slots, entity, ref slot, destinationChunk);
+                        operation->world.NotifyComponentAdded(entity, componentType);
+                        unchecked
+                        {
+                            Span<byte> component = new(slot.row.Pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
+                            componentBytes.CopyTo(component);
+                        }
                     }
                 }
             }
 
             private void RemoveComponentType()
             {
+                Span<Slot> slots = operation->world.world->slots.AsSpan();
                 int componentType = operation->buffer.Read<int>(bytePosition);
                 bytePosition += 4;
                 ReadOnlySpan<uint> selection = operation->selection.AsSpan();
                 for (int i = 0; i < selection.Length; i++)
                 {
-                    operation->world.RemoveComponentType(selection[i], componentType);
+                    //same as World.RemoveComponentType
+                    uint entity = selection[i];
+                    ref Slot slot = ref slots[(int)entity];
+                    Definition definition = slot.chunk.chunk->definition;
+                    definition.RemoveComponentType(componentType);
+                    Chunk destinationChunk = operation->world.world->chunks.GetOrCreate(definition);
+                    World.MoveEntityTo(slots, entity, ref slot, destinationChunk);
+                    operation->world.NotifyComponentRemoved(entity, componentType);
                 }
             }
 
@@ -1937,6 +2060,9 @@ namespace Worlds
                             break;
                         case InstructionType.AddComponentType:
                             AddComponentType();
+                            break;
+                        case InstructionType.TryAddComponentType:
+                            TryAddComponentType();
                             break;
                         case InstructionType.AddComponent:
                             AddComponent();

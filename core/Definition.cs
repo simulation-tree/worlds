@@ -45,6 +45,16 @@ namespace Worlds
         /// <summary>
         /// Creates a new definition with the exact component and array <see cref="BitMask"/> values.
         /// </summary>
+        public Definition(BitMask componentTypes, BitMask arrayTypes)
+        {
+            this.componentTypes = componentTypes;
+            this.arrayTypes = arrayTypes;
+            this.tagTypes = BitMask.Default;
+        }
+
+        /// <summary>
+        /// Creates a new definition with the exact component, array, and tag <see cref="BitMask"/> values.
+        /// </summary>
         public Definition(BitMask componentTypes, BitMask arrayTypes, BitMask tagTypes)
         {
             this.componentTypes = componentTypes;

@@ -83,7 +83,7 @@ namespace Worlds
         /// <summary>
         /// The size of a row of components in bytes.
         /// </summary>
-        public readonly int ComponentRowSize
+        public readonly uint ComponentRowSize
         {
             get
             {
@@ -216,7 +216,7 @@ namespace Worlds
             schema->tagsCount = 0;
             schema->componentRowSize = 0;
             schema->definitionMask = Definition.Default;
-            schema->componentOffsets = (int*)MemoryAddress.AllocateZeroed(OffsetsLengthInBytes).Pointer;
+            schema->componentOffsets = (uint*)MemoryAddress.AllocateZeroed(OffsetsLengthInBytes).Pointer;
             schema->sizes = (int*)MemoryAddress.AllocateZeroed(SizesLengthInBytes).Pointer;
             schema->typeHashes = (long*)MemoryAddress.AllocateZeroed(TypeHashesLengthInBytes).Pointer;
             schema->schemaIndex = createdSchemas;
@@ -287,7 +287,7 @@ namespace Worlds
 
             unchecked
             {
-                return schema->componentOffsets[(uint)GetComponentType<T>()];
+                return (int)schema->componentOffsets[(uint)GetComponentType<T>()];
             }
         }
 
@@ -299,7 +299,7 @@ namespace Worlds
         {
             unchecked
             {
-                return schema->componentOffsets[(uint)componentType];
+                return (int)schema->componentOffsets[(uint)componentType];
             }
         }
 
@@ -1370,7 +1370,7 @@ namespace Worlds
             schema->tagsCount = 0;
             schema->componentRowSize = 0;
             schema->definitionMask = Definition.Default;
-            schema->componentOffsets = (int*)MemoryAddress.AllocateZeroed(OffsetsLengthInBytes).Pointer;
+            schema->componentOffsets = (uint*)MemoryAddress.AllocateZeroed(OffsetsLengthInBytes).Pointer;
             schema->sizes = (int*)MemoryAddress.AllocateZeroed(SizesLengthInBytes).Pointer;
             schema->typeHashes = (long*)MemoryAddress.AllocateZeroed(TypeHashesLengthInBytes).Pointer;
             schema->schemaIndex = createdSchemas;
@@ -1511,10 +1511,10 @@ namespace Worlds
             writer.WriteValue((byte)schema->tagsCount);
             writer.WriteValue(schema->componentRowSize);
             writer.WriteValue(schema->definitionMask);
-            Span<int> offsets = new(schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(schema->componentOffsets, BitMask.Capacity);
             Span<int> sizes = new(schema->sizes, BitMask.Capacity * 2);
             Span<long> typeHashes = new(schema->typeHashes, BitMask.Capacity * 3);
-            writer.WriteSpan(offsets);
+            writer.WriteSpan(componentOffsets);
             writer.WriteSpan(sizes);
             writer.WriteSpan(typeHashes);
         }
@@ -1522,15 +1522,15 @@ namespace Worlds
         void ISerializable.Read(ByteReader reader)
         {
             schema = MemoryAddress.AllocatePointer<SchemaPointer>();
-            schema->componentOffsets = (int*)MemoryAddress.AllocateZeroed(OffsetsLengthInBytes).Pointer;
+            schema->componentOffsets = (uint*)MemoryAddress.AllocateZeroed(OffsetsLengthInBytes).Pointer;
             schema->sizes = (int*)MemoryAddress.AllocateZeroed(SizesLengthInBytes).Pointer;
             schema->typeHashes = (long*)MemoryAddress.AllocateZeroed(TypeHashesLengthInBytes).Pointer;
             schema->componentCount = reader.ReadValue<byte>();
             schema->arraysCount = reader.ReadValue<byte>();
             schema->tagsCount = reader.ReadValue<byte>();
-            schema->componentRowSize = reader.ReadValue<int>();
+            schema->componentRowSize = reader.ReadValue<uint>();
             schema->definitionMask = reader.ReadValue<Definition>();
-            reader.ReadSpan<int>(BitMask.Capacity).CopyTo(new Span<int>(schema->componentOffsets, BitMask.Capacity));
+            reader.ReadSpan<uint>(BitMask.Capacity).CopyTo(new Span<uint>(schema->componentOffsets, BitMask.Capacity));
             reader.ReadSpan<int>(BitMask.Capacity * 2).CopyTo(new Span<int>(schema->sizes, BitMask.Capacity * 2));
             reader.ReadSpan<long>(BitMask.Capacity * 3).CopyTo(new Span<long>(schema->typeHashes, BitMask.Capacity * 3));
             schema->schemaIndex = createdSchemas;
