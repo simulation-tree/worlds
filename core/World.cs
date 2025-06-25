@@ -1331,13 +1331,12 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(world);
 
-            Span<Slot> slots = world->slots.AsSpan();
-            if (entity >= slots.Length)
+            if (entity >= world->slots.Count)
             {
                 return false;
             }
 
-            return slots[(int)entity].state != Slot.State.Free;
+            return world->slots[entity].state != Slot.State.Free;
         }
 
         /// <summary>
