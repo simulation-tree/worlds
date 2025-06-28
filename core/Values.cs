@@ -61,11 +61,29 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private static void ThrowIfSizeMismatch<X>() where X : unmanaged
+        internal readonly void ThrowIfSizeMismatch()
+        {
+            if (array->stride != sizeof(T))
+            {
+                throw new InvalidOperationException($"Size of {typeof(T).Name} doesn't equal to the stride of {array->stride}");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        internal static void ThrowIfSizeMismatch<X>() where X : unmanaged
         {
             if (sizeof(T) != sizeof(X))
             {
                 throw new InvalidOperationException($"Size mismatch between {typeof(T).Name} and {typeof(X).Name}");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        internal static void ThrowIfSizeMismatch(int stride)
+        {
+            if (sizeof(T) != stride)
+            {
+                throw new InvalidOperationException($"Size of {typeof(T).Name} doesn't equal to the stride of {stride}");
             }
         }
 
@@ -426,7 +444,7 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfSizeMismatch<T>() where T : unmanaged
+        internal readonly void ThrowIfSizeMismatch<T>() where T : unmanaged
         {
             if (sizeof(T) != array->stride)
             {

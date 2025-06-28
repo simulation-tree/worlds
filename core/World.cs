@@ -2171,7 +2171,9 @@ namespace Worlds
             int arrayType = world->schema.GetArrayType<T>();
             ThrowIfArrayIsMissing(entity, arrayType);
 
-            return new(world->arrays[entity][arrayType].array);
+            Values<T> array = new(world->arrays[entity][arrayType].array);
+            array.ThrowIfSizeMismatch();
+            return array;
         }
 
         /// <summary>
@@ -2184,7 +2186,16 @@ namespace Worlds
 
             int arrayType = world->schema.GetArrayType<T>();
             Collections.Pointers.ArrayPointer* pointer = world->arrays[entity][arrayType].array;
-            return pointer == default ? default : new(pointer->items.Pointer, pointer->length);
+            if (pointer == default)
+            {
+                return default;
+            }
+            else
+            {
+                Span<T> array = new(pointer->items.Pointer, pointer->length);
+                Values<T>.ThrowIfSizeMismatch(pointer->stride);
+                return array;
+            }
         }
 
         /// <summary>
@@ -2196,7 +2207,9 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfArrayIsMissing(entity, arrayType);
 
-            return new(world->arrays[entity][arrayType].array);
+            Values<T> array = new(world->arrays[entity][arrayType].array);
+            array.ThrowIfSizeMismatch();
+            return array;
         }
 
         /// <summary>
@@ -2208,7 +2221,16 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
 
             Collections.Pointers.ArrayPointer* pointer = world->arrays[entity][arrayType].array;
-            return pointer == default ? default : new(pointer->items.Pointer, pointer->length);
+            if (pointer == default)
+            {
+                return default;
+            }
+            else
+            {
+                Span<T> array = new(pointer->items.Pointer, pointer->length);
+                Values<T>.ThrowIfSizeMismatch(pointer->stride);
+                return array;
+            }
         }
 
         /// <summary>
@@ -2964,7 +2986,7 @@ namespace Worlds
         /// <summary>
         /// Attempts to retrieve a reference to the component of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
         /// </summary>
-        /// <returns><c>true</c> if the component is found.</returns>
+        /// <returns><see langword="true"/> if the component is found.</returns>
         public readonly ref T TryGetComponent<T>(uint entity, int componentType, out bool contains) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(world);
@@ -2987,7 +3009,7 @@ namespace Worlds
         /// <summary>
         /// Attempts to retrieve a reference to the component of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
         /// </summary>
-        /// <returns><c>true</c> if the component is found.</returns>
+        /// <returns><see langword="true"/> if the component is found.</returns>
         public readonly ref T TryGetComponent<T>(uint entity, out bool contains) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(world);
@@ -3011,7 +3033,7 @@ namespace Worlds
         /// <summary>
         /// Attempts to retrieve the component of type <typeparamref name="T"/> from the given <paramref name="entity"/>.
         /// </summary>
-        /// <returns><c>true</c> if found.</returns>
+        /// <returns><see langword="true"/> if found.</returns>
         public readonly bool TryGetComponent<T>(uint entity, int componentType, out T component) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(world);
@@ -3420,7 +3442,7 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfParentIsSameAsChild(uint entity, uint parent)
+        internal static void ThrowIfParentIsSameAsChild(uint entity, uint parent)
         {
             if (entity == parent)
             {
@@ -3429,7 +3451,7 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfReferenceIsMissing(uint entity, rint reference)
+        internal readonly void ThrowIfReferenceIsMissing(uint entity, rint reference)
         {
             ref Slot slot = ref world->slots[entity];
             if (reference.value == 0 || reference.value > slot.referenceCount)
@@ -3439,7 +3461,7 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfReferencedEntityIsMissing(uint entity, uint referencedEntity)
+        internal readonly void ThrowIfReferencedEntityIsMissing(uint entity, uint referencedEntity)
         {
             ref Slot slot = ref world->slots[entity];
             Span<uint> references = world->references.AsSpan(slot.referenceStart, slot.referenceCount);
@@ -3450,7 +3472,7 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfComponentMissing(uint entity, int componentType)
+        internal readonly void ThrowIfComponentMissing(uint entity, int componentType)
         {
             BitMask componentTypes = world->slots[entity].chunk.chunk->definition.componentTypes;
             if (!componentTypes.Contains(componentType))
@@ -3460,7 +3482,7 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfComponentsMissing(uint entity, BitMask componentTypes)
+        internal readonly void ThrowIfComponentsMissing(uint entity, BitMask componentTypes)
         {
             BitMask currentComponentTypes = world->slots[entity].chunk.chunk->definition.componentTypes;
             if (!currentComponentTypes.ContainsAll(componentTypes))
@@ -3470,7 +3492,7 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfComponentAlreadyPresent(uint entity, int componentType)
+        internal readonly void ThrowIfComponentAlreadyPresent(uint entity, int componentType)
         {
             BitMask componentTypes = world->slots[entity].chunk.chunk->definition.componentTypes;
             if (componentTypes.Contains(componentType))
@@ -3480,7 +3502,7 @@ namespace Worlds
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfComponentsAlreadyPresent(uint entity, BitMask componentTypes)
+        internal readonly void ThrowIfComponentsAlreadyPresent(uint entity, BitMask componentTypes)
         {
             BitMask currentComponentTypes = world->slots[entity].chunk.chunk->definition.componentTypes;
             if (currentComponentTypes.ContainsAll(componentTypes))

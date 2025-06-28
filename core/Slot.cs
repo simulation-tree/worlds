@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Unmanaged;
 
 namespace Worlds
@@ -57,6 +58,46 @@ namespace Worlds
         /// Length of references.
         /// </summary>
         public int referenceCount;
+
+        /// <summary>
+        /// Retrieves the memory for <paramref name="componentType"/>.
+        /// </summary>
+        public unsafe readonly MemoryAddress GetComponent(int componentType)
+        {
+            ThrowIfComponentIsMissing(componentType);
+
+            return new(row.Pointer + chunk.chunk->schema.schema->componentOffsets[(uint)componentType]);
+        }
+
+        /// <summary>
+        /// Retrieves a reference to <typeparamref name="T"/>.
+        /// </summary>
+        public unsafe readonly ref T GetComponent<T>() where T : unmanaged
+        {
+            int componentType = chunk.chunk->schema.GetComponentType<T>();
+            ThrowIfComponentIsMissing(componentType);
+
+            return ref *(T*)(row.Pointer + chunk.chunk->schema.schema->componentOffsets[(uint)componentType]);
+        }
+
+        /// <summary>
+        /// Retrieves a reference to <typeparamref name="T"/>.
+        /// </summary>
+        public unsafe readonly ref T GetComponent<T>(int componentType) where T : unmanaged
+        {
+            ThrowIfComponentIsMissing(componentType);
+
+            return ref *(T*)(row.Pointer + chunk.chunk->schema.schema->componentOffsets[(uint)componentType]);
+        }
+
+        [Conditional("DEBUG")]
+        internal unsafe readonly void ThrowIfComponentIsMissing(int componentType)
+        {
+            if (!chunk.chunk->definition.componentTypes.Contains(componentType))
+            {
+                throw new InvalidOperationException($"Entity does not contain component type `{componentType}`");
+            }
+        }
 
         /// <summary>
         /// All possible states of an entity.

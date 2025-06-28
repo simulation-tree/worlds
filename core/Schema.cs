@@ -1184,11 +1184,30 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves the specified array types.
+        /// </summary>
+        public readonly void GetArrayTypes<T1, T2>(out int a1, out int a2) where T1 : unmanaged where T2 : unmanaged
+        {
+            a1 = GetArrayType<T1>();
+            a2 = GetArrayType<T2>();
+        }
+
+        /// <summary>
         /// Retrieves a mask of the specified array types.
         /// </summary>
         public readonly BitMask GetArrayTypes<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
             return new(GetArrayType<T1>(), GetArrayType<T2>(), GetArrayType<T3>());
+        }
+
+        /// <summary>
+        /// Retrieves the specified array types.
+        /// </summary>
+        public readonly void GetArrayTypes<T1, T2, T3>(out int a1, out int a2, out int a3) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
+        {
+            a1 = GetArrayType<T1>();
+            a2 = GetArrayType<T2>();
+            a3 = GetArrayType<T3>();
         }
 
         /// <summary>
@@ -1200,11 +1219,34 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves the specified array types.
+        /// </summary>
+        public readonly void GetArrayTypes<T1, T2, T3, T4>(out int a1, out int a2, out int a3, out int a4) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
+        {
+            a1 = GetArrayType<T1>();
+            a2 = GetArrayType<T2>();
+            a3 = GetArrayType<T3>();
+            a4 = GetArrayType<T4>();
+        }
+
+        /// <summary>
         /// Retrieves a mask of the specified array types.
         /// </summary>
         public readonly BitMask GetArrayTypes<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
             return new(GetArrayType<T1>(), GetArrayType<T2>(), GetArrayType<T3>(), GetArrayType<T4>(), GetArrayType<T5>());
+        }
+
+        /// <summary>
+        /// Retrieves the specified array types.
+        /// </summary>
+        public readonly void GetArrayTypes<T1, T2, T3, T4, T5>(out int a1, out int a2, out int a3, out int a4, out int a5) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
+        {
+            a1 = GetArrayType<T1>();
+            a2 = GetArrayType<T2>();
+            a3 = GetArrayType<T3>();
+            a4 = GetArrayType<T4>();
+            a5 = GetArrayType<T5>();
         }
 
         /// <summary>
@@ -1216,11 +1258,38 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves the specified array types.
+        /// </summary>
+        public readonly void GetArrayTypes<T1, T2, T3, T4, T5, T6>(out int a1, out int a2, out int a3, out int a4, out int a5, out int a6) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
+        {
+            a1 = GetArrayType<T1>();
+            a2 = GetArrayType<T2>();
+            a3 = GetArrayType<T3>();
+            a4 = GetArrayType<T4>();
+            a5 = GetArrayType<T5>();
+            a6 = GetArrayType<T6>();
+        }
+
+        /// <summary>
         /// Retrieves a mask of the specified array types.
         /// </summary>
         public readonly BitMask GetArrayTypes<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
             return new(GetArrayType<T1>(), GetArrayType<T2>(), GetArrayType<T3>(), GetArrayType<T4>(), GetArrayType<T5>(), GetArrayType<T6>(), GetArrayType<T7>());
+        }
+
+        /// <summary>
+        /// Retrieves the specified array types.
+        /// </summary>
+        public readonly void GetArrayTypes<T1, T2, T3, T4, T5, T6, T7>(out int a1, out int a2, out int a3, out int a4, out int a5, out int a6, out int a7) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
+        {
+            a1 = GetArrayType<T1>();
+            a2 = GetArrayType<T2>();
+            a3 = GetArrayType<T3>();
+            a4 = GetArrayType<T4>();
+            a5 = GetArrayType<T5>();
+            a6 = GetArrayType<T6>();
+            a7 = GetArrayType<T7>();
         }
 
         /// <summary>
@@ -1232,11 +1301,42 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves the specified array types.
+        /// </summary>
+        public readonly void GetArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8>(out int a1, out int a2, out int a3, out int a4, out int a5, out int a6, out int a7, out int a8) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
+        {
+            a1 = GetArrayType<T1>();
+            a2 = GetArrayType<T2>();
+            a3 = GetArrayType<T3>();
+            a4 = GetArrayType<T4>();
+            a5 = GetArrayType<T5>();
+            a6 = GetArrayType<T6>();
+            a7 = GetArrayType<T7>();
+            a8 = GetArrayType<T8>();
+        }
+
+        /// <summary>
         /// Retrieves a mask of the specified array types.
         /// </summary>
         public readonly BitMask GetArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
             return new(GetArrayType<T1>(), GetArrayType<T2>(), GetArrayType<T3>(), GetArrayType<T4>(), GetArrayType<T5>(), GetArrayType<T6>(), GetArrayType<T7>(), GetArrayType<T8>(), GetArrayType<T9>());
+        }
+
+        /// <summary>
+        /// Retrieves the specified array types.
+        /// </summary>
+        public readonly void GetArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(out int a1, out int a2, out int a3, out int a4, out int a5, out int a6, out int a7, out int a8, out int a9) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
+        {
+            a1 = GetArrayType<T1>();
+            a2 = GetArrayType<T2>();
+            a3 = GetArrayType<T3>();
+            a4 = GetArrayType<T4>();
+            a5 = GetArrayType<T5>();
+            a6 = GetArrayType<T6>();
+            a7 = GetArrayType<T7>();
+            a8 = GetArrayType<T8>();
+            a9 = GetArrayType<T9>();
         }
 
         /// <summary>
@@ -1248,6 +1348,23 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves the specified array types.
+        /// </summary>
+        public readonly void GetArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(out int a1, out int a2, out int a3, out int a4, out int a5, out int a6, out int a7, out int a8, out int a9, out int a10) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
+        {
+            a1 = GetArrayType<T1>();
+            a2 = GetArrayType<T2>();
+            a3 = GetArrayType<T3>();
+            a4 = GetArrayType<T4>();
+            a5 = GetArrayType<T5>();
+            a6 = GetArrayType<T6>();
+            a7 = GetArrayType<T7>();
+            a8 = GetArrayType<T8>();
+            a9 = GetArrayType<T9>();
+            a10 = GetArrayType<T10>();
+        }
+
+        /// <summary>
         /// Retrieves a mask of the specified array types.
         /// </summary>
         public readonly BitMask GetArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
@@ -1256,11 +1373,48 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves the specified array types.
+        /// </summary>
+        public readonly void GetArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(out int a1, out int a2, out int a3, out int a4, out int a5, out int a6, out int a7, out int a8, out int a9, out int a10, out int a11) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
+        {
+            a1 = GetArrayType<T1>();
+            a2 = GetArrayType<T2>();
+            a3 = GetArrayType<T3>();
+            a4 = GetArrayType<T4>();
+            a5 = GetArrayType<T5>();
+            a6 = GetArrayType<T6>();
+            a7 = GetArrayType<T7>();
+            a8 = GetArrayType<T8>();
+            a9 = GetArrayType<T9>();
+            a10 = GetArrayType<T10>();
+            a11 = GetArrayType<T11>();
+        }
+
+        /// <summary>
         /// Retrieves a mask of the specified array types.
         /// </summary>
         public readonly BitMask GetArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
             return new(GetArrayType<T1>(), GetArrayType<T2>(), GetArrayType<T3>(), GetArrayType<T4>(), GetArrayType<T5>(), GetArrayType<T6>(), GetArrayType<T7>(), GetArrayType<T8>(), GetArrayType<T9>(), GetArrayType<T10>(), GetArrayType<T11>(), GetArrayType<T12>());
+        }
+
+        /// <summary>
+        /// Retrieves the specified array types.
+        /// </summary>
+        public readonly void GetArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(out int a1, out int a2, out int a3, out int a4, out int a5, out int a6, out int a7, out int a8, out int a9, out int a10, out int a11, out int a12) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
+        {
+            a1 = GetArrayType<T1>();
+            a2 = GetArrayType<T2>();
+            a3 = GetArrayType<T3>();
+            a4 = GetArrayType<T4>();
+            a5 = GetArrayType<T5>();
+            a6 = GetArrayType<T6>();
+            a7 = GetArrayType<T7>();
+            a8 = GetArrayType<T8>();
+            a9 = GetArrayType<T9>();
+            a10 = GetArrayType<T10>();
+            a11 = GetArrayType<T11>();
+            a12 = GetArrayType<T12>();
         }
 
         /// <summary>

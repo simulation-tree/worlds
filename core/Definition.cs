@@ -33,6 +33,11 @@ namespace Worlds
         public readonly bool IsDisabled => (tagTypes.d & 1UL << 63) != 0;
 
         /// <summary>
+        /// Checks if this definition describes an enabled entity.
+        /// </summary>
+        public readonly bool IsEnabled =>(tagTypes.d & 1UL << 63) == 0;
+
+        /// <summary>
         /// Creates a new definition with the exact component <see cref="BitMask"/>.
         /// </summary>
         public Definition(BitMask componentTypes)
