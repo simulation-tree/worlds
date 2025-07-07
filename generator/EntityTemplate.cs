@@ -997,11 +997,37 @@
     }
 
     /// <summary>
+    /// Creates an array of type <typeparamref name=""T""/> on this entity from the
+    /// given <paramref name=""elements""/> span.
+    /// </summary>
+    public readonly void CreateArray<T>(int arrayType, ReadOnlySpan<T> elements) where T : unmanaged
+    {
+        world.CreateArray(value, arrayType, elements);
+    }
+
+    /// <summary>
+    /// Creates an array of type <typeparamref name=""T""/> on this entity from the
+    /// given <paramref name=""elements""/> span.
+    /// </summary>
+    public readonly void CreateArray<T>(int arrayType, Span<T> elements) where T : unmanaged
+    {
+        world.CreateArray(value, arrayType, elements);
+    }
+
+    /// <summary>
     /// Creates an array of type <typeparamref name=""T""/> on this entity.
     /// </summary>
     public readonly Values<T> CreateArray<T>(int length = 0) where T : unmanaged
     {
         return world.CreateArray<T>(value, length);
+    }
+
+    /// <summary>
+    /// Creates an array of type <typeparamref name=""T""/> on this entity.
+    /// </summary>
+    public readonly Values<T> CreateArray<T>(int arrayType, int length = 0) where T : unmanaged
+    {
+        return world.CreateArray<T>(value, arrayType, length);
     }
 
     /// <summary>

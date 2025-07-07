@@ -440,6 +440,14 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Retrieves the reference to the component of type <typeparamref name="T"/>.
+        /// </summary>
+        public readonly ref T GetComponent<T>(int componentType) where T : unmanaged
+        {
+            return ref world.GetComponent<T>(value, componentType);
+        }
+
+        /// <summary>
         /// Tries to retrieve an existing copy of a <typeparamref name="T"/> component.
         /// </summary>
         public readonly bool TryGetComponent<T>(out T component) where T : unmanaged
@@ -464,11 +472,27 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Tries to retrieve the reference to the component of type <typeparamref name="T"/>.
+        /// </summary>
+        public readonly ref T TryGetComponent<T>(int componentType, out bool contains) where T : unmanaged
+        {
+            return ref world.TryGetComponent<T>(value, componentType, out contains);
+        }
+
+        /// <summary>
         /// Assigns the given <paramref name="component"/>.
         /// </summary>
         public readonly void SetComponent<T>(T component) where T : unmanaged
         {
             world.SetComponent(value, component);
+        }
+
+        /// <summary>
+        /// Assigns the given <paramref name="component"/>.
+        /// </summary>
+        public readonly void SetComponent<T>(int componentType, T component) where T : unmanaged
+        {
+            world.SetComponent(value, componentType, component);
         }
 
         /// <summary>
@@ -576,11 +600,43 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Creates a new array with the given <paramref name="elements"/>.
+        /// </summary>
+        public readonly void CreateArray<T>(Span<T> elements) where T : unmanaged
+        {
+            world.CreateArray(value, elements);
+        }
+
+        /// <summary>
+        /// Creates a new array with the given <paramref name="elements"/>.
+        /// </summary>
+        public readonly void CreateArray<T>(int arrayType, ReadOnlySpan<T> elements) where T : unmanaged
+        {
+            world.CreateArray(value, arrayType, elements);
+        }
+
+        /// <summary>
+        /// Creates a new array with the given <paramref name="elements"/>.
+        /// </summary>
+        public readonly void CreateArray<T>(int arrayType, Span<T> elements) where T : unmanaged
+        {
+            world.CreateArray(value, arrayType, elements);
+        }
+
+        /// <summary>
         /// Creates a new array of type <typeparamref name="T"/> with the specified <paramref name="length"/>.
         /// </summary>
         public readonly Values<T> CreateArray<T>(int length = 0) where T : unmanaged
         {
             return world.CreateArray<T>(value, length);
+        }
+
+        /// <summary>
+        /// Creates a new array of type <typeparamref name="T"/> with the specified <paramref name="length"/>.
+        /// </summary>
+        public readonly Values<T> CreateArray<T>(int arrayType, int length = 0) where T : unmanaged
+        {
+            return world.CreateArray<T>(value, arrayType, length);
         }
 
         /// <summary>

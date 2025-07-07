@@ -1,4 +1,4 @@
-﻿#pragma warning disable W0002
+﻿#pragma warning disable W0003
 #pragma warning disable CS0169 // Field is never used
 
 using System;

@@ -2054,6 +2054,48 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Creates a new empty array on this <paramref name="entity"/>.
+        /// </summary>
+        public readonly Values<T> CreateArray<T>(uint entity, int arrayType, int length = 0) where T : unmanaged
+        {
+            MemoryAddress.ThrowIfDefault(world);
+            ThrowIfEntityIsMissing(entity);
+            ThrowIfArrayIsAlreadyPresent(entity, arrayType);
+
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
+            ref Arrays arrays = ref world->arrays[entity];
+
+            if ((slot.flags & Slot.Flags.ContainsArrays) == 0)
+            {
+                slot.flags |= Slot.Flags.ContainsArrays;
+                slot.flags &= ~Slot.Flags.ArraysOutdated;
+            }
+            else if ((slot.flags & Slot.Flags.ArraysOutdated) != 0)
+            {
+                slot.flags &= ~Slot.Flags.ArraysOutdated;
+                for (int a = 0; a < BitMask.Capacity; a++)
+                {
+                    Values array = arrays[a];
+                    if (array != default)
+                    {
+                        array.Dispose();
+                        arrays[a] = default;
+                    }
+                }
+            }
+
+            Definition newDefinition = slot.chunk.chunk->definition;
+            newDefinition.AddArrayType(arrayType);
+            Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
+            MoveEntityTo(slots, entity, ref slot, destinationChunk);
+            Values<T> newArray = new(length);
+            arrays[arrayType] = newArray;
+            NotifyArrayCreated(entity, arrayType);
+            return newArray;
+        }
+
+        /// <summary>
         /// Creates a new array containing the given <paramref name="values"/>.
         /// </summary>
         public readonly void CreateArray<T>(uint entity, ReadOnlySpan<T> values) where T : unmanaged
@@ -2098,12 +2140,92 @@ namespace Worlds
         /// <summary>
         /// Creates a new array containing the given <paramref name="values"/>.
         /// </summary>
+        public readonly void CreateArray<T>(uint entity, int arrayType, ReadOnlySpan<T> values) where T : unmanaged
+        {
+            MemoryAddress.ThrowIfDefault(world);
+            ThrowIfEntityIsMissing(entity);
+            ThrowIfArrayIsAlreadyPresent(entity, arrayType);
+
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
+            ref Arrays arrays = ref world->arrays[entity];
+
+            if ((slot.flags & Slot.Flags.ContainsArrays) == 0)
+            {
+                slot.flags |= Slot.Flags.ContainsArrays;
+                slot.flags &= ~Slot.Flags.ArraysOutdated;
+            }
+            else if ((slot.flags & Slot.Flags.ArraysOutdated) != 0)
+            {
+                slot.flags &= ~Slot.Flags.ArraysOutdated;
+                for (int a = 0; a < BitMask.Capacity; a++)
+                {
+                    Values array = arrays[a];
+                    if (array != default)
+                    {
+                        array.Dispose();
+                        arrays[a] = default;
+                    }
+                }
+            }
+
+            Definition newDefinition = slot.chunk.chunk->definition;
+            newDefinition.AddArrayType(arrayType);
+            Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
+            MoveEntityTo(slots, entity, ref slot, destinationChunk);
+            arrays[arrayType] = new Values<T>(values);
+            NotifyArrayCreated(entity, arrayType);
+        }
+
+        /// <summary>
+        /// Creates a new array containing the given <paramref name="values"/>.
+        /// </summary>
         public readonly void CreateArray<T>(uint entity, Span<T> values) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
             int arrayType = world->schema.GetArrayType<T>();
+            ThrowIfArrayIsAlreadyPresent(entity, arrayType);
+
+            Span<Slot> slots = world->slots.AsSpan();
+            ref Slot slot = ref slots[(int)entity];
+            ref Arrays arrays = ref world->arrays[entity];
+
+            if ((slot.flags & Slot.Flags.ContainsArrays) == 0)
+            {
+                slot.flags |= Slot.Flags.ContainsArrays;
+                slot.flags &= ~Slot.Flags.ArraysOutdated;
+            }
+            else if ((slot.flags & Slot.Flags.ArraysOutdated) != 0)
+            {
+                slot.flags &= ~Slot.Flags.ArraysOutdated;
+                for (int a = 0; a < BitMask.Capacity; a++)
+                {
+                    Values array = arrays[a];
+                    if (array != default)
+                    {
+                        array.Dispose();
+                        arrays[a] = default;
+                    }
+                }
+            }
+
+            Definition newDefinition = slot.chunk.chunk->definition;
+            newDefinition.AddArrayType(arrayType);
+            Chunk destinationChunk = world->chunks.GetOrCreate(newDefinition);
+            MoveEntityTo(slots, entity, ref slot, destinationChunk);
+            arrays[arrayType] = new Values<T>(values);
+            NotifyArrayCreated(entity, arrayType);
+        }
+
+        /// <summary>
+        /// Creates a new array containing the given <paramref name="values"/>.
+        /// </summary>
+        public readonly void CreateArray<T>(uint entity, int arrayType, Span<T> values) where T : unmanaged
+        {
+            MemoryAddress.ThrowIfDefault(world);
+            ThrowIfEntityIsMissing(entity);
             ThrowIfArrayIsAlreadyPresent(entity, arrayType);
 
             Span<Slot> slots = world->slots.AsSpan();
