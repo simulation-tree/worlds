@@ -288,8 +288,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity == byteLength)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.CreateSingleEntity);
@@ -308,8 +308,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity == byteLength)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.CreateSingleEntityAndSelect);
@@ -330,8 +330,8 @@ namespace Worlds
             if (operation->byteCapacity <= byteLength + 5)
             {
                 //the new capacity will always be able to contain the next 5 bytes, because the initial value is 32
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.CreateMultipleEntities);
@@ -352,8 +352,8 @@ namespace Worlds
             if (operation->byteCapacity <= byteLength + 5)
             {
                 //the new capacity will always be able to contain the next 5 bytes, because the initial value is 32
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.CreateMultipleEntitiesAndSelect);
@@ -376,8 +376,8 @@ namespace Worlds
             if (operation->byteCapacity <= byteLength + 5)
             {
                 //the new capacity will always be able to contain the next 5 bytes, because the initial value is 32
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.SetParent);
@@ -405,8 +405,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity == byteLength)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.DestroySelectedEntities);
@@ -426,8 +426,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity == byteLength)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.EnableSelectedEntities);
@@ -446,8 +446,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity == byteLength)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.DisableSelectedEntities);
@@ -518,8 +518,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 5)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.AddComponentType);
@@ -539,8 +539,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 5)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.AddComponentType);
@@ -561,8 +561,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 5)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.TryAddComponentType);
@@ -583,8 +583,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 5)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.TryAddComponentType);
@@ -708,8 +708,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 5)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.RemoveComponentType);
@@ -729,8 +729,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 5)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.RemoveComponentType);
@@ -750,8 +750,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 9)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.CreateArray);
@@ -772,8 +772,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 9)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.CreateArray);
@@ -869,8 +869,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 9)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.ResizeArray);
@@ -892,8 +892,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 9)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.ResizeArray);
@@ -1256,8 +1256,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 5)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.AddTag);
@@ -1277,8 +1277,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 5)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.AddTag);
@@ -1298,8 +1298,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 5)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.RemoveTag);
@@ -1319,8 +1319,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 5)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.RemoveTag);
@@ -1340,8 +1340,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 5)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.AppendEntityToSelection);
@@ -1370,8 +1370,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 5)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.SetSelectedEntity);
@@ -1433,8 +1433,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 5)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.AppendPreviouslyCreatedEntityToSelection);
@@ -1454,8 +1454,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity == byteLength)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.ClearSelection);
@@ -1475,8 +1475,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 5)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.RemoveReference);
@@ -1497,8 +1497,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 5)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.SetParentToPreviouslyCreatedEntity);
@@ -1518,8 +1518,8 @@ namespace Worlds
             int byteLength = operation->byteLength;
             if (operation->byteCapacity <= byteLength + 5)
             {
-                MemoryAddress.ResizePowerOf2(ref operation->buffer, operation->byteCapacity);
                 operation->byteCapacity *= 2;
+                MemoryAddress.Resize(ref operation->buffer, operation->byteCapacity);
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.AddReferenceToPreviouslyCreatedEntity);
