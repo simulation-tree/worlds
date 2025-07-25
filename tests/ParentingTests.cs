@@ -187,6 +187,30 @@ namespace Worlds.Tests
         }
 
         [Test]
+        public void DepthExtendsWhenChildrenAreAdded()
+        {
+            using World world = CreateWorld();
+            uint parent = world.CreateEntity();
+            uint a = world.CreateEntity();
+            uint b = world.CreateEntity();
+            uint c = world.CreateEntity();
+            uint d = world.CreateEntity();
+
+            Assert.That(world.MaxDepth, Is.EqualTo(0));
+            world.SetParent(a, parent);
+            Assert.That(world.MaxDepth, Is.EqualTo(1));
+            world.SetParent(b, c);
+            Assert.That(world.MaxDepth, Is.EqualTo(1));
+            world.SetParent(c, a);
+            Assert.That(world.MaxDepth, Is.EqualTo(3));
+
+            Assert.That(world.GetSlot(parent).depth, Is.EqualTo(0));
+            Assert.That(world.GetSlot(a).depth, Is.EqualTo(1));
+            Assert.That(world.GetSlot(b).depth, Is.EqualTo(3));
+            Assert.That(world.GetSlot(c).depth, Is.EqualTo(2));
+        }
+
+        [Test]
         public void MaxDepthOfWorld()
         {
             using World world = CreateWorld();

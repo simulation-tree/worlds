@@ -1440,26 +1440,33 @@ namespace Worlds
                     MoveEntityTo(slots, entity, ref entitySlot, destinationChunk);
                 }
 
-                //calculate the max depth of the world
-                if (entitySlot.depth > world->maxDepth)
-                {
-                    world->maxDepth = entitySlot.depth;
-                }
-
                 NotifyParentChange(entity, oldParent, newParent);
             }
 
             return parentChanged;
         }
 
-        private static void UpdateDepthOfChildren(uint entity, Span<Slot> slots, int depth)
+        private readonly void UpdateDepthOfChildren(uint entity, Span<Slot> slots, int depth)
         {
+            //calculate the max depth of the world
+            if (depth > world->maxDepth)
+            {
+                world->maxDepth = depth;
+            }
+
             for (uint childEntity = 1; childEntity < slots.Length; childEntity++)
             {
                 ref Slot childSlot = ref slots[(int)childEntity];
                 if (childSlot.parent == entity)
                 {
                     childSlot.depth = depth + 1;
+
+                    //calculate the max depth of the world
+                    if (childSlot.depth > world->maxDepth)
+                    {
+                        world->maxDepth = childSlot.depth;
+                    }
+
                     if ((childSlot.flags & Slot.Flags.ContainsChildren) != 0 && (childSlot.flags & Slot.Flags.ChildrenOutdated) == 0)
                     {
                         UpdateDepthOfChildren(childEntity, slots, depth + 1);
@@ -3260,6 +3267,17 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
 
             return world->slots[entity].chunk;
+        }
+
+        /// <summary>
+        /// Retrieves the <see cref="Slot"/> that contains the given <paramref name="entity"/>.
+        /// </summary>
+        public readonly Slot GetSlot(uint entity)
+        {
+            MemoryAddress.ThrowIfDefault(world);
+            ThrowIfEntityIsMissing(entity);
+
+            return world->slots[entity];
         }
 
         /// <summary>

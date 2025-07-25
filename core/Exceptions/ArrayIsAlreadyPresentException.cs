@@ -9,13 +9,13 @@ namespace Worlds
     public class ArrayIsAlreadyPresentException : Exception
     {
         /// <inheritdoc/>
-        public ArrayIsAlreadyPresentException(World world, uint entity, int componentType) : base(GetMessage(world, entity, componentType))
+        public ArrayIsAlreadyPresentException(World world, uint entity, int arrayType) : base(GetMessage(world, entity, arrayType))
         {
         }
 
-        private unsafe static string GetMessage(World world, uint entity, int componentType)
+        private unsafe static string GetMessage(World world, uint entity, int arrayType)
         {
-            TypeMetadata type = world.world->schema.GetComponentLayout(componentType);
+            TypeMetadata type = world.world->schema.GetArrayLayout(arrayType);
             return $"Entity `{entity}` already has array `{type}`";
         }
     }
