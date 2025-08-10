@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
@@ -36,10 +36,10 @@
     <ProjectReference Include="..\..\collections\source\Collections.csproj"/>
     <ProjectReference Include="..\..\types\core\Types.Core.csproj"/>
     <ProjectReference Include="..\..\unmanaged\core\Unmanaged.Core.csproj"/>
-    <ProjectReference Include="..\..\unmanaged\generator\Unmanaged.Generator.csproj">
-      <OutputItemType>Analyzer</OutputItemType>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Analyzer Include="..\..\unmanaged\generator\bin\$(Configuration)\netstandard2.0\Unmanaged.Generator.dll"/>
   </ItemGroup>
 
   <ItemGroup>

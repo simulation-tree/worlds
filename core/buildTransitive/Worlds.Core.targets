@@ -3,7 +3,7 @@
 
     <ItemGroup>
         <Reference Include="Worlds.Core">
-            <HintPath>$(MSBuildThisFileDirectory)..\lib\net9.0\$(Configuration)\Worlds.Core.dll</HintPath>
+            <HintPath>$(MSBuildThisFileDirectory)..\lib\$(TargetFramework)\$(Configuration)\Worlds.Core.dll</HintPath>
         </Reference>
     </ItemGroup>
 
