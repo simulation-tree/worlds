@@ -39,7 +39,7 @@ jobs:
       - name: Setup
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version:  |
+          dotnet-version: |
             9.0.x
             10.0.x
 
@@ -69,12 +69,6 @@ jobs:
       
       - name: Build `Worlds.Tests`
         run: dotnet build "${{ github.event.repository.name }}/tests" -c Release /p:Version=${VERSION}
-      
-      - name: Build `Worlds.TypesPreGenerator`
-        run: dotnet build "${{ github.event.repository.name }}/types pregenerator" -c Debug /p:Version=${VERSION}
-      
-      - name: Build `Worlds.TypesPreGenerator`
-        run: dotnet build "${{ github.event.repository.name }}/types pregenerator" -c Release /p:Version=${VERSION}
             
       - name: Test
         run: dotnet test "${{ github.event.repository.name }}/tests" -c Release --logger "trx" --framework net10.0
@@ -87,9 +81,6 @@ jobs:
       
       - name: Pack `Worlds`
         run: dotnet pack "${{ github.event.repository.name }}/source" /p:Version=${VERSION} --no-build --output .
-      
-      - name: Pack `Worlds.TypesPreGenerator`
-        run: dotnet pack "${{ github.event.repository.name }}/types pregenerator" /p:Version=${VERSION} --no-build --output .
 
       - name: Add NuGet Source
         run: dotnet nuget add source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --name github --username ${{ github.repository_owner }} --password ${{ github.token }} --store-password-in-clear-text
@@ -106,10 +97,5 @@ jobs:
       
       - name: Publish `Worlds`
         run: dotnet nuget push Worlds.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
-        env:
-          NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
-      
-      - name: Publish `Worlds.TypesPreGenerator`
-        run: dotnet nuget push Worlds.TypesPreGenerator.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
         env:
           NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
