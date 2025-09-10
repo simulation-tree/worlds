@@ -33,18 +33,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\collections\source\Collections.csproj"/>
-    <ProjectReference Include="..\..\types\core\Types.Core.csproj"/>
-    <ProjectReference Include="..\..\unmanaged\core\Unmanaged.Core.csproj"/>
+    <ProjectReference Include="..\..\collections\source\Collections.csproj" />
+    <ProjectReference Include="..\..\types\core\Types.Core.csproj" />
+    <ProjectReference Include="..\..\unmanaged\core\Unmanaged.Core.csproj" />
+    <ProjectReference Include="..\..\unmanaged\generator\Unmanaged.Generator.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
   </ItemGroup>
 
   <ItemGroup>
-    <Analyzer Include="..\..\unmanaged\generator\bin\$(Configuration)\netstandard2.0\Unmanaged.Generator.dll"/>
+    <Analyzer Include="..\..\unmanaged\generator\bin\$(Configuration)\netstandard2.0\Unmanaged.Generator.dll" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="bin/**/*" Pack="true" PackagePath="lib" Visible="false"/>
-    <Content Include="buildTransitive/**/*" Pack="true" PackagePath="buildTransitive"/>
+    <Content Include="bin/**/*" Pack="true" PackagePath="lib" Visible="false" />
+    <Content Include="buildTransitive/**/*" Pack="true" PackagePath="buildTransitive" />
   </ItemGroup>
 
 </Project>

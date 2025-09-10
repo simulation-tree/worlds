@@ -28,10 +28,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\generator\Worlds.Generator.csproj"/>
-    <ProjectReference Include="..\core\Worlds.Core.csproj"/>
-    <ProjectReference Include="..\..\types\source\Types.csproj"/>
-    <ProjectReference Include="..\..\unmanaged\source\Unmanaged.csproj"/>
+    <ProjectReference Include="..\generator\Worlds.Generator.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\core\Worlds.Core.csproj" />
+    <ProjectReference Include="..\..\types\source\Types.csproj" />
+    <ProjectReference Include="..\..\unmanaged\source\Unmanaged.csproj" />
   </ItemGroup>
 
 </Project>
