@@ -1,6 +1,7 @@
 ﻿using Collections.Generic;
 using System;
 using System.Diagnostics;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
 using Types;
@@ -1033,12 +1034,16 @@ namespace Worlds
             if (arrayTypes != BitMask.Default)
             {
                 ref Arrays arrays = ref world->arrays[entity];
-                for (int a = 0; a < BitMask.Capacity; a++)
+                for (int vectorIndex = 0; vectorIndex < 4; vectorIndex++)
                 {
-                    if (arrayTypes.Contains(a))
+                    ulong element = arrayTypes.value.GetElement(vectorIndex);
+                    while (element != 0)
                     {
+                        int trailingZeros = BitOperations.TrailingZeroCount(element);
+                        int a = vectorIndex * 64 + trailingZeros;
                         int arrayElementSize = world->schema.GetArraySize(a);
                         arrays[a] = new(0, arrayElementSize);
+                        element &= element - 1;
                     }
                 }
 
@@ -1081,12 +1086,16 @@ namespace Worlds
             if (arrayTypes != BitMask.Default)
             {
                 ref Arrays arrays = ref world->arrays[entity];
-                for (int a = 0; a < BitMask.Capacity; a++)
+                for (int vectorIndex = 0; vectorIndex < 4; vectorIndex++)
                 {
-                    if (arrayTypes.Contains(a))
+                    ulong element = arrayTypes.value.GetElement(vectorIndex);
+                    while (element != 0)
                     {
+                        int trailingZeros = BitOperations.TrailingZeroCount(element);
+                        int a = vectorIndex * 64 + trailingZeros;
                         int arrayElementSize = world->schema.GetArraySize(a);
                         arrays[a] = new(0, arrayElementSize);
+                        element &= element - 1;
                     }
                 }
 
@@ -2394,7 +2403,7 @@ namespace Worlds
             }
             else
             {
-                Span<T> array = new(pointer->items.Pointer, pointer->length);
+                Span<T> array = new(pointer->items.pointer, pointer->length);
                 Values<T>.ThrowIfSizeMismatch(pointer->stride);
                 return array;
             }
@@ -2429,7 +2438,7 @@ namespace Worlds
             }
             else
             {
-                Span<T> array = new(pointer->items.Pointer, pointer->length);
+                Span<T> array = new(pointer->items.pointer, pointer->length);
                 Values<T>.ThrowIfSizeMismatch(pointer->stride);
                 return array;
             }
@@ -2615,7 +2624,7 @@ namespace Worlds
             definition.AddComponentType(componentType);
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             MoveEntityTo(slots, entity, ref slot, destinationChunk);
-            *(T*)(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]) = component;
+            *(T*)(slot.row.pointer + world->schema.schema->componentOffsets[(uint)componentType]) = component;
             NotifyComponentAdded(entity, componentType);
         }
 
@@ -2634,7 +2643,7 @@ namespace Worlds
             definition.AddComponentType(componentType);
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             MoveEntityTo(slots, entity, ref slot, destinationChunk);
-            *(T*)(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]) = component;
+            *(T*)(slot.row.pointer + world->schema.schema->componentOffsets[(uint)componentType]) = component;
             NotifyComponentAdded(entity, componentType);
         }
 
@@ -2657,7 +2666,7 @@ namespace Worlds
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             MoveEntityTo(slots, entity, ref slot, destinationChunk);
             NotifyComponentAdded(entity, componentType);
-            return ref *(T*)(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+            return ref *(T*)(slot.row.pointer + world->schema.schema->componentOffsets[(uint)componentType]);
         }
 
         /// <summary>
@@ -2677,7 +2686,7 @@ namespace Worlds
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             MoveEntityTo(slots, entity, ref slot, destinationChunk);
             NotifyComponentAdded(entity, componentType);
-            return ref *(T*)(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+            return ref *(T*)(slot.row.pointer + world->schema.schema->componentOffsets[(uint)componentType]);
         }
 
         /// <summary>
@@ -2822,7 +2831,7 @@ namespace Worlds
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             MoveEntityTo(slots, entity, ref slot, destinationChunk);
             NotifyComponentAdded(entity, componentType);
-            component = new(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+            component = new(slot.row.pointer + world->schema.schema->componentOffsets[(uint)componentType]);
         }
 
         /// <summary>
@@ -2842,7 +2851,7 @@ namespace Worlds
             MoveEntityTo(slots, entity, ref slot, destinationChunk);
             NotifyComponentAdded(entity, componentType);
             componentSize = world->schema.schema->sizes[(uint)componentType];
-            return new(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+            return new(slot.row.pointer + world->schema.schema->componentOffsets[(uint)componentType]);
         }
 
         /// <summary>
@@ -2862,7 +2871,7 @@ namespace Worlds
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             MoveEntityTo(slots, entity, ref slot, destinationChunk);
             NotifyComponentAdded(entity, componentType);
-            Span<byte> component = new(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
+            Span<byte> component = new(slot.row.pointer + world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
             componentBytes.CopyTo(component);
         }
 
@@ -2883,7 +2892,7 @@ namespace Worlds
             Chunk destinationChunk = world->chunks.GetOrCreate(definition);
             MoveEntityTo(slots, entity, ref slot, destinationChunk);
             NotifyComponentAdded(entity, componentType);
-            return new(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType], world->schema.schema->sizes[(uint)componentType]);
+            return new(slot.row.pointer + world->schema.schema->componentOffsets[(uint)componentType], world->schema.schema->sizes[(uint)componentType]);
         }
 
         /// <summary>
@@ -3012,7 +3021,8 @@ namespace Worlds
 
             int componentType = world->schema.GetComponentType<T>();
             ThrowIfComponentMissing(entity, componentType);
-            return ref *(T*)(world->slots[entity].row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+
+            return ref *(T*)(world->slots[entity].row.pointer + world->schema.schema->componentOffsets[(uint)componentType]);
         }
 
         /// <summary>
@@ -3028,7 +3038,7 @@ namespace Worlds
             ref Slot slot = ref world->slots[entity];
             if (slot.chunk.chunk->definition.componentTypes.Contains(componentType))
             {
-                return *(T*)(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+                return *(T*)(slot.row.pointer + world->schema.schema->componentOffsets[(uint)componentType]);
             }
             else
             {
@@ -3045,7 +3055,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentMissing(entity, componentType);
 
-            return ref *(T*)(world->slots[entity].row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+            return ref *(T*)(world->slots[entity].row.pointer + world->schema.schema->componentOffsets[(uint)componentType]);
         }
 
         /// <summary>
@@ -3060,7 +3070,7 @@ namespace Worlds
             ref Slot slot = ref world->slots[entity];
             if (slot.chunk.chunk->definition.componentTypes.Contains(componentType))
             {
-                return *(T*)(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+                return *(T*)(slot.row.pointer + world->schema.schema->componentOffsets[(uint)componentType]);
             }
             else
             {
@@ -3078,7 +3088,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentMissing(entity, componentType);
 
-            return new(world->slots[entity].row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+            return new(world->slots[entity].row.pointer + world->schema.schema->componentOffsets[(uint)componentType]);
         }
 
         /// <summary>
@@ -3092,7 +3102,7 @@ namespace Worlds
             ThrowIfComponentMissing(entity, componentType);
 
             componentSize = world->schema.schema->sizes[(uint)componentType];
-            return new(world->slots[entity].row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+            return new(world->slots[entity].row.pointer + world->schema.schema->componentOffsets[(uint)componentType]);
         }
 
         /// <summary>
@@ -3104,7 +3114,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentMissing(entity, componentType);
 
-            return new(world->slots[entity].row.Pointer + world->schema.schema->componentOffsets[(uint)componentType], world->schema.schema->sizes[(uint)componentType]);
+            return new(world->slots[entity].row.pointer + world->schema.schema->componentOffsets[(uint)componentType], world->schema.schema->sizes[(uint)componentType]);
         }
 
         /// <summary>
@@ -3132,7 +3142,7 @@ namespace Worlds
             for (int i = 0; i < array.Length; i++)
             {
                 MemoryAddress allocation = array[i];
-                arrayObject[i] = layout.CreateInstance(new(allocation.Pointer, layout.Size));
+                arrayObject[i] = layout.CreateInstance(new(allocation.pointer, layout.Size));
             }
 
             return arrayObject;
@@ -3150,7 +3160,7 @@ namespace Worlds
             contains = slot.chunk.chunk->definition.componentTypes.Contains(componentType);
             if (contains)
             {
-                return ref *(T*)(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+                return ref *(T*)(slot.row.pointer + world->schema.schema->componentOffsets[(uint)componentType]);
             }
             else
             {
@@ -3171,7 +3181,7 @@ namespace Worlds
             contains = slot.chunk.chunk->definition.componentTypes.Contains(componentType);
             if (contains)
             {
-                return ref *(T*)(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+                return ref *(T*)(slot.row.pointer + world->schema.schema->componentOffsets[(uint)componentType]);
             }
             else
             {
@@ -3190,7 +3200,7 @@ namespace Worlds
             ref Slot slot = ref world->slots[entity];
             if (slot.chunk.chunk->definition.componentTypes.Contains(componentType))
             {
-                component = *(T*)(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+                component = *(T*)(slot.row.pointer + world->schema.schema->componentOffsets[(uint)componentType]);
                 return true;
             }
             else
@@ -3212,7 +3222,7 @@ namespace Worlds
             ref Slot slot = ref world->slots[entity];
             if (slot.chunk.chunk->definition.componentTypes.Contains(componentType))
             {
-                component = *(T*)(slot.row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]);
+                component = *(T*)(slot.row.pointer + world->schema.schema->componentOffsets[(uint)componentType]);
                 return true;
             }
             else
@@ -3233,7 +3243,7 @@ namespace Worlds
             int componentType = world->schema.GetComponentType<T>();
             ThrowIfComponentMissing(entity, componentType);
 
-            *(T*)(world->slots[entity].row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]) = component;
+            *(T*)(world->slots[entity].row.pointer + world->schema.schema->componentOffsets[(uint)componentType]) = component;
         }
 
         /// <summary>
@@ -3245,7 +3255,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentMissing(entity, componentType);
 
-            *(T*)(world->slots[entity].row.Pointer + world->schema.schema->componentOffsets[(uint)componentType]) = component;
+            *(T*)(world->slots[entity].row.pointer + world->schema.schema->componentOffsets[(uint)componentType]) = component;
         }
 
         /// <summary>
@@ -3257,7 +3267,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
             ThrowIfComponentMissing(entity, componentType);
 
-            Span<byte> component = new(world->slots[entity].row.Pointer + world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
+            Span<byte> component = new(world->slots[entity].row.pointer + world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
             componentBytes.CopyTo(component);
         }
 

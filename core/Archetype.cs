@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Numerics;
+using System.Runtime.Intrinsics;
 
 namespace Worlds
 {
@@ -63,16 +65,29 @@ namespace Worlds
         {
             this.definition = definition;
             this.schema = schema;
-            for (int i = 0; i < BitMask.Capacity; i++)
+            Vector256<ulong> componentTypes = definition.componentTypes.value;
+            for (int vectorIndex = 0; vectorIndex < 4; vectorIndex++)
             {
-                if (definition.componentTypes.Contains(i))
+                ulong element = componentTypes.GetElement(vectorIndex);
+                while (element != 0)
                 {
-                    componentSizes[i] = (ushort)schema.GetComponentSize(i);
+                    int trailingZeros = BitOperations.TrailingZeroCount(element);
+                    int bitIndex = vectorIndex * 64 + trailingZeros;
+                    componentSizes[bitIndex] = (ushort)schema.GetComponentSize(bitIndex);
+                    element &= element - 1;
                 }
+            }
 
-                if (definition.arrayTypes.Contains(i))
+            Vector256<ulong> arrayTypes = definition.arrayTypes.value;
+            for (int vectorIndex = 0; vectorIndex < 4; vectorIndex++)
+            {
+                ulong element = arrayTypes.GetElement(vectorIndex);
+                while (element != 0)
                 {
-                    arrayElementSizes[i] = (ushort)schema.GetArraySize(i);
+                    int trailingZeros = BitOperations.TrailingZeroCount(element);
+                    int bitIndex = vectorIndex * 64 + trailingZeros;
+                    arrayElementSizes[bitIndex] = (ushort)schema.GetArraySize(bitIndex);
+                    element &= element - 1;
                 }
             }
         }

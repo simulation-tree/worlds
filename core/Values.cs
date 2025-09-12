@@ -122,7 +122,7 @@ namespace Worlds
         {
             ThrowIfSizeMismatch<X>();
 
-            return new(array->items.Pointer, array->length);
+            return new(array->items.pointer, array->length);
         }
 
         /// <summary>
@@ -130,7 +130,7 @@ namespace Worlds
         /// </summary>
         public readonly Span<T> AsSpan()
         {
-            return new(array->items.Pointer, array->length);
+            return new(array->items.pointer, array->length);
         }
 
         /// <summary>
@@ -201,7 +201,7 @@ namespace Worlds
             MemoryAddress.Resize(ref array->items, sizeof(T) * newLength);
             if (newLength > array->length)
             {
-                Span<T> span = new(array->items.Pointer + array->length * sizeof(T), newLength - array->length);
+                Span<T> span = new(array->items.pointer + array->length * sizeof(T), newLength - array->length);
                 span.Fill(defaultValue);
             }
 
@@ -303,7 +303,7 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly Span<T>.Enumerator GetEnumerator()
         {
-            return new Span<T>(array->items.Pointer, array->length).GetEnumerator();
+            return new Span<T>(array->items.pointer, array->length).GetEnumerator();
         }
 
         /// <summary>
@@ -353,13 +353,13 @@ namespace Worlds
         /// <inheritdoc/>
         public static implicit operator Span<T>(Values<T> values)
         {
-            return new Span<T>(values.array->items.Pointer, values.array->length);
+            return new Span<T>(values.array->items.pointer, values.array->length);
         }
 
         /// <inheritdoc/>
         public static implicit operator ReadOnlySpan<T>(Values<T> values)
         {
-            return new Span<T>(values.array->items.Pointer, values.array->length);
+            return new Span<T>(values.array->items.pointer, values.array->length);
         }
     }
 
@@ -401,7 +401,7 @@ namespace Worlds
             {
                 ThrowIfOutOfRange(index);
 
-                return new(array->items.Pointer + array->stride * index);
+                return new(array->items.pointer + array->stride * index);
             }
         }
 
@@ -457,7 +457,7 @@ namespace Worlds
         /// </summary>
         public readonly Span<byte> AsSpan()
         {
-            return new(array->items.Pointer, array->length * array->stride);
+            return new(array->items.pointer, array->length * array->stride);
         }
 
         /// <summary>
@@ -467,7 +467,7 @@ namespace Worlds
         {
             ThrowIfSizeMismatch<T>();
 
-            return new(array->items.Pointer, array->length);
+            return new(array->items.pointer, array->length);
         }
 
         /// <summary>
@@ -475,7 +475,7 @@ namespace Worlds
         /// </summary>
         public readonly Span<byte> GetSpan(int byteLength)
         {
-            return new(array->items.Pointer, byteLength);
+            return new(array->items.pointer, byteLength);
         }
 
         /// <summary>
@@ -484,7 +484,7 @@ namespace Worlds
         /// </summary>
         public readonly Span<byte> Slice(int bytePosition, int byteLength)
         {
-            return new(array->items.Pointer + bytePosition, byteLength);
+            return new(array->items.pointer + bytePosition, byteLength);
         }
 
         /// <summary>

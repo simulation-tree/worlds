@@ -105,7 +105,6 @@ namespace Worlds.Tests
             definition.AddComponentType<Float>(schema);
             definition.AddArrayType<Character>(schema);
 
-
             Assert.That(definition.ContainsComponent<Byte>(schema), Is.True);
             Assert.That(definition.ContainsComponent<Float>(schema), Is.True);
             Assert.That(definition.ContainsComponent<Character>(schema), Is.False);

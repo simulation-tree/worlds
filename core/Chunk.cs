@@ -33,7 +33,7 @@ namespace Worlds
             {
                 MemoryAddress.ThrowIfDefault(chunk);
 
-                return new ReadOnlySpan<uint>(chunk->entities.Items.Pointer + 4u, chunk->count);
+                return new ReadOnlySpan<uint>(chunk->entities.Items.pointer + 4u, chunk->count);
             }
         }
 
@@ -276,7 +276,7 @@ namespace Worlds
             {
                 unchecked
                 {
-                    return new(row.Pointer + schema.schema->componentOffsets[(uint)componentType]);
+                    return new(row.pointer + schema.schema->componentOffsets[(uint)componentType]);
                 }
             }
 
@@ -287,7 +287,7 @@ namespace Worlds
             {
                 unchecked
                 {
-                    return ref *(T*)(row.Pointer + schema.schema->componentOffsets[(uint)componentType]);
+                    return ref *(T*)(row.pointer + schema.schema->componentOffsets[(uint)componentType]);
                 }
             }
 
@@ -298,7 +298,7 @@ namespace Worlds
             {
                 unchecked
                 {
-                    *(T*)(row.Pointer + schema.schema->componentOffsets[(uint)componentType]) = value;
+                    *(T*)(row.pointer + schema.schema->componentOffsets[(uint)componentType]) = value;
                 }
             }
 
@@ -309,7 +309,7 @@ namespace Worlds
             {
                 unchecked
                 {
-                    return new Span<byte>(row.Pointer + schema.schema->componentOffsets[(uint)componentType], schema.schema->sizes[(uint)componentType]);
+                    return new Span<byte>(row.pointer + schema.schema->componentOffsets[(uint)componentType], schema.schema->sizes[(uint)componentType]);
                 }
             }
         }

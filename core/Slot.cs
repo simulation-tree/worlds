@@ -48,7 +48,7 @@ namespace Worlds
         {
             ThrowIfComponentIsMissing(componentType);
 
-            return new(row.Pointer + chunk.chunk->schema.schema->componentOffsets[(uint)componentType]);
+            return new(row.pointer + chunk.chunk->schema.schema->componentOffsets[(uint)componentType]);
         }
 
         /// <summary>
@@ -59,7 +59,7 @@ namespace Worlds
             int componentType = chunk.chunk->schema.GetComponentType<T>();
             ThrowIfComponentIsMissing(componentType);
 
-            return ref *(T*)(row.Pointer + chunk.chunk->schema.schema->componentOffsets[(uint)componentType]);
+            return ref *(T*)(row.pointer + chunk.chunk->schema.schema->componentOffsets[(uint)componentType]);
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace Worlds
         {
             ThrowIfComponentIsMissing(componentType);
 
-            return ref *(T*)(row.Pointer + chunk.chunk->schema.schema->componentOffsets[(uint)componentType]);
+            return ref *(T*)(row.pointer + chunk.chunk->schema.schema->componentOffsets[(uint)componentType]);
         }
 
         [Conditional("DEBUG")]
@@ -80,30 +80,5 @@ namespace Worlds
                 throw new InvalidOperationException($"Entity does not contain component type `{componentType}`");
             }
         }
-    }
-
-    /// <summary>
-    /// Less frequently accessed information about an entity in a <see cref="World"/>.
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct SlotMetadata
-    {
-        /// <summary>
-        /// Start and length of the references.
-        /// </summary>
-        public ulong referenceRange;
-
-        /// <summary>
-        /// The state of this entity.
-        /// </summary>
-        public SlotState state;
-
-        /// <summary>
-        /// Flags describing the contents of this slot.
-        /// </summary>
-        public SlotFlags flags;
-
-        private readonly ushort padding1;
-        private readonly uint padding2;
     }
 }

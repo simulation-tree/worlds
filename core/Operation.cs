@@ -1608,7 +1608,7 @@ namespace Worlds
             {
                 int count = operation->buffer.Read<int>(bytePosition);
                 bytePosition += 4;
-                ReadOnlySpan<uint> entities = new(operation->buffer.Pointer + bytePosition, count);
+                ReadOnlySpan<uint> entities = new(operation->buffer.pointer + bytePosition, count);
                 bytePosition += count * sizeof(uint);
                 operation->selection.AddRange(entities);
             }
@@ -1678,7 +1678,7 @@ namespace Worlds
                     operation->world.NotifyComponentAdded(entity, componentType);
                     unchecked
                     {
-                        Span<byte> component = new(slot.row.Pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
+                        Span<byte> component = new(slot.row.pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
                         componentBytes.CopyTo(component);
                     }
                 }
@@ -1739,7 +1739,7 @@ namespace Worlds
                     unchecked
                     {
                         uint entity = selection[i];
-                        Span<byte> component = new(slots[(int)entity].row.Pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
+                        Span<byte> component = new(slots[(int)entity].row.pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
                         componentBytes.CopyTo(component);
                     }
                 }
@@ -1763,7 +1763,7 @@ namespace Worlds
                         //same as World.SetComponentBytes
                         unchecked
                         {
-                            Span<byte> component = new(slots[(int)entity].row.Pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
+                            Span<byte> component = new(slots[(int)entity].row.pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
                             componentBytes.CopyTo(component);
                         }
                     }
@@ -1777,7 +1777,7 @@ namespace Worlds
                         operation->world.NotifyComponentAdded(entity, componentType);
                         unchecked
                         {
-                            Span<byte> component = new(slot.row.Pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
+                            Span<byte> component = new(slot.row.pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
                             componentBytes.CopyTo(component);
                         }
                     }

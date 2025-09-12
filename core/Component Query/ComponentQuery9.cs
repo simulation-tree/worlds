@@ -825,7 +825,7 @@ namespace Worlds
                     chunks = chunksMemory.GetSpan<Chunk>(chunkCount);
                     Chunk chunk = chunks[0];
                     version = chunk.chunk->version;
-                    entities = new(chunk.chunk->entities.Items.Pointer, chunk.chunk->count + 1);
+                    entities = new(chunk.chunk->entities.Items.pointer, chunk.chunk->count + 1);
                     entityCount = chunk.chunk->count;
                     components = chunk.chunk->components;
                     Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
@@ -874,7 +874,7 @@ namespace Worlds
                     {
                         Chunk chunk = chunks[chunkIndex];
                         version = chunk.chunk->version;
-                        entities = new(chunk.chunk->entities.Items.Pointer, chunk.chunk->count + 1);
+                        entities = new(chunk.chunk->entities.Items.pointer, chunk.chunk->count + 1);
                         entityCount = chunk.chunk->count;
                         components = chunk.chunk->components;
                         entityIndex = 1;

@@ -18,7 +18,7 @@ namespace Worlds
             uint entity = world.CreateEntity(new BitMask(c1), out Chunk.Row newRow);
             unchecked
             {
-                *(T1*)(newRow.row.Pointer + schema.schema->componentOffsets[(uint)c1]) = component1;
+                *(T1*)(newRow.row.pointer + schema.schema->componentOffsets[(uint)c1]) = component1;
             }
 
             return entity;
@@ -33,7 +33,7 @@ namespace Worlds
             uint entity = world.CreateEntity(new BitMask(c1), out Chunk.Row newRow);
             unchecked
             {
-                *(T1*)(newRow.row.Pointer + schema.schema->componentOffsets[(uint)c1]) = component1;
+                *(T1*)(newRow.row.pointer + schema.schema->componentOffsets[(uint)c1]) = component1;
             }
 
             return entity;
@@ -50,7 +50,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
             }
@@ -68,7 +68,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
             }
@@ -87,7 +87,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
                 *(T3*)(pointer + componentOffsets[c3]) = component3;
@@ -106,7 +106,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
                 *(T3*)(pointer + componentOffsets[c3]) = component3;
@@ -126,7 +126,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
                 *(T3*)(pointer + componentOffsets[c3]) = component3;
@@ -146,7 +146,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
                 *(T3*)(pointer + componentOffsets[c3]) = component3;
@@ -167,7 +167,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
                 *(T3*)(pointer + componentOffsets[c3]) = component3;
@@ -188,7 +188,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
                 *(T3*)(pointer + componentOffsets[c3]) = component3;
@@ -210,7 +210,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
                 *(T3*)(pointer + componentOffsets[c3]) = component3;
@@ -232,7 +232,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
                 *(T3*)(pointer + componentOffsets[c3]) = component3;
@@ -255,7 +255,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
                 *(T3*)(pointer + componentOffsets[c3]) = component3;
@@ -278,7 +278,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
                 *(T3*)(pointer + componentOffsets[c3]) = component3;
@@ -303,7 +303,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
                 *(T3*)(pointer + componentOffsets[c3]) = component3;
@@ -327,7 +327,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
                 *(T3*)(pointer + componentOffsets[c3]) = component3;
@@ -353,7 +353,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
                 *(T3*)(pointer + componentOffsets[c3]) = component3;
@@ -380,7 +380,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
                 *(T3*)(pointer + componentOffsets[c3]) = component3;
@@ -408,7 +408,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
                 *(T3*)(pointer + componentOffsets[c3]) = component3;
@@ -437,7 +437,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
                 *(T3*)(pointer + componentOffsets[c3]) = component3;
@@ -467,7 +467,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
                 *(T3*)(pointer + componentOffsets[c3]) = component3;
@@ -498,7 +498,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
                 *(T3*)(pointer + componentOffsets[c3]) = component3;
@@ -530,7 +530,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
                 *(T3*)(pointer + componentOffsets[c3]) = component3;
@@ -563,7 +563,7 @@ namespace Worlds
             Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
             unchecked
             {
-                byte* pointer = newRow.row.Pointer;
+                byte* pointer = newRow.row.pointer;
                 *(T1*)(pointer + componentOffsets[c1]) = component1;
                 *(T2*)(pointer + componentOffsets[c2]) = component2;
                 *(T3*)(pointer + componentOffsets[c3]) = component3;

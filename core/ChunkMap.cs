@@ -50,9 +50,9 @@ namespace Worlds
 
             int capacity = chunkMap->capacity;
             long hashCode = definition.GetLongHashCode();
-            bool* occupied = (bool*)chunkMap->occupied.Pointer;
-            ChunkKey* values = (ChunkKey*)chunkMap->keys.Pointer;
-            long* hashCodes = (long*)chunkMap->hashCodes.Pointer;
+            bool* occupied = (bool*)chunkMap->occupied.pointer;
+            ChunkKey* values = (ChunkKey*)chunkMap->keys.pointer;
+            long* hashCodes = (long*)chunkMap->hashCodes.pointer;
             uint capacityMask = (uint)(capacity - 1);
             uint index = (uint)hashCode & capacityMask;
             uint startIndex = index;
@@ -113,16 +113,16 @@ namespace Worlds
             MemoryAddress oldOccupied = chunkMap->occupied;
             MemoryAddress oldHashCodes = chunkMap->hashCodes;
 
-            ChunkKey* oldValuesPtr = (ChunkKey*)oldValues.Pointer;
-            bool* oldOccupiedPtr = (bool*)oldOccupied.Pointer;
+            ChunkKey* oldValuesPtr = (ChunkKey*)oldValues.pointer;
+            bool* oldOccupiedPtr = (bool*)oldOccupied.pointer;
 
             chunkMap->keys = MemoryAddress.Allocate(newCapacity * sizeof(ChunkKey));
             chunkMap->hashCodes = MemoryAddress.Allocate(newCapacity * sizeof(long));
             chunkMap->occupied = MemoryAddress.AllocateZeroed(newCapacity);
 
-            *occupied = (bool*)chunkMap->occupied.Pointer;
-            *hashCodes = (long*)chunkMap->hashCodes.Pointer;
-            *values = (ChunkKey*)chunkMap->keys.Pointer;
+            *occupied = (bool*)chunkMap->occupied.pointer;
+            *hashCodes = (long*)chunkMap->hashCodes.pointer;
+            *values = (ChunkKey*)chunkMap->keys.pointer;
 
             uint newCapacityMask = (uint)(newCapacity - 1);
             for (int i = 0; i < oldCapacity; i++)
@@ -153,9 +153,9 @@ namespace Worlds
         {
             int capacity = chunkMap->capacity;
             long hashCode = default(Definition).GetLongHashCode();
-            Span<bool> occupied = new(chunkMap->occupied.Pointer, capacity);
-            Span<ChunkKey> values = new(chunkMap->keys.Pointer, capacity);
-            Span<long> hashCodes = new(chunkMap->hashCodes.Pointer, capacity);
+            Span<bool> occupied = new(chunkMap->occupied.pointer, capacity);
+            Span<ChunkKey> values = new(chunkMap->keys.pointer, capacity);
+            Span<long> hashCodes = new(chunkMap->hashCodes.pointer, capacity);
             Chunk newDefaultChunk = new(chunkMap->schema);
             capacity--;
             int index = unchecked((int)(((uint)hashCode) & (uint)capacity));
