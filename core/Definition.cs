@@ -711,6 +711,21 @@ namespace Worlds
             return archetype.definition;
         }
 
+        /// <summary>
+        /// Retrieves a <see cref="long"/> precision hash code for the given bit masks.
+        /// </summary>
+        public static long GetLongHashCode(BitMask componentTypes, BitMask arrayTypes, BitMask tagTypes)
+        {
+            unchecked
+            {
+                long hash = 17;
+                hash = hash * 23 + componentTypes.GetLongHashCode();
+                hash = hash * 23 + arrayTypes.GetLongHashCode();
+                hash = hash * 23 + tagTypes.GetLongHashCode();
+                return hash;
+            }
+        }
+
         /// <inheritdoc/>
         public static bool operator ==(Definition a, Definition b)
         {

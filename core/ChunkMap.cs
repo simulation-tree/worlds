@@ -104,6 +104,123 @@ namespace Worlds
             return newChunk;
         }
 
+        public readonly Chunk GetOrCreateWithAddedComponent(ChunkPointer* sourceChunk, int componentType)
+        {
+            BitMask newComponentTypes = sourceChunk->componentTypes;
+            newComponentTypes.Set(componentType);
+            return GetOrCreate(newComponentTypes, sourceChunk->arrayTypes, sourceChunk->tagTypes);
+        }
+
+        public readonly Chunk GetOrCreateWithRemovedComponent(ChunkPointer* sourceChunk, int componentType)
+        {
+            BitMask componentTypes = sourceChunk->componentTypes;
+            componentTypes.Clear(componentType);
+
+            if (componentTypes.IsEmpty && sourceChunk->arrayTypes.IsEmpty && sourceChunk->tagTypes.IsEmpty)
+            {
+                return chunkMap->defaultChunk;
+            }
+
+            return GetOrCreate(componentTypes, sourceChunk->arrayTypes, sourceChunk->tagTypes);
+        }
+
+        public readonly Chunk GetOrCreateWithAddedArray(ChunkPointer* sourceChunk, int arrayType)
+        {
+            BitMask arrayTypes = sourceChunk->arrayTypes;
+            arrayTypes.Set(arrayType);
+            return GetOrCreate(sourceChunk->componentTypes, arrayTypes, sourceChunk->tagTypes);
+        }
+
+        public readonly Chunk GetOrCreateWithRemovedArray(ChunkPointer* sourceChunk, int arrayType)
+        {
+            BitMask arrayTypes = sourceChunk->arrayTypes;
+            arrayTypes.Clear(arrayType);
+
+            if (sourceChunk->componentTypes.IsEmpty && arrayTypes.IsEmpty && sourceChunk->tagTypes.IsEmpty)
+            {
+                return chunkMap->defaultChunk;
+            }
+
+            return GetOrCreate(sourceChunk->componentTypes, arrayTypes, sourceChunk->tagTypes);
+        }
+
+        public readonly Chunk GetOrCreateWithAddedTag(ChunkPointer* sourceChunk, int tagType)
+        {
+            BitMask tagTypes = sourceChunk->tagTypes;
+            tagTypes.Set(tagType);
+            return GetOrCreate(sourceChunk->componentTypes, sourceChunk->arrayTypes, tagTypes);
+        }
+
+        public readonly Chunk GetOrCreateWithRemovedTag(ChunkPointer* sourceChunk, int tagType)
+        {
+            BitMask tagTypes = sourceChunk->tagTypes;
+            tagTypes.Clear(tagType);
+
+            if (sourceChunk->componentTypes.IsEmpty && sourceChunk->arrayTypes.IsEmpty && tagTypes.IsEmpty)
+            {
+                return chunkMap->defaultChunk;
+            }
+
+            return GetOrCreate(sourceChunk->componentTypes, sourceChunk->arrayTypes, tagTypes);
+        }
+
+        private readonly Chunk GetOrCreate(BitMask componentTypes, BitMask arrayTypes, BitMask tagTypes)
+        {
+            long hashCode = Definition.GetLongHashCode(componentTypes, arrayTypes, tagTypes);
+            int capacity = chunkMap->capacity;
+            bool* occupied = (bool*)chunkMap->occupied.pointer;
+            ChunkKey* values = (ChunkKey*)chunkMap->keys.pointer;
+            long* hashCodes = (long*)chunkMap->hashCodes.pointer;
+            uint capacityMask = (uint)(capacity - 1);
+            uint index = (uint)hashCode & capacityMask;
+            uint startIndex = index;
+
+            do
+            {
+                if (!occupied[index])
+                {
+                    goto CreateNew;
+                }
+
+                if (hashCodes[index] == hashCode)
+                {
+                    ChunkKey* key = &values[index];
+                    if (key->chunk.chunk->componentTypes == componentTypes &&
+                        key->chunk.chunk->arrayTypes == arrayTypes &&
+                        key->chunk.chunk->tagTypes == tagTypes)
+                    {
+                        return key->chunk;
+                    }
+                }
+
+                index = (index + 1) & capacityMask;
+            }
+            while (index != startIndex);
+
+        CreateNew:
+            int newCount = chunkMap->count + 1;
+            if (newCount >= capacityMask)
+            {
+                int newCapacity = capacity * 4;
+                Resize(newCapacity, &occupied, &values, &hashCodes);
+                capacityMask = (uint)(newCapacity - 1);
+
+                index = (uint)hashCode & capacityMask;
+                while (occupied[index])
+                {
+                    index = (index + 1) & capacityMask;
+                }
+            }
+
+            chunkMap->count = newCount;
+            Chunk newChunk = new(chunkMap->schema, new Definition(componentTypes, arrayTypes, tagTypes));
+            occupied[index] = true;
+            hashCodes[index] = hashCode;
+            values[index] = new(newChunk);
+            chunkMap->chunks.Add(newChunk);
+            return newChunk;
+        }
+
         private readonly void Resize(int newCapacity, bool** occupied, ChunkKey** values, long** hashCodes)
         {
             int oldCapacity = chunkMap->capacity;
