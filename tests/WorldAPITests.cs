@@ -144,6 +144,20 @@ namespace Worlds.Tests
             Assert.That(entities[6], Is.EqualTo(11));
         }
 
+        [Test]
+        public void CreateBulkWith1Component()
+        {
+            using World world = CreateWorld();
+            Span<uint> entities = stackalloc uint[100];
+            int componentType = world.Schema.GetComponentType<Another>();
+            Definition definition = new(new BitMask(componentType));
+            world.CreateEntities(entities, definition);
+            for (int i = 0; i < entities.Length; i++)
+            {
+                world.SetComponent(entities[i], componentType, new Another((uint)i));
+            }
+        }
+
         [TestCase(1)]
         [TestCase(2)]
         [TestCase(5)]

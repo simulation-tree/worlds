@@ -8,6 +8,7 @@ namespace Worlds.Pointers
         public int maxDepth;
         public Schema schema;
         public List<Slot> slots;
+        public List<SlotMetadata> slotMetadata;
         public List<Arrays> arrays;
         public Stack<uint> freeEntities;
         public ChunkMap chunks;

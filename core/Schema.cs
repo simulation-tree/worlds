@@ -18,6 +18,11 @@ namespace Worlds
         /// </summary>
         public const int DisabledTagType = BitMask.MaxValue;
 
+        /// <summary>
+        /// Mask used to identify disabled entities.
+        /// </summary>
+        public const ulong DisabledMask = 1UL << 63;
+
         internal const int OffsetsLengthInBytes = sizeof(int) * BitMask.Capacity;
         internal const int SizesLengthInBytes = sizeof(int) * BitMask.Capacity * 2;
         internal const int TypeHashesLengthInBytes = sizeof(long) * BitMask.Capacity * 3;

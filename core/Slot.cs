@@ -1,33 +1,20 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Unmanaged;
 
 namespace Worlds
 {
     /// <summary>
-    /// Describes an entity slot in a <see cref="World"/>.
+    /// Frequently accessed information about an entity in a <see cref="World"/>.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct Slot
     {
         /// <summary>
-        /// The entity that is the parent of the entity in this slot.
+        /// The row within the chunk that contains all of the components.
         /// </summary>
-        public uint parent;
-
-        /// <summary>
-        /// How deep the entity is in the hierarchy.
-        /// </summary>
-        public int depth;
-
-        /// <summary>
-        /// The state of this entity.
-        /// </summary>
-        public State state;
-
-        /// <summary>
-        /// Flags describing the contents of this slot.
-        /// </summary>
-        public Flags flags;
+        public MemoryAddress row;
 
         /// <summary>
         /// The chunk that the entity in this slot belongs to.
@@ -35,29 +22,24 @@ namespace Worlds
         public Chunk chunk;
 
         /// <summary>
+        /// The entity that is the parent of the entity in this slot.
+        /// </summary>
+        public uint parent;
+
+        /// <summary>
         /// The index of the entity in this slot inside its own chunk.
         /// </summary>
         public int index;
 
         /// <summary>
-        /// The row within the chunk that contains all of the components.
+        /// How deep the entity is in the hierarchy.
         /// </summary>
-        public MemoryAddress row;
+        public int depth;
 
         /// <summary>
         /// Amount of children the entity in this slot has.
         /// </summary>
         public int childrenCount;
-
-        /// <summary>
-        /// Where references start.
-        /// </summary>
-        public int referenceStart;
-
-        /// <summary>
-        /// Length of references.
-        /// </summary>
-        public int referenceCount;
 
         /// <summary>
         /// Retrieves the memory for <paramref name="componentType"/>.
@@ -98,73 +80,30 @@ namespace Worlds
                 throw new InvalidOperationException($"Entity does not contain component type `{componentType}`");
             }
         }
+    }
+
+    /// <summary>
+    /// Less frequently accessed information about an entity in a <see cref="World"/>.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct SlotMetadata
+    {
+        /// <summary>
+        /// Start and length of the references.
+        /// </summary>
+        public ulong referenceRange;
 
         /// <summary>
-        /// All possible states of an entity.
+        /// The state of this entity.
         /// </summary>
-        public enum State : byte
-        {
-            /// <summary>
-            /// Uninitialized.
-            /// </summary>
-            Unknown,
-
-            /// <summary>
-            /// The slot doesn't describe a valid entity.
-            /// </summary>
-            Free,
-
-            /// <summary>
-            /// The entity is enabled.
-            /// </summary>
-            Enabled,
-
-            /// <summary>
-            /// The entity is disabled.
-            /// </summary>
-            Disabled,
-
-            /// <summary>
-            /// The entity is enabled on its own, but disabled due to ancestors.
-            /// </summary>
-            DisabledButLocallyEnabled
-        }
+        public SlotState state;
 
         /// <summary>
-        /// Different properties that an entity can have.
+        /// Flags describing the contents of this slot.
         /// </summary>
-        [Flags]
-        public enum Flags : byte
-        {
-            /// <summary>
-            /// No settings.
-            /// </summary>
-            None = 0,
+        public SlotFlags flags;
 
-            /// <summary>
-            /// Entity contains arrays.
-            /// </summary>
-            ContainsArrays = 1,
-
-            /// <summary>
-            /// Entity contains children.
-            /// </summary>
-            ContainsChildren = 2,
-
-            /// <summary>
-            /// The arrays on this entity are outdated.
-            /// </summary>
-            ArraysOutdated = 8,
-
-            /// <summary>
-            /// The children on this entity are outdated.
-            /// </summary>
-            ChildrenOutdated = 16,
-
-            /// <summary>
-            /// The entity is outdated and needs to be refreshed back to initial state.
-            /// </summary>
-            Outdated = ArraysOutdated | ChildrenOutdated
-        }
+        private readonly ushort padding1;
+        private readonly uint padding2;
     }
 }

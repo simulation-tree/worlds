@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Numerics;
+using System.Runtime.Intrinsics;
 
 namespace Worlds
 {
@@ -27,25 +29,7 @@ namespace Worlds
         /// </summary>
         public const int MaxValue = 255;
 
-        /// <summary>
-        /// First 64 bits.
-        /// </summary>
-        public ulong a;
-
-        /// <summary>
-        /// Second 64 bits.
-        /// </summary>
-        public ulong b;
-
-        /// <summary>
-        /// Third 64 bits.
-        /// </summary>
-        public ulong c;
-
-        /// <summary>
-        /// Fourth 64 bits.
-        /// </summary>
-        public ulong d;
+        internal Vector256<ulong> value;
 
         /// <summary>
         /// Amount of bits set to 1.
@@ -54,33 +38,29 @@ namespace Worlds
         {
             get
             {
-                int count = 0;
-                for (int index = 0; index < Capacity; index++)
-                {
-                    if (Contains(index))
-                    {
-                        count++;
-                    }
-                }
-
-                return count;
+                return BitOperations.PopCount(value.GetElement(0)) +
+                       BitOperations.PopCount(value.GetElement(1)) +
+                       BitOperations.PopCount(value.GetElement(2)) +
+                       BitOperations.PopCount(value.GetElement(3));
             }
         }
 
         /// <summary>
         /// Checks if empty.
         /// </summary>
-        public readonly bool IsEmpty => a == 0 && b == 0 && c == 0 && d == 0;
+        public readonly bool IsEmpty => value == Vector256<ulong>.Zero;
+
+        internal BitMask(Vector256<ulong> value)
+        {
+            this.value = value;
+        }
 
         /// <summary>
         /// Creates a bit mask with the given positions set.
         /// </summary>
         public BitMask(int b1)
         {
-            a = default;
-            b = default;
-            c = default;
-            d = default;
+            value = default;
             Set(b1);
         }
 
@@ -89,10 +69,7 @@ namespace Worlds
         /// </summary>
         public BitMask(int b1, int b2)
         {
-            a = default;
-            b = default;
-            c = default;
-            d = default;
+            value = default;
             Set(b1);
             Set(b2);
         }
@@ -102,10 +79,7 @@ namespace Worlds
         /// </summary>
         public BitMask(int b1, int b2, int b3)
         {
-            a = default;
-            b = default;
-            c = default;
-            d = default;
+            value = default;
             Set(b1);
             Set(b2);
             Set(b3);
@@ -116,10 +90,7 @@ namespace Worlds
         /// </summary>
         public BitMask(int b1, int b2, int b3, int b4)
         {
-            a = default;
-            b = default;
-            c = default;
-            d = default;
+            value = default;
             Set(b1);
             Set(b2);
             Set(b3);
@@ -131,10 +102,7 @@ namespace Worlds
         /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5)
         {
-            a = default;
-            b = default;
-            c = default;
-            d = default;
+            value = default;
             Set(b1);
             Set(b2);
             Set(b3);
@@ -147,10 +115,7 @@ namespace Worlds
         /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6)
         {
-            a = default;
-            b = default;
-            c = default;
-            d = default;
+            value = default;
             Set(b1);
             Set(b2);
             Set(b3);
@@ -164,10 +129,7 @@ namespace Worlds
         /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6, int b7)
         {
-            a = default;
-            b = default;
-            c = default;
-            d = default;
+            value = default;
             Set(b1);
             Set(b2);
             Set(b3);
@@ -182,10 +144,7 @@ namespace Worlds
         /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6, int b7, int b8)
         {
-            a = default;
-            b = default;
-            c = default;
-            d = default;
+            value = default;
             Set(b1);
             Set(b2);
             Set(b3);
@@ -201,10 +160,7 @@ namespace Worlds
         /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6, int b7, int b8, int b9)
         {
-            a = default;
-            b = default;
-            c = default;
-            d = default;
+            value = default;
             Set(b1);
             Set(b2);
             Set(b3);
@@ -221,10 +177,7 @@ namespace Worlds
         /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6, int b7, int b8, int b9, int b10)
         {
-            a = default;
-            b = default;
-            c = default;
-            d = default;
+            value = default;
             Set(b1);
             Set(b2);
             Set(b3);
@@ -242,10 +195,7 @@ namespace Worlds
         /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6, int b7, int b8, int b9, int b10, int b11)
         {
-            a = default;
-            b = default;
-            c = default;
-            d = default;
+            value = default;
             Set(b1);
             Set(b2);
             Set(b3);
@@ -264,10 +214,7 @@ namespace Worlds
         /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6, int b7, int b8, int b9, int b10, int b11, int b12)
         {
-            a = default;
-            b = default;
-            c = default;
-            d = default;
+            value = default;
             Set(b1);
             Set(b2);
             Set(b3);
@@ -287,10 +234,7 @@ namespace Worlds
         /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6, int b7, int b8, int b9, int b10, int b11, int b12, int b13)
         {
-            a = default;
-            b = default;
-            c = default;
-            d = default;
+            value = default;
             Set(b1);
             Set(b2);
             Set(b3);
@@ -311,10 +255,7 @@ namespace Worlds
         /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6, int b7, int b8, int b9, int b10, int b11, int b12, int b13, int b14)
         {
-            a = default;
-            b = default;
-            c = default;
-            d = default;
+            value = default;
             Set(b1);
             Set(b2);
             Set(b3);
@@ -336,10 +277,7 @@ namespace Worlds
         /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6, int b7, int b8, int b9, int b10, int b11, int b12, int b13, int b14, int b15)
         {
-            a = default;
-            b = default;
-            c = default;
-            d = default;
+            value = default;
             Set(b1);
             Set(b2);
             Set(b3);
@@ -362,10 +300,7 @@ namespace Worlds
         /// </summary>
         public BitMask(int b1, int b2, int b3, int b4, int b5, int b6, int b7, int b8, int b9, int b10, int b11, int b12, int b13, int b14, int b15, int b16)
         {
-            a = default;
-            b = default;
-            c = default;
-            d = default;
+            value = default;
             Set(b1);
             Set(b2);
             Set(b3);
@@ -421,7 +356,7 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsAll(BitMask other)
         {
-            return (a & other.a) == other.a && (b & other.b) == other.b && (c & other.c) == other.c && (d & other.d) == other.d;
+            return (value & other.value) == other.value;
         }
 
         /// <summary>
@@ -429,7 +364,7 @@ namespace Worlds
         /// </summary>
         public readonly bool ContainsAny(BitMask other)
         {
-            return (a & other.a) != 0 || (b & other.b) != 0 || (c & other.c) != 0 || (d & other.d) != 0;
+            return (value & other.value) != Vector256<ulong>.Zero;
         }
 
         /// <summary>
@@ -437,13 +372,10 @@ namespace Worlds
         /// </summary>
         public readonly bool Contains(int index)
         {
-            return index switch
-            {
-                < 64 => (a & 1UL << index) != 0,
-                < 128 => (b & 1UL << index - 64) != 0,
-                < 192 => (c & 1UL << index - 128) != 0,
-                _ => (d & 1UL << index - 192) != 0,
-            };
+            int vectorIndex = index >> 6;
+            int bitOffset = index & 63;
+            ulong mask = 1UL << bitOffset;
+            return (value[vectorIndex] & mask) != 0;
         }
 
         /// <summary>
@@ -451,21 +383,10 @@ namespace Worlds
         /// </summary>
         public void Set(int index)
         {
-            switch (index)
-            {
-                case < 64:
-                    a |= 1UL << index;
-                    break;
-                case < 128:
-                    b |= 1UL << index - 64;
-                    break;
-                case < 192:
-                    c |= 1UL << index - 128;
-                    break;
-                default:
-                    d |= 1UL << index - 192;
-                    break;
-            }
+            int vectorIndex = index >> 6;
+            int bitOffset = index & 63;
+            ulong mask = 1UL << bitOffset;
+            value = value.WithElement(vectorIndex, value[vectorIndex] | mask);
         }
 
         /// <summary>
@@ -473,10 +394,7 @@ namespace Worlds
         /// </summary>
         public void Clear()
         {
-            a = default;
-            b = default;
-            c = default;
-            d = default;
+            value = default;
         }
 
         /// <summary>
@@ -484,21 +402,10 @@ namespace Worlds
         /// </summary>
         public void Clear(int index)
         {
-            switch (index)
-            {
-                case < 64:
-                    a &= ~(1UL << index);
-                    break;
-                case < 128:
-                    b &= ~(1UL << index - 64);
-                    break;
-                case < 192:
-                    c &= ~(1UL << index - 128);
-                    break;
-                default:
-                    d &= ~(1UL << index - 192);
-                    break;
-            }
+            int vectorIndex = index >> 6;
+            int bitOffset = index & 63;
+            ulong mask = 1UL << bitOffset;
+            value = value.WithElement(vectorIndex, value[vectorIndex] & ~mask);
         }
 
         /// <summary>
@@ -506,11 +413,8 @@ namespace Worlds
         /// </summary>
         public readonly long GetLongHashCode()
         {
-            unchecked
-            {
-                ulong hash = a ^ b ^ c ^ d;
-                return (long)hash ^ (long)(hash >> 32);
-            }
+            Vector128<ulong> folded = value.GetLower() ^ value.GetUpper();
+            return (long)folded.GetElement(0) ^ (long)folded.GetElement(1);
         }
 
         /// <summary>
@@ -518,11 +422,7 @@ namespace Worlds
         /// </summary>
         public readonly override int GetHashCode()
         {
-            unchecked
-            {
-                ulong hash = a ^ b ^ c ^ d;
-                return (int)hash ^ (int)(hash >> 32);
-            }
+            return value.GetHashCode();
         }
 
         /// <inheritdoc/>
@@ -534,19 +434,19 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly bool Equals(BitMask other)
         {
-            return a == other.a && b == other.b && c == other.c && d == other.d;
+            return value == other.value;
         }
 
         /// <inheritdoc/>
         public static bool operator ==(BitMask left, BitMask right)
         {
-            return left.Equals(right);
+            return left.value == right.value;
         }
 
         /// <inheritdoc/>
         public static bool operator !=(BitMask left, BitMask right)
         {
-            return !(left == right);
+            return left.value != right.value;
         }
 
         /// <summary>
@@ -554,12 +454,7 @@ namespace Worlds
         /// </summary>
         public static BitMask operator |(BitMask left, BitMask right)
         {
-            BitMask result = left;
-            result.a |= right.a;
-            result.b |= right.b;
-            result.c |= right.c;
-            result.d |= right.d;
-            return result;
+            return new BitMask(left.value | right.value);
         }
 
         /// <summary>
@@ -567,12 +462,7 @@ namespace Worlds
         /// </summary>
         public static BitMask operator &(BitMask left, BitMask right)
         {
-            BitMask result = left;
-            result.a &= right.a;
-            result.b &= right.b;
-            result.c &= right.c;
-            result.d &= right.d;
-            return result;
+            return new BitMask(left.value & right.value);
         }
 
         /// <summary>
@@ -580,12 +470,7 @@ namespace Worlds
         /// </summary>
         public static BitMask operator ^(BitMask left, BitMask right)
         {
-            BitMask result = left;
-            result.a ^= right.a;
-            result.b ^= right.b;
-            result.c ^= right.c;
-            result.d ^= right.d;
-            return result;
+            return new BitMask(left.value ^ right.value);
         }
 
         /// <summary>
@@ -593,12 +478,7 @@ namespace Worlds
         /// </summary>
         public static BitMask operator ~(BitMask mask)
         {
-            BitMask result = mask;
-            result.a = ~result.a;
-            result.b = ~result.b;
-            result.c = ~result.c;
-            result.d = ~result.d;
-            return result;
+            return new BitMask(~mask.value);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.Intrinsics;
 
 namespace Worlds
 {
@@ -152,7 +153,7 @@ namespace Worlds
                 Definition definition = chunk.Definition;
                 if (definition.componentTypes.ContainsAll(componentTypes))
                 {
-                    if ((definition.tagTypes.d & 1UL << 63) == 0)
+                    if ((definition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
                         int count = chunk.Count;
                         for (int e = 0; e < count; e++)
@@ -176,7 +177,7 @@ namespace Worlds
                 {
                     Chunk chunk = world.Chunks[i];
                     Definition definition = chunk.Definition;
-                    if (definition.componentTypes.ContainsAll(componentTypes) && (definition.tagTypes.d & 1UL << 63) == 0)
+                    if (definition.componentTypes.ContainsAll(componentTypes) && (definition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
                         int count = chunk.Count;
                         for (int e = 0; e < count; e++)
@@ -216,7 +217,7 @@ namespace Worlds
                 {
                     Chunk chunk = world.Chunks[i];
                     Definition definition = chunk.Definition;
-                    if (definition.componentTypes.Contains(componentType) && (definition.tagTypes.d & 1UL << 63) == 0)
+                    if (definition.componentTypes.Contains(componentType) && (definition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
                         int count = chunk.Count;
                         for (int e = 0; e < count; e++)
@@ -255,7 +256,7 @@ namespace Worlds
             {
                 Chunk chunk = world.Chunks[i];
                 Definition definition = chunk.Definition;
-                if (definition.componentTypes.Contains(componentType) && (definition.tagTypes.d & 1UL << 63) == 0)
+                if (definition.componentTypes.Contains(componentType) && (definition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                 {
                     int count = chunk.Count;
                     for (int e = 0; e < count; e++)
@@ -279,7 +280,7 @@ namespace Worlds
                 {
                     Chunk chunk = world.Chunks[i];
                     Definition chunkDefinition = chunk.Definition;
-                    if (chunkDefinition.componentTypes.Contains(componentType) && (chunkDefinition.tagTypes.d & 1UL << 63) == 0)
+                    if (chunkDefinition.componentTypes.Contains(componentType) && (chunkDefinition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
                         int count = chunk.Count;
                         for (int e = 0; e < count; e++)
@@ -321,7 +322,7 @@ namespace Worlds
                 Definition chunkDefinition = chunk.Definition;
                 if (chunkDefinition.componentTypes.ContainsAll(definition.componentTypes) && chunkDefinition.arrayTypes.ContainsAll(definition.arrayTypes))
                 {
-                    if ((chunkDefinition.tagTypes.d & 1UL << 63) == 0)
+                    if ((chunkDefinition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
                         if (chunkDefinition.tagTypes.ContainsAll(definition.tagTypes))
                         {
@@ -353,7 +354,7 @@ namespace Worlds
                     Definition chunkDefinition = chunk.Definition;
                     if (chunkDefinition.componentTypes.ContainsAll(definition.componentTypes) && chunkDefinition.arrayTypes.ContainsAll(definition.arrayTypes))
                     {
-                        if ((chunkDefinition.tagTypes.d & 1UL << 63) == 0)
+                        if ((chunkDefinition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                         {
                             if (chunkDefinition.tagTypes.ContainsAll(definition.tagTypes))
                             {
@@ -403,7 +404,7 @@ namespace Worlds
             for (int i = 0; i < chunks.Length; i++)
             {
                 Chunk chunk = chunks[i];
-                if ((chunk.chunk->definition.tagTypes.d & 1UL << 63) == 0)
+                if ((chunk.chunk->definition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                 {
                     if (chunk.chunk->definition.componentTypes.ContainsAll(definition.componentTypes) && chunk.chunk->definition.arrayTypes.ContainsAll(definition.arrayTypes))
                     {
@@ -438,7 +439,7 @@ namespace Worlds
                 for (int i = 0; i < chunks.Length; i++)
                 {
                     Chunk chunk = chunks[i];
-                    if ((chunk.chunk->definition.tagTypes.d & 1UL << 63) == 0)
+                    if ((chunk.chunk->definition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
                         if (chunk.chunk->definition.componentTypes.ContainsAll(definition.componentTypes) && chunk.chunk->definition.arrayTypes.ContainsAll(definition.arrayTypes))
                         {
@@ -513,7 +514,7 @@ namespace Worlds
                 Chunk chunk = chunks[i];
                 if (chunk.chunk->definition.ContainsComponent(componentType))
                 {
-                    if ((chunk.chunk->definition.tagTypes.d & 1UL << 63) == 0)
+                    if ((chunk.chunk->definition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
                         count += chunk.chunk->count;
                     }
@@ -539,7 +540,7 @@ namespace Worlds
                     Chunk chunk = chunks[i];
                     if (chunk.chunk->definition.ContainsComponent(componentType))
                     {
-                        if ((chunk.chunk->definition.tagTypes.d & 1UL << 63) == 0)
+                        if ((chunk.chunk->definition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                         {
                             count += chunk.chunk->count;
                         }
@@ -573,7 +574,7 @@ namespace Worlds
                 Chunk chunk = chunks[i];
                 if (chunk.chunk->definition.ContainsComponent(componentType))
                 {
-                    if ((chunk.chunk->definition.tagTypes.d & 1UL << 63) == 0)
+                    if ((chunk.chunk->definition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
                         count += chunk.chunk->count;
                     }
@@ -597,7 +598,7 @@ namespace Worlds
                     Chunk chunk = chunks[i];
                     if (chunk.chunk->definition.ContainsComponent(componentType))
                     {
-                        if ((chunk.chunk->definition.tagTypes.d & 1UL << 63) == 0)
+                        if ((chunk.chunk->definition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                         {
                             count += chunk.chunk->count;
                         }
@@ -633,7 +634,7 @@ namespace Worlds
             {
                 Chunk chunk = chunks[i];
                 Definition chunkDefinition = chunk.chunk->definition;
-                if ((chunkDefinition.tagTypes.d & 1UL << 63) == 0)
+                if ((chunkDefinition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                 {
                     if (chunkDefinition.componentTypes.ContainsAll(definition.componentTypes) && chunkDefinition.arrayTypes.ContainsAll(definition.arrayTypes))
                     {
@@ -665,7 +666,7 @@ namespace Worlds
                 {
                     Chunk chunk = chunks[i];
                     Definition chunkDefinition = chunk.chunk->definition;
-                    if ((chunkDefinition.tagTypes.d & 1UL << 63) == 0)
+                    if ((chunkDefinition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
                         if (chunkDefinition.componentTypes.ContainsAll(definition.componentTypes) && chunkDefinition.arrayTypes.ContainsAll(definition.arrayTypes))
                         {

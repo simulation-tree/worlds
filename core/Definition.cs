@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Intrinsics;
 
 namespace Worlds
 {
@@ -30,12 +31,12 @@ namespace Worlds
         /// <summary>
         /// Checks if this definition describes a disabled entity.
         /// </summary>
-        public readonly bool IsDisabled => (tagTypes.d & 1UL << 63) != 0;
+        public readonly bool IsDisabled => (tagTypes.value.GetElement(3) & Schema.DisabledMask) != 0;
 
         /// <summary>
         /// Checks if this definition describes an enabled entity.
         /// </summary>
-        public readonly bool IsEnabled =>(tagTypes.d & 1UL << 63) == 0;
+        public readonly bool IsEnabled => (tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0;
 
         /// <summary>
         /// Creates a new definition with the exact component <see cref="BitMask"/>.
@@ -257,18 +258,7 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly bool Equals(Definition other)
         {
-            return componentTypes.a == other.componentTypes.a &&
-                   componentTypes.b == other.componentTypes.b &&
-                   componentTypes.c == other.componentTypes.c &&
-                   componentTypes.d == other.componentTypes.d &&
-                   arrayTypes.a == other.arrayTypes.a &&
-                   arrayTypes.b == other.arrayTypes.b &&
-                   arrayTypes.c == other.arrayTypes.c &&
-                   arrayTypes.d == other.arrayTypes.d &&
-                   tagTypes.a == other.tagTypes.a &&
-                   tagTypes.b == other.tagTypes.b &&
-                   tagTypes.c == other.tagTypes.c &&
-                   tagTypes.d == other.tagTypes.d;
+            return componentTypes == other.componentTypes && arrayTypes == other.arrayTypes && tagTypes == other.tagTypes;
         }
 
         /// <summary>
