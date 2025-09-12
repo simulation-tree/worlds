@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Worlds
+﻿namespace Worlds
 {
     /// <summary>
     /// Extension methods for <see cref="World"/> to create entities with components
@@ -40,8 +38,9 @@ namespace Worlds
             schema.GetComponentTypes<T1, T2>(out int c1, out int c2);
             uint entity = world.CreateEntity(new BitMask(c1, c2), out Chunk.Row newRow);
             byte* pointer = newRow.row.pointer;
-            *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-            *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
             return entity;
         }
 
@@ -53,8 +52,9 @@ namespace Worlds
             Schema schema = world.world->schema;
             uint entity = world.CreateEntity(new BitMask(c1, c2), out Chunk.Row newRow);
             byte* pointer = newRow.row.pointer;
-            *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-            *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
             return entity;
         }
 
@@ -67,9 +67,10 @@ namespace Worlds
             schema.GetComponentTypes<T1, T2, T3>(out int c1, out int c2, out int c3);
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3), out Chunk.Row newRow);
             byte* pointer = newRow.row.pointer;
-            *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-            *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
-            *(T3*)(pointer + schema.schema->componentOffsets[c3]) = component3;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
+            *(T3*)(pointer + offsets[c3]) = component3;
             return entity;
         }
 
@@ -81,9 +82,10 @@ namespace Worlds
             Schema schema = world.world->schema;
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3), out Chunk.Row newRow);
             byte* pointer = newRow.row.pointer;
-            *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-            *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
-            *(T3*)(pointer + schema.schema->componentOffsets[c3]) = component3;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
+            *(T3*)(pointer + offsets[c3]) = component3;
             return entity;
         }
 
@@ -96,10 +98,11 @@ namespace Worlds
             schema.GetComponentTypes<T1, T2, T3, T4>(out int c1, out int c2, out int c3, out int c4);
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3, c4), out Chunk.Row newRow);
             byte* pointer = newRow.row.pointer;
-            *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-            *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
-            *(T3*)(pointer + schema.schema->componentOffsets[c3]) = component3;
-            *(T4*)(pointer + schema.schema->componentOffsets[c4]) = component4;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
+            *(T3*)(pointer + offsets[c3]) = component3;
+            *(T4*)(pointer + offsets[c4]) = component4;
             return entity;
         }
 
@@ -110,15 +113,12 @@ namespace Worlds
         {
             Schema schema = world.world->schema;
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3, c4), out Chunk.Row newRow);
-            unchecked
-            {
-                byte* pointer = newRow.row.pointer;
-                *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-                *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
-                *(T3*)(pointer + schema.schema->componentOffsets[c3]) = component3;
-                *(T4*)(pointer + schema.schema->componentOffsets[c4]) = component4;
-            }
-
+            byte* pointer = newRow.row.pointer;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
+            *(T3*)(pointer + offsets[c3]) = component3;
+            *(T4*)(pointer + offsets[c4]) = component4;
             return entity;
         }
 
@@ -131,11 +131,12 @@ namespace Worlds
             schema.GetComponentTypes<T1, T2, T3, T4, T5>(out int c1, out int c2, out int c3, out int c4, out int c5);
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3, c4, c5), out Chunk.Row newRow);
             byte* pointer = newRow.row.pointer;
-            *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-            *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
-            *(T3*)(pointer + schema.schema->componentOffsets[c3]) = component3;
-            *(T4*)(pointer + schema.schema->componentOffsets[c4]) = component4;
-            *(T5*)(pointer + schema.schema->componentOffsets[c5]) = component5;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
+            *(T3*)(pointer + offsets[c3]) = component3;
+            *(T4*)(pointer + offsets[c4]) = component4;
+            *(T5*)(pointer + offsets[c5]) = component5;
             return entity;
         }
 
@@ -147,11 +148,12 @@ namespace Worlds
             Schema schema = world.world->schema;
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3, c4, c5), out Chunk.Row newRow);
             byte* pointer = newRow.row.pointer;
-            *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-            *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
-            *(T3*)(pointer + schema.schema->componentOffsets[c3]) = component3;
-            *(T4*)(pointer + schema.schema->componentOffsets[c4]) = component4;
-            *(T5*)(pointer + schema.schema->componentOffsets[c5]) = component5;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
+            *(T3*)(pointer + offsets[c3]) = component3;
+            *(T4*)(pointer + offsets[c4]) = component4;
+            *(T5*)(pointer + offsets[c5]) = component5;
             return entity;
         }
 
@@ -164,12 +166,13 @@ namespace Worlds
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6);
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3, c4, c5, c6), out Chunk.Row newRow);
             byte* pointer = newRow.row.pointer;
-            *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-            *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
-            *(T3*)(pointer + schema.schema->componentOffsets[c3]) = component3;
-            *(T4*)(pointer + schema.schema->componentOffsets[c4]) = component4;
-            *(T5*)(pointer + schema.schema->componentOffsets[c5]) = component5;
-            *(T6*)(pointer + schema.schema->componentOffsets[c6]) = component6;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
+            *(T3*)(pointer + offsets[c3]) = component3;
+            *(T4*)(pointer + offsets[c4]) = component4;
+            *(T5*)(pointer + offsets[c5]) = component5;
+            *(T6*)(pointer + offsets[c6]) = component6;
             return entity;
         }
 
@@ -181,12 +184,13 @@ namespace Worlds
             Schema schema = world.world->schema;
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3, c4, c5, c6), out Chunk.Row newRow);
             byte* pointer = newRow.row.pointer;
-            *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-            *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
-            *(T3*)(pointer + schema.schema->componentOffsets[c3]) = component3;
-            *(T4*)(pointer + schema.schema->componentOffsets[c4]) = component4;
-            *(T5*)(pointer + schema.schema->componentOffsets[c5]) = component5;
-            *(T6*)(pointer + schema.schema->componentOffsets[c6]) = component6;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
+            *(T3*)(pointer + offsets[c3]) = component3;
+            *(T4*)(pointer + offsets[c4]) = component4;
+            *(T5*)(pointer + offsets[c5]) = component5;
+            *(T6*)(pointer + offsets[c6]) = component6;
             return entity;
         }
 
@@ -199,13 +203,14 @@ namespace Worlds
             schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7);
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3, c4, c5, c6, c7), out Chunk.Row newRow);
             byte* pointer = newRow.row.pointer;
-            *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-            *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
-            *(T3*)(pointer + schema.schema->componentOffsets[c3]) = component3;
-            *(T4*)(pointer + schema.schema->componentOffsets[c4]) = component4;
-            *(T5*)(pointer + schema.schema->componentOffsets[c5]) = component5;
-            *(T6*)(pointer + schema.schema->componentOffsets[c6]) = component6;
-            *(T7*)(pointer + schema.schema->componentOffsets[c7]) = component7;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
+            *(T3*)(pointer + offsets[c3]) = component3;
+            *(T4*)(pointer + offsets[c4]) = component4;
+            *(T5*)(pointer + offsets[c5]) = component5;
+            *(T6*)(pointer + offsets[c6]) = component6;
+            *(T7*)(pointer + offsets[c7]) = component7;
             return entity;
         }
 
@@ -217,13 +222,14 @@ namespace Worlds
             Schema schema = world.world->schema;
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3, c4, c5, c6, c7), out Chunk.Row newRow);
             byte* pointer = newRow.row.pointer;
-            *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-            *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
-            *(T3*)(pointer + schema.schema->componentOffsets[c3]) = component3;
-            *(T4*)(pointer + schema.schema->componentOffsets[c4]) = component4;
-            *(T5*)(pointer + schema.schema->componentOffsets[c5]) = component5;
-            *(T6*)(pointer + schema.schema->componentOffsets[c6]) = component6;
-            *(T7*)(pointer + schema.schema->componentOffsets[c7]) = component7;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
+            *(T3*)(pointer + offsets[c3]) = component3;
+            *(T4*)(pointer + offsets[c4]) = component4;
+            *(T5*)(pointer + offsets[c5]) = component5;
+            *(T6*)(pointer + offsets[c6]) = component6;
+            *(T7*)(pointer + offsets[c7]) = component7;
             return entity;
         }
 
@@ -237,14 +243,15 @@ namespace Worlds
             BitMask componentTypesMask = new(c1, c2, c3, c4, c5, c6, c7, c8);
             uint entity = world.CreateEntity(componentTypesMask, out Chunk.Row newRow);
             byte* pointer = newRow.row.pointer;
-            *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-            *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
-            *(T3*)(pointer + schema.schema->componentOffsets[c3]) = component3;
-            *(T4*)(pointer + schema.schema->componentOffsets[c4]) = component4;
-            *(T5*)(pointer + schema.schema->componentOffsets[c5]) = component5;
-            *(T6*)(pointer + schema.schema->componentOffsets[c6]) = component6;
-            *(T7*)(pointer + schema.schema->componentOffsets[c7]) = component7;
-            *(T8*)(pointer + schema.schema->componentOffsets[c8]) = component8;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
+            *(T3*)(pointer + offsets[c3]) = component3;
+            *(T4*)(pointer + offsets[c4]) = component4;
+            *(T5*)(pointer + offsets[c5]) = component5;
+            *(T6*)(pointer + offsets[c6]) = component6;
+            *(T7*)(pointer + offsets[c7]) = component7;
+            *(T8*)(pointer + offsets[c8]) = component8;
             return entity;
         }
 
@@ -256,14 +263,15 @@ namespace Worlds
             Schema schema = world.world->schema;
             uint entity = world.CreateEntity(new BitMask(c1, c2, c3, c4, c5, c6, c7, c8), out Chunk.Row newRow);
             byte* pointer = newRow.row.pointer;
-            *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-            *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
-            *(T3*)(pointer + schema.schema->componentOffsets[c3]) = component3;
-            *(T4*)(pointer + schema.schema->componentOffsets[c4]) = component4;
-            *(T5*)(pointer + schema.schema->componentOffsets[c5]) = component5;
-            *(T6*)(pointer + schema.schema->componentOffsets[c6]) = component6;
-            *(T7*)(pointer + schema.schema->componentOffsets[c7]) = component7;
-            *(T8*)(pointer + schema.schema->componentOffsets[c8]) = component8;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
+            *(T3*)(pointer + offsets[c3]) = component3;
+            *(T4*)(pointer + offsets[c4]) = component4;
+            *(T5*)(pointer + offsets[c5]) = component5;
+            *(T6*)(pointer + offsets[c6]) = component6;
+            *(T7*)(pointer + offsets[c7]) = component7;
+            *(T8*)(pointer + offsets[c8]) = component8;
             return entity;
         }
 
@@ -277,15 +285,16 @@ namespace Worlds
             BitMask componentTypesMask = new(c1, c2, c3, c4, c5, c6, c7, c8, c9);
             uint entity = world.CreateEntity(componentTypesMask, out Chunk.Row newRow);
             byte* pointer = newRow.row.pointer;
-            *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-            *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
-            *(T3*)(pointer + schema.schema->componentOffsets[c3]) = component3;
-            *(T4*)(pointer + schema.schema->componentOffsets[c4]) = component4;
-            *(T5*)(pointer + schema.schema->componentOffsets[c5]) = component5;
-            *(T6*)(pointer + schema.schema->componentOffsets[c6]) = component6;
-            *(T7*)(pointer + schema.schema->componentOffsets[c7]) = component7;
-            *(T8*)(pointer + schema.schema->componentOffsets[c8]) = component8;
-            *(T9*)(pointer + schema.schema->componentOffsets[c9]) = component9;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
+            *(T3*)(pointer + offsets[c3]) = component3;
+            *(T4*)(pointer + offsets[c4]) = component4;
+            *(T5*)(pointer + offsets[c5]) = component5;
+            *(T6*)(pointer + offsets[c6]) = component6;
+            *(T7*)(pointer + offsets[c7]) = component7;
+            *(T8*)(pointer + offsets[c8]) = component8;
+            *(T9*)(pointer + offsets[c9]) = component9;
             return entity;
         }
 
@@ -299,16 +308,17 @@ namespace Worlds
             BitMask componentTypesMask = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10);
             uint entity = world.CreateEntity(componentTypesMask, out Chunk.Row newRow);
             byte* pointer = newRow.row.pointer;
-            *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-            *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
-            *(T3*)(pointer + schema.schema->componentOffsets[c3]) = component3;
-            *(T4*)(pointer + schema.schema->componentOffsets[c4]) = component4;
-            *(T5*)(pointer + schema.schema->componentOffsets[c5]) = component5;
-            *(T6*)(pointer + schema.schema->componentOffsets[c6]) = component6;
-            *(T7*)(pointer + schema.schema->componentOffsets[c7]) = component7;
-            *(T8*)(pointer + schema.schema->componentOffsets[c8]) = component8;
-            *(T9*)(pointer + schema.schema->componentOffsets[c9]) = component9;
-            *(T10*)(pointer + schema.schema->componentOffsets[c10]) = component10;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
+            *(T3*)(pointer + offsets[c3]) = component3;
+            *(T4*)(pointer + offsets[c4]) = component4;
+            *(T5*)(pointer + offsets[c5]) = component5;
+            *(T6*)(pointer + offsets[c6]) = component6;
+            *(T7*)(pointer + offsets[c7]) = component7;
+            *(T8*)(pointer + offsets[c8]) = component8;
+            *(T9*)(pointer + offsets[c9]) = component9;
+            *(T10*)(pointer + offsets[c10]) = component10;
             return entity;
         }
 
@@ -322,17 +332,18 @@ namespace Worlds
             BitMask componentTypesMask = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11);
             uint entity = world.CreateEntity(componentTypesMask, out Chunk.Row newRow);
             byte* pointer = newRow.row.pointer;
-            *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-            *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
-            *(T3*)(pointer + schema.schema->componentOffsets[c3]) = component3;
-            *(T4*)(pointer + schema.schema->componentOffsets[c4]) = component4;
-            *(T5*)(pointer + schema.schema->componentOffsets[c5]) = component5;
-            *(T6*)(pointer + schema.schema->componentOffsets[c6]) = component6;
-            *(T7*)(pointer + schema.schema->componentOffsets[c7]) = component7;
-            *(T8*)(pointer + schema.schema->componentOffsets[c8]) = component8;
-            *(T9*)(pointer + schema.schema->componentOffsets[c9]) = component9;
-            *(T10*)(pointer + schema.schema->componentOffsets[c10]) = component10;
-            *(T11*)(pointer + schema.schema->componentOffsets[c11]) = component11;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
+            *(T3*)(pointer + offsets[c3]) = component3;
+            *(T4*)(pointer + offsets[c4]) = component4;
+            *(T5*)(pointer + offsets[c5]) = component5;
+            *(T6*)(pointer + offsets[c6]) = component6;
+            *(T7*)(pointer + offsets[c7]) = component7;
+            *(T8*)(pointer + offsets[c8]) = component8;
+            *(T9*)(pointer + offsets[c9]) = component9;
+            *(T10*)(pointer + offsets[c10]) = component10;
+            *(T11*)(pointer + offsets[c11]) = component11;
             return entity;
         }
 
@@ -346,18 +357,19 @@ namespace Worlds
             BitMask componentTypesMask = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12);
             uint entity = world.CreateEntity(componentTypesMask, out Chunk.Row newRow);
             byte* pointer = newRow.row.pointer;
-            *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-            *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
-            *(T3*)(pointer + schema.schema->componentOffsets[c3]) = component3;
-            *(T4*)(pointer + schema.schema->componentOffsets[c4]) = component4;
-            *(T5*)(pointer + schema.schema->componentOffsets[c5]) = component5;
-            *(T6*)(pointer + schema.schema->componentOffsets[c6]) = component6;
-            *(T7*)(pointer + schema.schema->componentOffsets[c7]) = component7;
-            *(T8*)(pointer + schema.schema->componentOffsets[c8]) = component8;
-            *(T9*)(pointer + schema.schema->componentOffsets[c9]) = component9;
-            *(T10*)(pointer + schema.schema->componentOffsets[c10]) = component10;
-            *(T11*)(pointer + schema.schema->componentOffsets[c11]) = component11;
-            *(T12*)(pointer + schema.schema->componentOffsets[c12]) = component12;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
+            *(T3*)(pointer + offsets[c3]) = component3;
+            *(T4*)(pointer + offsets[c4]) = component4;
+            *(T5*)(pointer + offsets[c5]) = component5;
+            *(T6*)(pointer + offsets[c6]) = component6;
+            *(T7*)(pointer + offsets[c7]) = component7;
+            *(T8*)(pointer + offsets[c8]) = component8;
+            *(T9*)(pointer + offsets[c9]) = component9;
+            *(T10*)(pointer + offsets[c10]) = component10;
+            *(T11*)(pointer + offsets[c11]) = component11;
+            *(T12*)(pointer + offsets[c12]) = component12;
             return entity;
         }
 
@@ -371,19 +383,20 @@ namespace Worlds
             BitMask componentTypesMask = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13);
             uint entity = world.CreateEntity(componentTypesMask, out Chunk.Row newRow);
             byte* pointer = newRow.row.pointer;
-            *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-            *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
-            *(T3*)(pointer + schema.schema->componentOffsets[c3]) = component3;
-            *(T4*)(pointer + schema.schema->componentOffsets[c4]) = component4;
-            *(T5*)(pointer + schema.schema->componentOffsets[c5]) = component5;
-            *(T6*)(pointer + schema.schema->componentOffsets[c6]) = component6;
-            *(T7*)(pointer + schema.schema->componentOffsets[c7]) = component7;
-            *(T8*)(pointer + schema.schema->componentOffsets[c8]) = component8;
-            *(T9*)(pointer + schema.schema->componentOffsets[c9]) = component9;
-            *(T10*)(pointer + schema.schema->componentOffsets[c10]) = component10;
-            *(T11*)(pointer + schema.schema->componentOffsets[c11]) = component11;
-            *(T12*)(pointer + schema.schema->componentOffsets[c12]) = component12;
-            *(T13*)(pointer + schema.schema->componentOffsets[c13]) = component13;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
+            *(T3*)(pointer + offsets[c3]) = component3;
+            *(T4*)(pointer + offsets[c4]) = component4;
+            *(T5*)(pointer + offsets[c5]) = component5;
+            *(T6*)(pointer + offsets[c6]) = component6;
+            *(T7*)(pointer + offsets[c7]) = component7;
+            *(T8*)(pointer + offsets[c8]) = component8;
+            *(T9*)(pointer + offsets[c9]) = component9;
+            *(T10*)(pointer + offsets[c10]) = component10;
+            *(T11*)(pointer + offsets[c11]) = component11;
+            *(T12*)(pointer + offsets[c12]) = component12;
+            *(T13*)(pointer + offsets[c13]) = component13;
             return entity;
         }
 
@@ -397,20 +410,21 @@ namespace Worlds
             BitMask componentTypesMask = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14);
             uint entity = world.CreateEntity(componentTypesMask, out Chunk.Row newRow);
             byte* pointer = newRow.row.pointer;
-            *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-            *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
-            *(T3*)(pointer + schema.schema->componentOffsets[c3]) = component3;
-            *(T4*)(pointer + schema.schema->componentOffsets[c4]) = component4;
-            *(T5*)(pointer + schema.schema->componentOffsets[c5]) = component5;
-            *(T6*)(pointer + schema.schema->componentOffsets[c6]) = component6;
-            *(T7*)(pointer + schema.schema->componentOffsets[c7]) = component7;
-            *(T8*)(pointer + schema.schema->componentOffsets[c8]) = component8;
-            *(T9*)(pointer + schema.schema->componentOffsets[c9]) = component9;
-            *(T10*)(pointer + schema.schema->componentOffsets[c10]) = component10;
-            *(T11*)(pointer + schema.schema->componentOffsets[c11]) = component11;
-            *(T12*)(pointer + schema.schema->componentOffsets[c12]) = component12;
-            *(T13*)(pointer + schema.schema->componentOffsets[c13]) = component13;
-            *(T14*)(pointer + schema.schema->componentOffsets[c14]) = component14;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
+            *(T3*)(pointer + offsets[c3]) = component3;
+            *(T4*)(pointer + offsets[c4]) = component4;
+            *(T5*)(pointer + offsets[c5]) = component5;
+            *(T6*)(pointer + offsets[c6]) = component6;
+            *(T7*)(pointer + offsets[c7]) = component7;
+            *(T8*)(pointer + offsets[c8]) = component8;
+            *(T9*)(pointer + offsets[c9]) = component9;
+            *(T10*)(pointer + offsets[c10]) = component10;
+            *(T11*)(pointer + offsets[c11]) = component11;
+            *(T12*)(pointer + offsets[c12]) = component12;
+            *(T13*)(pointer + offsets[c13]) = component13;
+            *(T14*)(pointer + offsets[c14]) = component14;
             return entity;
         }
 
@@ -424,21 +438,22 @@ namespace Worlds
             BitMask componentTypesMask = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15);
             uint entity = world.CreateEntity(componentTypesMask, out Chunk.Row newRow);
             byte* pointer = newRow.row.pointer;
-            *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-            *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
-            *(T3*)(pointer + schema.schema->componentOffsets[c3]) = component3;
-            *(T4*)(pointer + schema.schema->componentOffsets[c4]) = component4;
-            *(T5*)(pointer + schema.schema->componentOffsets[c5]) = component5;
-            *(T6*)(pointer + schema.schema->componentOffsets[c6]) = component6;
-            *(T7*)(pointer + schema.schema->componentOffsets[c7]) = component7;
-            *(T8*)(pointer + schema.schema->componentOffsets[c8]) = component8;
-            *(T9*)(pointer + schema.schema->componentOffsets[c9]) = component9;
-            *(T10*)(pointer + schema.schema->componentOffsets[c10]) = component10;
-            *(T11*)(pointer + schema.schema->componentOffsets[c11]) = component11;
-            *(T12*)(pointer + schema.schema->componentOffsets[c12]) = component12;
-            *(T13*)(pointer + schema.schema->componentOffsets[c13]) = component13;
-            *(T14*)(pointer + schema.schema->componentOffsets[c14]) = component14;
-            *(T15*)(pointer + schema.schema->componentOffsets[c15]) = component15;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
+            *(T3*)(pointer + offsets[c3]) = component3;
+            *(T4*)(pointer + offsets[c4]) = component4;
+            *(T5*)(pointer + offsets[c5]) = component5;
+            *(T6*)(pointer + offsets[c6]) = component6;
+            *(T7*)(pointer + offsets[c7]) = component7;
+            *(T8*)(pointer + offsets[c8]) = component8;
+            *(T9*)(pointer + offsets[c9]) = component9;
+            *(T10*)(pointer + offsets[c10]) = component10;
+            *(T11*)(pointer + offsets[c11]) = component11;
+            *(T12*)(pointer + offsets[c12]) = component12;
+            *(T13*)(pointer + offsets[c13]) = component13;
+            *(T14*)(pointer + offsets[c14]) = component14;
+            *(T15*)(pointer + offsets[c15]) = component15;
             return entity;
         }
 
@@ -452,22 +467,23 @@ namespace Worlds
             BitMask componentTypesMask = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16);
             uint entity = world.CreateEntity(componentTypesMask, out Chunk.Row newRow);
             byte* pointer = newRow.row.pointer;
-            *(T1*)(pointer + schema.schema->componentOffsets[c1]) = component1;
-            *(T2*)(pointer + schema.schema->componentOffsets[c2]) = component2;
-            *(T3*)(pointer + schema.schema->componentOffsets[c3]) = component3;
-            *(T4*)(pointer + schema.schema->componentOffsets[c4]) = component4;
-            *(T5*)(pointer + schema.schema->componentOffsets[c5]) = component5;
-            *(T6*)(pointer + schema.schema->componentOffsets[c6]) = component6;
-            *(T7*)(pointer + schema.schema->componentOffsets[c7]) = component7;
-            *(T8*)(pointer + schema.schema->componentOffsets[c8]) = component8;
-            *(T9*)(pointer + schema.schema->componentOffsets[c9]) = component9;
-            *(T10*)(pointer + schema.schema->componentOffsets[c10]) = component10;
-            *(T11*)(pointer + schema.schema->componentOffsets[c11]) = component11;
-            *(T12*)(pointer + schema.schema->componentOffsets[c12]) = component12;
-            *(T13*)(pointer + schema.schema->componentOffsets[c13]) = component13;
-            *(T14*)(pointer + schema.schema->componentOffsets[c14]) = component14;
-            *(T15*)(pointer + schema.schema->componentOffsets[c15]) = component15;
-            *(T16*)(pointer + schema.schema->componentOffsets[c16]) = component16;
+            uint* offsets = schema.schema->componentOffsets;
+            *(T1*)(pointer + offsets[c1]) = component1;
+            *(T2*)(pointer + offsets[c2]) = component2;
+            *(T3*)(pointer + offsets[c3]) = component3;
+            *(T4*)(pointer + offsets[c4]) = component4;
+            *(T5*)(pointer + offsets[c5]) = component5;
+            *(T6*)(pointer + offsets[c6]) = component6;
+            *(T7*)(pointer + offsets[c7]) = component7;
+            *(T8*)(pointer + offsets[c8]) = component8;
+            *(T9*)(pointer + offsets[c9]) = component9;
+            *(T10*)(pointer + offsets[c10]) = component10;
+            *(T11*)(pointer + offsets[c11]) = component11;
+            *(T12*)(pointer + offsets[c12]) = component12;
+            *(T13*)(pointer + offsets[c13]) = component13;
+            *(T14*)(pointer + offsets[c14]) = component14;
+            *(T15*)(pointer + offsets[c15]) = component15;
+            *(T16*)(pointer + offsets[c16]) = component16;
             return entity;
         }
     }
