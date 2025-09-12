@@ -1,12 +1,8 @@
-using System;
 using System.Text;
 
 public static class SharedFunctions
 {
     private const char GenericTypePrefix = 'C';
-    private const string ComponentType = "int";
-    private const string SpanType = "Span";
-    private const string ComponentTypeFieldName = "componentType";
     private const string ComponentOffsetType = "uint";
     private const string ComponentOffsetFieldName = "componentOffset";
     private const string ComponentVariableName = "component";
@@ -79,76 +75,12 @@ public static class SharedFunctions
         return builder.ToString();
     }
 
-    public static string TypeParametersSignature(uint count)
-    {
-        StringBuilder builder = new();
-        for (uint i = 1; i <= count + 1; i++)
-        {
-            builder.Append(GenericTypePrefix);
-            builder.Append(i);
-            builder.Append(' ');
-            builder.Append(ComponentTypeFieldName);
-            builder.Append(i);
-            builder.Append(", ");
-        }
-
-        builder.Length -= 2;
-        return builder.ToString();
-    }
-
-    public static string TypeParameters(uint count)
-    {
-        StringBuilder builder = new();
-        for (uint i = 1; i <= count + 1; i++)
-        {
-            builder.Append(ComponentTypeFieldName);
-            builder.Append(i);
-            builder.Append(", ");
-        }
-
-        builder.Length -= 2;
-        return builder.ToString();
-    }
-
-    public static string AssignComponentFields(uint count, int indent)
-    {
-        StringBuilder builder = new();
-        for (uint i = 1; i <= count + 1; i++)
-        {
-            builder.Append(new string(' ', indent));
-            builder.Append(ComponentTypeFieldName);
-            builder.Append(i);
-            builder.Append(" = entity.AsEntity().GetComponent<");
-            builder.Append(GenericTypePrefix);
-            builder.Append(i);
-            builder.Append(">();");
-
-            if (i < count + 1)
-            {
-                builder.Append('\n');
-                builder.Append(new string(' ', indent));
-            }
-        }
-
-        return builder.ToString();
-    }
-
     public static string DeclareComponentQueryEnumeratorFields(uint count, int indent)
     {
-        //declare component types and offsets
+        // declare component types and offsets
         StringBuilder builder = new();
         for (uint i = 1; i <= count + 1; i++)
         {
-            builder.Append("private readonly ");
-            builder.Append(ComponentType);
-            builder.Append(' ');
-            builder.Append(ComponentTypeFieldName);
-            builder.Append(i);
-            builder.Append(';');
-
-            builder.Append('\n');
-            builder.Append(new string(' ', indent));
-
             builder.Append("private readonly ");
             builder.Append(ComponentOffsetType);
             builder.Append(' ');
@@ -158,28 +90,7 @@ public static class SharedFunctions
 
             if (i < count + 1)
             {
-                builder.Append('\n');
-                builder.Append(new string(' ', indent));
-            }
-        }
-
-        return builder.ToString();
-    }
-
-    public static string AssignComponentTypeFields(uint count, int indent)
-    {
-        StringBuilder builder = new();
-        for (uint i = 1; i <= count + 1; i++)
-        {
-            builder.Append(ComponentTypeFieldName);
-            builder.Append(i);
-            builder.Append(" = schema.GetComponentType<");
-            builder.Append(GenericTypePrefix);
-            builder.Append(i);
-            builder.Append(">();");
-
-            if (i < count + 1)
-            {
+                builder.Append('\r');
                 builder.Append('\n');
                 builder.Append(new string(' ', indent));
             }
@@ -209,6 +120,7 @@ public static class SharedFunctions
 
             if (i < count + 1)
             {
+                builder.Append('\r');
                 builder.Append('\n');
                 builder.Append(new string(' ', indent));
             }
@@ -235,40 +147,17 @@ public static class SharedFunctions
     public static string AssignComponentOffsets(uint count, int indent)
     {
         StringBuilder builder = new();
-        builder.Append("Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);");
-        builder.Append('\n');
-        builder.Append(new string(' ', indent));
         for (uint i = 1; i <= count + 1; i++)
         {
             builder.Append(ComponentOffsetFieldName);
             builder.Append(i);
-            builder.Append(" = componentOffsets[");
-            builder.Append(ComponentTypeFieldName);
+            builder.Append(" = schema.schema->componentOffsets[schema.GetComponentType<C");
             builder.Append(i);
-            builder.Append("];");
+            builder.Append(">()];");
 
             if (i < count + 1)
             {
-                builder.Append('\n');
-                builder.Append(new string(' ', indent));
-            }
-        }
-
-        return builder.ToString();
-    }
-
-    public static string DescribeEntity(uint count, int indent)
-    {
-        StringBuilder builder = new();
-        for (uint i = 1; i <= count + 1; i++)
-        {
-            builder.Append("archetype.AddComponentType<");
-            builder.Append(GenericTypePrefix);
-            builder.Append(i);
-            builder.Append(">();");
-
-            if (i < count + 1)
-            {
+                builder.Append('\r');
                 builder.Append('\n');
                 builder.Append(new string(' ', indent));
             }

@@ -1,14 +1,17 @@
 using Collections;
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Unmanaged;
+using Worlds.Pointers;
 
 namespace Worlds
 {
     /// <summary>
     /// Component query for the component types specified.
     /// </summary>
-    public unsafe struct ComponentQuery<C1, C2, C3, C4, C5> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged
+    [SkipLocalsInit]
+    public unsafe ref struct ComponentQuery<C1, C2, C3, C4, C5> where C1 : unmanaged where C2 : unmanaged where C3 : unmanaged where C4 : unmanaged where C5 : unmanaged
     {
         private Definition required;
         private Definition exclude;
@@ -50,7 +53,7 @@ namespace Worlds
 
             return this;
         }
-        
+
         /// <summary>
         /// Makes the given array types required.
         /// </summary>
@@ -712,15 +715,10 @@ namespace Worlds
         {
             private readonly ReadOnlySpan<Chunk> chunks;
             private readonly ComponentQuery<C1, C2, C3, C4, C5> query;
-            private readonly int componentType1;
             private readonly uint componentOffset1;
-            private readonly int componentType2;
             private readonly uint componentOffset2;
-            private readonly int componentType3;
             private readonly uint componentOffset3;
-            private readonly int componentType4;
             private readonly uint componentOffset4;
-            private readonly int componentType5;
             private readonly uint componentOffset5;
             private int version;
             private int entityIndex;
@@ -753,71 +751,64 @@ namespace Worlds
                 int chunkCount = 0;
                 ReadOnlySpan<Chunk> allChunks = query.world.Chunks;
                 Span<Chunk> chunksBuffer = stackalloc Chunk[allChunks.Length];
-                foreach (Chunk chunk in allChunks)
+                for (int i = 0; i < allChunks.Length; i++)
                 {
-                    if (chunk.chunk->count > 0)
+                    ChunkPointer* chunk = allChunks[i].chunk;
+                    if (chunk->count > 0)
                     {
-                        Definition key = chunk.chunk->definition;
-
                         //check if chunk contains inclusion
-                        if (!key.componentTypes.ContainsAll(query.required.componentTypes))
+                        if (!chunk->componentTypes.ContainsAll(query.required.componentTypes))
                         {
                             continue;
                         }
 
-                        if (!key.arrayTypes.ContainsAll(query.required.arrayTypes))
+                        if (!chunk->arrayTypes.ContainsAll(query.required.arrayTypes))
                         {
                             continue;
                         }
 
-                        if (!key.tagTypes.ContainsAll(query.required.tagTypes))
+                        if (!chunk->tagTypes.ContainsAll(query.required.tagTypes))
                         {
                             continue;
                         }
 
                         //check if chunk doesnt contain exclusion
-                        if (key.componentTypes.ContainsAny(query.exclude.componentTypes))
+                        if (chunk->componentTypes.ContainsAny(query.exclude.componentTypes))
                         {
                             continue;
                         }
 
-                        if (key.arrayTypes.ContainsAny(query.exclude.arrayTypes))
+                        if (chunk->arrayTypes.ContainsAny(query.exclude.arrayTypes))
                         {
                             continue;
                         }
 
-                        if (key.tagTypes.ContainsAny(query.exclude.tagTypes))
+                        if (chunk->tagTypes.ContainsAny(query.exclude.tagTypes))
                         {
                             continue;
                         }
 
-                        chunksBuffer[chunkCount++] = chunk;
+                        chunksBuffer[chunkCount++] = new(chunk);
                     }
                 }
 
                 entityIndex = 0;
                 chunkIndex = 0;
-                Schema schema = query.world.world->schema;
-                componentType1 = schema.GetComponentType<C1>();
-                componentType2 = schema.GetComponentType<C2>();
-                componentType3 = schema.GetComponentType<C3>();
-                componentType4 = schema.GetComponentType<C4>();
-                componentType5 = schema.GetComponentType<C5>();
                 if (chunkCount > 0)
                 {
                     MemoryAddress chunksMemory = MemoryAddress.Allocate(chunksBuffer.Slice(0, chunkCount));
                     chunks = chunksMemory.GetSpan<Chunk>(chunkCount);
-                    Chunk chunk = chunks[0];
-                    version = chunk.chunk->version;
-                    entities = new(chunk.chunk->entities.Items.pointer, chunk.chunk->count + 1);
-                    entityCount = chunk.chunk->count;
-                    components = chunk.chunk->components;
-                    Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
-                    componentOffset1 = componentOffsets[componentType1];
-                    componentOffset2 = componentOffsets[componentType2];
-                    componentOffset3 = componentOffsets[componentType3];
-                    componentOffset4 = componentOffsets[componentType4];
-                    componentOffset5 = componentOffsets[componentType5];
+                    ChunkPointer* chunk = chunks[0].chunk;
+                    version = chunk->version;
+                    entities = new(chunk->entities.Items.pointer, chunk->count + 1);
+                    entityCount = chunk->count;
+                    components = chunk->components;
+                    Schema schema = query.world.world->schema;
+                    componentOffset1 = schema.schema->componentOffsets[schema.GetComponentType<C1>()];
+                    componentOffset2 = schema.schema->componentOffsets[schema.GetComponentType<C2>()];
+                    componentOffset3 = schema.schema->componentOffsets[schema.GetComponentType<C3>()];
+                    componentOffset4 = schema.schema->componentOffsets[schema.GetComponentType<C4>()];
+                    componentOffset5 = schema.schema->componentOffsets[schema.GetComponentType<C5>()];
                 }
                 else
                 {
@@ -829,7 +820,7 @@ namespace Worlds
             private readonly void ThrowIfVersionIsDifferent() 
             {
                 Chunk chunk = chunks[chunkIndex];
-                if (version != chunk.Version)
+                if (version != chunk.chunk->version)
                 {
                     throw new ChunkModifiedWhileIteratingException(chunk);
                 }
@@ -852,11 +843,11 @@ namespace Worlds
                     chunkIndex++;
                     if (chunkIndex < chunks.Length)
                     {
-                        Chunk chunk = chunks[chunkIndex];
-                        version = chunk.chunk->version;
-                        entities = new(chunk.chunk->entities.Items.pointer, chunk.chunk->count + 1);
-                        entityCount = chunk.chunk->count;
-                        components = chunk.chunk->components;
+                        ChunkPointer* chunk = chunks[chunkIndex].chunk;
+                        version = chunk->version;
+                        entities = new(chunk->entities.Items.pointer, chunk->count + 1);
+                        entityCount = chunk->count;
+                        components = chunk->components;
                         entityIndex = 1;
                         return true;
                     }

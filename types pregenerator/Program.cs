@@ -17,9 +17,6 @@ if (int.TryParse(firstInput, out int mode))
         case 0:
             ComponentQuery.Generate();
             break;
-        case 1:
-            Entity.Generate();
-            break;
         default:
             Console.WriteLine($"Invalid generation mode {mode}");
             break;

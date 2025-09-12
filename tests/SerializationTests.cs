@@ -167,8 +167,6 @@ namespace Worlds.Tests
             using ByteReader reader = new(writer);
             using World loadedWorld = World.Deserialize(reader, Process);
 
-            Schema loadedSchema = loadedWorld.Schema;
-
             static TypeMetadata Process(TypeMetadata type, DataType.Kind dataType)
             {
                 if (type.Is<Fruit>())
@@ -182,6 +180,7 @@ namespace Worlds.Tests
                 }
             }
 
+            Schema loadedSchema = loadedWorld.Schema;
             Assert.That(loadedSchema.ContainsComponentType<Another>(), Is.True);
             Assert.That(loadedSchema.ContainsComponentType<Fruit>(), Is.False);
             Assert.That(loadedSchema.ContainsComponentType<Cherry>(), Is.True);

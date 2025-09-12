@@ -1,14 +1,17 @@
 using Collections;
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Unmanaged;
+using Worlds.Pointers;
 
 namespace Worlds
 {
     /// <summary>
     /// Component query for the component types specified.
     /// </summary>
-    public unsafe struct {{TypeName}}<{{GenericTypeArguments}}> {{TypeConstraints}}
+    [SkipLocalsInit]
+    public unsafe ref struct {{TypeName}}<{{GenericTypeArguments}}> {{TypeConstraints}}
     {
         private Definition required;
         private Definition exclude;
@@ -50,7 +53,7 @@ namespace Worlds
 
             return this;
         }
-        
+
         /// <summary>
         /// Makes the given array types required.
         /// </summary>
@@ -740,61 +743,59 @@ namespace Worlds
                 int chunkCount = 0;
                 ReadOnlySpan<Chunk> allChunks = query.world.Chunks;
                 Span<Chunk> chunksBuffer = stackalloc Chunk[allChunks.Length];
-                foreach (Chunk chunk in allChunks)
+                for (int i = 0; i < allChunks.Length; i++)
                 {
-                    if (chunk.chunk->count > 0)
+                    ChunkPointer* chunk = allChunks[i].chunk;
+                    if (chunk->count > 0)
                     {
-                        Definition key = chunk.chunk->definition;
-
                         //check if chunk contains inclusion
-                        if (!key.componentTypes.ContainsAll(query.required.componentTypes))
+                        if (!chunk->componentTypes.ContainsAll(query.required.componentTypes))
                         {
                             continue;
                         }
 
-                        if (!key.arrayTypes.ContainsAll(query.required.arrayTypes))
+                        if (!chunk->arrayTypes.ContainsAll(query.required.arrayTypes))
                         {
                             continue;
                         }
 
-                        if (!key.tagTypes.ContainsAll(query.required.tagTypes))
+                        if (!chunk->tagTypes.ContainsAll(query.required.tagTypes))
                         {
                             continue;
                         }
 
                         //check if chunk doesnt contain exclusion
-                        if (key.componentTypes.ContainsAny(query.exclude.componentTypes))
+                        if (chunk->componentTypes.ContainsAny(query.exclude.componentTypes))
                         {
                             continue;
                         }
 
-                        if (key.arrayTypes.ContainsAny(query.exclude.arrayTypes))
+                        if (chunk->arrayTypes.ContainsAny(query.exclude.arrayTypes))
                         {
                             continue;
                         }
 
-                        if (key.tagTypes.ContainsAny(query.exclude.tagTypes))
+                        if (chunk->tagTypes.ContainsAny(query.exclude.tagTypes))
                         {
                             continue;
                         }
 
-                        chunksBuffer[chunkCount++] = chunk;
+                        chunksBuffer[chunkCount++] = new(chunk);
                     }
                 }
 
                 entityIndex = 0;
                 chunkIndex = 0;
-                Schema schema = query.world.world->schema;
-                {{AssignComponentTypeFields}}
                 if (chunkCount > 0)
                 {
                     MemoryAddress chunksMemory = MemoryAddress.Allocate(chunksBuffer.Slice(0, chunkCount));
                     chunks = chunksMemory.GetSpan<Chunk>(chunkCount);
-                    Chunk chunk = chunks[0];
-                    version = chunk.chunk->version;
-                    entities = new(chunk.chunk->entities.Items.pointer, chunk.chunk->count + 1);
-                    entityCount = chunk.chunk->count;
-                    components = chunk.chunk->components;
+                    ChunkPointer* chunk = chunks[0].chunk;
+                    version = chunk->version;
+                    entities = new(chunk->entities.Items.pointer, chunk->count + 1);
+                    entityCount = chunk->count;
+                    components = chunk->components;
+                    Schema schema = query.world.world->schema;
                     {{AssignComponentOffsets}}
                 }
                 else
@@ -807,7 +808,7 @@ namespace Worlds
             private readonly void ThrowIfVersionIsDifferent() 
             {
                 Chunk chunk = chunks[chunkIndex];
-                if (version != chunk.Version)
+                if (version != chunk.chunk->version)
                 {
                     throw new ChunkModifiedWhileIteratingException(chunk);
                 }
@@ -830,11 +831,11 @@ namespace Worlds
                     chunkIndex++;
                     if (chunkIndex < chunks.Length)
                     {
-                        Chunk chunk = chunks[chunkIndex];
-                        version = chunk.chunk->version;
-                        entities = new(chunk.chunk->entities.Items.pointer, chunk.chunk->count + 1);
-                        entityCount = chunk.chunk->count;
-                        components = chunk.chunk->components;
+                        ChunkPointer* chunk = chunks[chunkIndex].chunk;
+                        version = chunk->version;
+                        entities = new(chunk->entities.Items.pointer, chunk->count + 1);
+                        entityCount = chunk->count;
+                        components = chunk->components;
                         entityIndex = 1;
                         return true;
                     }

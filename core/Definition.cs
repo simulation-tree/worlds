@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 using System.Runtime.Intrinsics;
 
 namespace Worlds
@@ -174,11 +175,16 @@ namespace Worlds
         public readonly int CopyComponentTypesTo(Span<int> destination)
         {
             int count = 0;
-            for (int c = 0; c < BitMask.Capacity; c++)
+            Vector256<ulong> value = componentTypes.value;
+            for (int longIndex = 0; longIndex < 4; longIndex++)
             {
-                if (componentTypes.Contains(c))
+                ulong bits = value.GetElement(longIndex);
+                int baseIndex = longIndex * 64;
+                while (bits != 0)
                 {
-                    destination[count++] = c;
+                    int bitIndex = BitOperations.TrailingZeroCount(bits);
+                    destination[count++] = baseIndex + bitIndex;
+                    bits &= bits - 1;
                 }
             }
 
@@ -192,11 +198,16 @@ namespace Worlds
         public readonly int CopyArrayTypesTo(Span<int> destination)
         {
             int count = 0;
-            for (int a = 0; a < BitMask.Capacity; a++)
+            Vector256<ulong> value = arrayTypes.value;
+            for (int longIndex = 0; longIndex < 4; longIndex++)
             {
-                if (arrayTypes.Contains(a))
+                ulong bits = value.GetElement(longIndex);
+                int baseIndex = longIndex * 64;
+                while (bits != 0)
                 {
-                    destination[count++] = a;
+                    int bitIndex = BitOperations.TrailingZeroCount(bits);
+                    destination[count++] = baseIndex + bitIndex;
+                    bits &= bits - 1;
                 }
             }
 
@@ -210,11 +221,16 @@ namespace Worlds
         public readonly int CopyTagTypesTo(Span<int> destination)
         {
             int count = 0;
-            for (int t = 0; t < BitMask.Capacity; t++)
+            Vector256<ulong> value = tagTypes.value;
+            for (int longIndex = 0; longIndex < 4; longIndex++)
             {
-                if (tagTypes.Contains(t))
+                ulong bits = value.GetElement(longIndex);
+                int baseIndex = longIndex * 64;
+                while (bits != 0)
                 {
-                    destination[count++] = t;
+                    int bitIndex = BitOperations.TrailingZeroCount(bits);
+                    destination[count++] = baseIndex + bitIndex;
+                    bits &= bits - 1;
                 }
             }
 
@@ -239,14 +255,7 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            unchecked
-            {
-                int hash = 17;
-                hash = hash * 23 + componentTypes.GetHashCode();
-                hash = hash * 23 + arrayTypes.GetHashCode();
-                hash = hash * 23 + tagTypes.GetHashCode();
-                return hash;
-            }
+            return HashCode.Combine(componentTypes, arrayTypes, tagTypes);
         }
 
         /// <inheritdoc/>

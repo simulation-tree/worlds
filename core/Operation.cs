@@ -1671,16 +1671,13 @@ namespace Worlds
                     //same as World.AddComponentBytes
                     uint entity = selection[i];
                     ref Slot slot = ref slots[(int)entity];
-                    Definition definition = slot.chunk.chunk->definition;
+                    Definition definition = slot.chunk.chunk->Definition;
                     definition.AddComponentType(componentType);
                     Chunk destinationChunk = operation->world.world->chunks.GetOrCreate(definition);
                     World.MoveEntityTo(slots, entity, ref slot, destinationChunk);
                     operation->world.NotifyComponentAdded(entity, componentType);
-                    unchecked
-                    {
-                        Span<byte> component = new(slot.row.pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
-                        componentBytes.CopyTo(component);
-                    }
+                    Span<byte> component = new(slot.row.pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
+                    componentBytes.CopyTo(component);
                 }
             }
 
@@ -1695,7 +1692,7 @@ namespace Worlds
                     //same as World.AddComponentType
                     uint entity = selection[i];
                     ref Slot slot = ref slots[(int)entity];
-                    Definition definition = slot.chunk.chunk->definition;
+                    Definition definition = slot.chunk.chunk->Definition;
                     definition.AddComponentType(componentType);
                     Chunk destinationChunk = operation->world.world->chunks.GetOrCreate(definition);
                     World.MoveEntityTo(slots, entity, ref slot, destinationChunk);
@@ -1713,7 +1710,7 @@ namespace Worlds
                 {
                     uint entity = selection[i];
                     ref Slot slot = ref slots[(int)entity];
-                    Definition definition = slot.chunk.chunk->definition;
+                    Definition definition = slot.chunk.chunk->Definition;
                     if (!definition.componentTypes.Contains(componentType))
                     {
                         definition.AddComponentType(componentType);
@@ -1736,12 +1733,9 @@ namespace Worlds
                 for (int i = 0; i < selection.Length; i++)
                 {
                     //same as World.SetComponentBytes
-                    unchecked
-                    {
-                        uint entity = selection[i];
-                        Span<byte> component = new(slots[(int)entity].row.pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
-                        componentBytes.CopyTo(component);
-                    }
+                    uint entity = selection[i];
+                    Span<byte> component = new(slots[(int)entity].row.pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
+                    componentBytes.CopyTo(component);
                 }
             }
 
@@ -1758,28 +1752,22 @@ namespace Worlds
                 {
                     uint entity = selection[i];
                     ref Slot slot = ref slots[(int)entity];
-                    if (slot.chunk.chunk->definition.componentTypes.Contains(componentType))
+                    if (slot.chunk.chunk->componentTypes.Contains(componentType))
                     {
                         //same as World.SetComponentBytes
-                        unchecked
-                        {
-                            Span<byte> component = new(slots[(int)entity].row.pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
-                            componentBytes.CopyTo(component);
-                        }
+                        Span<byte> component = new(slots[(int)entity].row.pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
+                        componentBytes.CopyTo(component);
                     }
                     else
                     {
                         //same as World.AddComponentBytes
-                        Definition definition = slot.chunk.chunk->definition;
+                        Definition definition = slot.chunk.chunk->Definition;
                         definition.AddComponentType(componentType);
                         Chunk destinationChunk = operation->world.world->chunks.GetOrCreate(definition);
                         World.MoveEntityTo(slots, entity, ref slot, destinationChunk);
                         operation->world.NotifyComponentAdded(entity, componentType);
-                        unchecked
-                        {
-                            Span<byte> component = new(slot.row.pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
-                            componentBytes.CopyTo(component);
-                        }
+                        Span<byte> component = new(slot.row.pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
+                        componentBytes.CopyTo(component);
                     }
                 }
             }
@@ -1795,7 +1783,7 @@ namespace Worlds
                     //same as World.RemoveComponentType
                     uint entity = selection[i];
                     ref Slot slot = ref slots[(int)entity];
-                    Definition definition = slot.chunk.chunk->definition;
+                    Definition definition = slot.chunk.chunk->Definition;
                     definition.RemoveComponentType(componentType);
                     Chunk destinationChunk = operation->world.world->chunks.GetOrCreate(definition);
                     World.MoveEntityTo(slots, entity, ref slot, destinationChunk);

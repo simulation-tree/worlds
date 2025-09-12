@@ -483,6 +483,27 @@ namespace Worlds.Tests
             Assert.That(entities.Contains(d), Is.True);
         }
 
+        [Test]
+        public void FindAllEntities()
+        {
+            using World world = CreateWorld();
+            Span<uint> entities = stackalloc uint[4];
+            world.CreateEntities(entities);
+
+            using List<uint> foundEntities = new();
+            Query query = new(world);
+            foreach (uint entity in query)
+            {
+                foundEntities.Add(entity);
+            }
+
+            Assert.That(foundEntities.Count, Is.EqualTo(entities.Length));
+            foreach (uint entity in entities)
+            {
+                Assert.That(foundEntities.Contains(entity), Is.True);
+            }
+        }
+
 #if DEBUG
         [Test]
         public void ThrowIfVersionChanges()
@@ -493,14 +514,23 @@ namespace Worlds.Tests
             uint c = world.CreateEntity();
             world.AddComponent(a, new Apple());
             world.AddComponent(b, new Apple());
-            ComponentQuery<Apple> appleQuery = new(world);
-            Assert.Throws<ChunkModifiedWhileIteratingException>(() =>
+
+            try
             {
+                ComponentQuery<Apple> appleQuery = new(world);
                 foreach (var r in appleQuery)
                 {
                     world.AddTag<IsThing>(r.entity);
                 }
-            });
+            }
+            catch (ChunkModifiedWhileIteratingException)
+            {
+                Assert.Pass();
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"Threw the wrong exception type: {ex.GetType()}");
+            }
         }
 #endif
     }

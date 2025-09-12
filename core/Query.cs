@@ -1,11 +1,14 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using Unmanaged;
+using Worlds.Pointers;
 
 namespace Worlds
 {
     /// <summary>
     /// A native query of entities.
     /// </summary>
+    [SkipLocalsInit]
     public unsafe ref struct Query
     {
         private readonly World world;
@@ -24,7 +27,7 @@ namespace Worlds
                 {
                     if (chunk.chunk->count > 0)
                     {
-                        Definition key = chunk.chunk->definition;
+                        Definition key = chunk.chunk->Definition;
 
                         //check if chunk contains inclusion
                         if ((key.componentTypes & required.componentTypes) != required.componentTypes)
@@ -198,45 +201,45 @@ namespace Worlds
         /// </summary>
         public readonly bool TryGetFirst(out uint entity)
         {
-            foreach (Chunk chunk in world.Chunks)
+            ReadOnlySpan<Chunk> chunks = world.Chunks;
+            for (int i = 0; i < chunks.Length; i++)
             {
-                if (chunk.chunk->count > 0)
+                ChunkPointer* chunk = chunks[i].chunk;
+                if (chunk->count > 0)
                 {
-                    Definition key = chunk.chunk->definition;
-
                     //check if chunk contains inclusion
-                    if ((key.componentTypes & required.componentTypes) != required.componentTypes)
+                    if ((chunk->componentTypes & required.componentTypes) != required.componentTypes)
                     {
                         continue;
                     }
 
-                    if ((key.arrayTypes & required.arrayTypes) != required.arrayTypes)
+                    if ((chunk->arrayTypes & required.arrayTypes) != required.arrayTypes)
                     {
                         continue;
                     }
 
-                    if ((key.tagTypes & required.tagTypes) != required.tagTypes)
+                    if ((chunk->tagTypes & required.tagTypes) != required.tagTypes)
                     {
                         continue;
                     }
 
                     //check if chunk doesnt contain exclusion
-                    if (key.componentTypes.ContainsAny(exclude.componentTypes))
+                    if (chunk->componentTypes.ContainsAny(exclude.componentTypes))
                     {
                         continue;
                     }
 
-                    if (key.arrayTypes.ContainsAny(exclude.arrayTypes))
+                    if (chunk->arrayTypes.ContainsAny(exclude.arrayTypes))
                     {
                         continue;
                     }
 
-                    if (key.tagTypes.ContainsAny(exclude.tagTypes))
+                    if (chunk->tagTypes.ContainsAny(exclude.tagTypes))
                     {
                         continue;
                     }
 
-                    entity = chunk.Entities[0];
+                    entity = chunk->entities[ChunkPointer.FirstEntity];
                     return true;
                 }
             }
@@ -252,62 +255,62 @@ namespace Worlds
         {
             private readonly Query query;
 
-            private Chunk chunk;
+            private ChunkPointer* currentChunk;
             private int chunkIndex;
             private int entityIndex;
 
             /// <summary>
             /// The found entity.
             /// </summary>
-            public readonly uint Current => chunk.Entities[entityIndex - 1];
+            public readonly uint Current => currentChunk->entities[entityIndex];
 
             internal Enumerator(Query query)
             {
                 entityIndex = 0;
-                chunk = default;
+                currentChunk = default;
                 chunkIndex = 0;
                 this.query = query;
                 World world = query.world;
                 Definition required = query.required;
                 Definition exclude = query.exclude;
-                for (int i = 0; i < world.Chunks.Length; i++)
+                ReadOnlySpan<Chunk> chunks = world.Chunks;
+                for (int i = 0; i < chunks.Length; i++)
                 {
-                    Chunk chunk = world.Chunks[i];
-                    Definition key = chunk.chunk->definition;
+                    ChunkPointer* chunk = chunks[i].chunk;
 
                     //check if chunk contains inclusion
-                    if ((key.componentTypes & required.componentTypes) != required.componentTypes)
+                    if ((chunk->componentTypes & required.componentTypes) != required.componentTypes)
                     {
                         continue;
                     }
 
-                    if ((key.arrayTypes & required.arrayTypes) != required.arrayTypes)
+                    if ((chunk->arrayTypes & required.arrayTypes) != required.arrayTypes)
                     {
                         continue;
                     }
 
-                    if ((key.tagTypes & required.tagTypes) != required.tagTypes)
+                    if ((chunk->tagTypes & required.tagTypes) != required.tagTypes)
                     {
                         continue;
                     }
 
                     //check if chunk doesnt contain exclusion
-                    if (key.componentTypes.ContainsAny(exclude.componentTypes))
+                    if (chunk->componentTypes.ContainsAny(exclude.componentTypes))
                     {
                         continue;
                     }
 
-                    if (key.arrayTypes.ContainsAny(exclude.arrayTypes))
+                    if (chunk->arrayTypes.ContainsAny(exclude.arrayTypes))
                     {
                         continue;
                     }
 
-                    if (key.tagTypes.ContainsAny(exclude.tagTypes))
+                    if (chunk->tagTypes.ContainsAny(exclude.tagTypes))
                     {
                         continue;
                     }
 
-                    this.chunk = chunk;
+                    currentChunk = chunk;
                     chunkIndex = i;
                     break;
                 }
@@ -318,64 +321,65 @@ namespace Worlds
             /// </summary>
             public bool MoveNext()
             {
-                if (entityIndex < chunk.chunk->count)
+                if (entityIndex < currentChunk->count)
                 {
                     entityIndex++;
                     return true;
                 }
                 else
                 {
-                    chunk = default;
+                    currentChunk = default;
                     World world = query.world;
                     Definition required = query.required;
                     Definition exclude = query.exclude;
-                    for (int i = chunkIndex + 1; i < world.Chunks.Length; i++)
+                    ReadOnlySpan<Chunk> chunks = world.Chunks;
+                    for (int i = chunkIndex + 1; i < chunks.Length; i++)
                     {
-                        Chunk chunk = world.Chunks[i];
-                        if (chunk.chunk->count > 0)
+                        ChunkPointer* chunk = chunks[i].chunk;
+                        if (chunk->count > 0)
                         {
-                            Definition key = chunk.chunk->definition;
+                            //Definition key = chunk->Definition;
 
                             //check if chunk contains inclusion
-                            if ((key.componentTypes & required.componentTypes) != required.componentTypes)
+                            if ((chunk->componentTypes & required.componentTypes) != required.componentTypes)
                             {
                                 continue;
                             }
 
-                            if ((key.arrayTypes & required.arrayTypes) != required.arrayTypes)
+                            if ((chunk->arrayTypes & required.arrayTypes) != required.arrayTypes)
                             {
                                 continue;
                             }
 
-                            if ((key.tagTypes & required.tagTypes) != required.tagTypes)
+                            if ((chunk->tagTypes & required.tagTypes) != required.tagTypes)
                             {
                                 continue;
                             }
 
                             //check if chunk doesnt contain exclusion
-                            if (key.componentTypes.ContainsAny(exclude.componentTypes))
+                            if (chunk->componentTypes.ContainsAny(exclude.componentTypes))
                             {
                                 continue;
                             }
 
-                            if (key.arrayTypes.ContainsAny(exclude.arrayTypes))
+                            if (chunk->arrayTypes.ContainsAny(exclude.arrayTypes))
                             {
                                 continue;
                             }
 
-                            if (key.tagTypes.ContainsAny(exclude.tagTypes))
+                            if (chunk->tagTypes.ContainsAny(exclude.tagTypes))
                             {
                                 continue;
                             }
 
-                            this.chunk = chunk;
+                            currentChunk = chunk;
                             chunkIndex = i;
                             break;
                         }
                     }
 
                     entityIndex = 1;
-                    return chunk != default;
+                    return currentChunk != default;
                 }
             }
         }

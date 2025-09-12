@@ -75,7 +75,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         internal unsafe readonly void ThrowIfComponentIsMissing(int componentType)
         {
-            if (!chunk.chunk->definition.componentTypes.Contains(componentType))
+            if (!chunk.chunk->componentTypes.Contains(componentType))
             {
                 throw new InvalidOperationException($"Entity does not contain component type `{componentType}`");
             }

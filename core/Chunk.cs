@@ -60,7 +60,46 @@ namespace Worlds
             {
                 MemoryAddress.ThrowIfDefault(chunk);
 
-                return chunk->definition;
+                return chunk->Definition;
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the component types stored in this chunk.
+        /// </summary>
+        public readonly BitMask ComponentTypes
+        {
+            get
+            {
+                MemoryAddress.ThrowIfDefault(chunk);
+
+                return chunk->componentTypes;
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the array types stored in this chunk.
+        /// </summary>
+        public readonly BitMask ArrayTypes
+        {
+            get
+            {
+                MemoryAddress.ThrowIfDefault(chunk);
+
+                return chunk->arrayTypes;
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the tag types stored in this chunk.
+        /// </summary>
+        public readonly BitMask TagTypes
+        {
+            get
+            {
+                MemoryAddress.ThrowIfDefault(chunk);
+
+                return chunk->tagTypes;
             }
         }
 
@@ -114,7 +153,14 @@ namespace Worlds
             chunk->components = new(4, (int)schema.schema->componentRowSize);
             chunk->components.AddDefault(); //reserved
             chunk->schema = schema;
-            chunk->definition = definition;
+            chunk->componentTypes = definition.componentTypes;
+            chunk->arrayTypes = definition.arrayTypes;
+            chunk->tagTypes = definition.tagTypes;
+        }
+
+        internal Chunk(ChunkPointer* chunk)
+        {
+            this.chunk = chunk;
         }
 
         /// <inheritdoc/>
@@ -137,7 +183,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfComponentTypeIsMissing(int componentType)
         {
-            if (!chunk->definition.componentTypes.Contains(componentType))
+            if (!chunk->componentTypes.Contains(componentType))
             {
                 throw new ArgumentException($"Component type `{DataType.GetComponent(componentType, chunk->schema).ToString(chunk->schema)}` is missing from the chunk");
             }
@@ -175,10 +221,10 @@ namespace Worlds
         {
             int length = 0;
             length += chunk->count.ToString(destination);
-            if (chunk->definition != Definition.Default)
+            if (chunk->Definition != Definition.Default)
             {
                 destination[length++] = ' ';
-                length += chunk->definition.ToString(chunk->schema, destination.Slice(length));
+                length += chunk->Definition.ToString(chunk->schema, destination.Slice(length));
             }
 
             return length;
@@ -187,7 +233,7 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return chunk->definition.GetHashCode();
+            return chunk->Definition.GetHashCode();
         }
 
         /// <summary>
@@ -197,10 +243,7 @@ namespace Worlds
         {
             MemoryAddress.ThrowIfDefault(chunk);
 
-            unchecked
-            {
-                return (int)chunk->schema.schema->componentOffsets[(uint)componentType];
-            }
+            return (int)chunk->schema.schema->componentOffsets[(uint)componentType];
         }
 
         /// <summary>
@@ -208,11 +251,8 @@ namespace Worlds
         /// </summary>
         public readonly ComponentEnumerator<T> GetComponents<T>(int componentType) where T : unmanaged
         {
-            unchecked
-            {
-                int componentOffset = (int)chunk->schema.schema->componentOffsets[(uint)componentType];
-                return new(chunk->components, componentOffset);
-            }
+            int componentOffset = (int)chunk->schema.schema->componentOffsets[(uint)componentType];
+            return new(chunk->components, componentOffset);
         }
 
         /// <summary>
@@ -224,11 +264,8 @@ namespace Worlds
             ThrowIfIndexIsOutOfRange(index);
             ThrowIfComponentTypeIsMissing(componentType);
 
-            unchecked
-            {
-                int componentOffset = (int)chunk->schema.schema->componentOffsets[(uint)componentType];
-                return ref chunk->components[index].Read<T>(componentOffset);
-            }
+            int componentOffset = (int)chunk->schema.schema->componentOffsets[(uint)componentType];
+            return ref chunk->components[index].Read<T>(componentOffset);
         }
 
         /// <inheritdoc/>

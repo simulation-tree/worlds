@@ -7,7 +7,7 @@
 
         public unsafe ChunkKey(Chunk chunk)
         {
-            this.definition = chunk.chunk->definition;
+            this.definition = chunk.chunk->Definition;
             this.chunk = chunk;
         }
     }

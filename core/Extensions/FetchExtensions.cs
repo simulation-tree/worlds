@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Runtime.Intrinsics;
+using Worlds.Pointers;
 
 namespace Worlds
 {
@@ -15,14 +16,15 @@ namespace Worlds
         public static ref T TryGetFirstComponent<T>(this World world, out bool contains) where T : unmanaged
         {
             int componentType = world.world->schema.GetComponentType<T>();
+            int componentOffset = (int)world.world->schema.schema->componentOffsets[(uint)componentType];
             ReadOnlySpan<Chunk> chunks = world.Chunks;
             for (int i = 0; i < chunks.Length; i++)
             {
-                Chunk chunk = chunks[i];
-                if (chunk.chunk->count > 0 && chunk.chunk->definition.ContainsComponent(componentType))
+                ChunkPointer* chunk = chunks[i].chunk;
+                if (chunk->count > 0 && chunk->componentTypes.Contains(componentType))
                 {
                     contains = true;
-                    return ref chunk.GetComponent<T>(1, componentType);
+                    return ref chunk->components[ChunkPointer.FirstEntity].Read<T>(componentOffset);
                 }
             }
 
@@ -36,13 +38,14 @@ namespace Worlds
         public static bool TryGetFirstComponent<T>(this World world, out T component) where T : unmanaged
         {
             int componentType = world.world->schema.GetComponentType<T>();
+            int componentOffset = (int)world.world->schema.schema->componentOffsets[(uint)componentType];
             ReadOnlySpan<Chunk> chunks = world.Chunks;
             for (int i = 0; i < chunks.Length; i++)
             {
-                Chunk chunk = chunks[i];
-                if (chunk.chunk->count > 0 && chunk.chunk->definition.ContainsComponent(componentType))
+                ChunkPointer* chunk = chunks[i].chunk;
+                if (chunk->count > 0 && chunk->componentTypes.Contains(componentType))
                 {
-                    component = chunk.GetComponent<T>(1, componentType);
+                    component = chunk->components[ChunkPointer.FirstEntity].Read<T>(componentOffset);
                     return true;
                 }
             }
@@ -57,13 +60,14 @@ namespace Worlds
         public static bool TryGetFirstComponent<T>(this World world, out uint entity) where T : unmanaged
         {
             int componentType = world.world->schema.GetComponentType<T>();
+            int componentOffset = (int)world.world->schema.schema->componentOffsets[(uint)componentType];
             ReadOnlySpan<Chunk> chunks = world.Chunks;
             for (int i = 0; i < chunks.Length; i++)
             {
-                Chunk chunk = chunks[i];
-                if (chunk.chunk->count > 0 && chunk.chunk->definition.ContainsComponent(componentType))
+                ChunkPointer* chunk = chunks[i].chunk;
+                if (chunk->count > 0 && chunk->componentTypes.Contains(componentType))
                 {
-                    entity = chunk.Entities[0];
+                    entity = chunk->entities[ChunkPointer.FirstEntity];
                     return true;
                 }
             }
@@ -78,15 +82,16 @@ namespace Worlds
         public unsafe static ref T TryGetFirstComponent<T>(this World world, out uint entity, out bool contains) where T : unmanaged
         {
             int componentType = world.world->schema.GetComponentType<T>();
+            int componentOffset = (int)world.world->schema.schema->componentOffsets[(uint)componentType];
             ReadOnlySpan<Chunk> chunks = world.Chunks;
             for (int i = 0; i < chunks.Length; i++)
             {
-                Chunk chunk = chunks[i];
-                if (chunk.chunk->count > 0 && chunk.chunk->definition.ContainsComponent(componentType))
+                ChunkPointer* chunk = chunks[i].chunk;
+                if (chunk->count > 0 && chunk->componentTypes.Contains(componentType))
                 {
-                    entity = chunk.Entities[0];
+                    entity = chunk->entities[ChunkPointer.FirstEntity];
                     contains = true;
-                    return ref chunk.GetComponent<T>(1, componentType);
+                    return ref chunk->components[ChunkPointer.FirstEntity].Read<T>(componentOffset);
                 }
             }
 
@@ -105,13 +110,14 @@ namespace Worlds
         public static ref T GetFirstComponent<T>(this World world) where T : unmanaged
         {
             int componentType = world.world->schema.GetComponentType<T>();
+            int componentOffset = (int)world.world->schema.schema->componentOffsets[(uint)componentType];
             ReadOnlySpan<Chunk> chunks = world.Chunks;
             for (int i = 0; i < chunks.Length; i++)
             {
-                Chunk chunk = chunks[i];
-                if (chunk.chunk->count > 0 && chunk.chunk->definition.ContainsComponent(componentType))
+                ChunkPointer* chunk = chunks[i].chunk;
+                if (chunk->count > 0 && chunk->componentTypes.Contains(componentType))
                 {
-                    return ref chunk.GetComponent<T>(1, componentType);
+                    return ref chunk->components[ChunkPointer.FirstEntity].Read<T>(componentOffset);
                 }
             }
 
@@ -128,14 +134,15 @@ namespace Worlds
         public static ref T GetFirstComponent<T>(this World world, out uint entity) where T : unmanaged
         {
             int componentType = world.world->schema.GetComponentType<T>();
+            int componentOffset = (int)world.world->schema.schema->componentOffsets[(uint)componentType];
             ReadOnlySpan<Chunk> chunks = world.Chunks;
             for (int i = 0; i < chunks.Length; i++)
             {
-                Chunk chunk = chunks[i];
-                if (chunk.chunk->count > 0 && chunk.chunk->definition.ContainsComponent(componentType))
+                ChunkPointer* chunk = chunks[i].chunk;
+                if (chunk->count > 0 && chunk->componentTypes.Contains(componentType))
                 {
-                    entity = chunk.Entities[0];
-                    return ref chunk.GetComponent<T>(1, componentType);
+                    entity = chunk->entities[ChunkPointer.FirstEntity];
+                    return ref chunk->components[ChunkPointer.FirstEntity].Read<T>(componentOffset);
                 }
             }
 
@@ -176,8 +183,7 @@ namespace Worlds
                 for (int i = 0; i < chunksLength; i++)
                 {
                     Chunk chunk = world.Chunks[i];
-                    Definition definition = chunk.Definition;
-                    if (definition.componentTypes.ContainsAll(componentTypes) && (definition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
+                    if (chunk.ComponentTypes.ContainsAll(componentTypes) && (chunk.TagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
                         int count = chunk.Count;
                         for (int e = 0; e < count; e++)
@@ -192,8 +198,7 @@ namespace Worlds
                 for (int i = 0; i < chunksLength; i++)
                 {
                     Chunk chunk = world.Chunks[i];
-                    Definition definition = chunk.Definition;
-                    if (definition.componentTypes.ContainsAll(componentTypes))
+                    if (chunk.ComponentTypes.ContainsAll(componentTypes))
                     {
                         int count = chunk.Count;
                         for (int e = 0; e < count; e++)
@@ -216,8 +221,7 @@ namespace Worlds
                 for (int i = 0; i < chunksLength; i++)
                 {
                     Chunk chunk = world.Chunks[i];
-                    Definition definition = chunk.Definition;
-                    if (definition.componentTypes.Contains(componentType) && (definition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
+                    if (chunk.ComponentTypes.Contains(componentType) && (chunk.TagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
                         int count = chunk.Count;
                         for (int e = 0; e < count; e++)
@@ -232,8 +236,7 @@ namespace Worlds
                 for (int i = 0; i < chunksLength; i++)
                 {
                     Chunk chunk = world.Chunks[i];
-                    Definition definition = chunk.Definition;
-                    if (definition.componentTypes.Contains(componentType))
+                    if (chunk.ComponentTypes.Contains(componentType))
                     {
                         int count = chunk.Count;
                         for (int e = 0; e < count; e++)
@@ -255,8 +258,7 @@ namespace Worlds
             for (int i = 0; i < chunksLength; i++)
             {
                 Chunk chunk = world.Chunks[i];
-                Definition definition = chunk.Definition;
-                if (definition.componentTypes.Contains(componentType) && (definition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
+                if (chunk.ComponentTypes.Contains(componentType) && (chunk.TagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                 {
                     int count = chunk.Count;
                     for (int e = 0; e < count; e++)
@@ -279,8 +281,7 @@ namespace Worlds
                 for (int i = 0; i < chunksLength; i++)
                 {
                     Chunk chunk = world.Chunks[i];
-                    Definition chunkDefinition = chunk.Definition;
-                    if (chunkDefinition.componentTypes.Contains(componentType) && (chunkDefinition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
+                    if (chunk.ComponentTypes.Contains(componentType) && (chunk.TagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
                         int count = chunk.Count;
                         for (int e = 0; e < count; e++)
@@ -295,8 +296,7 @@ namespace Worlds
                 for (int i = 0; i < chunksLength; i++)
                 {
                     Chunk chunk = world.Chunks[i];
-                    Definition definition = chunk.Definition;
-                    if (definition.componentTypes.Contains(componentType))
+                    if (chunk.ComponentTypes.Contains(componentType))
                     {
                         int count = chunk.Count;
                         for (int e = 0; e < count; e++)
@@ -319,18 +319,16 @@ namespace Worlds
             for (int i = 0; i < chunksLength; i++)
             {
                 Chunk chunk = world.Chunks[i];
-                Definition chunkDefinition = chunk.Definition;
-                if (chunkDefinition.componentTypes.ContainsAll(definition.componentTypes) && chunkDefinition.arrayTypes.ContainsAll(definition.arrayTypes))
+                if (chunk.ComponentTypes.ContainsAll(definition.componentTypes) && chunk.ArrayTypes.ContainsAll(definition.arrayTypes))
                 {
-                    if ((chunkDefinition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
+                    if ((chunk.TagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
-                        if (chunkDefinition.tagTypes.ContainsAll(definition.tagTypes))
+                        if (chunk.TagTypes.ContainsAll(definition.tagTypes))
                         {
                             int count = chunk.Count;
                             for (int e = 0; e < count; e++)
                             {
-                                Entity entity = new(world, chunk.Entities[e]);
-                                yield return entity.As<T>();
+                                yield return new Entity(world, chunk.Entities[e]).As<T>();
                             }
                         }
                     }
@@ -351,18 +349,16 @@ namespace Worlds
                 for (int i = 0; i < chunksLength; i++)
                 {
                     Chunk chunk = world.Chunks[i];
-                    Definition chunkDefinition = chunk.Definition;
-                    if (chunkDefinition.componentTypes.ContainsAll(definition.componentTypes) && chunkDefinition.arrayTypes.ContainsAll(definition.arrayTypes))
+                    if (chunk.ComponentTypes.ContainsAll(definition.componentTypes) && chunk.ArrayTypes.ContainsAll(definition.arrayTypes))
                     {
-                        if ((chunkDefinition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
+                        if ((chunk.TagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                         {
-                            if (chunkDefinition.tagTypes.ContainsAll(definition.tagTypes))
+                            if (chunk.TagTypes.ContainsAll(definition.tagTypes))
                             {
                                 int count = chunk.Count;
                                 for (int e = 0; e < count; e++)
                                 {
-                                    Entity entity = new(world, chunk.Entities[e]);
-                                    yield return entity.As<T>();
+                                    yield return new Entity(world, chunk.Entities[e]).As<T>();
                                 }
                             }
                         }
@@ -374,16 +370,14 @@ namespace Worlds
                 for (int i = 0; i < chunksLength; i++)
                 {
                     Chunk chunk = world.Chunks[i];
-                    Definition chunkDefinition = chunk.Definition;
-                    if (chunkDefinition.componentTypes.ContainsAll(definition.componentTypes) && chunkDefinition.arrayTypes.ContainsAll(definition.arrayTypes))
+                    if (chunk.ComponentTypes.ContainsAll(definition.componentTypes) && chunk.ArrayTypes.ContainsAll(definition.arrayTypes))
                     {
-                        if (chunkDefinition.tagTypes.ContainsAll(definition.tagTypes))
+                        if (chunk.TagTypes.ContainsAll(definition.tagTypes))
                         {
                             int count = chunk.Count;
                             for (int e = 0; e < count; e++)
                             {
-                                Entity entity = new(world, chunk.Entities[e]);
-                                yield return entity.As<T>();
+                                yield return new Entity(world, chunk.Entities[e]).As<T>();
                             }
                         }
                     }
@@ -403,16 +397,16 @@ namespace Worlds
             ReadOnlySpan<Chunk> chunks = world.Chunks;
             for (int i = 0; i < chunks.Length; i++)
             {
-                Chunk chunk = chunks[i];
-                if ((chunk.chunk->definition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
+                ChunkPointer* chunk = chunks[i].chunk;
+                if ((chunk->tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                 {
-                    if (chunk.chunk->definition.componentTypes.ContainsAll(definition.componentTypes) && chunk.chunk->definition.arrayTypes.ContainsAll(definition.arrayTypes))
+                    if (chunk->componentTypes.ContainsAll(definition.componentTypes) && chunk->arrayTypes.ContainsAll(definition.arrayTypes))
                     {
-                        if (chunk.chunk->definition.tagTypes.ContainsAll(definition.tagTypes))
+                        if (chunk->tagTypes.ContainsAll(definition.tagTypes))
                         {
-                            if (chunk.chunk->count > 0)
+                            if (chunk->count > 0)
                             {
-                                entity = new Entity(world, chunk.Entities[0]).As<T>();
+                                entity = new Entity(world, chunk->entities[ChunkPointer.FirstEntity]).As<T>();
                                 return true;
                             }
                         }
@@ -431,23 +425,22 @@ namespace Worlds
         {
             EntityExtensions.ThrowIfLayoutNotCompatible<T>();
 
-            Schema schema = world.world->schema;
-            Definition definition = Definition.Get<T>(schema);
+            Definition definition = Definition.Get<T>(world.world->schema);
             ReadOnlySpan<Chunk> chunks = world.Chunks;
             if (onlyEnabled)
             {
                 for (int i = 0; i < chunks.Length; i++)
                 {
-                    Chunk chunk = chunks[i];
-                    if ((chunk.chunk->definition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
+                    ChunkPointer* chunk = chunks[i].chunk;
+                    if ((chunk->tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
-                        if (chunk.chunk->definition.componentTypes.ContainsAll(definition.componentTypes) && chunk.chunk->definition.arrayTypes.ContainsAll(definition.arrayTypes))
+                        if (chunk->componentTypes.ContainsAll(definition.componentTypes) && chunk->arrayTypes.ContainsAll(definition.arrayTypes))
                         {
-                            if (chunk.chunk->definition.tagTypes.ContainsAll(definition.tagTypes))
+                            if (chunk->tagTypes.ContainsAll(definition.tagTypes))
                             {
-                                if (chunk.chunk->count > 0)
+                                if (chunk->count > 0)
                                 {
-                                    entity = new Entity(world, chunk.Entities[0]).As<T>();
+                                    entity = new Entity(world, chunk->entities[ChunkPointer.FirstEntity]).As<T>();
                                     return true;
                                 }
                             }
@@ -459,14 +452,14 @@ namespace Worlds
             {
                 for (int i = 0; i < chunks.Length; i++)
                 {
-                    Chunk chunk = chunks[i];
-                    if (chunk.chunk->definition.componentTypes.ContainsAll(definition.componentTypes) && chunk.chunk->definition.arrayTypes.ContainsAll(definition.arrayTypes))
+                    ChunkPointer* chunk = chunks[i].chunk;
+                    if (chunk->componentTypes.ContainsAll(definition.componentTypes) && chunk->arrayTypes.ContainsAll(definition.arrayTypes))
                     {
-                        if (chunk.chunk->definition.tagTypes.ContainsAll(definition.tagTypes))
+                        if (chunk->tagTypes.ContainsAll(definition.tagTypes))
                         {
-                            if (chunk.chunk->count > 0)
+                            if (chunk->count > 0)
                             {
-                                entity = new Entity(world, chunk.Entities[0]).As<T>();
+                                entity = new Entity(world, chunk->entities[ChunkPointer.FirstEntity]).As<T>();
                                 return true;
                             }
                         }
@@ -505,18 +498,17 @@ namespace Worlds
         /// </summary>
         public static int CountEntitiesWith<T>(this World world) where T : unmanaged
         {
-            Schema schema = world.world->schema;
-            int componentType = schema.GetComponentType<T>();
+            int componentType = world.world->schema.GetComponentType<T>();
             ReadOnlySpan<Chunk> chunks = world.Chunks;
             int count = 0;
             for (int i = 0; i < chunks.Length; i++)
             {
-                Chunk chunk = chunks[i];
-                if (chunk.chunk->definition.ContainsComponent(componentType))
+                ChunkPointer* chunk = chunks[i].chunk;
+                if (chunk->componentTypes.Contains(componentType))
                 {
-                    if ((chunk.chunk->definition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
+                    if ((chunk->tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
-                        count += chunk.chunk->count;
+                        count += chunk->count;
                     }
                 }
             }
@@ -529,20 +521,19 @@ namespace Worlds
         /// </summary>
         public static int CountEntitiesWith<T>(this World world, bool onlyEnabled) where T : unmanaged
         {
-            Schema schema = world.world->schema;
-            int componentType = schema.GetComponentType<T>();
+            int componentType = world.world->schema.GetComponentType<T>();
             ReadOnlySpan<Chunk> chunks = world.Chunks;
             int count = 0;
             if (onlyEnabled)
             {
                 for (int i = 0; i < chunks.Length; i++)
                 {
-                    Chunk chunk = chunks[i];
-                    if (chunk.chunk->definition.ContainsComponent(componentType))
+                    ChunkPointer* chunk = chunks[i].chunk;
+                    if (chunk->componentTypes.Contains(componentType))
                     {
-                        if ((chunk.chunk->definition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
+                        if ((chunk->tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                         {
-                            count += chunk.chunk->count;
+                            count += chunk->count;
                         }
                     }
                 }
@@ -551,10 +542,10 @@ namespace Worlds
             {
                 for (int i = 0; i < chunks.Length; i++)
                 {
-                    Chunk chunk = chunks[i];
-                    if (chunk.chunk->definition.ContainsComponent(componentType))
+                    ChunkPointer* chunk = chunks[i].chunk;
+                    if (chunk->componentTypes.Contains(componentType))
                     {
-                        count += chunk.chunk->count;
+                        count += chunk->count;
                     }
                 }
             }
@@ -571,12 +562,12 @@ namespace Worlds
             int count = 0;
             for (int i = 0; i < chunks.Length; i++)
             {
-                Chunk chunk = chunks[i];
-                if (chunk.chunk->definition.ContainsComponent(componentType))
+                ChunkPointer* chunk = chunks[i].chunk;
+                if (chunk->componentTypes.Contains(componentType))
                 {
-                    if ((chunk.chunk->definition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
+                    if ((chunk->tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
-                        count += chunk.chunk->count;
+                        count += chunk->count;
                     }
                 }
             }
@@ -595,12 +586,12 @@ namespace Worlds
             {
                 for (int i = 0; i < chunks.Length; i++)
                 {
-                    Chunk chunk = chunks[i];
-                    if (chunk.chunk->definition.ContainsComponent(componentType))
+                    ChunkPointer* chunk = chunks[i].chunk;
+                    if (chunk->componentTypes.Contains(componentType))
                     {
-                        if ((chunk.chunk->definition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
+                        if ((chunk->tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                         {
-                            count += chunk.chunk->count;
+                            count += chunk->count;
                         }
                     }
                 }
@@ -609,10 +600,10 @@ namespace Worlds
             {
                 for (int i = 0; i < chunks.Length; i++)
                 {
-                    Chunk chunk = chunks[i];
-                    if (chunk.chunk->definition.ContainsComponent(componentType))
+                    ChunkPointer* chunk = chunks[i].chunk;
+                    if (chunk->componentTypes.Contains(componentType))
                     {
-                        count += chunk.chunk->count;
+                        count += chunk->count;
                     }
                 }
             }
@@ -632,15 +623,14 @@ namespace Worlds
             int count = 0;
             for (int i = 0; i < chunks.Length; i++)
             {
-                Chunk chunk = chunks[i];
-                Definition chunkDefinition = chunk.chunk->definition;
-                if ((chunkDefinition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
+                ChunkPointer* chunk = chunks[i].chunk;
+                if ((chunk->tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                 {
-                    if (chunkDefinition.componentTypes.ContainsAll(definition.componentTypes) && chunkDefinition.arrayTypes.ContainsAll(definition.arrayTypes))
+                    if (chunk->componentTypes.ContainsAll(definition.componentTypes) && chunk->arrayTypes.ContainsAll(definition.arrayTypes))
                     {
-                        if (chunkDefinition.tagTypes.ContainsAll(definition.tagTypes))
+                        if (chunk->tagTypes.ContainsAll(definition.tagTypes))
                         {
-                            count += chunk.chunk->count;
+                            count += chunk->count;
                         }
                     }
                 }
@@ -664,15 +654,14 @@ namespace Worlds
             {
                 for (int i = 0; i < chunksLength; i++)
                 {
-                    Chunk chunk = chunks[i];
-                    Definition chunkDefinition = chunk.chunk->definition;
-                    if ((chunkDefinition.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
+                    ChunkPointer* chunk = chunks[i].chunk;
+                    if ((chunk->tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
-                        if (chunkDefinition.componentTypes.ContainsAll(definition.componentTypes) && chunkDefinition.arrayTypes.ContainsAll(definition.arrayTypes))
+                        if (chunk->componentTypes.ContainsAll(definition.componentTypes) && chunk->arrayTypes.ContainsAll(definition.arrayTypes))
                         {
-                            if (chunkDefinition.tagTypes.ContainsAll(definition.tagTypes))
+                            if (chunk->tagTypes.ContainsAll(definition.tagTypes))
                             {
-                                count += chunk.chunk->count;
+                                count += chunk->count;
                             }
                         }
                     }
@@ -682,13 +671,12 @@ namespace Worlds
             {
                 for (int i = 0; i < chunksLength; i++)
                 {
-                    Chunk chunk = chunks[i];
-                    Definition chunkDefinition = chunk.chunk->definition;
-                    if (chunkDefinition.componentTypes.ContainsAll(definition.componentTypes) && chunkDefinition.arrayTypes.ContainsAll(definition.arrayTypes))
+                    ChunkPointer* chunk = chunks[i].chunk;
+                    if (chunk->componentTypes.ContainsAll(definition.componentTypes) && chunk->arrayTypes.ContainsAll(definition.arrayTypes))
                     {
-                        if (chunkDefinition.tagTypes.ContainsAll(definition.tagTypes))
+                        if (chunk->tagTypes.ContainsAll(definition.tagTypes))
                         {
-                            count += chunk.chunk->count;
+                            count += chunk->count;
                         }
                     }
                 }

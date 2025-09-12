@@ -15,9 +15,7 @@ public static class ComponentQuery
             source = source.Replace("{{GenericTypeArguments}}", GenericTypeArguments(i));
             source = source.Replace("{{TypeConstraints}}", TypeConstraints(i));
             source = source.Replace("{{DeclareComponentQueryEnumeratorFields}}", DeclareComponentQueryEnumeratorFields(i, GetIndent(source, "{{DeclareComponentQueryEnumeratorFields}}")));
-            source = source.Replace("{{AssignComponentTypeFields}}", AssignComponentTypeFields(i, GetIndent(source, "{{AssignComponentTypeFields}}")));
             source = source.Replace("{{AssignComponentOffsets}}", AssignComponentOffsets(i, GetIndent(source, "{{AssignComponentOffsets}}")));
-            source = source.Replace("{{TypeParameters}}", TypeParameters(i));
             source = source.Replace("{{AccessComponents}}", AccessComponents(i, GetIndent(source, "{{AccessComponents}}")));
             source = source.Replace("{{ReferenceComponents}}", ReferenceComponents(i));
             File.WriteAllText($"{TypeName}{i + 1}.cs", source);

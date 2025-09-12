@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
 
 namespace Worlds
@@ -352,8 +353,31 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Copies all set indices to the given <paramref name="destination"/> span.
+        /// </summary>
+        /// <returns>Amount of set bits</returns>
+        public readonly int CopyTo(Span<int> destination)
+        {
+            int count = 0;
+            for (int longIndex = 0; longIndex < 4; longIndex++)
+            {
+                ulong bits = value.GetElement(longIndex);
+                int baseIndex = longIndex * 64;
+                while (bits != 0)
+                {
+                    int bitIndex = BitOperations.TrailingZeroCount(bits);
+                    destination[count++] = baseIndex + bitIndex;
+                    bits &= bits - 1;
+                }
+            }
+
+            return count;
+        }
+
+        /// <summary>
         /// Checks if this bit set contains all bits of the <paramref name="other"/> bit set.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool ContainsAll(BitMask other)
         {
             return (value & other.value) == other.value;
@@ -362,6 +386,7 @@ namespace Worlds
         /// <summary>
         /// Checks if this bit set contains any of the bits of the <paramref name="other"/> bit set.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool ContainsAny(BitMask other)
         {
             return (value & other.value) != Vector256<ulong>.Zero;
@@ -370,17 +395,23 @@ namespace Worlds
         /// <summary>
         /// Checks if the bit at position <paramref name="index"/> is 1.
         /// </summary>
-        public readonly bool Contains(int index)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe readonly bool Contains(int index)
         {
-            int vectorIndex = index >> 6;
-            int bitOffset = index & 63;
-            ulong mask = 1UL << bitOffset;
-            return (value[vectorIndex] & mask) != 0;
+            fixed (Vector256<ulong>* ptr = &value)
+            {
+                ulong* p = (ulong*)ptr;
+                int vectorIndex = index >> 6;
+                int bitOffset = index & 63;
+                ulong mask = 1UL << bitOffset;
+                return (p[vectorIndex] & mask) != 0;
+            }
         }
 
         /// <summary>
         /// Sets the bit at position <paramref name="index"/> to 1.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set(int index)
         {
             int vectorIndex = index >> 6;
@@ -392,6 +423,7 @@ namespace Worlds
         /// <summary>
         /// Resets the entire bit mask to <see langword="default"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Clear()
         {
             value = default;
@@ -400,6 +432,7 @@ namespace Worlds
         /// <summary>
         /// Resets the bit at position <paramref name="index"/> to 0.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Clear(int index)
         {
             int vectorIndex = index >> 6;
