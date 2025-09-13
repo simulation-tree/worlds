@@ -101,7 +101,7 @@ Polling of components, and modifying them can be done through a few different wa
 
 **Manual**
 
-This approach is the quickest:
+This approach performs the quickest:
 ```cs
 uint sum = 0;
 
@@ -109,9 +109,11 @@ void Do()
 {
     int componentType = world.Schema.GetComponentType<Fruit>();
     int tagType = world.Schema.GetTagType<IsThing>();
-    foreach (Chunk chunk in world.Chunks)
+    ReadOnlySpan<Chunk> chunks = world.Chunks;
+    for (int c = 0; c < chunks.Length; c++)
     {
-        if (chunk.Definition.ContainsComponent(componentType) && !chunk.Definition.ContainsTag(tagType))
+        Chunk chunk = chunks[c];
+        if (chunk.componentTypes.Contains(componentType) && !chunk.tagTypes.Contains(tagType))
         {
             Span<Fruit> components = chunk.GetComponents<Fruit>(componentType);
             ReadOnlySpan<uint> entities = chunk.Entities;
@@ -129,7 +131,7 @@ void Do()
 
 **ComponentQuery**
 
-This approach is the next quicker, and requires way less code to write:
+This approach is the next quicker, and requires less code to write:
 ```cs
 uint sum = 0;
 
@@ -150,7 +152,7 @@ void Do()
 **Get methods**
 
 Other approaches through extension methods like `GetAllContaining` don't lend themselves
-to quicker runtimes, but are quicker to write:
+to quicker runtimes:
 ```cs
 uint sum;
 
@@ -312,8 +314,8 @@ static TypeLayout Process(TypeLayout type, DataType.Kind dataType)
 
 ### Contributing and design
 
-This library implements the "[entity-component-system](https://en.wikipedia.org/wiki/Entity_component_system)" pattern
-of the "archetype" variety. Created for building programs of whatever kind, with an open door for targeting
-runtime efficiency. It's meant to be fast, though it's not quite there yet.
+This library implements the "[entity-component-system](https://en.wikipedia.org/wiki/Entity_component_system)" pattern of the "archetype" variety.
+
+Created for building programs of whatever kind, with an open door for targeting runtime efficiency. Favoring faster data access and iteration.
 
 Contributions to this goal are welcome.
