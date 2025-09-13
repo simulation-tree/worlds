@@ -151,7 +151,7 @@ public static class SharedFunctions
         {
             builder.Append(ComponentOffsetFieldName);
             builder.Append(i);
-            builder.Append(" = schema.schema->componentOffsets[schema.GetComponentType<C");
+            builder.Append(" = schema.componentOffsets[schema.GetComponentType<C");
             builder.Append(i);
             builder.Append(">()];");
 

@@ -15,7 +15,7 @@ namespace Worlds
 
         private unsafe static string GetMessage(World world, uint entity, int arrayType)
         {
-            TypeMetadata type = world.world->schema.GetArrayLayout(arrayType);
+            TypeMetadata type = world.schema.GetArrayLayout(arrayType);
             return $"Entity `{entity}` already has array `{type}`";
         }
     }

@@ -23,40 +23,40 @@ namespace Worlds
             get
             {
                 int count = 0;
-                foreach (Chunk chunk in world.Chunks)
+                ReadOnlySpan<Chunk> chunks = world.Chunks;
+                for (int i = 0; i < chunks.Length; i++)
                 {
+                    Chunk chunk = chunks[i];
                     if (chunk.chunk->count > 0)
                     {
-                        Definition key = chunk.chunk->Definition;
-
                         //check if chunk contains inclusion
-                        if ((key.componentTypes & required.componentTypes) != required.componentTypes)
+                        if ((chunk.componentTypes & required.componentTypes) != required.componentTypes)
                         {
                             continue;
                         }
 
-                        if ((key.arrayTypes & required.arrayTypes) != required.arrayTypes)
+                        if ((chunk.ArrayTypes & required.arrayTypes) != required.arrayTypes)
                         {
                             continue;
                         }
 
-                        if ((key.tagTypes & required.tagTypes) != required.tagTypes)
+                        if ((chunk.tagTypes & required.tagTypes) != required.tagTypes)
                         {
                             continue;
                         }
 
                         //check if chunk doesnt contain exclusion
-                        if (key.componentTypes.ContainsAny(exclude.componentTypes))
+                        if (chunk.componentTypes.ContainsAny(exclude.componentTypes))
                         {
                             continue;
                         }
 
-                        if (key.arrayTypes.ContainsAny(exclude.arrayTypes))
+                        if (chunk.ArrayTypes.ContainsAny(exclude.arrayTypes))
                         {
                             continue;
                         }
 
-                        if (key.tagTypes.ContainsAny(exclude.tagTypes))
+                        if (chunk.tagTypes.ContainsAny(exclude.tagTypes))
                         {
                             continue;
                         }
@@ -72,10 +72,7 @@ namespace Worlds
 #if NET
         /// <inheritdoc/>
         [Obsolete("Default constructor not supported", true)]
-        public Query()
-        {
-            throw new NotSupportedException();
-        }
+        public Query() { }
 #endif
 
         /// <summary>
@@ -112,7 +109,7 @@ namespace Worlds
         /// </summary>
         public Query RequireComponent<T>() where T : unmanaged
         {
-            required.AddComponentType<T>(world.world->schema);
+            required.AddComponentType<T>(world.schema);
             return this;
         }
 
@@ -130,7 +127,7 @@ namespace Worlds
         /// </summary>
         public Query ExcludeComponent<T>() where T : unmanaged
         {
-            exclude.AddComponentType<T>(world.world->schema);
+            exclude.AddComponentType<T>(world.schema);
             return this;
         }
 
@@ -139,7 +136,7 @@ namespace Worlds
         /// </summary>
         public Query RequireArrayElement<T>() where T : unmanaged
         {
-            required.AddArrayType<T>(world.world->schema);
+            required.AddArrayType<T>(world.schema);
             return this;
         }
 
@@ -157,7 +154,7 @@ namespace Worlds
         /// </summary>
         public Query ExcludeArray<T>() where T : unmanaged
         {
-            exclude.AddArrayType<T>(world.world->schema);
+            exclude.AddArrayType<T>(world.schema);
             return this;
         }
 
@@ -166,7 +163,7 @@ namespace Worlds
         /// </summary>
         public Query RequireTag<T>() where T : unmanaged
         {
-            required.AddTagType<T>(world.world->schema);
+            required.AddTagType<T>(world.schema);
             return this;
         }
 
@@ -184,7 +181,7 @@ namespace Worlds
         /// </summary>
         public Query ExcludeTag<T>() where T : unmanaged
         {
-            exclude.AddTagType<T>(world.world->schema);
+            exclude.AddTagType<T>(world.schema);
             return this;
         }
 
@@ -204,42 +201,42 @@ namespace Worlds
             ReadOnlySpan<Chunk> chunks = world.Chunks;
             for (int i = 0; i < chunks.Length; i++)
             {
-                ChunkPointer* chunk = chunks[i].chunk;
-                if (chunk->count > 0)
+                Chunk chunk = chunks[i];
+                if (chunk.chunk->count > 0)
                 {
                     //check if chunk contains inclusion
-                    if ((chunk->componentTypes & required.componentTypes) != required.componentTypes)
+                    if ((chunk.componentTypes & required.componentTypes) != required.componentTypes)
                     {
                         continue;
                     }
 
-                    if ((chunk->arrayTypes & required.arrayTypes) != required.arrayTypes)
+                    if ((chunk.ArrayTypes & required.arrayTypes) != required.arrayTypes)
                     {
                         continue;
                     }
 
-                    if ((chunk->tagTypes & required.tagTypes) != required.tagTypes)
+                    if ((chunk.tagTypes & required.tagTypes) != required.tagTypes)
                     {
                         continue;
                     }
 
                     //check if chunk doesnt contain exclusion
-                    if (chunk->componentTypes.ContainsAny(exclude.componentTypes))
+                    if (chunk.componentTypes.ContainsAny(exclude.componentTypes))
                     {
                         continue;
                     }
 
-                    if (chunk->arrayTypes.ContainsAny(exclude.arrayTypes))
+                    if (chunk.ArrayTypes.ContainsAny(exclude.arrayTypes))
                     {
                         continue;
                     }
 
-                    if (chunk->tagTypes.ContainsAny(exclude.tagTypes))
+                    if (chunk.tagTypes.ContainsAny(exclude.tagTypes))
                     {
                         continue;
                     }
 
-                    entity = chunk->entities[ChunkPointer.FirstEntity];
+                    entity = chunk.chunk->entities[ChunkPointer.FirstEntity];
                     return true;
                 }
             }

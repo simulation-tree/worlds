@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using Unmanaged;
 using Worlds.Pointers;
 
@@ -7,11 +8,12 @@ namespace Worlds
     internal unsafe struct ChunkMap
     {
         public ChunkMapPointer* chunkMap;
+        public SchemaPointer* schema;
 
-        public ChunkMap(Schema schema)
+        public ChunkMap(SchemaPointer* schema)
         {
+            this.schema = schema;
             chunkMap = MemoryAddress.AllocatePointer<ChunkMapPointer>();
-            chunkMap->schema = schema;
             chunkMap->count = 0;
             chunkMap->capacity = 32;
             chunkMap->chunks = new(32);
@@ -67,10 +69,10 @@ namespace Worlds
 
                 if (hashCodes[index] == hashCode)
                 {
-                    ChunkKey* key = &values[index];
-                    if (key->definition == definition)
+                    Chunk key = values[index].chunk;
+                    if (key.componentTypes == definition.componentTypes && key.ArrayTypes == definition.arrayTypes && key.tagTypes == definition.tagTypes)
                     {
-                        return key->chunk;
+                        return key;
                     }
                 }
 
@@ -96,7 +98,7 @@ namespace Worlds
 
             // create new chunk here
             chunkMap->count = newCount;
-            Chunk newChunk = new(chunkMap->schema, definition);
+            Chunk newChunk = new(schema, definition.componentTypes, definition.arrayTypes, definition.tagTypes);
             occupied[index] = true;
             hashCodes[index] = hashCode;
             values[index] = new(newChunk);
@@ -104,54 +106,115 @@ namespace Worlds
             return newChunk;
         }
 
-        public readonly Chunk GetOrCreateWithAddedComponent(ChunkPointer* sourceChunk, int componentType)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly Chunk GetOrCreateWithAddedComponent(Chunk sourceChunk, int componentType)
         {
-            return GetOrCreate(BitMask.Set(sourceChunk->componentTypes, componentType), sourceChunk->arrayTypes, sourceChunk->tagTypes);
+            return GetOrCreate(BitMask.Set(sourceChunk.componentTypes, componentType), sourceChunk.ArrayTypes, sourceChunk.tagTypes);
         }
 
-        public readonly Chunk GetOrCreateWithRemovedComponent(ChunkPointer* sourceChunk, int componentType)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly Chunk GetOrCreateWithAddedComponents(Chunk sourceChunk, BitMask componentTypes)
         {
-            BitMask componentTypes = BitMask.Clear(sourceChunk->componentTypes, componentType);
-            if (componentTypes.IsEmpty && sourceChunk->arrayTypes.IsEmpty && sourceChunk->tagTypes.IsEmpty)
+            return GetOrCreate(sourceChunk.componentTypes | componentTypes, sourceChunk.ArrayTypes, sourceChunk.tagTypes);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly Chunk GetOrCreateWithRemovedComponent(Chunk sourceChunk, int componentType)
+        {
+            BitMask componentTypes = BitMask.Clear(sourceChunk.componentTypes, componentType);
+            if (componentTypes.IsEmpty && sourceChunk.ArrayTypes.IsEmpty && sourceChunk.tagTypes.IsEmpty)
             {
                 return chunkMap->defaultChunk;
             }
 
-            return GetOrCreate(componentTypes, sourceChunk->arrayTypes, sourceChunk->tagTypes);
+            return GetOrCreate(componentTypes, sourceChunk.ArrayTypes, sourceChunk.tagTypes);
         }
 
-        public readonly Chunk GetOrCreateWithAddedArray(ChunkPointer* sourceChunk, int arrayType)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly Chunk GetOrCreateWithRemovedComponents(Chunk sourceChunk, BitMask componentTypes)
         {
-            return GetOrCreate(sourceChunk->componentTypes, BitMask.Set(sourceChunk->arrayTypes, arrayType), sourceChunk->tagTypes);
-        }
-
-        public readonly Chunk GetOrCreateWithRemovedArray(ChunkPointer* sourceChunk, int arrayType)
-        {
-            BitMask arrayTypes = BitMask.Clear(sourceChunk->arrayTypes, arrayType);
-            if (sourceChunk->componentTypes.IsEmpty && arrayTypes.IsEmpty && sourceChunk->tagTypes.IsEmpty)
+            componentTypes = sourceChunk.componentTypes & ~componentTypes;
+            if (componentTypes.IsEmpty && sourceChunk.ArrayTypes.IsEmpty && sourceChunk.tagTypes.IsEmpty)
             {
                 return chunkMap->defaultChunk;
             }
 
-            return GetOrCreate(sourceChunk->componentTypes, arrayTypes, sourceChunk->tagTypes);
+            return GetOrCreate(componentTypes, sourceChunk.ArrayTypes, sourceChunk.tagTypes);
         }
 
-        public readonly Chunk GetOrCreateWithAddedTag(ChunkPointer* sourceChunk, int tagType)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly Chunk GetOrCreateWithAddedArray(Chunk sourceChunk, int arrayType)
         {
-            return GetOrCreate(sourceChunk->componentTypes, sourceChunk->arrayTypes, BitMask.Set(sourceChunk->tagTypes, tagType));
+            return GetOrCreate(sourceChunk.componentTypes, BitMask.Set(sourceChunk.ArrayTypes, arrayType), sourceChunk.tagTypes);
         }
 
-        public readonly Chunk GetOrCreateWithRemovedTag(ChunkPointer* sourceChunk, int tagType)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly Chunk GetOrCreateWithAddedArrays(Chunk sourceChunk, BitMask arrayTypes)
         {
-            BitMask tagTypes = BitMask.Clear(sourceChunk->tagTypes, tagType);
-            if (sourceChunk->componentTypes.IsEmpty && sourceChunk->arrayTypes.IsEmpty && tagTypes.IsEmpty)
+            return GetOrCreate(sourceChunk.componentTypes, sourceChunk.ArrayTypes | arrayTypes, sourceChunk.tagTypes);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly Chunk GetOrCreateWithRemovedArray(Chunk sourceChunk, int arrayType)
+        {
+            BitMask arrayTypes = BitMask.Clear(sourceChunk.ArrayTypes, arrayType);
+            if (sourceChunk.componentTypes.IsEmpty && arrayTypes.IsEmpty && sourceChunk.tagTypes.IsEmpty)
             {
                 return chunkMap->defaultChunk;
             }
 
-            return GetOrCreate(sourceChunk->componentTypes, sourceChunk->arrayTypes, tagTypes);
+            return GetOrCreate(sourceChunk.componentTypes, arrayTypes, sourceChunk.tagTypes);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly Chunk GetOrCreateWithRemovedArrays(Chunk sourceChunk, BitMask arrayTypes)
+        {
+            arrayTypes = sourceChunk.ArrayTypes & ~arrayTypes;
+            if (sourceChunk.componentTypes.IsEmpty && arrayTypes.IsEmpty && sourceChunk.tagTypes.IsEmpty)
+            {
+                return chunkMap->defaultChunk;
+            }
+
+            return GetOrCreate(sourceChunk.componentTypes, arrayTypes, sourceChunk.tagTypes);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly Chunk GetOrCreateWithAddedTag(Chunk sourceChunk, int tagType)
+        {
+            return GetOrCreate(sourceChunk.componentTypes, sourceChunk.ArrayTypes, BitMask.Set(sourceChunk.tagTypes, tagType));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly Chunk GetOrCreateWithAddedTags(Chunk sourceChunk, BitMask tagTypes)
+        {
+            return GetOrCreate(sourceChunk.componentTypes, sourceChunk.ArrayTypes, sourceChunk.tagTypes | tagTypes);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly Chunk GetOrCreateWithRemovedTag(Chunk sourceChunk, int tagType)
+        {
+            BitMask tagTypes = BitMask.Clear(sourceChunk.tagTypes, tagType);
+            if (sourceChunk.componentTypes.IsEmpty && sourceChunk.ArrayTypes.IsEmpty && tagTypes.IsEmpty)
+            {
+                return chunkMap->defaultChunk;
+            }
+
+            return GetOrCreate(sourceChunk.componentTypes, sourceChunk.ArrayTypes, tagTypes);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly Chunk GetOrCreateWithRemovedTags(Chunk sourceChunk, BitMask tagTypes)
+        {
+            tagTypes = sourceChunk.tagTypes & ~tagTypes;
+            if (sourceChunk.componentTypes.IsEmpty && sourceChunk.ArrayTypes.IsEmpty && tagTypes.IsEmpty)
+            {
+                return chunkMap->defaultChunk;
+            }
+
+            return GetOrCreate(sourceChunk.componentTypes, sourceChunk.ArrayTypes, tagTypes);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private readonly Chunk GetOrCreate(BitMask componentTypes, BitMask arrayTypes, BitMask tagTypes)
         {
             long hashCode = Definition.GetLongHashCode(componentTypes, arrayTypes, tagTypes);
@@ -172,12 +235,10 @@ namespace Worlds
 
                 if (hashCodes[index] == hashCode)
                 {
-                    ChunkKey* key = &values[index];
-                    if (key->chunk.chunk->componentTypes == componentTypes &&
-                        key->chunk.chunk->arrayTypes == arrayTypes &&
-                        key->chunk.chunk->tagTypes == tagTypes)
+                    Chunk key = values[index].chunk;
+                    if (key.componentTypes == componentTypes && key.ArrayTypes == arrayTypes && key.tagTypes == tagTypes)
                     {
-                        return key->chunk;
+                        return key;
                     }
                 }
 
@@ -201,7 +262,7 @@ namespace Worlds
             }
 
             chunkMap->count = newCount;
-            Chunk newChunk = new(chunkMap->schema, new Definition(componentTypes, arrayTypes, tagTypes));
+            Chunk newChunk = new(schema, componentTypes, arrayTypes, tagTypes);
             occupied[index] = true;
             hashCodes[index] = hashCode;
             values[index] = new(newChunk);
@@ -235,8 +296,7 @@ namespace Worlds
                 if (oldOccupiedPtr[i])
                 {
                     ChunkKey value = oldValuesPtr[i];
-                    long hash = value.definition.GetLongHashCode();
-                    uint newIndex = (uint)hash & newCapacityMask;
+                    uint newIndex = (uint)value.definitionHash & newCapacityMask;
 
                     while ((*occupied)[newIndex])
                     {
@@ -245,7 +305,7 @@ namespace Worlds
 
                     (*occupied)[newIndex] = true;
                     (*values)[newIndex] = value;
-                    (*hashCodes)[newIndex] = hash;
+                    (*hashCodes)[newIndex] = value.definitionHash;
                 }
             }
 
@@ -260,7 +320,7 @@ namespace Worlds
             bool* occupied = (bool*)chunkMap->occupied.pointer;
             ChunkKey* values = (ChunkKey*)chunkMap->keys.pointer;
             long* hashCodes = (long*)chunkMap->hashCodes.pointer;
-            Chunk newDefaultChunk = new(chunkMap->schema);
+            Chunk newDefaultChunk = new(schema);
             uint index = (uint)hashCode & (uint)(chunkMap->capacity - 1);
             occupied[index] = true;
             hashCodes[index] = hashCode;
@@ -272,7 +332,7 @@ namespace Worlds
 
         internal readonly void UpdateDefaultChunkStrideToMatchSchema()
         {
-            chunkMap->defaultChunk.UpdateStrideToMatchSchema();
+            chunkMap->defaultChunk.UpdateStrideToMatchSchema(schema->componentRowSize);
         }
 
         public readonly void Clear()

@@ -150,7 +150,7 @@ namespace Worlds
         /// </summary>
         public unsafe readonly bool Is<T>() where T : unmanaged, IEntity
         {
-            Archetype archetype = Archetype.Get<T>(world.world->schema);
+            Archetype archetype = Archetype.Get<T>(world.schema);
             return world.Is(value, archetype);
         }
 
@@ -175,7 +175,7 @@ namespace Worlds
         /// </summary>
         public unsafe readonly T Become<T>() where T : unmanaged, IEntity
         {
-            Archetype archetype = Archetype.Get<T>(world.world->schema);
+            Archetype archetype = Archetype.Get<T>(world.schema);
             world.Become(value, archetype);
             return EntityExtensions.As<T>(this);
         }
@@ -779,7 +779,7 @@ namespace Worlds
                 if (!destroyed)
                 {
                     Entity entity = new(world, value);
-                    Schema schema = world.world->schema;
+                    Schema schema = world.schema;
 #if DEBUG
                     World.createStackTraces.TryGetValue(entity, out creation);
 #endif

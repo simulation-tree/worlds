@@ -2,12 +2,12 @@
 {
     internal readonly struct ChunkKey
     {
-        public readonly Definition definition;
+        public readonly long definitionHash;
         public readonly Chunk chunk;
 
-        public unsafe ChunkKey(Chunk chunk)
+        public ChunkKey(Chunk chunk)
         {
-            this.definition = chunk.chunk->Definition;
+            definitionHash = Definition.GetLongHashCode(chunk.componentTypes, chunk.ArrayTypes, chunk.tagTypes);
             this.chunk = chunk;
         }
     }

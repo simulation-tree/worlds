@@ -3,6 +3,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Unmanaged;
+using Worlds.Pointers;
 
 namespace Worlds
 {
@@ -474,7 +475,7 @@ namespace Worlds
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.AddComponent);
-            operation->buffer.Write(byteLength + 1, operation->world.world->schema.GetComponentType<T>());
+            operation->buffer.Write(byteLength + 1, operation->world.schema.GetComponentType<T>());
             operation->buffer.Write(byteLength + 5, sizeof(T));
             operation->buffer.Write(byteLength + 9, component);
             operation->byteLength = newByteLength;
@@ -523,7 +524,7 @@ namespace Worlds
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.AddComponentType);
-            operation->buffer.Write(byteLength + 1, operation->world.world->schema.GetComponentType<T>());
+            operation->buffer.Write(byteLength + 1, operation->world.schema.GetComponentType<T>());
             operation->byteLength = byteLength + 5;
             operation->instructionCount++;
         }
@@ -566,7 +567,7 @@ namespace Worlds
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.TryAddComponentType);
-            operation->buffer.Write(byteLength + 1, operation->world.world->schema.GetComponentType<T>());
+            operation->buffer.Write(byteLength + 1, operation->world.schema.GetComponentType<T>());
             operation->byteLength = byteLength + 5;
             operation->instructionCount++;
         }
@@ -612,7 +613,7 @@ namespace Worlds
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.SetComponent);
-            operation->buffer.Write(byteLength + 1, operation->world.world->schema.GetComponentType<T>());
+            operation->buffer.Write(byteLength + 1, operation->world.schema.GetComponentType<T>());
             operation->buffer.Write(byteLength + 5, sizeof(T));
             operation->buffer.Write(byteLength + 9, component);
             operation->byteLength = newByteLength;
@@ -664,7 +665,7 @@ namespace Worlds
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.AddOrSetComponent);
-            operation->buffer.Write(byteLength + 1, operation->world.world->schema.GetComponentType<T>());
+            operation->buffer.Write(byteLength + 1, operation->world.schema.GetComponentType<T>());
             operation->buffer.Write(byteLength + 5, sizeof(T));
             operation->buffer.Write(byteLength + 9, component);
             operation->byteLength = newByteLength;
@@ -713,7 +714,7 @@ namespace Worlds
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.RemoveComponentType);
-            operation->buffer.Write(byteLength + 1, operation->world.world->schema.GetComponentType<T>());
+            operation->buffer.Write(byteLength + 1, operation->world.schema.GetComponentType<T>());
             operation->byteLength = byteLength + 5;
             operation->instructionCount++;
         }
@@ -755,7 +756,7 @@ namespace Worlds
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.CreateArray);
-            operation->buffer.Write(byteLength + 1, operation->world.world->schema.GetArrayType<T>());
+            operation->buffer.Write(byteLength + 1, operation->world.schema.GetArrayType<T>());
             operation->buffer.Write(byteLength + 5, length);
             operation->byteLength = byteLength + 9;
             operation->instructionCount++;
@@ -803,7 +804,7 @@ namespace Worlds
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.CreateAndInitializeArray);
-            operation->buffer.Write(byteLength + 1, operation->world.world->schema.GetArrayType<T>());
+            operation->buffer.Write(byteLength + 1, operation->world.schema.GetArrayType<T>());
             operation->buffer.Write(byteLength + 5, sizeof(T));
             operation->buffer.Write(byteLength + 9, values.Length);
             operation->buffer.Write(byteLength + 13, values);
@@ -874,7 +875,7 @@ namespace Worlds
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.ResizeArray);
-            operation->buffer.Write(byteLength + 1, operation->world.world->schema.GetArrayType<T>());
+            operation->buffer.Write(byteLength + 1, operation->world.schema.GetArrayType<T>());
             operation->buffer.Write(byteLength + 5, newLength);
             operation->byteLength = byteLength + 9;
             operation->instructionCount++;
@@ -922,7 +923,7 @@ namespace Worlds
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.SetArrayElement);
-            operation->buffer.Write(byteLength + 1, operation->world.world->schema.GetArrayType<T>());
+            operation->buffer.Write(byteLength + 1, operation->world.schema.GetArrayType<T>());
             operation->buffer.Write(byteLength + 5, sizeof(T));
             operation->buffer.Write(byteLength + 9, index);
             operation->buffer.Write(byteLength + 13, value);
@@ -976,7 +977,7 @@ namespace Worlds
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.SetArrayElements);
-            operation->buffer.Write(byteLength + 1, operation->world.world->schema.GetArrayType<T>());
+            operation->buffer.Write(byteLength + 1, operation->world.schema.GetArrayType<T>());
             operation->buffer.Write(byteLength + 5, sizeof(T));
             operation->buffer.Write(byteLength + 9, 0);
             operation->buffer.Write(byteLength + 13, values.Length);
@@ -1048,7 +1049,7 @@ namespace Worlds
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.SetArrayElements);
-            operation->buffer.Write(byteLength + 1, operation->world.world->schema.GetArrayType<T>());
+            operation->buffer.Write(byteLength + 1, operation->world.schema.GetArrayType<T>());
             operation->buffer.Write(byteLength + 5, sizeof(T));
             operation->buffer.Write(byteLength + 9, index);
             operation->buffer.Write(byteLength + 13, values.Length);
@@ -1120,7 +1121,7 @@ namespace Worlds
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.SetArray);
-            operation->buffer.Write(byteLength + 1, operation->world.world->schema.GetArrayType<T>());
+            operation->buffer.Write(byteLength + 1, operation->world.schema.GetArrayType<T>());
             operation->buffer.Write(byteLength + 5, sizeof(T));
             operation->buffer.Write(byteLength + 9, values.Length);
             operation->buffer.Write(byteLength + 13, values);
@@ -1191,7 +1192,7 @@ namespace Worlds
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.CreateOrSetArray);
-            operation->buffer.Write(byteLength + 1, operation->world.world->schema.GetArrayType<T>());
+            operation->buffer.Write(byteLength + 1, operation->world.schema.GetArrayType<T>());
             operation->buffer.Write(byteLength + 5, sizeof(T));
             operation->buffer.Write(byteLength + 9, values.Length);
             operation->buffer.Write(byteLength + 13, values);
@@ -1261,7 +1262,7 @@ namespace Worlds
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.AddTag);
-            operation->buffer.Write(byteLength + 1, operation->world.world->schema.GetTagType<T>());
+            operation->buffer.Write(byteLength + 1, operation->world.schema.GetTagType<T>());
             operation->byteLength = byteLength + 5;
             operation->instructionCount++;
         }
@@ -1303,7 +1304,7 @@ namespace Worlds
             }
 
             operation->buffer.Write(byteLength, (byte)InstructionType.RemoveTag);
-            operation->buffer.Write(byteLength + 1, operation->world.world->schema.GetTagType<T>());
+            operation->buffer.Write(byteLength + 1, operation->world.schema.GetTagType<T>());
             operation->byteLength = byteLength + 5;
             operation->instructionCount++;
         }
@@ -1659,7 +1660,8 @@ namespace Worlds
 
             private void AddComponent()
             {
-                Span<Slot> slots = operation->world.world->slots.AsSpan();
+                WorldPointer* world = operation->world.world;
+                Span<Slot> slots = world->slots.AsSpan();
                 int componentType = operation->buffer.Read<int>(bytePosition);
                 int componentSize = operation->buffer.Read<int>(bytePosition + 4);
                 bytePosition += 8;
@@ -1668,41 +1670,39 @@ namespace Worlds
                 ReadOnlySpan<uint> selection = operation->selection.AsSpan();
                 for (int i = 0; i < selection.Length; i++)
                 {
-                    //same as World.AddComponentBytes
+                    // same as World.AddComponentBytes
                     uint entity = selection[i];
                     ref Slot slot = ref slots[(int)entity];
-                    Definition definition = slot.chunk.chunk->Definition;
-                    definition.AddComponentType(componentType);
-                    Chunk destinationChunk = operation->world.world->chunks.GetOrCreate(definition);
-                    World.MoveEntityTo(slots, entity, ref slot, destinationChunk);
+                    Chunk destinationChunk = world->chunkMap.GetOrCreateWithAddedComponent(slot.chunk, componentType);
+                    World.MoveEntityTo(world, entity, ref slot, destinationChunk);
                     operation->world.NotifyComponentAdded(entity, componentType);
-                    Span<byte> component = new(slot.row.pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
+                    Span<byte> component = new(slot.row.pointer + world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
                     componentBytes.CopyTo(component);
                 }
             }
 
             private void AddComponentType()
             {
-                Span<Slot> slots = operation->world.world->slots.AsSpan();
+                WorldPointer* world = operation->world.world;
+                Span<Slot> slots = world->slots.AsSpan();
                 int componentType = operation->buffer.Read<int>(bytePosition);
                 bytePosition += 4;
                 ReadOnlySpan<uint> selection = operation->selection.AsSpan();
                 for (int i = 0; i < selection.Length; i++)
                 {
-                    //same as World.AddComponentType
+                    // same as World.AddComponentType
                     uint entity = selection[i];
                     ref Slot slot = ref slots[(int)entity];
-                    Definition definition = slot.chunk.chunk->Definition;
-                    definition.AddComponentType(componentType);
-                    Chunk destinationChunk = operation->world.world->chunks.GetOrCreate(definition);
-                    World.MoveEntityTo(slots, entity, ref slot, destinationChunk);
+                    Chunk destinationChunk = world->chunkMap.GetOrCreateWithAddedComponent(slot.chunk, componentType);
+                    World.MoveEntityTo(world, entity, ref slot, destinationChunk);
                     operation->world.NotifyComponentAdded(entity, componentType);
                 }
             }
 
             private void TryAddComponentType()
             {
-                Span<Slot> slots = operation->world.world->slots.AsSpan();
+                WorldPointer* world = operation->world.world;
+                Span<Slot> slots = world->slots.AsSpan();
                 int componentType = operation->buffer.Read<int>(bytePosition);
                 bytePosition += 4;
                 ReadOnlySpan<uint> selection = operation->selection.AsSpan();
@@ -1710,12 +1710,10 @@ namespace Worlds
                 {
                     uint entity = selection[i];
                     ref Slot slot = ref slots[(int)entity];
-                    Definition definition = slot.chunk.chunk->Definition;
-                    if (!definition.componentTypes.Contains(componentType))
+                    if (!slot.chunk.componentTypes.Contains(componentType))
                     {
-                        definition.AddComponentType(componentType);
-                        Chunk destinationChunk = operation->world.world->chunks.GetOrCreate(definition);
-                        World.MoveEntityTo(slots, entity, ref slot, destinationChunk);
+                        Chunk destinationChunk = world->chunkMap.GetOrCreateWithAddedComponent(slot.chunk, componentType);
+                        World.MoveEntityTo(world, entity, ref slot, destinationChunk);
                         operation->world.NotifyComponentAdded(entity, componentType);
                     }
                 }
@@ -1723,7 +1721,8 @@ namespace Worlds
 
             private void SetComponent()
             {
-                Span<Slot> slots = operation->world.world->slots.AsSpan();
+                WorldPointer* world = operation->world.world;
+                Span<Slot> slots = world->slots.AsSpan();
                 int componentType = operation->buffer.Read<int>(bytePosition);
                 int componentSize = operation->buffer.Read<int>(bytePosition + 4);
                 bytePosition += 8;
@@ -1734,14 +1733,15 @@ namespace Worlds
                 {
                     //same as World.SetComponentBytes
                     uint entity = selection[i];
-                    Span<byte> component = new(slots[(int)entity].row.pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
+                    Span<byte> component = new(slots[(int)entity].row.pointer + world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
                     componentBytes.CopyTo(component);
                 }
             }
 
             private void AddOrSetComponent()
             {
-                Span<Slot> slots = operation->world.world->slots.AsSpan();
+                WorldPointer* world = operation->world.world;
+                Span<Slot> slots = world->slots.AsSpan();
                 int componentType = operation->buffer.Read<int>(bytePosition);
                 int componentSize = operation->buffer.Read<int>(bytePosition + 4);
                 bytePosition += 8;
@@ -1752,21 +1752,19 @@ namespace Worlds
                 {
                     uint entity = selection[i];
                     ref Slot slot = ref slots[(int)entity];
-                    if (slot.chunk.chunk->componentTypes.Contains(componentType))
+                    if (slot.chunk.componentTypes.Contains(componentType))
                     {
                         //same as World.SetComponentBytes
-                        Span<byte> component = new(slots[(int)entity].row.pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
+                        Span<byte> component = new(slots[(int)entity].row.pointer + world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
                         componentBytes.CopyTo(component);
                     }
                     else
                     {
                         //same as World.AddComponentBytes
-                        Definition definition = slot.chunk.chunk->Definition;
-                        definition.AddComponentType(componentType);
-                        Chunk destinationChunk = operation->world.world->chunks.GetOrCreate(definition);
-                        World.MoveEntityTo(slots, entity, ref slot, destinationChunk);
+                        Chunk destinationChunk = world->chunkMap.GetOrCreateWithAddedComponent(slot.chunk, componentType);
+                        World.MoveEntityTo(world, entity, ref slot, destinationChunk);
                         operation->world.NotifyComponentAdded(entity, componentType);
-                        Span<byte> component = new(slot.row.pointer + operation->world.world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
+                        Span<byte> component = new(slot.row.pointer + world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);
                         componentBytes.CopyTo(component);
                     }
                 }
@@ -1774,7 +1772,8 @@ namespace Worlds
 
             private void RemoveComponentType()
             {
-                Span<Slot> slots = operation->world.world->slots.AsSpan();
+                WorldPointer* world = operation->world.world;
+                Span<Slot> slots = world->slots.AsSpan();
                 int componentType = operation->buffer.Read<int>(bytePosition);
                 bytePosition += 4;
                 ReadOnlySpan<uint> selection = operation->selection.AsSpan();
@@ -1783,10 +1782,8 @@ namespace Worlds
                     //same as World.RemoveComponentType
                     uint entity = selection[i];
                     ref Slot slot = ref slots[(int)entity];
-                    Definition definition = slot.chunk.chunk->Definition;
-                    definition.RemoveComponentType(componentType);
-                    Chunk destinationChunk = operation->world.world->chunks.GetOrCreate(definition);
-                    World.MoveEntityTo(slots, entity, ref slot, destinationChunk);
+                    Chunk destinationChunk = world->chunkMap.GetOrCreateWithRemovedComponent(slot.chunk, componentType);
+                    World.MoveEntityTo(world, entity, ref slot, destinationChunk);
                     operation->world.NotifyComponentRemoved(entity, componentType);
                 }
             }

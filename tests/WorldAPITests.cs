@@ -410,23 +410,23 @@ namespace Worlds.Tests
             Assert.That(world.IsEnabled(child), Is.False);
             Assert.That(world.IsLocallyEnabled(child), Is.True);
             Chunk chunk = world.GetChunk(child);
-            Assert.That(chunk.Definition.tagTypes.Contains(Schema.DisabledTagType), Is.True);
+            Assert.That(chunk.tagTypes.Contains(Schema.DisabledTagType), Is.True);
             world.SetEnabled(parent, true);
             Assert.That(world.IsEnabled(parent), Is.True);
             Assert.That(world.IsEnabled(child), Is.True);
             chunk = world.GetChunk(child);
-            Assert.That(chunk.Definition.tagTypes.Contains(Schema.DisabledTagType), Is.False);
+            Assert.That(chunk.tagTypes.Contains(Schema.DisabledTagType), Is.False);
 
             world.SetEnabled(child, false);
             Assert.That(world.IsEnabled(child), Is.False);
             chunk = world.GetChunk(child);
-            Assert.That(chunk.Definition.tagTypes.Contains(Schema.DisabledTagType), Is.True);
+            Assert.That(chunk.tagTypes.Contains(Schema.DisabledTagType), Is.True);
 
             world.SetEnabled(parent, false);
             world.SetEnabled(child, true);
             Assert.That(world.IsEnabled(child), Is.False);
             chunk = world.GetChunk(child);
-            Assert.That(chunk.Definition.tagTypes.Contains(Schema.DisabledTagType), Is.True);
+            Assert.That(chunk.tagTypes.Contains(Schema.DisabledTagType), Is.True);
         }
 
         [Test]

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics;
 using Unmanaged;
 using Worlds.Pointers;
 
@@ -12,7 +13,18 @@ namespace Worlds
     [SkipLocalsInit]
     public unsafe struct Chunk : IDisposable, IEquatable<Chunk>
     {
+        /// <summary>
+        /// Retrieves the component types stored in this chunk.
+        /// </summary>
+        public readonly BitMask componentTypes;
+
         internal ChunkPointer* chunk;
+        internal uint* componentOffsets;
+
+        /// <summary>
+        /// Retrieves the tag types stored in this chunk.
+        /// </summary>
+        public readonly BitMask tagTypes;
 
         /// <summary>
         /// Checks if this chunk is disposed.
@@ -29,6 +41,7 @@ namespace Worlds
         /// </summary>
         public readonly ReadOnlySpan<uint> Entities
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 MemoryAddress.ThrowIfDefault(chunk);
@@ -38,50 +51,11 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Amount of entities stored in this chunk.
-        /// </summary>
-        public readonly int Count
-        {
-            get
-            {
-                MemoryAddress.ThrowIfDefault(chunk);
-
-                return chunk->count;
-            }
-        }
-
-        /// <summary>
-        /// Returns the definition representing the types of components, arrays and tags
-        /// this chunk is for.
-        /// </summary>
-        public readonly Definition Definition
-        {
-            get
-            {
-                MemoryAddress.ThrowIfDefault(chunk);
-
-                return chunk->Definition;
-            }
-        }
-
-        /// <summary>
-        /// Retrieves the component types stored in this chunk.
-        /// </summary>
-        public readonly BitMask ComponentTypes
-        {
-            get
-            {
-                MemoryAddress.ThrowIfDefault(chunk);
-
-                return chunk->componentTypes;
-            }
-        }
-
-        /// <summary>
         /// Retrieves the array types stored in this chunk.
         /// </summary>
         public readonly BitMask ArrayTypes
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 MemoryAddress.ThrowIfDefault(chunk);
@@ -91,15 +65,55 @@ namespace Worlds
         }
 
         /// <summary>
-        /// Retrieves the tag types stored in this chunk.
+        /// Amount of entities stored in this chunk.
         /// </summary>
-        public readonly BitMask TagTypes
+        public readonly int Count
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 MemoryAddress.ThrowIfDefault(chunk);
 
-                return chunk->tagTypes;
+                return chunk->count;
+            }
+        }
+
+        /// <summary>
+        /// Checks if this definition describes a disabled entity.
+        /// </summary>
+        public readonly bool IsDisabled
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                return (tagTypes.value.GetElement(3) & Schema.DisabledMask) != 0;
+            }
+        }
+
+        /// <summary>
+        /// Checks if this definition describes an enabled entity.
+        /// </summary>
+        public readonly bool IsEnabled
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                return (tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0;
+            }
+        }
+
+        /// <summary>
+        /// Returns the definition representing the types of components, arrays and tags
+        /// this chunk is for.
+        /// </summary>
+        public readonly Definition Definition
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                MemoryAddress.ThrowIfDefault(chunk);
+
+                return new(componentTypes, ArrayTypes, tagTypes);
             }
         }
 
@@ -108,12 +122,12 @@ namespace Worlds
         /// </summary>
         public readonly Row this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 MemoryAddress.ThrowIfDefault(chunk);
 
-                MemoryAddress row = chunk->components[index];
-                return new Row(chunk->schema, row);
+                return new Row(componentOffsets, chunk->schema.schema->sizes, chunk->components[index]);
             }
         }
 
@@ -122,6 +136,7 @@ namespace Worlds
         /// </summary>
         public readonly int Version
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 MemoryAddress.ThrowIfDefault(chunk);
@@ -133,10 +148,7 @@ namespace Worlds
 #if NET
         /// <inheritdoc/>
         [Obsolete("Default constructor not supported", true)]
-        public Chunk()
-        {
-            throw new NotSupportedException();
-        }
+        public Chunk() { }
 #endif
 
         /// <summary>
@@ -144,23 +156,73 @@ namespace Worlds
         /// </summary>
         public Chunk(Schema schema, Definition definition = default)
         {
+            componentOffsets = schema.componentOffsets;
+            MemoryAddress.ThrowIfDefault(componentOffsets);
+
             chunk = MemoryAddress.AllocatePointer<ChunkPointer>();
             chunk->lastEntity = 0;
             chunk->count = 0;
             chunk->version = 0;
             chunk->entities = new(4);
-            chunk->entities.AddDefault(); //reserved
+            chunk->entities.AddDefault(); // reserved
             chunk->components = new(4, (int)schema.schema->componentRowSize);
-            chunk->components.AddDefault(); //reserved
+            chunk->components.AddDefault(); // reserved
             chunk->schema = schema;
             chunk->componentTypes = definition.componentTypes;
             chunk->arrayTypes = definition.arrayTypes;
             chunk->tagTypes = definition.tagTypes;
+            componentTypes = definition.componentTypes;
+            tagTypes = definition.tagTypes;
+        }
+
+        internal Chunk(SchemaPointer* schema, BitMask componentTypes, BitMask arrayTypes, BitMask tagTypes)
+        {
+            componentOffsets = schema->componentOffsets;
+            MemoryAddress.ThrowIfDefault(componentOffsets);
+
+            chunk = MemoryAddress.AllocatePointer<ChunkPointer>();
+            chunk->lastEntity = 0;
+            chunk->count = 0;
+            chunk->version = 0;
+            chunk->entities = new(4);
+            chunk->entities.AddDefault(); // reserved
+            chunk->components = new(4, (int)schema->componentRowSize);
+            chunk->components.AddDefault(); // reserved
+            chunk->schema = new(schema);
+            chunk->componentTypes = componentTypes;
+            chunk->arrayTypes = arrayTypes;
+            chunk->tagTypes = tagTypes;
+            this.componentTypes = componentTypes;
+            this.tagTypes = tagTypes;
+        }
+
+        internal Chunk(SchemaPointer* schema)
+        {
+            componentOffsets = schema->componentOffsets;
+            MemoryAddress.ThrowIfDefault(componentOffsets);
+
+            chunk = MemoryAddress.AllocatePointer<ChunkPointer>();
+            chunk->lastEntity = 0;
+            chunk->count = 0;
+            chunk->version = 0;
+            chunk->entities = new(4);
+            chunk->entities.AddDefault(); // reserved
+            chunk->components = new(4, (int)schema->componentRowSize);
+            chunk->components.AddDefault(); // reserved
+            chunk->schema = new(schema);
+            chunk->componentTypes = default;
+            chunk->arrayTypes = default;
+            chunk->tagTypes = default;
+            componentTypes = default;
+            tagTypes = default;
         }
 
         internal Chunk(ChunkPointer* chunk)
         {
             this.chunk = chunk;
+            componentTypes = chunk->componentTypes;
+            tagTypes = chunk->tagTypes;
+            componentOffsets = chunk->schema.componentOffsets;
         }
 
         /// <inheritdoc/>
@@ -173,17 +235,17 @@ namespace Worlds
             MemoryAddress.Free(ref chunk);
         }
 
-        internal readonly void UpdateStrideToMatchSchema()
+        internal readonly void UpdateStrideToMatchSchema(uint componentRowSize)
         {
             chunk->components.Dispose();
-            chunk->components = new(4, (int)chunk->schema.schema->componentRowSize);
-            chunk->components.AddDefault(); //reserved
+            chunk->components = new(4, (int)componentRowSize);
+            chunk->components.AddDefault(); // reserved
         }
 
         [Conditional("DEBUG")]
         private readonly void ThrowIfComponentTypeIsMissing(int componentType)
         {
-            if (!chunk->componentTypes.Contains(componentType))
+            if (!componentTypes.Contains(componentType))
             {
                 throw new ArgumentException($"Component type `{DataType.GetComponent(componentType, chunk->schema).ToString(chunk->schema)}` is missing from the chunk");
             }
@@ -221,10 +283,10 @@ namespace Worlds
         {
             int length = 0;
             length += chunk->count.ToString(destination);
-            if (chunk->Definition != Definition.Default)
+            if (componentTypes != BitMask.Default && ArrayTypes != BitMask.Default && tagTypes != BitMask.Default)
             {
                 destination[length++] = ' ';
-                length += chunk->Definition.ToString(chunk->schema, destination.Slice(length));
+                length += new Definition(componentTypes, ArrayTypes, tagTypes).ToString(chunk->schema, destination.Slice(length));
             }
 
             return length;
@@ -233,39 +295,46 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return chunk->Definition.GetHashCode();
+            return (int)Definition.GetLongHashCode(componentTypes, ArrayTypes, tagTypes);
         }
 
         /// <summary>
         /// Retrieves the byte offset of the <paramref name="componentType"/>
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly int GetComponentOffset(int componentType)
         {
-            MemoryAddress.ThrowIfDefault(chunk);
+            MemoryAddress.ThrowIfDefault(componentOffsets);
+            ThrowIfComponentTypeIsMissing(componentType);
 
-            return (int)chunk->schema.schema->componentOffsets[(uint)componentType];
+            return (int)componentOffsets[(uint)componentType];
         }
 
         /// <summary>
         /// Retrieves an enumerator for iterating through each component of type <typeparamref name="T"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly ComponentEnumerator<T> GetComponents<T>(int componentType) where T : unmanaged
         {
-            int componentOffset = (int)chunk->schema.schema->componentOffsets[(uint)componentType];
-            return new(chunk->components, componentOffset);
+            MemoryAddress.ThrowIfDefault(chunk);
+            MemoryAddress.ThrowIfDefault(componentOffsets);
+            ThrowIfComponentTypeIsMissing(componentType);
+
+            return new(chunk->components, (int)componentOffsets[(uint)componentType]);
         }
 
         /// <summary>
         /// Retrieves a reference to the component of type <paramref name="componentType"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly ref T GetComponent<T>(int index, int componentType) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(chunk);
+            MemoryAddress.ThrowIfDefault(componentOffsets);
             ThrowIfIndexIsOutOfRange(index);
             ThrowIfComponentTypeIsMissing(componentType);
 
-            int componentOffset = (int)chunk->schema.schema->componentOffsets[(uint)componentType];
-            return ref chunk->components[index].Read<T>(componentOffset);
+            return ref chunk->components[index].Read<T>((int)componentOffsets[(uint)componentType]);
         }
 
         /// <inheritdoc/>
@@ -297,12 +366,14 @@ namespace Worlds
         /// </summary>
         public readonly struct Row
         {
-            private readonly Schema schema;
+            private readonly uint* componentOffsets;
+            private readonly int* componentSizes;
             internal readonly MemoryAddress row;
 
-            internal Row(Schema schema, MemoryAddress row)
+            internal Row(uint* componentOffsets, int* componentSizes, MemoryAddress row)
             {
-                this.schema = schema;
+                this.componentOffsets = componentOffsets;
+                this.componentSizes = componentSizes;
                 this.row = row;
             }
 
@@ -311,7 +382,7 @@ namespace Worlds
             /// </summary>
             public readonly MemoryAddress GetComponent(int componentType)
             {
-                return new(row.pointer + schema.schema->componentOffsets[(uint)componentType]);
+                return new(row.pointer + componentOffsets[(uint)componentType]);
             }
 
             /// <summary>
@@ -319,7 +390,7 @@ namespace Worlds
             /// </summary>
             public readonly ref T GetComponent<T>(int componentType) where T : unmanaged
             {
-                return ref *(T*)(row.pointer + schema.schema->componentOffsets[(uint)componentType]);
+                return ref *(T*)(row.pointer + componentOffsets[(uint)componentType]);
             }
 
             /// <summary>
@@ -327,7 +398,7 @@ namespace Worlds
             /// </summary>
             public readonly void SetComponent<T>(int componentType, T value) where T : unmanaged
             {
-                *(T*)(row.pointer + schema.schema->componentOffsets[(uint)componentType]) = value;
+                *(T*)(row.pointer + componentOffsets[(uint)componentType]) = value;
             }
 
             /// <summary>
@@ -335,7 +406,7 @@ namespace Worlds
             /// </summary>
             public readonly Span<byte> GetSpan(int componentType)
             {
-                return new Span<byte>(row.pointer + schema.schema->componentOffsets[(uint)componentType], schema.schema->sizes[(uint)componentType]);
+                return new Span<byte>(row.pointer + componentOffsets[(uint)componentType], componentSizes[(uint)componentType]);
             }
         }
 

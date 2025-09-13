@@ -5,7 +5,6 @@ namespace Worlds.Pointers
 {
     internal struct ChunkMapPointer
     {
-        public Schema schema;
         public int count;
         public int capacity;
         public List<Chunk> chunks;

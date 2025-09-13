@@ -448,10 +448,19 @@
     }
 
     /// <summary>
+    /// Retrieves the component of type <typeparamref name=""T""/> if it exists,
+    /// otherwise a <see langword=""default""/> value.
+    /// </summary>
+    public readonly T GetComponentOrDefault<T>() where T : unmanaged
+    {
+        return world.GetComponentOrDefault<T>(value);
+    }
+
+    /// <summary>
     /// Retrieves a copy of a <typeparamref name=""T""/> component from this entity, or the
     /// <paramref name=""defaultValue""/> if it does not exist.
     /// </summary>
-    public readonly T GetComponentOrDefault<T>(T defaultValue = default) where T : unmanaged
+    public readonly T GetComponentOrDefault<T>(T defaultValue) where T : unmanaged
     {
         return world.GetComponentOrDefault<T>(value, defaultValue);
     }

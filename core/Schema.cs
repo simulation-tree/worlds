@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Types;
 using Unmanaged;
@@ -30,6 +31,7 @@ namespace Worlds
         private static int createdSchemas;
 
         internal SchemaPointer* schema;
+        internal uint* componentOffsets;
 
         /// <summary>
         /// Checks if this schema is disposed.
@@ -226,6 +228,7 @@ namespace Worlds
             schema->typeHashes = (long*)MemoryAddress.AllocateZeroed(TypeHashesLengthInBytes).pointer;
             schema->schemaIndex = createdSchemas;
             createdSchemas++;
+            componentOffsets = schema->componentOffsets;
         }
 #endif
 
@@ -235,6 +238,7 @@ namespace Worlds
         public Schema(void* pointer)
         {
             schema = (SchemaPointer*)pointer;
+            componentOffsets = schema->componentOffsets;
         }
 
         /// <inheritdoc/>
@@ -246,6 +250,7 @@ namespace Worlds
             MemoryAddress.Free(ref schema->sizes);
             MemoryAddress.Free(ref schema->typeHashes);
             MemoryAddress.Free(ref schema);
+            componentOffsets = default;
         }
 
         internal readonly void CopyFrom(Schema source)
@@ -263,6 +268,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the size of <paramref name="componentType"/> in bytes.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly int GetComponentSize(int componentType)
         {
             return schema->sizes[(uint)componentType];
@@ -271,6 +277,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the size of each <paramref name="arrayType"/> element in bytes.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly int GetArraySize(int arrayType)
         {
             return schema->sizes[(uint)(BitMask.Capacity + arrayType)];
@@ -280,6 +287,7 @@ namespace Worlds
         /// Retrieves the position in bytes where component of type <typeparamref name="T"/>
         /// would start in a chunk component row.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly int GetComponentOffset<T>() where T : unmanaged
         {
             ThrowIfComponentTypeIsMissing<T>();
@@ -291,6 +299,7 @@ namespace Worlds
         /// Retrieves the position in bytes where <paramref name="componentType"/>
         /// would start in a chunk component row.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly int GetComponentOffset(int componentType)
         {
             return (int)schema->componentOffsets[(uint)componentType];
@@ -309,6 +318,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the type information for <paramref name="componentType"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly DataType GetComponentDataType(int componentType)
         {
             MemoryAddress.ThrowIfDefault(schema);
@@ -320,6 +330,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the type information for <paramref name="arrayType"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly DataType GetArrayDataType(int arrayType)
         {
             MemoryAddress.ThrowIfDefault(schema);
@@ -331,6 +342,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the type information for <paramref name="tagType"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly DataType GetTagDataType(int tagType)
         {
             ThrowIfTagIsMissing(tagType);
@@ -341,6 +353,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the type layout for the given <paramref name="componentType"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly TypeMetadata GetComponentLayout(int componentType)
         {
             MemoryAddress.ThrowIfDefault(schema);
@@ -354,6 +367,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the type layout for the given <paramref name="arrayType"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly TypeMetadata GetArrayLayout(int arrayType)
         {
             MemoryAddress.ThrowIfDefault(schema);
@@ -366,6 +380,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the type layout for the given <paramref name="tagType"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly TypeMetadata GetTagLayout(int tagType)
         {
             MemoryAddress.ThrowIfDefault(schema);
@@ -378,6 +393,7 @@ namespace Worlds
         /// <summary>
         /// Retrieves the type metadata for the component of type <typeparamref name="T"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly TypeMetadata GetComponentLayout<T>() where T : unmanaged
         {
             return GetComponentLayout(GetComponentType<T>());
@@ -390,7 +406,7 @@ namespace Worlds
         public readonly int RegisterComponent<T>() where T : unmanaged
         {
             int newComponentType = RegisterComponent(MetadataRegistry.GetOrRegisterType<T>());
-            SchemaTypeCache<T>.SetComponentType(this, newComponentType);
+            SchemaTypeCache<T>.SetComponentType(schema, newComponentType);
             return newComponentType;
         }
 
@@ -424,7 +440,7 @@ namespace Worlds
         public readonly int RegisterArray<T>() where T : unmanaged
         {
             int arrayType = RegisterArray(MetadataRegistry.GetOrRegisterType<T>());
-            SchemaTypeCache<T>.SetArrayType(this, arrayType);
+            SchemaTypeCache<T>.SetArrayType(schema, arrayType);
             return arrayType;
         }
 
@@ -456,7 +472,7 @@ namespace Worlds
         public readonly int RegisterTag<T>() where T : unmanaged
         {
             int tagType = RegisterTag(MetadataRegistry.GetOrRegisterType<T>());
-            SchemaTypeCache<T>.SetTagType(this, tagType);
+            SchemaTypeCache<T>.SetTagType(schema, tagType);
             return tagType;
         }
 
@@ -483,6 +499,7 @@ namespace Worlds
         /// <summary>
         /// Checks if <paramref name="componentType"/> has been registered.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool ContainsComponentType(int componentType)
         {
             MemoryAddress.ThrowIfDefault(schema);
@@ -493,6 +510,7 @@ namespace Worlds
         /// <summary>
         /// Checks if <paramref name="arrayType"/> has been registered.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool ContainsArrayType(int arrayType)
         {
             MemoryAddress.ThrowIfDefault(schema);
@@ -503,6 +521,7 @@ namespace Worlds
         /// <summary>
         /// Checks if <paramref name="tagType"/> has been registered.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool ContainsTagType(int tagType)
         {
             MemoryAddress.ThrowIfDefault(schema);
@@ -513,6 +532,7 @@ namespace Worlds
         /// <summary>
         /// Checks if a component with <paramref name="fullTypeName"/> has been registered.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool ContainsComponentType(ASCIIText256 fullTypeName)
         {
             MemoryAddress.ThrowIfDefault(schema);
@@ -524,6 +544,7 @@ namespace Worlds
         /// <summary>
         /// Checks if <paramref name="type"/> is a registered component.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool ContainsComponentType(TypeMetadata type)
         {
             MemoryAddress.ThrowIfDefault(schema);
@@ -535,6 +556,7 @@ namespace Worlds
         /// <summary>
         /// Tries to retrieve the index of the component type <paramref name="type"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool TryGetComponentType(TypeMetadata type, out int componentType)
         {
             MemoryAddress.ThrowIfDefault(schema);
@@ -546,6 +568,7 @@ namespace Worlds
         /// <summary>
         /// Tries to retrieve the index of the component type with the given <paramref name="fullTypeName"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool TryGetComponentType(ReadOnlySpan<char> fullTypeName, out int componentType)
         {
             MemoryAddress.ThrowIfDefault(schema);
@@ -557,6 +580,7 @@ namespace Worlds
         /// <summary>
         /// Checks if an array with <paramref name="fullTypeName"/> has been registered.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool ContainsArrayType(ASCIIText256 fullTypeName)
         {
             MemoryAddress.ThrowIfDefault(schema);
@@ -568,6 +592,7 @@ namespace Worlds
         /// <summary>
         /// Checks if <paramref name="type"/> is a registered array.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool ContainsArrayType(TypeMetadata type)
         {
             MemoryAddress.ThrowIfDefault(schema);
@@ -579,6 +604,7 @@ namespace Worlds
         /// <summary>
         /// Tries to retrieve the index of the array type <paramref name="type"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool TryGetArrayType(TypeMetadata type, out int arrayType)
         {
             MemoryAddress.ThrowIfDefault(schema);
@@ -590,6 +616,7 @@ namespace Worlds
         /// <summary>
         /// Tries to retrieve the index of the array type with the given <paramref name="fullTypeName"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool TryGetArrayType(ReadOnlySpan<char> fullTypeName, out int arrayType)
         {
             MemoryAddress.ThrowIfDefault(schema);
@@ -601,6 +628,7 @@ namespace Worlds
         /// <summary>
         /// Checks if a tag type with <paramref name="fullTypeName"/> has been registered.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool ContainsTagType(ASCIIText256 fullTypeName)
         {
             MemoryAddress.ThrowIfDefault(schema);
@@ -612,6 +640,7 @@ namespace Worlds
         /// <summary>
         /// Checks if <paramref name="type"/> is a registered tag.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool ContainsTagType(TypeMetadata type)
         {
             MemoryAddress.ThrowIfDefault(schema);
@@ -623,6 +652,7 @@ namespace Worlds
         /// <summary>
         /// Tries to retrieve the index of the tag type <paramref name="type"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool TryGetTagType(TypeMetadata type, out int tagType)
         {
             MemoryAddress.ThrowIfDefault(schema);
@@ -635,6 +665,7 @@ namespace Worlds
         /// Checks if a registered component of type <typeparamref name="T"/>
         /// has been registered.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool ContainsComponentType<T>() where T : unmanaged
         {
             if (!MetadataRegistry.IsTypeRegistered<T>())
@@ -649,16 +680,18 @@ namespace Worlds
         /// <summary>
         /// Retrieves the index of the component type <typeparamref name="T"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly int GetComponentType<T>() where T : unmanaged
         {
             ThrowIfComponentTypeIsMissing<T>();
 
-            return SchemaTypeCache<T>.GetOrSetComponentType(this);
+            return SchemaTypeCache<T>.GetOrSetComponentType(schema);
         }
 
         /// <summary>
         /// Retrieves the index for component of <paramref name="type"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly int GetComponentType(TypeMetadata type)
         {
             ThrowIfComponentTypeIsMissing(type);
@@ -670,16 +703,18 @@ namespace Worlds
         /// <summary>
         /// Retrieves the type information for component of type <typeparamref name="T"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly DataType GetComponentDataType<T>() where T : unmanaged
         {
             ThrowIfComponentTypeIsMissing<T>();
 
-            return new(SchemaTypeCache<T>.GetOrSetComponentType(this), DataType.Kind.Component, sizeof(T));
+            return new(SchemaTypeCache<T>.GetOrSetComponentType(schema), DataType.Kind.Component, sizeof(T));
         }
 
         /// <summary>
         /// Retrieves the type information for component of <paramref name="type"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly DataType GetComponentDataType(TypeMetadata type)
         {
             ThrowIfComponentTypeIsMissing(type);
@@ -692,6 +727,7 @@ namespace Worlds
         /// <summary>
         /// Checks if an array of type <typeparamref name="T"/> has been registered.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool ContainsArrayType<T>() where T : unmanaged
         {
             if (!MetadataRegistry.IsTypeRegistered<T>())
@@ -706,16 +742,18 @@ namespace Worlds
         /// <summary>
         /// Retrieves the index of the array type <typeparamref name="T"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly int GetArrayType<T>() where T : unmanaged
         {
             ThrowIfArrayTypeIsMissing<T>();
 
-            return SchemaTypeCache<T>.GetOrSetArrayType(this);
+            return SchemaTypeCache<T>.GetOrSetArrayType(schema);
         }
 
         /// <summary>
         /// Retrieves the index for the given <paramref name="arrayType"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly int GetArrayType(TypeMetadata arrayType)
         {
             ThrowIfArrayTypeIsMissing(arrayType);
@@ -727,16 +765,18 @@ namespace Worlds
         /// <summary>
         /// Retrieves the type information for array of type <typeparamref name="T"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly DataType GetArrayDataType<T>() where T : unmanaged
         {
             ThrowIfArrayTypeIsMissing<T>();
 
-            return new(SchemaTypeCache<T>.GetOrSetArrayType(this), DataType.Kind.Array, sizeof(T));
+            return new(SchemaTypeCache<T>.GetOrSetArrayType(schema), DataType.Kind.Array, sizeof(T));
         }
 
         /// <summary>
         /// Retrieves the type information for array of <paramref name="type"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly DataType GetArrayDataType(TypeMetadata type)
         {
             ThrowIfArrayTypeIsMissing(type);
@@ -749,16 +789,18 @@ namespace Worlds
         /// <summary>
         /// Retrieves the index of the tag type <typeparamref name="T"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly int GetTagType<T>() where T : unmanaged
         {
             ThrowIfTagIsMissing<T>();
 
-            return SchemaTypeCache<T>.GetOrSetTagType(this);
+            return SchemaTypeCache<T>.GetOrSetTagType(schema);
         }
 
         /// <summary>
         /// Retrieves the index for the given <paramref name="tagType"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly int GetTagType(TypeMetadata tagType)
         {
             ThrowIfTagIsMissing(tagType);
@@ -770,17 +812,19 @@ namespace Worlds
         /// <summary>
         /// Retrieves the type information for tag of type <typeparamref name="T"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly DataType GetTagDataType<T>() where T : unmanaged
         {
             ThrowIfTagIsMissing<T>();
 
-            return new(SchemaTypeCache<T>.GetOrSetTagType(this), DataType.Kind.Tag, 1);
+            return new(SchemaTypeCache<T>.GetOrSetTagType(schema), DataType.Kind.Tag, 1);
         }
 
         /// <summary>
         /// Checks if a registered tag of type <typeparamref name="T"/>
         /// exists.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool ContainsTagType<T>() where T : unmanaged
         {
             if (!MetadataRegistry.IsTypeRegistered<T>())
@@ -1658,7 +1702,7 @@ namespace Worlds
             writer.WriteValue((byte)schema->tagsCount);
             writer.WriteValue(schema->componentRowSize);
             writer.WriteValue(schema->definitionMask);
-            Span<uint> componentOffsets = new(schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(this.componentOffsets, BitMask.Capacity);
             Span<int> sizes = new(schema->sizes, BitMask.Capacity * 2);
             Span<long> typeHashes = new(schema->typeHashes, BitMask.Capacity * 3);
             writer.WriteSpan(componentOffsets);
@@ -1715,7 +1759,7 @@ namespace Worlds
         /// Cache of types per <see cref="Schema"/>.
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        private static class SchemaTypeCache<T> where T : unmanaged
+        internal static class SchemaTypeCache<T> where T : unmanaged
         {
             private static int[] components;
             private static int[] arrays;
@@ -1734,42 +1778,42 @@ namespace Worlds
                 tags = new int[tagCapacity];
             }
 
-            public static void SetComponentType(Schema schema, int componentType)
+            public static void SetComponentType(SchemaPointer* schema, int componentType)
             {
-                if (schema.schema->schemaIndex >= componentCapacity)
+                if (schema->schemaIndex >= componentCapacity)
                 {
-                    componentCapacity = schema.schema->schemaIndex + 1;
+                    componentCapacity = schema->schemaIndex + 1;
                     Array.Resize(ref components, componentCapacity);
                 }
 
-                components[schema.schema->schemaIndex] = componentType;
+                components[schema->schemaIndex] = componentType;
             }
 
-            public static void SetArrayType(Schema schema, int arrayType)
+            public static void SetArrayType(SchemaPointer* schema, int arrayType)
             {
-                if (schema.schema->schemaIndex >= arrayCapacity)
+                if (schema->schemaIndex >= arrayCapacity)
                 {
-                    arrayCapacity = schema.schema->schemaIndex + 1;
+                    arrayCapacity = schema->schemaIndex + 1;
                     Array.Resize(ref arrays, arrayCapacity);
                 }
 
-                arrays[schema.schema->schemaIndex] = arrayType;
+                arrays[schema->schemaIndex] = arrayType;
             }
 
-            public static void SetTagType(Schema schema, int tagType)
+            public static void SetTagType(SchemaPointer* schema, int tagType)
             {
-                if (schema.schema->schemaIndex >= tagCapacity)
+                if (schema->schemaIndex >= tagCapacity)
                 {
-                    tagCapacity = schema.schema->schemaIndex + 1;
+                    tagCapacity = schema->schemaIndex + 1;
                     Array.Resize(ref tags, tagCapacity);
                 }
 
-                tags[schema.schema->schemaIndex] = tagType;
+                tags[schema->schemaIndex] = tagType;
             }
 
-            public static int GetOrSetComponentType(Schema schema)
+            public static int GetOrSetComponentType(SchemaPointer* schema)
             {
-                int schemaIndex = schema.schema->schemaIndex;
+                int schemaIndex = schema->schemaIndex;
                 if (schemaIndex < componentCapacity)
                 {
                     return components[schemaIndex];
@@ -1779,16 +1823,16 @@ namespace Worlds
                     componentCapacity = schemaIndex + 1;
                     Array.Resize(ref components, componentCapacity);
 
-                    Span<TypeMetadata> componentTypes = new(schema.schema->typeHashes, BitMask.Capacity);
+                    Span<TypeMetadata> componentTypes = new(schema->typeHashes, BitMask.Capacity);
                     int componentType = componentTypes.IndexOf(TypeMetadata.Get<T>());
                     components[schemaIndex] = componentType;
                     return componentType;
                 }
             }
 
-            public static int GetOrSetArrayType(Schema schema)
+            public static int GetOrSetArrayType(SchemaPointer* schema)
             {
-                int schemaIndex = schema.schema->schemaIndex;
+                int schemaIndex = schema->schemaIndex;
                 if (schemaIndex < arrayCapacity)
                 {
                     return arrays[schemaIndex];
@@ -1798,16 +1842,16 @@ namespace Worlds
                     arrayCapacity = schemaIndex + 1;
                     Array.Resize(ref arrays, arrayCapacity);
 
-                    Span<TypeMetadata> arrayTypes = new(schema.schema->typeHashes, BitMask.Capacity * 2);
+                    Span<TypeMetadata> arrayTypes = new(schema->typeHashes, BitMask.Capacity * 2);
                     int arrayType = arrayTypes.Slice(BitMask.Capacity).IndexOf(TypeMetadata.Get<T>());
                     arrays[schemaIndex] = arrayType;
                     return arrayType;
                 }
             }
 
-            public static int GetOrSetTagType(Schema schema)
+            public static int GetOrSetTagType(SchemaPointer* schema)
             {
-                int schemaIndex = schema.schema->schemaIndex;
+                int schemaIndex = schema->schemaIndex;
                 if (schemaIndex < tagCapacity)
                 {
                     return tags[schemaIndex];
@@ -1817,7 +1861,7 @@ namespace Worlds
                     tagCapacity = schemaIndex + 1;
                     Array.Resize(ref tags, tagCapacity);
 
-                    Span<TypeMetadata> tagTypes = new(schema.schema->typeHashes, BitMask.Capacity * 3);
+                    Span<TypeMetadata> tagTypes = new(schema->typeHashes, BitMask.Capacity * 3);
                     int tagType = tagTypes.Slice(BitMask.Capacity * 2).IndexOf(TypeMetadata.Get<T>());
                     tags[schemaIndex] = tagType;
                     return tagType;

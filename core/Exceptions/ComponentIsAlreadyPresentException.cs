@@ -21,7 +21,7 @@ namespace Worlds
 
         private unsafe static string GetMessage(World world, uint entity, int componentType)
         {
-            TypeMetadata type = world.world->schema.GetComponentLayout(componentType);
+            TypeMetadata type = world.schema.GetComponentLayout(componentType);
             return $"Entity `{entity}` already has component `{type}`";
         }
 
@@ -32,7 +32,7 @@ namespace Worlds
             {
                 if (componentTypes.Contains(c))
                 {
-                    TypeMetadata type = world.world->schema.GetComponentLayout(c);
+                    TypeMetadata type = world.schema.GetComponentLayout(c);
                     text.Append(type.ToString());
                     text.Append('\n');
                 }

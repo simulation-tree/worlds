@@ -12,7 +12,7 @@ namespace Worlds
         /// </summary>
         public static void AddComponentTypes<T1, T2>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged
         {
-            world.AddComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2>());
+            world.AddComponentTypes(entity, world.schema.GetComponentTypes<T1, T2>());
         }
 
         /// <summary>
@@ -20,10 +20,9 @@ namespace Worlds
         /// </summary>
         public static void AddComponents<T1, T2>(this World world, uint entity, T1 component1, T2 component2) where T1 : unmanaged where T2 : unmanaged
         {
-            Schema schema = world.world->schema;
-            schema.GetComponentTypes<T1, T2>(out int c1, out int c2);
+            world.schema.GetComponentTypes<T1, T2>(out int c1, out int c2);
             BitMask componentTypes = new(c1, c2);
-            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(world.schema.componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -34,7 +33,7 @@ namespace Worlds
         /// </summary>
         public static void AddComponentTypes<T1, T2, T3>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            world.AddComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3>());
+            world.AddComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3>());
         }
 
         /// <summary>
@@ -42,10 +41,9 @@ namespace Worlds
         /// </summary>
         public static void AddComponents<T1, T2, T3>(this World world, uint entity, T1 component1, T2 component2, T3 component3) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            Schema schema = world.world->schema;
-            schema.GetComponentTypes<T1, T2, T3>(out int c1, out int c2, out int c3);
+            world.schema.GetComponentTypes<T1, T2, T3>(out int c1, out int c2, out int c3);
             BitMask componentTypes = new(c1, c2, c3);
-            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(world.schema.componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -57,7 +55,7 @@ namespace Worlds
         /// </summary>
         public static void AddComponentTypes<T1, T2, T3, T4>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            world.AddComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4>());
+            world.AddComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4>());
         }
 
         /// <summary>
@@ -65,10 +63,9 @@ namespace Worlds
         /// </summary>
         public static void AddComponents<T1, T2, T3, T4>(this World world, uint entity, T1 component1, T2 component2, T3 component3, T4 component4) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            Schema schema = world.world->schema;
-            schema.GetComponentTypes<T1, T2, T3, T4>(out int c1, out int c2, out int c3, out int c4);
+            world.schema.GetComponentTypes<T1, T2, T3, T4>(out int c1, out int c2, out int c3, out int c4);
             BitMask componentTypes = new(c1, c2, c3, c4);
-            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(world.schema.componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -81,7 +78,7 @@ namespace Worlds
         /// </summary>
         public static void AddComponentTypes<T1, T2, T3, T4, T5>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
-            world.AddComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5>());
+            world.AddComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5>());
         }
 
         /// <summary>
@@ -89,10 +86,9 @@ namespace Worlds
         /// </summary>
         public static void AddComponents<T1, T2, T3, T4, T5>(this World world, uint entity, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
-            Schema schema = world.world->schema;
-            schema.GetComponentTypes<T1, T2, T3, T4, T5>(out int c1, out int c2, out int c3, out int c4, out int c5);
+            world.schema.GetComponentTypes<T1, T2, T3, T4, T5>(out int c1, out int c2, out int c3, out int c4, out int c5);
             BitMask componentTypes = new(c1, c2, c3, c4, c5);
-            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(world.schema.componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -106,7 +102,7 @@ namespace Worlds
         /// </summary>
         public static void AddComponentTypes<T1, T2, T3, T4, T5, T6>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
-            world.AddComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6>());
+            world.AddComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6>());
         }
 
         /// <summary>
@@ -114,10 +110,9 @@ namespace Worlds
         /// </summary>
         public static void AddComponents<T1, T2, T3, T4, T5, T6>(this World world, uint entity, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
-            Schema schema = world.world->schema;
-            schema.GetComponentTypes<T1, T2, T3, T4, T5, T6>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6);
+            world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6);
-            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(world.schema.componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -132,7 +127,7 @@ namespace Worlds
         /// </summary>
         public static void AddComponentTypes<T1, T2, T3, T4, T5, T6, T7>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
-            world.AddComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7>());
+            world.AddComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7>());
         }
 
         /// <summary>
@@ -140,10 +135,9 @@ namespace Worlds
         /// </summary>
         public static void AddComponents<T1, T2, T3, T4, T5, T6, T7>(this World world, uint entity, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
-            Schema schema = world.world->schema;
-            schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7);
+            world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6, c7);
-            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(world.schema.componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -159,7 +153,7 @@ namespace Worlds
         /// </summary>
         public static void AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
-            world.AddComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>());
+            world.AddComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>());
         }
 
         /// <summary>
@@ -167,10 +161,9 @@ namespace Worlds
         /// </summary>
         public static void AddComponents<T1, T2, T3, T4, T5, T6, T7, T8>(this World world, uint entity, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
-            Schema schema = world.world->schema;
-            schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8);
+            world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6, c7, c8);
-            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(world.schema.componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -187,7 +180,7 @@ namespace Worlds
         /// </summary>
         public static void AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
-            world.AddComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>());
+            world.AddComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>());
         }
 
         /// <summary>
@@ -195,10 +188,9 @@ namespace Worlds
         /// </summary>
         public static void AddComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9>(this World world, uint entity, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
-            Schema schema = world.world->schema;
-            schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9);
+            world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6, c7, c8, c9);
-            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(world.schema.componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -216,7 +208,7 @@ namespace Worlds
         /// </summary>
         public static void AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
-            world.AddComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>());
+            world.AddComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>());
         }
 
         /// <summary>
@@ -224,10 +216,9 @@ namespace Worlds
         /// </summary>
         public static void AddComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(this World world, uint entity, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
-            Schema schema = world.world->schema;
-            schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10);
+            world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10);
-            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(world.schema.componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -246,7 +237,7 @@ namespace Worlds
         /// </summary>
         public static void AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
-            world.AddComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>());
+            world.AddComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>());
         }
 
         /// <summary>
@@ -254,10 +245,9 @@ namespace Worlds
         /// </summary>
         public static void AddComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(this World world, uint entity, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
-            Schema schema = world.world->schema;
-            schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11);
+            world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11);
-            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(world.schema.componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -277,7 +267,7 @@ namespace Worlds
         /// </summary>
         public static void AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
-            world.AddComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>());
+            world.AddComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>());
         }
 
         /// <summary>
@@ -285,10 +275,9 @@ namespace Worlds
         /// </summary>
         public static void AddComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(this World world, uint entity, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
-            Schema schema = world.world->schema;
-            schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12);
+            world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12);
-            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(world.schema.componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -309,7 +298,7 @@ namespace Worlds
         /// </summary>
         public static void AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged
         {
-            world.AddComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>());
+            world.AddComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>());
         }
 
         /// <summary>
@@ -317,10 +306,9 @@ namespace Worlds
         /// </summary>
         public static void AddComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(this World world, uint entity, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged
         {
-            Schema schema = world.world->schema;
-            schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12, out int c13);
+            world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12, out int c13);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13);
-            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(world.schema.componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -342,7 +330,7 @@ namespace Worlds
         /// </summary>
         public static void AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged
         {
-            world.AddComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>());
+            world.AddComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>());
         }
 
         /// <summary>
@@ -350,10 +338,9 @@ namespace Worlds
         /// </summary>
         public static void AddComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(this World world, uint entity, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13, T14 component14) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged
         {
-            Schema schema = world.world->schema;
-            schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12, out int c13, out int c14);
+            world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12, out int c13, out int c14);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14);
-            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(world.schema.componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -376,7 +363,7 @@ namespace Worlds
         /// </summary>
         public static void AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged
         {
-            world.AddComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>());
+            world.AddComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>());
         }
 
         /// <summary>
@@ -384,10 +371,9 @@ namespace Worlds
         /// </summary>
         public static void AddComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(this World world, uint entity, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13, T14 component14, T15 component15) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged
         {
-            Schema schema = world.world->schema;
-            schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12, out int c13, out int c14, out int c15);
+            world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12, out int c13, out int c14, out int c15);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15);
-            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(world.schema.componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -411,7 +397,7 @@ namespace Worlds
         /// </summary>
         public static void AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged
         {
-            world.AddComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>());
+            world.AddComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>());
         }
 
         /// <summary>
@@ -419,10 +405,9 @@ namespace Worlds
         /// </summary>
         public static void AddComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(this World world, uint entity, T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11, T12 component12, T13 component13, T14 component14, T15 component15, T16 component16) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged
         {
-            Schema schema = world.world->schema;
-            schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12, out int c13, out int c14, out int c15, out int c16);
+            world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(out int c1, out int c2, out int c3, out int c4, out int c5, out int c6, out int c7, out int c8, out int c9, out int c10, out int c11, out int c12, out int c13, out int c14, out int c15, out int c16);
             BitMask componentTypes = new(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16);
-            Span<uint> componentOffsets = new(schema.schema->componentOffsets, BitMask.Capacity);
+            Span<uint> componentOffsets = new(world.schema.componentOffsets, BitMask.Capacity);
             world.AddComponentTypes(entity, componentTypes, out Chunk.Row newRow);
             newRow.row.Write(componentOffsets[c1], component1);
             newRow.row.Write(componentOffsets[c2], component2);
@@ -447,7 +432,7 @@ namespace Worlds
         /// </summary>
         public static void RemoveComponentTypes<T1, T2>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged
         {
-            world.RemoveComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2>());
+            world.RemoveComponentTypes(entity, world.schema.GetComponentTypes<T1, T2>());
         }
 
         /// <summary>
@@ -455,7 +440,7 @@ namespace Worlds
         /// </summary>
         public static void RemoveComponentTypes<T1, T2, T3>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            world.RemoveComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3>());
+            world.RemoveComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3>());
         }
 
         /// <summary>
@@ -463,7 +448,7 @@ namespace Worlds
         /// </summary>
         public static void RemoveComponentTypes<T1, T2, T3, T4>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            world.RemoveComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4>());
+            world.RemoveComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4>());
         }
 
         /// <summary>
@@ -471,7 +456,7 @@ namespace Worlds
         /// </summary>
         public static void RemoveComponentTypes<T1, T2, T3, T4, T5>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
-            world.RemoveComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5>());
+            world.RemoveComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5>());
         }
 
         /// <summary>
@@ -479,7 +464,7 @@ namespace Worlds
         /// </summary>
         public static void RemoveComponentTypes<T1, T2, T3, T4, T5, T6>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
-            world.RemoveComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6>());
+            world.RemoveComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6>());
         }
 
         /// <summary>
@@ -487,7 +472,7 @@ namespace Worlds
         /// </summary>
         public static void RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
-            world.RemoveComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7>());
+            world.RemoveComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7>());
         }
 
         /// <summary>
@@ -495,7 +480,7 @@ namespace Worlds
         /// </summary>
         public static void RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
-            world.RemoveComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>());
+            world.RemoveComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>());
         }
 
         /// <summary>
@@ -503,7 +488,7 @@ namespace Worlds
         /// </summary>
         public static void RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
-            world.RemoveComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>());
+            world.RemoveComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>());
         }
 
         /// <summary>
@@ -511,7 +496,7 @@ namespace Worlds
         /// </summary>
         public static void RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
-            world.RemoveComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>());
+            world.RemoveComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>());
         }
 
         /// <summary>
@@ -519,7 +504,7 @@ namespace Worlds
         /// </summary>
         public static void RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
-            world.RemoveComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>());
+            world.RemoveComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>());
         }
 
         /// <summary>
@@ -527,7 +512,7 @@ namespace Worlds
         /// </summary>
         public static void RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
-            world.RemoveComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>());
+            world.RemoveComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>());
         }
 
         /// <summary>
@@ -535,7 +520,7 @@ namespace Worlds
         /// </summary>
         public static void RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged
         {
-            world.RemoveComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>());
+            world.RemoveComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>());
         }
 
         /// <summary>
@@ -543,7 +528,7 @@ namespace Worlds
         /// </summary>
         public static void RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged
         {
-            world.RemoveComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>());
+            world.RemoveComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>());
         }
 
         /// <summary>
@@ -551,7 +536,7 @@ namespace Worlds
         /// </summary>
         public static void RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged
         {
-            world.RemoveComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>());
+            world.RemoveComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>());
         }
 
         /// <summary>
@@ -559,7 +544,7 @@ namespace Worlds
         /// </summary>
         public static void RemoveComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(this World world, uint entity) where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged where T13 : unmanaged where T14 : unmanaged where T15 : unmanaged where T16 : unmanaged
         {
-            world.RemoveComponentTypes(entity, world.world->schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>());
+            world.RemoveComponentTypes(entity, world.schema.GetComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>());
         }
     }
 }

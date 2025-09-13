@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unmanaged;
 
@@ -44,38 +45,41 @@ namespace Worlds
         /// <summary>
         /// Retrieves the memory for <paramref name="componentType"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe readonly MemoryAddress GetComponent(int componentType)
         {
             ThrowIfComponentIsMissing(componentType);
 
-            return new(row.pointer + chunk.chunk->schema.schema->componentOffsets[(uint)componentType]);
+            return new(row.pointer + chunk.componentOffsets[(uint)componentType]);
         }
 
         /// <summary>
         /// Retrieves a reference to <typeparamref name="T"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe readonly ref T GetComponent<T>() where T : unmanaged
         {
             int componentType = chunk.chunk->schema.GetComponentType<T>();
             ThrowIfComponentIsMissing(componentType);
 
-            return ref *(T*)(row.pointer + chunk.chunk->schema.schema->componentOffsets[(uint)componentType]);
+            return ref *(T*)(row.pointer + chunk.componentOffsets[(uint)componentType]);
         }
 
         /// <summary>
         /// Retrieves a reference to <typeparamref name="T"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe readonly ref T GetComponent<T>(int componentType) where T : unmanaged
         {
             ThrowIfComponentIsMissing(componentType);
 
-            return ref *(T*)(row.pointer + chunk.chunk->schema.schema->componentOffsets[(uint)componentType]);
+            return ref *(T*)(row.pointer + chunk.componentOffsets[(uint)componentType]);
         }
 
         [Conditional("DEBUG")]
         internal unsafe readonly void ThrowIfComponentIsMissing(int componentType)
         {
-            if (!chunk.chunk->componentTypes.Contains(componentType))
+            if (!chunk.componentTypes.Contains(componentType))
             {
                 throw new InvalidOperationException($"Entity does not contain component type `{componentType}`");
             }

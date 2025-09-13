@@ -33,7 +33,7 @@ namespace Worlds
         {
             required = default;
             exclude = default;
-            required.AddComponentTypes(world.world->schema.GetComponentTypes<C1>());
+            required.AddComponentTypes(world.schema.GetComponentTypes<C1>());
             this.world = world;
         }
 
@@ -59,7 +59,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireArray<T>() where T : unmanaged
         {
-            required.AddArrayType<T>(world.world->schema);
+            required.AddArrayType<T>(world.schema);
             return this;
         }
 
@@ -68,7 +68,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireArrays<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
-            required.AddArrayTypes<T1, T2>(world.world->schema);
+            required.AddArrayTypes<T1, T2>(world.schema);
             return this;
         }
 
@@ -77,7 +77,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireArrays<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            required.AddArrayTypes<T1, T2, T3>(world.world->schema);
+            required.AddArrayTypes<T1, T2, T3>(world.schema);
             return this;
         }
 
@@ -86,7 +86,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireArrays<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            required.AddArrayTypes<T1, T2, T3, T4>(world.world->schema);
+            required.AddArrayTypes<T1, T2, T3, T4>(world.schema);
             return this;
         }
 
@@ -95,7 +95,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireArrays<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
-            required.AddArrayTypes<T1, T2, T3, T4, T5>(world.world->schema);
+            required.AddArrayTypes<T1, T2, T3, T4, T5>(world.schema);
             return this;
         }
 
@@ -104,7 +104,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireArrays<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
-            required.AddArrayTypes<T1, T2, T3, T4, T5, T6>(world.world->schema);
+            required.AddArrayTypes<T1, T2, T3, T4, T5, T6>(world.schema);
             return this;
         }
 
@@ -113,7 +113,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireArrays<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
-            required.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7>(world.world->schema);
+            required.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7>(world.schema);
             return this;
         }
 
@@ -122,7 +122,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireArrays<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
-            required.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8>(world.world->schema);
+            required.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8>(world.schema);
             return this;
         }
 
@@ -131,7 +131,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireArrays<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
-            required.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(world.world->schema);
+            required.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(world.schema);
             return this;
         }
 
@@ -140,7 +140,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireArrays<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
-            required.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(world.world->schema);
+            required.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(world.schema);
             return this;
         }
 
@@ -149,7 +149,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireArrays<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
-            required.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(world.world->schema);
+            required.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(world.schema);
             return this;
         }
 
@@ -158,7 +158,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireArrays<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
-            required.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(world.world->schema);
+            required.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(world.schema);
             return this;
         }
 
@@ -167,7 +167,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireTag<T>() where T : unmanaged
         {
-            required.AddTagType<T>(world.world->schema);
+            required.AddTagType<T>(world.schema);
             return this;
         }
 
@@ -176,7 +176,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireTags<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
-            required.AddTagTypes<T1, T2>(world.world->schema);
+            required.AddTagTypes<T1, T2>(world.schema);
             return this;
         }
 
@@ -185,7 +185,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireTags<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            required.AddTagTypes<T1, T2, T3>(world.world->schema);
+            required.AddTagTypes<T1, T2, T3>(world.schema);
             return this;
         }
 
@@ -194,7 +194,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireTags<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            required.AddTagTypes<T1, T2, T3, T4>(world.world->schema);
+            required.AddTagTypes<T1, T2, T3, T4>(world.schema);
             return this;
         }
 
@@ -203,7 +203,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireTags<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
-            required.AddTagTypes<T1, T2, T3, T4, T5>(world.world->schema);
+            required.AddTagTypes<T1, T2, T3, T4, T5>(world.schema);
             return this;
         }
 
@@ -212,7 +212,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireTags<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
-            required.AddTagTypes<T1, T2, T3, T4, T5, T6>(world.world->schema);
+            required.AddTagTypes<T1, T2, T3, T4, T5, T6>(world.schema);
             return this;
         }
 
@@ -221,7 +221,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireTags<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
-            required.AddTagTypes<T1, T2, T3, T4, T5, T6, T7>(world.world->schema);
+            required.AddTagTypes<T1, T2, T3, T4, T5, T6, T7>(world.schema);
             return this;
         }
 
@@ -230,7 +230,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireTags<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
-            required.AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8>(world.world->schema);
+            required.AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8>(world.schema);
             return this;
         }
 
@@ -239,7 +239,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireTags<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
-            required.AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(world.world->schema);
+            required.AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(world.schema);
             return this;
         }
 
@@ -248,7 +248,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
-            required.AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(world.world->schema);
+            required.AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(world.schema);
             return this;
         }
 
@@ -257,7 +257,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
-            required.AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(world.world->schema);
+            required.AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(world.schema);
             return this;
         }
 
@@ -266,7 +266,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
-            required.AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(world.world->schema);
+            required.AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(world.schema);
             return this;
         }
 
@@ -275,7 +275,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireComponent<T1>() where T1 : unmanaged
         {
-            required.AddComponentType<T1>(world.world->schema);
+            required.AddComponentType<T1>(world.schema);
             return this;
         }
 
@@ -284,7 +284,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireComponents<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
-            required.AddComponentTypes<T1, T2>(world.world->schema);
+            required.AddComponentTypes<T1, T2>(world.schema);
             return this;
         }
 
@@ -293,7 +293,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireComponents<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            required.AddComponentTypes<T1, T2, T3>(world.world->schema);
+            required.AddComponentTypes<T1, T2, T3>(world.schema);
             return this;
         }
 
@@ -302,7 +302,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireComponents<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            required.AddComponentTypes<T1, T2, T3, T4>(world.world->schema);
+            required.AddComponentTypes<T1, T2, T3, T4>(world.schema);
             return this;
         }
 
@@ -311,7 +311,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireComponents<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
-            required.AddComponentTypes<T1, T2, T3, T4, T5>(world.world->schema);
+            required.AddComponentTypes<T1, T2, T3, T4, T5>(world.schema);
             return this;
         }
 
@@ -320,7 +320,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireComponents<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
-            required.AddComponentTypes<T1, T2, T3, T4, T5, T6>(world.world->schema);
+            required.AddComponentTypes<T1, T2, T3, T4, T5, T6>(world.schema);
             return this;
         }
 
@@ -329,7 +329,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireComponents<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
-            required.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7>(world.world->schema);
+            required.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7>(world.schema);
             return this;
         }
 
@@ -338,7 +338,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireComponents<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
-            required.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>(world.world->schema);
+            required.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>(world.schema);
             return this;
         }
 
@@ -347,7 +347,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
-            required.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(world.world->schema);
+            required.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(world.schema);
             return this;
         }
 
@@ -356,7 +356,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
-            required.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(world.world->schema);
+            required.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(world.schema);
             return this;
         }
 
@@ -365,7 +365,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
-            required.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(world.world->schema);
+            required.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(world.schema);
             return this;
         }
 
@@ -374,7 +374,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> RequireComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
-            required.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(world.world->schema);
+            required.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(world.schema);
             return this;
         }
 
@@ -383,7 +383,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeComponent<T1>() where T1 : unmanaged
         {
-            exclude.AddComponentType<T1>(world.world->schema);
+            exclude.AddComponentType<T1>(world.schema);
             return this;
         }
 
@@ -392,7 +392,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeComponents<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
-            exclude.AddComponentTypes<T1, T2>(world.world->schema);
+            exclude.AddComponentTypes<T1, T2>(world.schema);
             return this;
         }
 
@@ -401,7 +401,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeComponents<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            exclude.AddComponentTypes<T1, T2, T3>(world.world->schema);
+            exclude.AddComponentTypes<T1, T2, T3>(world.schema);
             return this;
         }
 
@@ -410,7 +410,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeComponents<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            exclude.AddComponentTypes<T1, T2, T3, T4>(world.world->schema);
+            exclude.AddComponentTypes<T1, T2, T3, T4>(world.schema);
             return this;
         }
 
@@ -419,7 +419,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeComponents<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
-            exclude.AddComponentTypes<T1, T2, T3, T4, T5>(world.world->schema);
+            exclude.AddComponentTypes<T1, T2, T3, T4, T5>(world.schema);
             return this;
         }
 
@@ -428,7 +428,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeComponents<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
-            exclude.AddComponentTypes<T1, T2, T3, T4, T5, T6>(world.world->schema);
+            exclude.AddComponentTypes<T1, T2, T3, T4, T5, T6>(world.schema);
             return this;
         }
 
@@ -437,7 +437,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeComponents<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
-            exclude.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7>(world.world->schema);
+            exclude.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7>(world.schema);
             return this;
         }
 
@@ -446,7 +446,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeComponents<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
-            exclude.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>(world.world->schema);
+            exclude.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8>(world.schema);
             return this;
         }
 
@@ -455,7 +455,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
-            exclude.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(world.world->schema);
+            exclude.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(world.schema);
             return this;
         }
 
@@ -464,7 +464,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
-            exclude.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(world.world->schema);
+            exclude.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(world.schema);
             return this;
         }
 
@@ -473,7 +473,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
-            exclude.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(world.world->schema);
+            exclude.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(world.schema);
             return this;
         }
 
@@ -482,7 +482,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeComponents<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
-            exclude.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(world.world->schema);
+            exclude.AddComponentTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(world.schema);
             return this;
         }
 
@@ -491,7 +491,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeTag<T1>() where T1 : unmanaged
         {
-            exclude.AddTagType<T1>(world.world->schema);
+            exclude.AddTagType<T1>(world.schema);
             return this;
         }
 
@@ -500,7 +500,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeTags<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
-            exclude.AddTagTypes<T1, T2>(world.world->schema);
+            exclude.AddTagTypes<T1, T2>(world.schema);
             return this;
         }
 
@@ -509,7 +509,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeTags<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            exclude.AddTagTypes<T1, T2, T3>(world.world->schema);
+            exclude.AddTagTypes<T1, T2, T3>(world.schema);
             return this;
         }
 
@@ -518,7 +518,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeTags<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            exclude.AddTagTypes<T1, T2, T3, T4>(world.world->schema);
+            exclude.AddTagTypes<T1, T2, T3, T4>(world.schema);
             return this;
         }
 
@@ -527,7 +527,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeTags<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
-            exclude.AddTagTypes<T1, T2, T3, T4, T5>(world.world->schema);
+            exclude.AddTagTypes<T1, T2, T3, T4, T5>(world.schema);
             return this;
         }
 
@@ -536,7 +536,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeTags<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
-            exclude.AddTagTypes<T1, T2, T3, T4, T5, T6>(world.world->schema);
+            exclude.AddTagTypes<T1, T2, T3, T4, T5, T6>(world.schema);
             return this;
         }
 
@@ -545,7 +545,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeTags<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
-            exclude.AddTagTypes<T1, T2, T3, T4, T5, T6, T7>(world.world->schema);
+            exclude.AddTagTypes<T1, T2, T3, T4, T5, T6, T7>(world.schema);
             return this;
         }
 
@@ -554,7 +554,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeTags<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
-            exclude.AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8>(world.world->schema);
+            exclude.AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8>(world.schema);
             return this;
         }
 
@@ -563,7 +563,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeTags<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
-            exclude.AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(world.world->schema);
+            exclude.AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(world.schema);
             return this;
         }
 
@@ -572,7 +572,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
-            exclude.AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(world.world->schema);
+            exclude.AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(world.schema);
             return this;
         }
 
@@ -581,7 +581,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
-            exclude.AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(world.world->schema);
+            exclude.AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(world.schema);
             return this;
         }
 
@@ -590,7 +590,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeTags<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
-            exclude.AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(world.world->schema);
+            exclude.AddTagTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(world.schema);
             return this;
         }
 
@@ -599,7 +599,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeArray<T1>() where T1 : unmanaged
         {
-            exclude.AddArrayType<T1>(world.world->schema);
+            exclude.AddArrayType<T1>(world.schema);
             return this;
         }
 
@@ -608,7 +608,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeArrays<T1, T2>() where T1 : unmanaged where T2 : unmanaged
         {
-            exclude.AddArrayTypes<T1, T2>(world.world->schema);
+            exclude.AddArrayTypes<T1, T2>(world.schema);
             return this;
         }
 
@@ -617,7 +617,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeArrays<T1, T2, T3>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            exclude.AddArrayTypes<T1, T2, T3>(world.world->schema);
+            exclude.AddArrayTypes<T1, T2, T3>(world.schema);
             return this;
         }
 
@@ -626,7 +626,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeArrays<T1, T2, T3, T4>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            exclude.AddArrayTypes<T1, T2, T3, T4>(world.world->schema);
+            exclude.AddArrayTypes<T1, T2, T3, T4>(world.schema);
             return this;
         }
 
@@ -635,7 +635,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeArrays<T1, T2, T3, T4, T5>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
-            exclude.AddArrayTypes<T1, T2, T3, T4, T5>(world.world->schema);
+            exclude.AddArrayTypes<T1, T2, T3, T4, T5>(world.schema);
             return this;
         }
 
@@ -644,7 +644,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeArrays<T1, T2, T3, T4, T5, T6>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
-            exclude.AddArrayTypes<T1, T2, T3, T4, T5, T6>(world.world->schema);
+            exclude.AddArrayTypes<T1, T2, T3, T4, T5, T6>(world.schema);
             return this;
         }
 
@@ -653,7 +653,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeArrays<T1, T2, T3, T4, T5, T6, T7>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
-            exclude.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7>(world.world->schema);
+            exclude.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7>(world.schema);
             return this;
         }
 
@@ -662,7 +662,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeArrays<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
-            exclude.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8>(world.world->schema);
+            exclude.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8>(world.schema);
             return this;
         }
 
@@ -671,7 +671,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeArrays<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
-            exclude.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(world.world->schema);
+            exclude.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9>(world.schema);
             return this;
         }
 
@@ -680,7 +680,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeArrays<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged
         {
-            exclude.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(world.world->schema);
+            exclude.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(world.schema);
             return this;
         }
 
@@ -689,7 +689,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeArrays<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged
         {
-            exclude.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(world.world->schema);
+            exclude.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(world.schema);
             return this;
         }
 
@@ -698,7 +698,7 @@ namespace Worlds
         /// </summary>
         public ComponentQuery<C1> ExcludeArrays<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>() where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged where T10 : unmanaged where T11 : unmanaged where T12 : unmanaged
         {
-            exclude.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(world.world->schema);
+            exclude.AddArrayTypes<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(world.schema);
             return this;
         }
 
@@ -714,7 +714,6 @@ namespace Worlds
         public ref struct Enumerator
         {
             private readonly ReadOnlySpan<Chunk> chunks;
-            private readonly ComponentQuery<C1> query;
             private readonly uint componentOffset1;
             private int version;
             private int entityIndex;
@@ -739,7 +738,6 @@ namespace Worlds
 
             internal unsafe Enumerator(ComponentQuery<C1> query)
             {
-                this.query = query;
                 int chunkCount = 0;
                 ReadOnlySpan<Chunk> allChunks = query.world.Chunks;
                 Span<Chunk> chunksBuffer = stackalloc Chunk[allChunks.Length];
@@ -792,11 +790,11 @@ namespace Worlds
                     chunks = chunksMemory.GetSpan<Chunk>(chunkCount);
                     ChunkPointer* chunk = chunks[0].chunk;
                     version = chunk->version;
-                    entities = new(chunk->entities.Items.pointer, chunk->count + 1);
+                    entities = new(chunk->entities.Items.pointer, chunk->count + ChunkPointer.FirstEntity);
                     entityCount = chunk->count;
                     components = chunk->components;
-                    Schema schema = query.world.world->schema;
-                    componentOffset1 = schema.schema->componentOffsets[schema.GetComponentType<C1>()];
+                    Schema schema = query.world.schema;
+                    componentOffset1 = schema.componentOffsets[schema.GetComponentType<C1>()];
                 }
                 else
                 {
@@ -805,7 +803,7 @@ namespace Worlds
             }
 
             [Conditional("DEBUG")]
-            private readonly void ThrowIfVersionIsDifferent() 
+            private readonly void ThrowIfVersionIsDifferent()
             {
                 Chunk chunk = chunks[chunkIndex];
                 if (version != chunk.chunk->version)
@@ -833,10 +831,10 @@ namespace Worlds
                     {
                         ChunkPointer* chunk = chunks[chunkIndex].chunk;
                         version = chunk->version;
-                        entities = new(chunk->entities.Items.pointer, chunk->count + 1);
+                        entities = new(chunk->entities.Items.pointer, chunk->count + ChunkPointer.FirstEntity);
                         entityCount = chunk->count;
                         components = chunk->components;
-                        entityIndex = 1;
+                        entityIndex = ChunkPointer.FirstEntity;
                         return true;
                     }
                     else

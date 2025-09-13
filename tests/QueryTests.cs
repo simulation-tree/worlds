@@ -88,6 +88,42 @@ namespace Worlds.Tests
         }
 
         [Test]
+        public void FasterQuery()
+        {
+            using World world = CreateWorld();
+
+            uint a = world.CreateEntity();
+            world.AddComponent(a, new Apple());
+
+            uint b = world.CreateEntity();
+            world.AddComponent(b, new Berry());
+
+            uint c = world.CreateEntity();
+            world.AddComponent(c, new Apple());
+            world.AddComponent(c, new Berry());
+
+            uint d = world.CreateEntity();
+            world.AddComponent(d, new Apple());
+
+            using List<uint> entities = new();
+            ReadOnlySpan<Chunk> chunks = world.Chunks;
+            int componentType = world.Schema.GetComponentType<Berry>();
+            for (int ci = 0; ci < chunks.Length; ci++)
+            {
+                Chunk chunk = chunks[ci];
+                if (chunk.componentTypes.Contains(componentType))
+                {
+                    ComponentEnumerator<Berry> berries = chunk.GetComponents<Berry>(componentType);
+                    entities.AddRange(chunk.Entities);
+                }
+            }
+
+            Assert.That(entities.Count, Is.EqualTo(2));
+            Assert.That(entities[0], Is.EqualTo(b));
+            Assert.That(entities[1], Is.EqualTo(c));
+        }
+
+        [Test]
         public void QueryWithExclusion()
         {
             using World world = CreateWorld();

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using static SharedFunctions;
 
 public static class ComponentQuery
@@ -7,6 +8,8 @@ public static class ComponentQuery
 
     public static void Generate()
     {
+        string repositoryRoot = GetRepositoryRoot();
+        string destinationFolder = Path.Combine(repositoryRoot, "core", "Component Query");
         string template = File.ReadAllText("ComponentQuery.cs.template");
         for (uint i = 0; i < 16; i++)
         {
@@ -18,7 +21,25 @@ public static class ComponentQuery
             source = source.Replace("{{AssignComponentOffsets}}", AssignComponentOffsets(i, GetIndent(source, "{{AssignComponentOffsets}}")));
             source = source.Replace("{{AccessComponents}}", AccessComponents(i, GetIndent(source, "{{AccessComponents}}")));
             source = source.Replace("{{ReferenceComponents}}", ReferenceComponents(i));
-            File.WriteAllText($"{TypeName}{i + 1}.cs", source);
+            string fileName = $"{TypeName}{i + 1}.cs";
+            string filePath = Path.Combine(destinationFolder, fileName);
+            File.WriteAllText(filePath, source);
         }
+    }
+
+    private static string GetRepositoryRoot()
+    {
+        string? directory = Environment.CurrentDirectory;
+        while (directory is not null)
+        {
+            if (Directory.Exists(Path.Combine(directory, ".git")))
+            {
+                return directory;
+            }
+
+            directory = Path.GetDirectoryName(directory);
+        }
+
+        throw new InvalidOperationException("Could not find repository root");
     }
 }

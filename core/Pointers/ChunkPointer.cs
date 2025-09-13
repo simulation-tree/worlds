@@ -7,16 +7,14 @@ namespace Worlds.Pointers
     {
         public const int FirstEntity = 1;
 
-        public uint lastEntity;
-        public int count;
-        public int version;
         public BitMask componentTypes;
         public BitMask arrayTypes;
         public BitMask tagTypes;
-        public Schema schema;
         public List<uint> entities;
         public List components;
-
-        public readonly Definition Definition => new(componentTypes, arrayTypes, tagTypes);
+        public int count;
+        public uint lastEntity;
+        public int version;
+        public Schema schema;
     }
 }

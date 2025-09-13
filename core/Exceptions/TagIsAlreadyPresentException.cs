@@ -15,7 +15,7 @@ namespace Worlds
 
         private unsafe static string GetMessage(World world, uint entity, int tagType)
         {
-            TypeMetadata type = world.world->schema.GetTagLayout(tagType);
+            TypeMetadata type = world.schema.GetTagLayout(tagType);
             return $"Entity `{entity}` already has tag `{type}`";
         }
     }
