@@ -455,7 +455,12 @@ namespace Worlds
         /// </summary>
         public readonly override int GetHashCode()
         {
-            return value.GetHashCode();
+            int hash = 17;
+            hash = hash * 31 + value.GetElement(0).GetHashCode();
+            hash = hash * 31 + value.GetElement(1).GetHashCode();
+            hash = hash * 31 + value.GetElement(2).GetHashCode();
+            hash = hash * 31 + value.GetElement(3).GetHashCode();
+            return hash;
         }
 
         /// <inheritdoc/>
@@ -468,6 +473,30 @@ namespace Worlds
         public readonly bool Equals(BitMask other)
         {
             return value == other.value;
+        }
+
+        /// <summary>
+        /// Sets the bit at position <paramref name="index"/> to 1.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static BitMask Set(BitMask bitMask, int index)
+        {
+            int vectorIndex = index >> 6;
+            int bitOffset = index & 63;
+            ulong mask = 1UL << bitOffset;
+            return new(bitMask.value.WithElement(vectorIndex, bitMask.value[vectorIndex] | mask));
+        }
+
+        /// <summary>
+        /// Resets the bit at position <paramref name="index"/> to 0.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static BitMask Clear(BitMask bitMask, int index)
+        {
+            int vectorIndex = index >> 6;
+            int bitOffset = index & 63;
+            ulong mask = 1UL << bitOffset;
+            return new(bitMask.value.WithElement(vectorIndex, bitMask.value[vectorIndex] & ~mask));
         }
 
         /// <inheritdoc/>

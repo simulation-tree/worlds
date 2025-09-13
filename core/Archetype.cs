@@ -149,7 +149,10 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return HashCode.Combine(definition, schema);
+            int hash = 17;
+            hash = hash * 31 + definition.GetHashCode();
+            hash = hash * 31 + schema.GetHashCode();
+            return hash;
         }
 
         /// <summary>

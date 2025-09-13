@@ -698,13 +698,10 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            unchecked
-            {
-                int hash = 17;
-                hash = hash * 23 + world.GetHashCode();
-                hash = hash * 23 + value.GetHashCode();
-                return hash;
-            }
+            int hash = 17;
+            hash = hash * 31 + world.GetHashCode();
+            hash = hash * 31 + value.GetHashCode();
+            return hash;
         }
 
         [Conditional("DEBUG")]

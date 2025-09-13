@@ -391,7 +391,10 @@ namespace Worlds.Generators
             builder.AppendLine("public readonly override int GetHashCode()");
             builder.BeginGroup();
             {
-                builder.AppendLine("return HashCode.Combine(world, value);");
+                builder.AppendLine("int hash = 17;");
+                builder.AppendLine("hash = hash * 31 + world.GetHashCode();");
+                builder.AppendLine("hash = hash * 31 + (int)value;");
+                builder.AppendLine("return hash;");
             }
             builder.EndGroup();
 

@@ -311,10 +311,7 @@ namespace Worlds
             /// </summary>
             public readonly MemoryAddress GetComponent(int componentType)
             {
-                unchecked
-                {
-                    return new(row.pointer + schema.schema->componentOffsets[(uint)componentType]);
-                }
+                return new(row.pointer + schema.schema->componentOffsets[(uint)componentType]);
             }
 
             /// <summary>
@@ -322,10 +319,7 @@ namespace Worlds
             /// </summary>
             public readonly ref T GetComponent<T>(int componentType) where T : unmanaged
             {
-                unchecked
-                {
-                    return ref *(T*)(row.pointer + schema.schema->componentOffsets[(uint)componentType]);
-                }
+                return ref *(T*)(row.pointer + schema.schema->componentOffsets[(uint)componentType]);
             }
 
             /// <summary>
@@ -333,10 +327,7 @@ namespace Worlds
             /// </summary>
             public readonly void SetComponent<T>(int componentType, T value) where T : unmanaged
             {
-                unchecked
-                {
-                    *(T*)(row.pointer + schema.schema->componentOffsets[(uint)componentType]) = value;
-                }
+                *(T*)(row.pointer + schema.schema->componentOffsets[(uint)componentType]) = value;
             }
 
             /// <summary>
@@ -344,10 +335,7 @@ namespace Worlds
             /// </summary>
             public readonly Span<byte> GetSpan(int componentType)
             {
-                unchecked
-                {
-                    return new Span<byte>(row.pointer + schema.schema->componentOffsets[(uint)componentType], schema.schema->sizes[(uint)componentType]);
-                }
+                return new Span<byte>(row.pointer + schema.schema->componentOffsets[(uint)componentType], schema.schema->sizes[(uint)componentType]);
             }
         }
 

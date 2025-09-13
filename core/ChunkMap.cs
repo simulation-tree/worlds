@@ -106,16 +106,12 @@ namespace Worlds
 
         public readonly Chunk GetOrCreateWithAddedComponent(ChunkPointer* sourceChunk, int componentType)
         {
-            BitMask newComponentTypes = sourceChunk->componentTypes;
-            newComponentTypes.Set(componentType);
-            return GetOrCreate(newComponentTypes, sourceChunk->arrayTypes, sourceChunk->tagTypes);
+            return GetOrCreate(BitMask.Set(sourceChunk->componentTypes, componentType), sourceChunk->arrayTypes, sourceChunk->tagTypes);
         }
 
         public readonly Chunk GetOrCreateWithRemovedComponent(ChunkPointer* sourceChunk, int componentType)
         {
-            BitMask componentTypes = sourceChunk->componentTypes;
-            componentTypes.Clear(componentType);
-
+            BitMask componentTypes = BitMask.Clear(sourceChunk->componentTypes, componentType);
             if (componentTypes.IsEmpty && sourceChunk->arrayTypes.IsEmpty && sourceChunk->tagTypes.IsEmpty)
             {
                 return chunkMap->defaultChunk;
@@ -126,16 +122,12 @@ namespace Worlds
 
         public readonly Chunk GetOrCreateWithAddedArray(ChunkPointer* sourceChunk, int arrayType)
         {
-            BitMask arrayTypes = sourceChunk->arrayTypes;
-            arrayTypes.Set(arrayType);
-            return GetOrCreate(sourceChunk->componentTypes, arrayTypes, sourceChunk->tagTypes);
+            return GetOrCreate(sourceChunk->componentTypes, BitMask.Set(sourceChunk->arrayTypes, arrayType), sourceChunk->tagTypes);
         }
 
         public readonly Chunk GetOrCreateWithRemovedArray(ChunkPointer* sourceChunk, int arrayType)
         {
-            BitMask arrayTypes = sourceChunk->arrayTypes;
-            arrayTypes.Clear(arrayType);
-
+            BitMask arrayTypes = BitMask.Clear(sourceChunk->arrayTypes, arrayType);
             if (sourceChunk->componentTypes.IsEmpty && arrayTypes.IsEmpty && sourceChunk->tagTypes.IsEmpty)
             {
                 return chunkMap->defaultChunk;
@@ -146,16 +138,12 @@ namespace Worlds
 
         public readonly Chunk GetOrCreateWithAddedTag(ChunkPointer* sourceChunk, int tagType)
         {
-            BitMask tagTypes = sourceChunk->tagTypes;
-            tagTypes.Set(tagType);
-            return GetOrCreate(sourceChunk->componentTypes, sourceChunk->arrayTypes, tagTypes);
+            return GetOrCreate(sourceChunk->componentTypes, sourceChunk->arrayTypes, BitMask.Set(sourceChunk->tagTypes, tagType));
         }
 
         public readonly Chunk GetOrCreateWithRemovedTag(ChunkPointer* sourceChunk, int tagType)
         {
-            BitMask tagTypes = sourceChunk->tagTypes;
-            tagTypes.Clear(tagType);
-
+            BitMask tagTypes = BitMask.Clear(sourceChunk->tagTypes, tagType);
             if (sourceChunk->componentTypes.IsEmpty && sourceChunk->arrayTypes.IsEmpty && tagTypes.IsEmpty)
             {
                 return chunkMap->defaultChunk;
@@ -268,14 +256,12 @@ namespace Worlds
 
         private readonly Chunk CreateDefault()
         {
-            int capacity = chunkMap->capacity;
             long hashCode = default(Definition).GetLongHashCode();
-            Span<bool> occupied = new(chunkMap->occupied.pointer, capacity);
-            Span<ChunkKey> values = new(chunkMap->keys.pointer, capacity);
-            Span<long> hashCodes = new(chunkMap->hashCodes.pointer, capacity);
+            bool* occupied = (bool*)chunkMap->occupied.pointer;
+            ChunkKey* values = (ChunkKey*)chunkMap->keys.pointer;
+            long* hashCodes = (long*)chunkMap->hashCodes.pointer;
             Chunk newDefaultChunk = new(chunkMap->schema);
-            capacity--;
-            int index = unchecked((int)(((uint)hashCode) & (uint)capacity));
+            uint index = (uint)hashCode & (uint)(chunkMap->capacity - 1);
             occupied[index] = true;
             hashCodes[index] = hashCode;
             values[index] = new(newDefaultChunk);

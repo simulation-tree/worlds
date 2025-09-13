@@ -265,10 +265,7 @@ namespace Worlds
         /// </summary>
         public readonly int GetComponentSize(int componentType)
         {
-            unchecked
-            {
-                return schema->sizes[(uint)componentType];
-            }
+            return schema->sizes[(uint)componentType];
         }
 
         /// <summary>
@@ -276,10 +273,7 @@ namespace Worlds
         /// </summary>
         public readonly int GetArraySize(int arrayType)
         {
-            unchecked
-            {
-                return schema->sizes[(uint)(BitMask.Capacity + arrayType)];
-            }
+            return schema->sizes[(uint)(BitMask.Capacity + arrayType)];
         }
 
         /// <summary>
@@ -290,10 +284,7 @@ namespace Worlds
         {
             ThrowIfComponentTypeIsMissing<T>();
 
-            unchecked
-            {
-                return (int)schema->componentOffsets[(uint)GetComponentType<T>()];
-            }
+            return (int)schema->componentOffsets[(uint)GetComponentType<T>()];
         }
 
         /// <summary>
@@ -302,10 +293,7 @@ namespace Worlds
         /// </summary>
         public readonly int GetComponentOffset(int componentType)
         {
-            unchecked
-            {
-                return (int)schema->componentOffsets[(uint)componentType];
-            }
+            return (int)schema->componentOffsets[(uint)componentType];
         }
 
         /// <summary>

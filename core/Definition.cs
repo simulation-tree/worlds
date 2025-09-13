@@ -242,20 +242,21 @@ namespace Worlds
         /// </summary>
         public readonly long GetLongHashCode()
         {
-            unchecked
-            {
-                long hash = 17;
-                hash = hash * 23 + componentTypes.GetLongHashCode();
-                hash = hash * 23 + arrayTypes.GetLongHashCode();
-                hash = hash * 23 + tagTypes.GetLongHashCode();
-                return hash;
-            }
+            long hash = 17;
+            hash = hash * 23 + componentTypes.GetLongHashCode();
+            hash = hash * 23 + arrayTypes.GetLongHashCode();
+            hash = hash * 23 + tagTypes.GetLongHashCode();
+            return hash;
         }
 
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return HashCode.Combine(componentTypes, arrayTypes, tagTypes);
+            int hash = 17;
+            hash = hash * 23 + componentTypes.GetHashCode();
+            hash = hash * 23 + arrayTypes.GetHashCode();
+            hash = hash * 23 + tagTypes.GetHashCode();
+            return hash;
         }
 
         /// <inheritdoc/>
@@ -716,14 +717,11 @@ namespace Worlds
         /// </summary>
         public static long GetLongHashCode(BitMask componentTypes, BitMask arrayTypes, BitMask tagTypes)
         {
-            unchecked
-            {
-                long hash = 17;
-                hash = hash * 23 + componentTypes.GetLongHashCode();
-                hash = hash * 23 + arrayTypes.GetLongHashCode();
-                hash = hash * 23 + tagTypes.GetLongHashCode();
-                return hash;
-            }
+            long hash = 17;
+            hash = hash * 23 + componentTypes.GetLongHashCode();
+            hash = hash * 23 + arrayTypes.GetLongHashCode();
+            hash = hash * 23 + tagTypes.GetLongHashCode();
+            return hash;
         }
 
         /// <inheritdoc/>

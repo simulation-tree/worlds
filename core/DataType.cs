@@ -133,10 +133,10 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            unchecked
-            {
-                return (index << 2) | (byte)kind;
-            }
+            int hash = 17;
+            hash = hash * 31 + index;
+            hash = hash * 31 + (int)kind;
+            return hash;
         }
 
         /// <inheritdoc/>

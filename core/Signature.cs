@@ -75,18 +75,15 @@ namespace Worlds
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            unchecked
+            int hash = 17;
+            fixed (byte* ptr = bytes)
             {
-                int hash = 17;
-                fixed (byte* ptr = bytes)
+                for (int i = 0; i < ByteSize; i++)
                 {
-                    for (int i = 0; i < ByteSize; i++)
-                    {
-                        hash = hash * 31 + ptr[i];
-                    }
-
-                    return hash;
+                    hash = hash * 31 + ptr[i];
                 }
+
+                return hash;
             }
         }
 

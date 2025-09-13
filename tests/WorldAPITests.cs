@@ -158,6 +158,25 @@ namespace Worlds.Tests
             }
         }
 
+        [Test]
+        public void CreateBulkWith3Components()
+        {
+            using World world = CreateWorld();
+            Span<uint> entities = stackalloc uint[100];
+            int componentType1 = world.Schema.GetComponentType<Another>();
+            int componentType2 = world.Schema.GetComponentType<SimpleComponent>();
+            int componentType3 = world.Schema.GetComponentType<TestComponent>();
+            Definition definition = new(new BitMask(componentType1, componentType2, componentType3));
+            world.CreateEntities(entities, definition);
+            for (int i = 0; i < entities.Length; i++)
+            {
+                Chunk.Row row = world.GetChunkRow(entities[i]);
+                row.SetComponent(componentType1, new Another((uint)i));
+                row.SetComponent(componentType2, new SimpleComponent("aa"));
+                row.SetComponent(componentType3, new TestComponent(i));
+            }
+        }
+
         [TestCase(1)]
         [TestCase(2)]
         [TestCase(5)]
