@@ -19,6 +19,7 @@
     <IsTrimmable>True</IsTrimmable>
     <NoStandardLib>true</NoStandardLib>
     <PackageId>SimulationTree.Worlds</PackageId>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>

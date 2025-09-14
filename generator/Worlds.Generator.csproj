@@ -12,6 +12,7 @@
     <Company>simulation-tree</Company>
     <RepositoryUrl>https://github.com/simulation-tree/worlds</RepositoryUrl>
     <PackageId>SimulationTree.Worlds.Generator</PackageId>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
