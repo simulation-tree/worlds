@@ -11,7 +11,7 @@
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <Title>Worlds</Title>
     <Authors>popcron</Authors>
-    <Company>simulation-tree</Company>
+    <Company>Simulation Tree</Company>
     <Description>Native C# library for ECS</Description>
     <RepositoryUrl>https://github.com/simulation-tree/worlds</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>

@@ -12,7 +12,7 @@
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
     <Title>Worlds Core</Title>
     <Authors>popcron</Authors>
-    <Company>simulation-tree</Company>
+    <Company>Simulation Tree</Company>
     <Description>Native ECS library</Description>
     <RepositoryUrl>https://github.com/simulation-tree/worlds</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
