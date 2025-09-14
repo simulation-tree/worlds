@@ -18,6 +18,7 @@
     <IsAotCompatible>True</IsAotCompatible>
     <IsTrimmable>True</IsTrimmable>
     <NoStandardLib>true</NoStandardLib>
+    <PackageId>SimulationTree.Worlds</PackageId>
   </PropertyGroup>
 
   <ItemGroup>

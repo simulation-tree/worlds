@@ -9,6 +9,7 @@
     <PublishAot>True</PublishAot>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <OutDir>bin/$(TargetFramework)/$(Configuration)</OutDir>
+    <PackageId>SimulationTree.Worlds.TypesPreGenerator</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
