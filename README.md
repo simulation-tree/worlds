@@ -17,7 +17,7 @@ Schemas can be loaded after a world is created, or by passing one to the constru
 ```cs
 private static void Main()
 {
-    TypeRegistryLoader.Load();              //register type metadata
+    MetadataRegistryLoader.Load();              // register type metadata
 
     Schema schema = new();
     schema.RegisterComponent<float>();
@@ -37,7 +37,7 @@ public struct Fruit(uint value)
     public uint value = value;
 }
 ```
-> The `TypeRegistryLoader` is part of the [`types`](https://github.com/simulation-tree/types) project and it initializes metadata for all types.
+> The `MetadataRegistryLoader` is part of the [`types`](https://github.com/simulation-tree/types) project and it initializes metadata for all types.
 
 ### Schema loader
 
@@ -47,8 +47,8 @@ manually registering them, and making startup easier:
 ```cs
 private static void Main()
 {
-    TypeRegistryLoader.Load();              //register type metadata
-    Schema schema = SchemaLoader.Get();     //register components/arrays/tags
+    MetadataRegistryLoader.Load();              // register type metadata
+    Schema schema = SchemaLoader.Get();         // register components/arrays/tags
     using World world = new(schema);
 
     uint entity = world.CreateEntity();
