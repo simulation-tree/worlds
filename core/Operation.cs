@@ -1710,7 +1710,7 @@ namespace Worlds
                 {
                     uint entity = selection[i];
                     ref Slot slot = ref slots[(int)entity];
-                    if (!slot.chunk.componentTypes.Contains(componentType))
+                    if (!slot.chunk.ComponentTypes.Contains(componentType))
                     {
                         Chunk destinationChunk = world->chunkMap.GetOrCreateWithAddedComponent(slot.chunk, componentType);
                         World.MoveEntityTo(world, entity, ref slot, destinationChunk);
@@ -1752,7 +1752,7 @@ namespace Worlds
                 {
                     uint entity = selection[i];
                     ref Slot slot = ref slots[(int)entity];
-                    if (slot.chunk.componentTypes.Contains(componentType))
+                    if (slot.chunk.ComponentTypes.Contains(componentType))
                     {
                         //same as World.SetComponentBytes
                         Span<byte> component = new(slots[(int)entity].row.pointer + world->schema.schema->componentOffsets[(uint)componentType], componentBytes.Length);

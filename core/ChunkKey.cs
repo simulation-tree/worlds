@@ -7,7 +7,7 @@
 
         public ChunkKey(Chunk chunk)
         {
-            definitionHash = Definition.GetLongHashCode(chunk.componentTypes, chunk.ArrayTypes, chunk.tagTypes);
+            definitionHash = Definition.GetLongHashCode(chunk.ComponentTypes, chunk.ArrayTypes, chunk.TagTypes);
             this.chunk = chunk;
         }
     }

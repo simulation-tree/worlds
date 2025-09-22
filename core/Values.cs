@@ -501,6 +501,21 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Adds a <see langword="default"/> item to the end.
+        /// </summary>
+        public readonly ref T Add<T>() where T : unmanaged
+        {
+            ThrowIfGreaterThanStride<T>();
+
+            int newLength = array->length + 1;
+            MemoryAddress.Resize(ref array->items, array->stride * newLength);
+            ref T element = ref array->items.ReadElement<T>(array->length);
+            array->length = newLength;
+            element = default;
+            return ref element;
+        }
+
+        /// <summary>
         /// Retrieves the reference to the element at <paramref name="index"/> as
         /// type <typeparamref name="T"/>.
         /// </summary>
@@ -522,6 +537,15 @@ namespace Worlds
             ThrowIfGreaterThanStride<T>();
 
             array->items.Write(array->stride * index, value);
+        }
+
+        /// <summary>
+        /// Clears the array.
+        /// </summary>
+        public readonly void Clear()
+        {
+            array->length = 0;
+            MemoryAddress.Resize(ref array->items, 0);
         }
 
         /// <summary>

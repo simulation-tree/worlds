@@ -157,9 +157,9 @@ namespace Worlds
             for (int i = 0; i < world.Chunks.Length; i++)
             {
                 Chunk chunk = world.Chunks[i];
-                if (chunk.componentTypes.ContainsAll(componentTypes))
+                if (chunk.ComponentTypes.ContainsAll(componentTypes))
                 {
-                    if ((chunk.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
+                    if ((chunk.TagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
                         int count = chunk.Count;
                         for (int e = 0; e < count; e++)
@@ -182,7 +182,7 @@ namespace Worlds
                 for (int i = 0; i < chunksLength; i++)
                 {
                     Chunk chunk = world.Chunks[i];
-                    if (chunk.componentTypes.ContainsAll(componentTypes) && (chunk.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
+                    if (chunk.ComponentTypes.ContainsAll(componentTypes) && (chunk.TagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
                         int count = chunk.Count;
                         for (int e = 0; e < count; e++)
@@ -197,7 +197,7 @@ namespace Worlds
                 for (int i = 0; i < chunksLength; i++)
                 {
                     Chunk chunk = world.Chunks[i];
-                    if (chunk.componentTypes.ContainsAll(componentTypes))
+                    if (chunk.ComponentTypes.ContainsAll(componentTypes))
                     {
                         int count = chunk.Count;
                         for (int e = 0; e < count; e++)
@@ -220,7 +220,7 @@ namespace Worlds
                 for (int i = 0; i < chunksLength; i++)
                 {
                     Chunk chunk = world.Chunks[i];
-                    if (chunk.componentTypes.Contains(componentType) && (chunk.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
+                    if (chunk.ComponentTypes.Contains(componentType) && (chunk.TagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
                         int count = chunk.Count;
                         for (int e = 0; e < count; e++)
@@ -235,7 +235,7 @@ namespace Worlds
                 for (int i = 0; i < chunksLength; i++)
                 {
                     Chunk chunk = world.Chunks[i];
-                    if (chunk.componentTypes.Contains(componentType))
+                    if (chunk.ComponentTypes.Contains(componentType))
                     {
                         int count = chunk.Count;
                         for (int e = 0; e < count; e++)
@@ -257,7 +257,7 @@ namespace Worlds
             for (int i = 0; i < chunksLength; i++)
             {
                 Chunk chunk = world.Chunks[i];
-                if (chunk.componentTypes.Contains(componentType) && (chunk.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
+                if (chunk.ComponentTypes.Contains(componentType) && (chunk.TagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                 {
                     int count = chunk.Count;
                     for (int e = 0; e < count; e++)
@@ -280,7 +280,7 @@ namespace Worlds
                 for (int i = 0; i < chunksLength; i++)
                 {
                     Chunk chunk = world.Chunks[i];
-                    if (chunk.componentTypes.Contains(componentType) && (chunk.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
+                    if (chunk.ComponentTypes.Contains(componentType) && (chunk.TagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
                         int count = chunk.Count;
                         for (int e = 0; e < count; e++)
@@ -295,7 +295,7 @@ namespace Worlds
                 for (int i = 0; i < chunksLength; i++)
                 {
                     Chunk chunk = world.Chunks[i];
-                    if (chunk.componentTypes.Contains(componentType))
+                    if (chunk.ComponentTypes.Contains(componentType))
                     {
                         int count = chunk.Count;
                         for (int e = 0; e < count; e++)
@@ -317,11 +317,11 @@ namespace Worlds
             for (int i = 0; i < chunksLength; i++)
             {
                 Chunk chunk = world.Chunks[i];
-                if (chunk.componentTypes.ContainsAll(definition.componentTypes) && chunk.ArrayTypes.ContainsAll(definition.arrayTypes))
+                if (chunk.ComponentTypes.ContainsAll(definition.componentTypes) && chunk.ArrayTypes.ContainsAll(definition.arrayTypes))
                 {
-                    if ((chunk.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
+                    if ((chunk.TagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                     {
-                        if (chunk.tagTypes.ContainsAll(definition.tagTypes))
+                        if (chunk.TagTypes.ContainsAll(definition.tagTypes))
                         {
                             int count = chunk.Count;
                             for (int e = 0; e < count; e++)
@@ -346,11 +346,11 @@ namespace Worlds
                 for (int i = 0; i < chunksLength; i++)
                 {
                     Chunk chunk = world.Chunks[i];
-                    if (chunk.componentTypes.ContainsAll(definition.componentTypes) && chunk.ArrayTypes.ContainsAll(definition.arrayTypes))
+                    if (chunk.ComponentTypes.ContainsAll(definition.componentTypes) && chunk.ArrayTypes.ContainsAll(definition.arrayTypes))
                     {
-                        if ((chunk.tagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
+                        if ((chunk.TagTypes.value.GetElement(3) & Schema.DisabledMask) == 0)
                         {
-                            if (chunk.tagTypes.ContainsAll(definition.tagTypes))
+                            if (chunk.TagTypes.ContainsAll(definition.tagTypes))
                             {
                                 int count = chunk.Count;
                                 for (int e = 0; e < count; e++)
@@ -367,9 +367,9 @@ namespace Worlds
                 for (int i = 0; i < chunksLength; i++)
                 {
                     Chunk chunk = world.Chunks[i];
-                    if (chunk.componentTypes.ContainsAll(definition.componentTypes) && chunk.ArrayTypes.ContainsAll(definition.arrayTypes))
+                    if (chunk.ComponentTypes.ContainsAll(definition.componentTypes) && chunk.ArrayTypes.ContainsAll(definition.arrayTypes))
                     {
-                        if (chunk.tagTypes.ContainsAll(definition.tagTypes))
+                        if (chunk.TagTypes.ContainsAll(definition.tagTypes))
                         {
                             int count = chunk.Count;
                             for (int e = 0; e < count; e++)

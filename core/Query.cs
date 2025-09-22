@@ -30,7 +30,7 @@ namespace Worlds
                     if (chunk.chunk->count > 0)
                     {
                         //check if chunk contains inclusion
-                        if ((chunk.componentTypes & required.componentTypes) != required.componentTypes)
+                        if ((chunk.ComponentTypes & required.componentTypes) != required.componentTypes)
                         {
                             continue;
                         }
@@ -40,13 +40,13 @@ namespace Worlds
                             continue;
                         }
 
-                        if ((chunk.tagTypes & required.tagTypes) != required.tagTypes)
+                        if ((chunk.TagTypes & required.tagTypes) != required.tagTypes)
                         {
                             continue;
                         }
 
                         //check if chunk doesnt contain exclusion
-                        if (chunk.componentTypes.ContainsAny(exclude.componentTypes))
+                        if (chunk.ComponentTypes.ContainsAny(exclude.componentTypes))
                         {
                             continue;
                         }
@@ -56,7 +56,7 @@ namespace Worlds
                             continue;
                         }
 
-                        if (chunk.tagTypes.ContainsAny(exclude.tagTypes))
+                        if (chunk.TagTypes.ContainsAny(exclude.tagTypes))
                         {
                             continue;
                         }
@@ -205,7 +205,7 @@ namespace Worlds
                 if (chunk.chunk->count > 0)
                 {
                     //check if chunk contains inclusion
-                    if ((chunk.componentTypes & required.componentTypes) != required.componentTypes)
+                    if ((chunk.ComponentTypes & required.componentTypes) != required.componentTypes)
                     {
                         continue;
                     }
@@ -215,13 +215,13 @@ namespace Worlds
                         continue;
                     }
 
-                    if ((chunk.tagTypes & required.tagTypes) != required.tagTypes)
+                    if ((chunk.TagTypes & required.tagTypes) != required.tagTypes)
                     {
                         continue;
                     }
 
                     //check if chunk doesnt contain exclusion
-                    if (chunk.componentTypes.ContainsAny(exclude.componentTypes))
+                    if (chunk.ComponentTypes.ContainsAny(exclude.componentTypes))
                     {
                         continue;
                     }
@@ -231,7 +231,7 @@ namespace Worlds
                         continue;
                     }
 
-                    if (chunk.tagTypes.ContainsAny(exclude.tagTypes))
+                    if (chunk.TagTypes.ContainsAny(exclude.tagTypes))
                     {
                         continue;
                     }

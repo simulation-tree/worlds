@@ -111,7 +111,7 @@ namespace Worlds.Tests
             for (int ci = 0; ci < chunks.Length; ci++)
             {
                 Chunk chunk = chunks[ci];
-                if (chunk.componentTypes.Contains(componentType))
+                if (chunk.ComponentTypes.Contains(componentType))
                 {
                     ComponentEnumerator<Berry> berries = chunk.GetComponents<Berry>(componentType);
                     entities.AddRange(chunk.Entities);

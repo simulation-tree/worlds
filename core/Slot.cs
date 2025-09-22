@@ -50,7 +50,7 @@ namespace Worlds
         {
             ThrowIfComponentIsMissing(componentType);
 
-            return new(row.pointer + chunk.componentOffsets[(uint)componentType]);
+            return new(row.pointer + chunk.chunk->schema.componentOffsets[(uint)componentType]);
         }
 
         /// <summary>
@@ -62,7 +62,7 @@ namespace Worlds
             int componentType = chunk.chunk->schema.GetComponentType<T>();
             ThrowIfComponentIsMissing(componentType);
 
-            return ref *(T*)(row.pointer + chunk.componentOffsets[(uint)componentType]);
+            return ref *(T*)(row.pointer + chunk.chunk->schema.componentOffsets[(uint)componentType]);
         }
 
         /// <summary>
@@ -73,13 +73,13 @@ namespace Worlds
         {
             ThrowIfComponentIsMissing(componentType);
 
-            return ref *(T*)(row.pointer + chunk.componentOffsets[(uint)componentType]);
+            return ref *(T*)(row.pointer + chunk.chunk->schema.componentOffsets[(uint)componentType]);
         }
 
         [Conditional("DEBUG")]
         internal unsafe readonly void ThrowIfComponentIsMissing(int componentType)
         {
-            if (!chunk.componentTypes.Contains(componentType))
+            if (!chunk.ComponentTypes.Contains(componentType))
             {
                 throw new InvalidOperationException($"Entity does not contain component type `{componentType}`");
             }

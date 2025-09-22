@@ -1040,6 +1040,54 @@
     }
 
     /// <summary>
+    /// Adds the given <paramref name=""element""/> to the end of an existing array on this entity.
+    /// </summary>
+    public readonly void AddArrayElement<T>(T element) where T : unmanaged
+    {
+        world.AddArrayElement(value, element);
+    }
+
+    /// <summary>
+    /// Adds the given <paramref name=""element""/> to the end of an existing array on this entity.
+    /// </summary>
+    public readonly void AddArrayElement<T>(int arrayType, T element) where T : unmanaged
+    {
+        world.AddArrayElement(value, arrayType, element);
+    }
+
+    /// <summary>
+    /// Adds a <see langword=""default""/> element to the end of an existing array on this entity.
+    /// </summary>
+    public readonly ref T AddArrayElement<T>() where T : unmanaged
+    {
+        return ref world.AddArrayElement<T>(value);
+    }
+
+    /// <summary>
+    /// Adds a <see langword=""default""/> element to the end of an existing array on this entity.
+    /// </summary>
+    public readonly ref T AddArrayElement<T>(int arrayType) where T : unmanaged
+    {
+        return ref world.AddArrayElement<T>(value, arrayType);
+    }
+
+    /// <summary>
+    /// Clears all elements from an existing array on this entity.
+    /// </summary>
+    public readonly void ClearArray<T>() where T : unmanaged
+    {
+        world.ClearArray<T>(value);
+    }
+
+    /// <summary>
+    /// Clears all elements from an existing array on this entity.
+    /// </summary>
+    public readonly void ClearArray(int arrayType)
+    {
+        world.ClearArray(value, arrayType);
+    }
+
+    /// <summary>
     /// Destroys the array of type <typeparamref name=""T""/> from this entity.
     /// </summary>
     public readonly void DestroyArray<T>() where T : unmanaged

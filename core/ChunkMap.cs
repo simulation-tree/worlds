@@ -70,7 +70,7 @@ namespace Worlds
                 if (hashCodes[index] == hashCode)
                 {
                     Chunk key = values[index].chunk;
-                    if (key.componentTypes == definition.componentTypes && key.ArrayTypes == definition.arrayTypes && key.tagTypes == definition.tagTypes)
+                    if (key.ComponentTypes == definition.componentTypes && key.ArrayTypes == definition.arrayTypes && key.TagTypes == definition.tagTypes)
                     {
                         return key;
                     }
@@ -109,109 +109,109 @@ namespace Worlds
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly Chunk GetOrCreateWithAddedComponent(Chunk sourceChunk, int componentType)
         {
-            return GetOrCreate(BitMask.Set(sourceChunk.componentTypes, componentType), sourceChunk.ArrayTypes, sourceChunk.tagTypes);
+            return GetOrCreate(BitMask.Set(sourceChunk.ComponentTypes, componentType), sourceChunk.ArrayTypes, sourceChunk.TagTypes);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly Chunk GetOrCreateWithAddedComponents(Chunk sourceChunk, BitMask componentTypes)
         {
-            return GetOrCreate(sourceChunk.componentTypes | componentTypes, sourceChunk.ArrayTypes, sourceChunk.tagTypes);
+            return GetOrCreate(sourceChunk.ComponentTypes | componentTypes, sourceChunk.ArrayTypes, sourceChunk.TagTypes);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly Chunk GetOrCreateWithRemovedComponent(Chunk sourceChunk, int componentType)
         {
-            BitMask componentTypes = BitMask.Clear(sourceChunk.componentTypes, componentType);
-            if (componentTypes.IsEmpty && sourceChunk.ArrayTypes.IsEmpty && sourceChunk.tagTypes.IsEmpty)
+            BitMask componentTypes = BitMask.Clear(sourceChunk.ComponentTypes, componentType);
+            if (componentTypes.IsEmpty && sourceChunk.ArrayTypes.IsEmpty && sourceChunk.TagTypes.IsEmpty)
             {
                 return chunkMap->defaultChunk;
             }
 
-            return GetOrCreate(componentTypes, sourceChunk.ArrayTypes, sourceChunk.tagTypes);
+            return GetOrCreate(componentTypes, sourceChunk.ArrayTypes, sourceChunk.TagTypes);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly Chunk GetOrCreateWithRemovedComponents(Chunk sourceChunk, BitMask componentTypes)
         {
-            componentTypes = sourceChunk.componentTypes & ~componentTypes;
-            if (componentTypes.IsEmpty && sourceChunk.ArrayTypes.IsEmpty && sourceChunk.tagTypes.IsEmpty)
+            componentTypes = sourceChunk.ComponentTypes & ~componentTypes;
+            if (componentTypes.IsEmpty && sourceChunk.ArrayTypes.IsEmpty && sourceChunk.TagTypes.IsEmpty)
             {
                 return chunkMap->defaultChunk;
             }
 
-            return GetOrCreate(componentTypes, sourceChunk.ArrayTypes, sourceChunk.tagTypes);
+            return GetOrCreate(componentTypes, sourceChunk.ArrayTypes, sourceChunk.TagTypes);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly Chunk GetOrCreateWithAddedArray(Chunk sourceChunk, int arrayType)
         {
-            return GetOrCreate(sourceChunk.componentTypes, BitMask.Set(sourceChunk.ArrayTypes, arrayType), sourceChunk.tagTypes);
+            return GetOrCreate(sourceChunk.ComponentTypes, BitMask.Set(sourceChunk.ArrayTypes, arrayType), sourceChunk.TagTypes);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly Chunk GetOrCreateWithAddedArrays(Chunk sourceChunk, BitMask arrayTypes)
         {
-            return GetOrCreate(sourceChunk.componentTypes, sourceChunk.ArrayTypes | arrayTypes, sourceChunk.tagTypes);
+            return GetOrCreate(sourceChunk.ComponentTypes, sourceChunk.ArrayTypes | arrayTypes, sourceChunk.TagTypes);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly Chunk GetOrCreateWithRemovedArray(Chunk sourceChunk, int arrayType)
         {
             BitMask arrayTypes = BitMask.Clear(sourceChunk.ArrayTypes, arrayType);
-            if (sourceChunk.componentTypes.IsEmpty && arrayTypes.IsEmpty && sourceChunk.tagTypes.IsEmpty)
+            if (sourceChunk.ComponentTypes.IsEmpty && arrayTypes.IsEmpty && sourceChunk.TagTypes.IsEmpty)
             {
                 return chunkMap->defaultChunk;
             }
 
-            return GetOrCreate(sourceChunk.componentTypes, arrayTypes, sourceChunk.tagTypes);
+            return GetOrCreate(sourceChunk.ComponentTypes, arrayTypes, sourceChunk.TagTypes);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly Chunk GetOrCreateWithRemovedArrays(Chunk sourceChunk, BitMask arrayTypes)
         {
             arrayTypes = sourceChunk.ArrayTypes & ~arrayTypes;
-            if (sourceChunk.componentTypes.IsEmpty && arrayTypes.IsEmpty && sourceChunk.tagTypes.IsEmpty)
+            if (sourceChunk.ComponentTypes.IsEmpty && arrayTypes.IsEmpty && sourceChunk.TagTypes.IsEmpty)
             {
                 return chunkMap->defaultChunk;
             }
 
-            return GetOrCreate(sourceChunk.componentTypes, arrayTypes, sourceChunk.tagTypes);
+            return GetOrCreate(sourceChunk.ComponentTypes, arrayTypes, sourceChunk.TagTypes);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly Chunk GetOrCreateWithAddedTag(Chunk sourceChunk, int tagType)
         {
-            return GetOrCreate(sourceChunk.componentTypes, sourceChunk.ArrayTypes, BitMask.Set(sourceChunk.tagTypes, tagType));
+            return GetOrCreate(sourceChunk.ComponentTypes, sourceChunk.ArrayTypes, BitMask.Set(sourceChunk.TagTypes, tagType));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly Chunk GetOrCreateWithAddedTags(Chunk sourceChunk, BitMask tagTypes)
         {
-            return GetOrCreate(sourceChunk.componentTypes, sourceChunk.ArrayTypes, sourceChunk.tagTypes | tagTypes);
+            return GetOrCreate(sourceChunk.ComponentTypes, sourceChunk.ArrayTypes, sourceChunk.TagTypes | tagTypes);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly Chunk GetOrCreateWithRemovedTag(Chunk sourceChunk, int tagType)
         {
-            BitMask tagTypes = BitMask.Clear(sourceChunk.tagTypes, tagType);
-            if (sourceChunk.componentTypes.IsEmpty && sourceChunk.ArrayTypes.IsEmpty && tagTypes.IsEmpty)
+            BitMask tagTypes = BitMask.Clear(sourceChunk.TagTypes, tagType);
+            if (sourceChunk.ComponentTypes.IsEmpty && sourceChunk.ArrayTypes.IsEmpty && tagTypes.IsEmpty)
             {
                 return chunkMap->defaultChunk;
             }
 
-            return GetOrCreate(sourceChunk.componentTypes, sourceChunk.ArrayTypes, tagTypes);
+            return GetOrCreate(sourceChunk.ComponentTypes, sourceChunk.ArrayTypes, tagTypes);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly Chunk GetOrCreateWithRemovedTags(Chunk sourceChunk, BitMask tagTypes)
         {
-            tagTypes = sourceChunk.tagTypes & ~tagTypes;
-            if (sourceChunk.componentTypes.IsEmpty && sourceChunk.ArrayTypes.IsEmpty && tagTypes.IsEmpty)
+            tagTypes = sourceChunk.TagTypes & ~tagTypes;
+            if (sourceChunk.ComponentTypes.IsEmpty && sourceChunk.ArrayTypes.IsEmpty && tagTypes.IsEmpty)
             {
                 return chunkMap->defaultChunk;
             }
 
-            return GetOrCreate(sourceChunk.componentTypes, sourceChunk.ArrayTypes, tagTypes);
+            return GetOrCreate(sourceChunk.ComponentTypes, sourceChunk.ArrayTypes, tagTypes);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -236,7 +236,7 @@ namespace Worlds
                 if (hashCodes[index] == hashCode)
                 {
                     Chunk key = values[index].chunk;
-                    if (key.componentTypes == componentTypes && key.ArrayTypes == arrayTypes && key.tagTypes == tagTypes)
+                    if (key.ComponentTypes == componentTypes && key.ArrayTypes == arrayTypes && key.TagTypes == tagTypes)
                     {
                         return key;
                     }

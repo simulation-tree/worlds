@@ -821,7 +821,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            return world->slots[entity].chunk.componentTypes.CopyTo(destination);
+            return world->slots[entity].chunk.ComponentTypes.CopyTo(destination);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1243,7 +1243,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
 
             Chunk chunk = world->slots[entity].chunk;
-            if (!chunk.componentTypes.ContainsAll(definition.componentTypes))
+            if (!chunk.ComponentTypes.ContainsAll(definition.componentTypes))
             {
                 return false;
             }
@@ -1253,7 +1253,7 @@ namespace Worlds
                 return false;
             }
 
-            return chunk.tagTypes.ContainsAll(definition.tagTypes);
+            return chunk.TagTypes.ContainsAll(definition.tagTypes);
         }
 
         /// <summary>
@@ -1929,7 +1929,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            return world->slots[entity].chunk.tagTypes.Contains(schema.GetTagType<T>());
+            return world->slots[entity].chunk.TagTypes.Contains(schema.GetTagType<T>());
         }
 
         /// <summary>
@@ -1940,7 +1940,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            return world->slots[entity].chunk.tagTypes.Contains(tagType);
+            return world->slots[entity].chunk.TagTypes.Contains(tagType);
         }
 
         /// <summary>
@@ -2024,7 +2024,7 @@ namespace Worlds
         {
             ThrowIfEntityIsMissing(entity);
 
-            return world->slots[entity].chunk.tagTypes;
+            return world->slots[entity].chunk.TagTypes;
         }
 
         /// <summary>
@@ -2597,6 +2597,78 @@ namespace Worlds
         }
 
         /// <summary>
+        /// Adds the given <paramref name="element"/> to the end of an existing array on this <paramref name="entity"/>.
+        /// </summary>
+        public readonly void AddArrayElement<T>(uint entity, T element) where T : unmanaged
+        {
+            ThrowIfEntityIsMissing(entity);
+
+            int arrayType = schema.GetArrayType<T>();
+            ThrowIfArrayIsMissing(entity, arrayType);
+
+            world->arrays[entity][arrayType].Add(element);
+        }
+
+        /// <summary>
+        /// Adds the given <paramref name="element"/> to the end of an existing array on this <paramref name="entity"/>.
+        /// </summary>
+        public readonly void AddArrayElement<T>(uint entity, int arrayType, T element) where T : unmanaged
+        {
+            ThrowIfEntityIsMissing(entity);
+            ThrowIfArrayIsMissing(entity, arrayType);
+
+            world->arrays[entity][arrayType].Add(element);
+        }
+
+        /// <summary>
+        /// Adds a <see langword="default"/> element to the end of an existing array on this <paramref name="entity"/>.
+        /// </summary>
+        public readonly ref T AddArrayElement<T>(uint entity) where T : unmanaged
+        {
+            ThrowIfEntityIsMissing(entity);
+
+            int arrayType = schema.GetArrayType<T>();
+            ThrowIfArrayIsMissing(entity, arrayType);
+
+            return ref world->arrays[entity][arrayType].Add<T>();
+        }
+
+        /// <summary>
+        /// Adds a <see langword="default"/> element to the end of an existing array on this <paramref name="entity"/>.
+        /// </summary>
+        public readonly ref T AddArrayElement<T>(uint entity, int arrayType) where T : unmanaged
+        {
+            ThrowIfEntityIsMissing(entity);
+            ThrowIfArrayIsMissing(entity, arrayType);
+
+            return ref world->arrays[entity][arrayType].Add<T>();
+        }
+
+        /// <summary>
+        /// Clears all elements from an existing array on this <paramref name="entity"/>.
+        /// </summary>
+        public readonly void ClearArray<T>(uint entity) where T : unmanaged
+        {
+            ThrowIfEntityIsMissing(entity);
+
+            int arrayType = schema.GetArrayType<T>();
+            ThrowIfArrayIsMissing(entity, arrayType);
+
+            world->arrays[entity][arrayType].Clear();
+        }
+
+        /// <summary>
+        /// Clears all elements from an existing array on this <paramref name="entity"/>.
+        /// </summary>
+        public readonly void ClearArray(uint entity, int arrayType)
+        {
+            ThrowIfEntityIsMissing(entity);
+            ThrowIfArrayIsMissing(entity, arrayType);
+
+            world->arrays[entity][arrayType].Clear();
+        }
+
+        /// <summary>
         /// Destroys the array of type <typeparamref name="T"/> on the given <paramref name="entity"/>.
         /// </summary>
         public readonly void DestroyArray<T>(uint entity) where T : unmanaged
@@ -2931,7 +3003,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
 
             int componentType = schema.GetComponentType<T>();
-            return world->slots[entity].chunk.componentTypes.Contains(componentType);
+            return world->slots[entity].chunk.ComponentTypes.Contains(componentType);
         }
 
         /// <summary>
@@ -2942,7 +3014,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
             ThrowIfEntityIsMissing(entity);
 
-            return world->slots[entity].chunk.componentTypes.Contains(componentType);
+            return world->slots[entity].chunk.ComponentTypes.Contains(componentType);
         }
 
         /// <summary>
@@ -2982,7 +3054,7 @@ namespace Worlds
 
             int componentType = schema.GetComponentType<T>();
             ref Slot slot = ref world->slots[entity];
-            if (slot.chunk.componentTypes.Contains(componentType))
+            if (slot.chunk.ComponentTypes.Contains(componentType))
             {
                 return *(T*)(slot.row.pointer + schema.schema->componentOffsets[(uint)componentType]);
             }
@@ -3014,7 +3086,7 @@ namespace Worlds
             ThrowIfEntityIsMissing(entity);
 
             ref Slot slot = ref world->slots[entity];
-            if (slot.chunk.componentTypes.Contains(componentType))
+            if (slot.chunk.ComponentTypes.Contains(componentType))
             {
                 return *(T*)(slot.row.pointer + schema.schema->componentOffsets[(uint)componentType]);
             }
@@ -3103,7 +3175,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
 
             ref Slot slot = ref world->slots[entity];
-            contains = slot.chunk.componentTypes.Contains(componentType);
+            contains = slot.chunk.ComponentTypes.Contains(componentType);
             if (contains)
             {
                 return ref *(T*)(slot.row.pointer + schema.schema->componentOffsets[(uint)componentType]);
@@ -3124,7 +3196,7 @@ namespace Worlds
 
             int componentType = schema.GetComponentType<T>();
             ref Slot slot = ref world->slots[entity];
-            contains = slot.chunk.componentTypes.Contains(componentType);
+            contains = slot.chunk.ComponentTypes.Contains(componentType);
             if (contains)
             {
                 return ref *(T*)(slot.row.pointer + schema.schema->componentOffsets[(uint)componentType]);
@@ -3144,7 +3216,7 @@ namespace Worlds
             MemoryAddress.ThrowIfDefault(world);
 
             ref Slot slot = ref world->slots[entity];
-            if (slot.chunk.componentTypes.Contains(componentType))
+            if (slot.chunk.ComponentTypes.Contains(componentType))
             {
                 component = *(T*)(slot.row.pointer + schema.schema->componentOffsets[(uint)componentType]);
                 return true;
@@ -3166,7 +3238,7 @@ namespace Worlds
 
             int componentType = schema.GetComponentType<T>();
             ref Slot slot = ref world->slots[entity];
-            if (slot.chunk.componentTypes.Contains(componentType))
+            if (slot.chunk.ComponentTypes.Contains(componentType))
             {
                 component = *(T*)(slot.row.pointer + schema.schema->componentOffsets[(uint)componentType]);
                 return true;
@@ -3262,7 +3334,7 @@ namespace Worlds
             Span<Chunk> chunks = world->chunkMap.chunkMap->chunks.AsSpan();
             for (int i = 0; i < world->chunkMap.chunkMap->count; i++)
             {
-                if (chunks[i].componentTypes.ContainsAll(componentTypes))
+                if (chunks[i].ComponentTypes.ContainsAll(componentTypes))
                 {
                     count++;
                 }
@@ -3306,7 +3378,7 @@ namespace Worlds
             for (int i = 0; i < world->chunkMap.chunkMap->count; i++)
             {
                 Chunk chunk = chunks[i];
-                if (chunk.componentTypes.ContainsAll(definition.componentTypes) && chunk.ArrayTypes.ContainsAll(definition.arrayTypes) && chunk.tagTypes.ContainsAll(definition.tagTypes))
+                if (chunk.ComponentTypes.ContainsAll(definition.componentTypes) && chunk.ArrayTypes.ContainsAll(definition.arrayTypes) && chunk.TagTypes.ContainsAll(definition.tagTypes))
                 {
                     count++;
                 }
@@ -3326,7 +3398,7 @@ namespace Worlds
             Span<Chunk> chunks = world->chunkMap.chunkMap->chunks.AsSpan();
             for (int i = 0; i < world->chunkMap.chunkMap->count; i++)
             {
-                if (chunks[i].componentTypes.Contains(componentType))
+                if (chunks[i].ComponentTypes.Contains(componentType))
                 {
                     count++;
                 }
@@ -3366,7 +3438,7 @@ namespace Worlds
             Span<Chunk> chunks = world->chunkMap.chunkMap->chunks.AsSpan();
             for (int i = 0; i < world->chunkMap.chunkMap->count; i++)
             {
-                if (chunks[i].tagTypes.Contains(tagType))
+                if (chunks[i].TagTypes.Contains(tagType))
                 {
                     count++;
                 }
@@ -3417,12 +3489,12 @@ namespace Worlds
             ref Slot destinationSlot = ref destinationWorld.world->slots[(int)destinationEntity];
             for (int c = 0; c < BitMask.Capacity; c++)
             {
-                if (sourceSlot.chunk.componentTypes.Contains(c))
+                if (sourceSlot.chunk.ComponentTypes.Contains(c))
                 {
                     int sourceComponentSize = sourceSchema->sizes[(uint)c];
                     uint sourceComponentOffset = sourceSchema->componentOffsets[(uint)c];
                     uint destinationComponentOffset = destinationSchema->componentOffsets[(uint)c];
-                    if (!destinationSlot.chunk.componentTypes.Contains(c))
+                    if (!destinationSlot.chunk.ComponentTypes.Contains(c))
                     {
                         destinationWorld.AddComponentType(destinationEntity, c);
                     }
@@ -3572,7 +3644,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         internal readonly void ThrowIfComponentMissing(uint entity, int componentType)
         {
-            BitMask componentTypes = world->slots[entity].chunk.componentTypes;
+            BitMask componentTypes = world->slots[entity].chunk.ComponentTypes;
             if (!componentTypes.Contains(componentType))
             {
                 throw new ComponentIsMissingException(this, entity, componentType);
@@ -3582,7 +3654,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         internal readonly void ThrowIfComponentsMissing(uint entity, BitMask componentTypes)
         {
-            BitMask currentComponentTypes = world->slots[entity].chunk.componentTypes;
+            BitMask currentComponentTypes = world->slots[entity].chunk.ComponentTypes;
             if (!currentComponentTypes.ContainsAll(componentTypes))
             {
                 throw new ComponentIsMissingException(this, entity, componentTypes);
@@ -3592,7 +3664,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         internal readonly void ThrowIfComponentAlreadyPresent(uint entity, int componentType)
         {
-            BitMask componentTypes = world->slots[entity].chunk.componentTypes;
+            BitMask componentTypes = world->slots[entity].chunk.ComponentTypes;
             if (componentTypes.Contains(componentType))
             {
                 throw new ComponentIsAlreadyPresentException(this, entity, componentType);
@@ -3602,7 +3674,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         internal readonly void ThrowIfComponentsAlreadyPresent(uint entity, BitMask componentTypes)
         {
-            BitMask currentComponentTypes = world->slots[entity].chunk.componentTypes;
+            BitMask currentComponentTypes = world->slots[entity].chunk.ComponentTypes;
             if (currentComponentTypes.ContainsAll(componentTypes))
             {
                 throw new ComponentIsAlreadyPresentException(this, entity, componentTypes);
@@ -3612,7 +3684,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfTagAlreadyPresent(uint entity, int tagType)
         {
-            BitMask tagTypes = world->slots[entity].chunk.tagTypes;
+            BitMask tagTypes = world->slots[entity].chunk.TagTypes;
             if (tagTypes.Contains(tagType))
             {
                 throw new TagIsAlreadyPresentException(this, entity, tagType);
@@ -3622,7 +3694,7 @@ namespace Worlds
         [Conditional("DEBUG")]
         private readonly void ThrowIfTagIsMissing(uint entity, int tagType)
         {
-            BitMask tagTypes = world->slots[entity].chunk.tagTypes;
+            BitMask tagTypes = world->slots[entity].chunk.TagTypes;
             if (!tagTypes.Contains(tagType))
             {
                 throw new TagIsMissingException(this, entity, tagType);
