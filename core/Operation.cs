@@ -30,6 +30,7 @@ namespace Worlds
         /// </summary>
         public readonly int Count
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 MemoryAddress.ThrowIfDefault(operation);
@@ -41,9 +42,7 @@ namespace Worlds
 #if NET
         /// <inheritdoc/>
         [Obsolete("Default constructor not supported", true)]
-        public Operation()
-        {
-        }
+        public Operation() { }
 #endif
 
         /// <summary>
@@ -94,6 +93,7 @@ namespace Worlds
         /// <summary>
         /// Clears all instructions and resets the operation to the initial state.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void Reset()
         {
             MemoryAddress.ThrowIfDefault(operation);
